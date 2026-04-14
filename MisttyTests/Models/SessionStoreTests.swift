@@ -247,27 +247,27 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(pane.processTitle, "nvim")
   }
 
-  func test_isRunningNeovim() {
+  func test_isRunningVimLike() {
     let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
     let pane = session.tabs[0].panes[0]
 
     pane.processTitle = "zsh"
-    XCTAssertFalse(pane.isRunningNeovim)
+    XCTAssertFalse(pane.isRunningVimLike)
 
     pane.processTitle = "nvim"
-    XCTAssertTrue(pane.isRunningNeovim)
+    XCTAssertTrue(pane.isRunningVimLike)
 
     pane.processTitle = "nvim ."
-    XCTAssertTrue(pane.isRunningNeovim)
+    XCTAssertTrue(pane.isRunningVimLike)
 
     pane.processTitle = "vim"
-    XCTAssertTrue(pane.isRunningNeovim)
+    XCTAssertTrue(pane.isRunningVimLike)
 
     pane.processTitle = "vimtutor"
-    XCTAssertFalse(pane.isRunningNeovim)
+    XCTAssertFalse(pane.isRunningVimLike)
 
     pane.processTitle = nil
-    XCTAssertFalse(pane.isRunningNeovim)
+    XCTAssertFalse(pane.isRunningVimLike)
   }
 
   func test_idsAreSequential() {
@@ -279,5 +279,26 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(s2.tabs[0].id, 2)
     XCTAssertEqual(s1.tabs[0].panes[0].id, 1)
     XCTAssertEqual(s2.tabs[0].panes[0].id, 2)
+  }
+
+  // MARK: - Close session active switching (IMPROVE-5)
+
+  func test_closeActiveSession_switchesToLast() {
+    let s1 = store.createSession(name: "a", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "b", directory: URL(fileURLWithPath: "/tmp"))
+    let s3 = store.createSession(name: "c", directory: URL(fileURLWithPath: "/tmp"))
+    store.activeSession = s1
+    store.closeSession(s1)
+    XCTAssertEqual(store.sessions.count, 2)
+    XCTAssertEqual(store.activeSession?.id, s3.id)
+  }
+
+  func test_closeNonActiveSession_activeUnchanged() {
+    let s1 = store.createSession(name: "a", directory: URL(fileURLWithPath: "/tmp"))
+    let s2 = store.createSession(name: "b", directory: URL(fileURLWithPath: "/tmp"))
+    store.activeSession = s1
+    store.closeSession(s2)
+    XCTAssertEqual(store.sessions.count, 1)
+    XCTAssertEqual(store.activeSession?.id, s1.id)
   }
 }

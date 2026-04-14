@@ -485,4 +485,63 @@ final class CopyModeStateTests: XCTestCase {
     let actions = state.continuePendingMotion(lineReader: emptyLineReader)
     XCTAssertTrue(actions.isEmpty)
   }
+
+  // MARK: - Visual mode yank (GAP-8)
+
+  func test_y_inVisualMode_exitsWithSelection() {
+    var state = makeState(cursorRow: 5, cursorCol: 0)
+    let reader: (Int) -> String? = { _ in "hello world" }
+    _ = state.handleKey(key: "v", keyCode: 0, modifiers: [], lineReader: reader)
+    XCTAssertEqual(state.subMode, .visual)
+    XCTAssertNotNil(state.anchor)
+
+    _ = state.handleKey(key: "l", keyCode: 0, modifiers: [], lineReader: reader)
+    _ = state.handleKey(key: "l", keyCode: 0, modifiers: [], lineReader: reader)
+    _ = state.handleKey(key: "l", keyCode: 0, modifiers: [], lineReader: reader)
+    XCTAssertEqual(state.cursorCol, 3)
+
+    let actions = state.handleKey(key: "y", keyCode: 0, modifiers: [], lineReader: reader)
+    XCTAssertTrue(actions.contains(.exitCopyMode))
+    XCTAssertTrue(state.isSelecting)
+    XCTAssertEqual(state.anchor?.col, 0)
+    XCTAssertEqual(state.selectionRange?.start.col, 0)
+    XCTAssertEqual(state.selectionRange?.end.col, 3)
+  }
+
+  // MARK: - Search input flow (GAP-11)
+
+  func test_searchInputFlow() {
+    var state = makeState()
+    _ = state.handleKey(key: "/", keyCode: 0, modifiers: [], lineReader: emptyLineReader)
+    XCTAssertEqual(state.subMode, .searchForward)
+
+    _ = state.handleKey(key: "f", keyCode: 0, modifiers: [], lineReader: emptyLineReader)
+    _ = state.handleKey(key: "o", keyCode: 0, modifiers: [], lineReader: emptyLineReader)
+    _ = state.handleKey(key: "o", keyCode: 0, modifiers: [], lineReader: emptyLineReader)
+    XCTAssertEqual(state.searchQuery, "foo")
+
+    // Backspace (keyCode 51)
+    let updateActions = state.handleKey(
+      key: "\u{7f}", keyCode: 51, modifiers: [], lineReader: emptyLineReader)
+    XCTAssertEqual(state.searchQuery, "fo")
+    XCTAssertTrue(updateActions.contains(.updateSearch(query: "fo")))
+
+    // Return (keyCode 36) confirms search
+    let confirmActions = state.handleKey(
+      key: "\r", keyCode: 36, modifiers: [], lineReader: emptyLineReader)
+    XCTAssertTrue(confirmActions.contains(.confirmSearch))
+    XCTAssertEqual(state.subMode, .normal)
+  }
+
+  // MARK: - Cross-line word motion with leading whitespace (BUG-2)
+
+  func test_w_crossLine_skipsLeadingWhitespace() {
+    var state = makeState(rows: 24, cols: 80, cursorRow: 5, cursorCol: 3)
+    let reader: (Int) -> String? = { row in
+      row == 5 ? "hello" : "  world foo"
+    }
+    _ = state.handleKey(key: "w", keyCode: 0, modifiers: [], lineReader: reader)
+    XCTAssertEqual(state.cursorRow, 6)
+    XCTAssertEqual(state.cursorCol, 2)
+  }
 }

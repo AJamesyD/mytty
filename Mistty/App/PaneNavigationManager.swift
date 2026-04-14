@@ -38,7 +38,7 @@ final class PaneNavigationManager {
       else { return event }
 
       // If running neovim, let the keypress through for smart-splits
-      if pane.isRunningNeovim { return event }
+      if pane.isRunningVimLike { return event }
 
       // Navigate between MistTY panes, only consume if navigation succeeds
       if let target = tab.layout.adjacentPane(from: pane, direction: direction) {

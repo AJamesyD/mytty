@@ -49,4 +49,16 @@ final class FrecencyServiceTests: XCTestCase {
     let newScore = service.score(for: "ssh:new")
     XCTAssertGreaterThan(newScore, oldScore)
   }
+
+  func test_corruptedJSON_recoversGracefully() {
+    let corruptURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("frecency-corrupt-\(UUID().uuidString).json")
+    try! Data("not json".utf8).write(to: corruptURL)
+    defer { try? FileManager.default.removeItem(at: corruptURL) }
+
+    let corruptService = FrecencyService(storageURL: corruptURL)
+    XCTAssertEqual(corruptService.score(for: "anything"), 0)
+    corruptService.recordAccess(for: "key")
+    XCTAssertGreaterThan(corruptService.score(for: "key"), 0)
+  }
 }

@@ -13,10 +13,10 @@ final class MisttyPane: Identifiable {
 
   var processTitle: String?
 
-  var isRunningNeovim: Bool {
+  var isRunningVimLike: Bool {
     guard let title = processTitle?.lowercased() else { return false }
-    let neovimNames = ["nvim", "neovim", "vim"]
-    return neovimNames.contains(where: { title == $0 || title.hasPrefix($0 + " ") })
+    let vimNames = ["nvim", "neovim", "vim"]
+    return vimNames.contains(where: { title == $0 || title.hasPrefix($0 + " ") })
   }
 
   init(id: Int) {
