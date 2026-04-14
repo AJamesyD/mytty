@@ -143,4 +143,64 @@ final class MisttyConfigTests: XCTestCase {
     XCTAssertEqual(config.ssh.resolveCommand(for: "prod-db"), "ssh")
     XCTAssertEqual(config.ssh.resolveCommand(for: "prod-web"), "et")
   }
+
+  func test_parsesPanelConfig() throws {
+    let toml = """
+      [sidebar]
+      mode = "auto-hide"
+
+      [tab-bar]
+      mode = "hidden"
+      hide-when-single-tab = false
+
+      [auto-hide]
+      dwell-ms = 200
+      dismiss-delay-ms = 400
+      show-hints = false
+      """
+    let config = try MisttyConfig.parse(toml)
+    XCTAssertEqual(config.sidebarMode, .autoHide)
+    XCTAssertEqual(config.tabBarMode, .hidden)
+    XCTAssertFalse(config.hideTabBarWhenSingleTab)
+    XCTAssertEqual(config.autoHideDwellMs, 200)
+    XCTAssertEqual(config.autoHideDismissDelayMs, 400)
+    XCTAssertFalse(config.autoHideShowHints)
+  }
+
+  func test_panelConfigDefaults() throws {
+    let config = try MisttyConfig.parse("")
+    XCTAssertEqual(config.sidebarMode, .pinned)
+    XCTAssertEqual(config.tabBarMode, .pinned)
+    XCTAssertTrue(config.hideTabBarWhenSingleTab)
+    XCTAssertEqual(config.autoHideDwellMs, 150)
+    XCTAssertEqual(config.autoHideDismissDelayMs, 300)
+    XCTAssertTrue(config.autoHideShowHints)
+  }
+
+  func test_backwardCompat_sidebarVisibleFalse() throws {
+    let toml = """
+      sidebar_visible = false
+      """
+    let config = try MisttyConfig.parse(toml)
+    XCTAssertEqual(config.sidebarMode, .hidden)
+  }
+
+  func test_backwardCompat_sidebarVisibleTrue() throws {
+    let toml = """
+      sidebar_visible = true
+      """
+    let config = try MisttyConfig.parse(toml)
+    XCTAssertEqual(config.sidebarMode, .pinned)
+  }
+
+  func test_sidebarTableOverridesLegacy() throws {
+    let toml = """
+      sidebar_visible = false
+
+      [sidebar]
+      mode = "pinned"
+      """
+    let config = try MisttyConfig.parse(toml)
+    XCTAssertEqual(config.sidebarMode, .pinned)
+  }
 }
