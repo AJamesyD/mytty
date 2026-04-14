@@ -1,0 +1,6 @@
+# Formatting and lint auto-fix commits
+bf8cf6754cc4bca5c15072aee52d7a9a03160715 # bf8cf67 style: fix swiftlint violations (force_try, for_where, line length)
+dbbe72dfa6023ab1505e137414607a3ceee2ea5b # dbbe72d style: apply swiftlint auto-fixes
+594d82ed948cf8051aa1039c9e69131213b6d43f # 594d82e style: run swift format on all source files
+5aaec035f2534df63a20268a7a6d5923a0498fc4 # 5aaec03 style: format copy mode changes
+809dc6930eac70aaacdff006a25e4659413a5974 # 809dc69 chore: post-MVP phase 1 cleanup and formatting
