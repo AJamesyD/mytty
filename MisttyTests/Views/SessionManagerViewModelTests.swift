@@ -10,7 +10,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "other", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = s1
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
 
     let sessionItems = vm.filteredItems.compactMap { item -> String? in
@@ -84,7 +84,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "other", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store, frecencyService: service)
+    let vm = SessionManagerViewModel(store: store, frecencyService: service, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
 
     let names = vm.filteredItems.compactMap { item -> String? in
@@ -99,7 +99,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "my-project", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("mprj")
 
@@ -117,7 +117,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "work-other", directory: URL(fileURLWithPath: "/tmp/other"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("work bazel")
 
@@ -143,7 +143,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "dev-tools", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store, frecencyService: service)
+    let vm = SessionManagerViewModel(store: store, frecencyService: service, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("dev")
 
@@ -159,7 +159,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "my-project", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("proj")
 
@@ -178,7 +178,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "beta", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("")
 
@@ -197,7 +197,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "alpha", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("   ")
 
@@ -216,7 +216,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "existing", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("proj")
 
@@ -231,7 +231,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "project", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("proj")
 
@@ -242,7 +242,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("nonexistent-unique-query-xyz")
 
@@ -258,7 +258,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("")
 
@@ -273,7 +273,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("/tmp")
 
@@ -289,7 +289,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("/tmp/nonexistent-mistty-test-dir-\(UUID().uuidString)")
 
@@ -304,7 +304,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("/nonexistent-parent-\(UUID().uuidString)/child")
 
@@ -319,7 +319,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("ssh myhost")
 
@@ -335,7 +335,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("ssh ")
 
@@ -352,7 +352,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("myproject")
     vm.selectedIndex = 0
@@ -366,7 +366,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let s1 = store.createSession(name: "current", directory: URL(fileURLWithPath: "/tmp/somedir"))
     store.activeSession = s1
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("newproj")
     vm.selectedIndex = 0
@@ -381,7 +381,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("ssh testhost")
     vm.selectedIndex = 0
@@ -410,7 +410,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery(tempFile.path)
 
@@ -427,7 +427,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("/tmp")
 
@@ -442,7 +442,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let store = SessionStore()
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("nonexistent-xyz")
     vm.selectedIndex = 0
@@ -455,7 +455,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "bazel-build", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("bzael")
 
@@ -472,7 +472,7 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "personal", directory: URL(fileURLWithPath: "/tmp/personal"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store)
+    let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
 
     vm.updateQuery("work")

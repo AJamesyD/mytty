@@ -78,15 +78,24 @@ final class SessionManagerViewModel {
 
   let store: SessionStore
   private let frecencyService: FrecencyService
+  private let zoxideProvider: @Sendable () async -> [URL]
+  private let sshProvider: @Sendable () -> [SSHHost]
 
-  init(store: SessionStore, frecencyService: FrecencyService = FrecencyService()) {
+  init(
+    store: SessionStore,
+    frecencyService: FrecencyService = FrecencyService(),
+    zoxideProvider: @Sendable @escaping () async -> [URL] = { await ZoxideService.recentDirectories() },
+    sshProvider: @Sendable @escaping () -> [SSHHost] = { SSHConfigService.loadHosts() }
+  ) {
     self.store = store
     self.frecencyService = frecencyService
+    self.zoxideProvider = zoxideProvider
+    self.sshProvider = sshProvider
   }
 
   func load() async {
-    let dirs = await ZoxideService.recentDirectories()
-    let sshHosts = SSHConfigService.loadHosts()
+    let dirs = await zoxideProvider()
+    let sshHosts = sshProvider()
 
     let activeDirectories = Set(store.sessions.map { $0.directory.standardizedFileURL })
 
