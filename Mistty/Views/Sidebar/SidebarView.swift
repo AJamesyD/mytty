@@ -88,9 +88,6 @@ struct SessionRowView: View {
       }
     } label: {
       HStack(spacing: 6) {
-        RoundedRectangle(cornerRadius: 1.5)
-          .fill(isActive ? MisttyTheme.sessionAccent : Color.clear)
-          .frame(width: 3, height: 16)
         Text(session.name)
           .font(.system(size: 13))
           .fontWeight(isActive ? .semibold : .regular)
@@ -112,6 +109,14 @@ struct SessionRowView: View {
       .contentShape(Rectangle())
       .onTapGesture { store.activeSession = session }
     }
+    .listRowBackground(
+      HStack(spacing: 0) {
+        MisttyTheme.sessionAccent
+          .frame(width: 3)
+          .opacity(isActive ? 1 : 0)
+        Color.clear
+      }
+    )
     .padding(.top, 4)
   }
 }
