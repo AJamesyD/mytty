@@ -61,6 +61,7 @@ struct SessionRowView: View {
             Circle()
               .fill(MisttyTheme.bellIndicator)
               .frame(width: 6, height: 6)
+              .accessibilityLabel("Bell notification")
           }
           if editingTabID == tab.id {
             TextField(
@@ -89,9 +90,11 @@ struct SessionRowView: View {
             Image(systemName: "rectangle.split.2x1")
               .font(.system(size: 9))
               .foregroundStyle(MisttyTheme.tabCountBadge)
+              .accessibilityHidden(true)
             Text("\(tab.panes.count)")
               .font(.system(size: 10, design: .monospaced))
               .foregroundStyle(MisttyTheme.tabCountBadge)
+              .accessibilityLabel("\(tab.panes.count) panes")
           }
           Spacer()
         }
@@ -153,6 +156,7 @@ struct SessionRowView: View {
               Capsule()
                 .fill(MisttyTheme.tabCountBadge.opacity(0.15))
             )
+            .accessibilityLabel("\(session.tabs.count) tabs")
         }
       }
       .contentShape(Rectangle())
