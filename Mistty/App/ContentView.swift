@@ -5,14 +5,15 @@ import SwiftUI
 
 struct ContentView: View {
   var store: SessionStore
-  @AppStorage("sidebarVisible") var sidebarVisible = true
   @SceneStorage("sidebarWidth") var sidebarWidth: Double = 220
+  @Environment(\.accessibilityReduceMotion) var reduceMotion
   @State var showingSessionManager = false
   @State var sessionManagerVM: SessionManagerViewModel?
   @State var eventMonitor: Any?
   @State var windowModeManager = WindowModeManager()
   @State var copyModeManager = CopyModeManager()
   @State var whichKeyManager = WhichKeyManager()
+  @State var panelState = PanelState()
 
   var body: some View {
     contentWithNotifications
@@ -40,30 +41,29 @@ struct ContentView: View {
       copyMode: { handleCopyMode() },
       whichKey: { handleWhichKey() },
       sessionManager: { showingSessionManager = true },
-      togglePopup: { name in handlePopupToggle(name: name) }
+      togglePopup: { name in handlePopupToggle(name: name) },
+      toggleSidebar: { handleToggleSidebar() },
+      toggleTabBar: { handleToggleTabBar() }
     )
   }
 
-  var mainContent: some View {
-    HStack(spacing: 0) {
-      if sidebarVisible {
-        SidebarView(
-          store: store,
-          width: Binding(
-            get: { CGFloat(sidebarWidth) },
-            set: { sidebarWidth = Double($0) }
-          ))
-        Rectangle()
-          .fill(MisttyTheme.sidebarDivider)
-          .frame(width: 1)
-      }
+  var sidebarPanel: some View {
+    SidebarView(
+      store: store,
+      width: Binding(
+        get: { CGFloat(sidebarWidth) },
+        set: { sidebarWidth = Double($0) }
+      ))
+  }
 
-      Group {
-        if let session = store.activeSession,
-          let tab = session.activeTab
-        {
+  var terminalArea: some View {
+    Group {
+      if let session = store.activeSession,
+        let tab = session.activeTab
+      {
+        ZStack(alignment: .top) {
           VStack(spacing: 0) {
-            if session.tabs.count > 1 {
+            if panelState.tabBarIsPinned(tabCount: session.tabs.count) {
               TabBarView(session: session)
               Divider()
             }
@@ -109,19 +109,132 @@ struct ContentView: View {
               }
             }
           }
-        } else {
-          VStack(spacing: 12) {
-            Text("No active session")
-              .font(.title2)
-              .foregroundStyle(.secondary)
-            Text("Press ⌘J to open or create a session")
-              .foregroundStyle(.tertiary)
+
+          if !panelState.tabBarIsPinned(tabCount: session.tabs.count)
+            && panelState.shouldShowTabBar(tabCount: session.tabs.count)
+          {
+            VStack(spacing: 0) {
+              TabBarView(session: session)
+                .background(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 0, x: 0, y: 1)
+              Spacer()
+            }
+            .transition(.move(edge: .top))
           }
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+          if panelState.tabBarMode == .autoHide
+            && (!panelState.hideTabBarWhenSingleTab || session.tabs.count > 1)
+          {
+            VStack {
+              EdgeTriggerView(
+                dwellDuration: panelState.dwellDuration,
+                dismissDelay: panelState.dismissDelay,
+                onReveal: {
+                  guard !isAnyModalActive else { return }
+                  panelState.isTabBarRevealed = true
+                },
+                onDismiss: {
+                  guard !panelState.isTabBarTempPinned else { return }
+                  panelState.isTabBarRevealed = false
+                }
+              )
+              .frame(height: 20)
+              .frame(maxWidth: .infinity)
+              Spacer()
+            }
+          }
+
+          if panelState.showHints && panelState.tabBarMode == .autoHide
+            && !panelState.isTabBarRevealed
+            && (!panelState.hideTabBarWhenSingleTab || session.tabs.count > 1)
+          {
+            VStack {
+              RoundedRectangle(cornerRadius: 1)
+                .fill(Color.primary.opacity(0.15))
+                .frame(width: 24, height: 2)
+                .frame(maxWidth: .infinity)
+                .allowsHitTesting(false)
+              Spacer()
+            }
+          }
+        }
+        .animation(
+          reduceMotion ? .easeInOut(duration: 0.15) : .easeOut(duration: 0.2),
+          value: panelState.isTabBarRevealed
+        )
+      } else {
+        VStack(spacing: 12) {
+          Text("No active session")
+            .font(.title2)
+            .foregroundStyle(.secondary)
+          Text("Press ⌘J to open or create a session")
+            .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+      }
+    }
+  }
+
+  var mainContent: some View {
+    ZStack(alignment: .leading) {
+      HStack(spacing: 0) {
+        if panelState.sidebarIsPinned {
+          sidebarPanel
+          Rectangle()
+            .fill(MisttyTheme.sidebarDivider)
+            .frame(width: 1)
+        }
+        terminalArea
+      }
+
+      if !panelState.sidebarIsPinned {
+        if panelState.isSidebarRevealed {
+          sidebarPanel
+            .background(.ultraThinMaterial)
+            .shadow(color: .black.opacity(0.1), radius: 2, x: 1, y: 0)
+            .transition(.move(edge: .leading))
+        }
+
+        if panelState.sidebarMode == .autoHide {
+          EdgeTriggerView(
+            dwellDuration: panelState.dwellDuration,
+            dismissDelay: panelState.dismissDelay,
+            onReveal: {
+              guard !isAnyModalActive else { return }
+              panelState.isSidebarRevealed = true
+            },
+            onDismiss: {
+              guard !panelState.isSidebarTempPinned else { return }
+              panelState.isSidebarRevealed = false
+            }
+          )
+          .frame(width: 20)
+          .frame(maxHeight: .infinity)
+        }
+
+        if panelState.showHints && panelState.sidebarMode == .autoHide
+          && !panelState.isSidebarRevealed
+        {
+          RoundedRectangle(cornerRadius: 1)
+            .fill(Color.primary.opacity(0.15))
+            .frame(width: 2, height: 24)
+            .frame(maxHeight: .infinity)
+            .allowsHitTesting(false)
         }
       }
     }
+    .animation(
+      reduceMotion ? .easeInOut(duration: 0.15) : .easeOut(duration: 0.2),
+      value: panelState.isSidebarRevealed
+    )
     .onAppear {
+      let config = MisttyConfig.load()
+      panelState.sidebarMode = config.sidebarMode
+      panelState.tabBarMode = config.tabBarMode
+      panelState.hideTabBarWhenSingleTab = config.hideTabBarWhenSingleTab
+      panelState.dwellDuration = Double(config.autoHideDwellMs) / 1000.0
+      panelState.dismissDelay = Double(config.autoHideDismissDelayMs) / 1000.0
+      panelState.showHints = config.autoHideShowHints
       windowModeManager.onNeedExitCopyMode = { copyModeManager.exit() }
       copyModeManager.onNeedExitWindowMode = {
         store.activeSession?.activeTab?.windowModeState = .inactive

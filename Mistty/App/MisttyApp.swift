@@ -6,7 +6,6 @@ import SwiftUI
 struct MisttyApp: App {
   @State private var store = SessionStore()
   @State private var ipcListener: IPCListener?
-  @AppStorage("sidebarVisible") var sidebarVisible = true
   @FocusedValue(\.terminalCommands) var commands
 
   init() {
@@ -38,9 +37,14 @@ struct MisttyApp: App {
         Divider()
 
         Button("Toggle Sidebar") {
-          sidebarVisible.toggle()
+          commands?.toggleSidebar()
         }
         .keyboardShortcut("s", modifiers: .command)
+
+        Button("Toggle Tab Bar") {
+          commands?.toggleTabBar()
+        }
+        .keyboardShortcut("t", modifiers: [.command, .shift])
 
         Button("New Tab") {
           commands?.newTab()

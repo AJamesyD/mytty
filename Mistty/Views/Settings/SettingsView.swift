@@ -22,7 +22,17 @@ struct SettingsView: View {
       }
 
       Section("Appearance") {
-        Toggle("Show Sidebar by Default", isOn: $config.sidebarVisible)
+        Picker("Sidebar Mode", selection: $config.sidebarMode) {
+          Text("Pinned").tag(PanelMode.pinned)
+          Text("Auto-hide").tag(PanelMode.autoHide)
+          Text("Hidden").tag(PanelMode.hidden)
+        }
+        Picker("Tab Bar Mode", selection: $config.tabBarMode) {
+          Text("Pinned").tag(PanelMode.pinned)
+          Text("Auto-hide").tag(PanelMode.autoHide)
+          Text("Hidden").tag(PanelMode.hidden)
+        }
+        Toggle("Hide Tab Bar When Single Tab", isOn: $config.hideTabBarWhenSingleTab)
       }
 
       Section("Popups") {
@@ -153,7 +163,9 @@ struct SettingsView: View {
     .onChange(of: config.fontFamily) { _, _ in saveConfig() }
     .onChange(of: config.cursorStyle) { _, _ in saveConfig() }
     .onChange(of: config.scrollbackLines) { _, _ in saveConfig() }
-    .onChange(of: config.sidebarVisible) { _, _ in saveConfig() }
+    .onChange(of: config.sidebarMode) { _, _ in saveConfig() }
+    .onChange(of: config.tabBarMode) { _, _ in saveConfig() }
+    .onChange(of: config.hideTabBarWhenSingleTab) { _, _ in saveConfig() }
     .onChange(of: config.popups) { _, _ in saveConfig() }
     .onChange(of: config.ssh) { _, _ in saveConfig() }
   }

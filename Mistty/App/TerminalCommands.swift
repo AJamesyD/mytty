@@ -16,6 +16,8 @@ struct TerminalCommands {
   var whichKey: () -> Void
   var sessionManager: () -> Void
   var togglePopup: (String) -> Void
+  var toggleSidebar: () -> Void
+  var toggleTabBar: () -> Void
 }
 
 struct TerminalCommandsKey: FocusedValueKey {

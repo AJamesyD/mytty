@@ -4,6 +4,13 @@ import MisttyShared
 import SwiftUI
 
 extension ContentView {
+  var isAnyModalActive: Bool {
+    showingSessionManager
+      || windowModeManager.isActive
+      || copyModeManager.isActive
+      || whichKeyManager.isActive
+  }
+
   var contentWithNotifications: some View {
     contentWithOverlays
       .onReceive(NotificationCenter.default.publisher(for: .ghosttySetTitle)) { notification in
@@ -160,6 +167,34 @@ extension ContentView {
     session.closeTab(tab)
     if session.tabs.isEmpty {
       store.closeSession(session)
+    }
+  }
+
+  func handleToggleSidebar() {
+    switch panelState.sidebarMode {
+    case .pinned:
+      panelState.sidebarMode = .hidden
+    case .autoHide:
+      panelState.isSidebarTempPinned.toggle()
+      panelState.isSidebarRevealed = panelState.isSidebarTempPinned
+    case .hidden:
+      panelState.isSidebarTempPinned.toggle()
+      panelState.isSidebarRevealed = panelState.isSidebarTempPinned
+    }
+  }
+
+  func handleToggleTabBar() {
+    guard let session = store.activeSession else { return }
+    if panelState.hideTabBarWhenSingleTab && session.tabs.count < 2 { return }
+    switch panelState.tabBarMode {
+    case .pinned:
+      panelState.tabBarMode = .hidden
+    case .autoHide:
+      panelState.isTabBarTempPinned.toggle()
+      panelState.isTabBarRevealed = panelState.isTabBarTempPinned
+    case .hidden:
+      panelState.isTabBarTempPinned.toggle()
+      panelState.isTabBarRevealed = panelState.isTabBarTempPinned
     }
   }
 

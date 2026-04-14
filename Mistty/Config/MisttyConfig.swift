@@ -32,7 +32,12 @@ struct MisttyConfig: Sendable, Equatable {
   var fontFamily: String = "monospace"
   var cursorStyle: String = "block"
   var scrollbackLines: Int = 10000
-  var sidebarVisible: Bool = true
+  var sidebarMode: PanelMode = .pinned
+  var tabBarMode: PanelMode = .pinned
+  var hideTabBarWhenSingleTab: Bool = true
+  var autoHideDwellMs: Int = 150
+  var autoHideDismissDelayMs: Int = 300
+  var autoHideShowHints: Bool = true
   var popups: [PopupDefinition] = []
   var ssh = SSHConfig()
 
@@ -45,7 +50,33 @@ struct MisttyConfig: Sendable, Equatable {
     if let family = table["font_family"]?.string { config.fontFamily = family }
     if let cursor = table["cursor_style"]?.string { config.cursorStyle = cursor }
     if let scrollback = table["scrollback_lines"]?.int { config.scrollbackLines = scrollback }
-    if let sidebar = table["sidebar_visible"]?.bool { config.sidebarVisible = sidebar }
+    if let sidebarTable = table["sidebar"]?.table {
+      if let modeStr = sidebarTable["mode"]?.string,
+        let mode = PanelMode.fromConfig(modeStr)
+      {
+        config.sidebarMode = mode
+      }
+    }
+    if table["sidebar"]?.table == nil, let visible = table["sidebar_visible"]?.bool {
+      config.sidebarMode = visible ? .pinned : .hidden
+    }
+    if let tabBarTable = table["tab-bar"]?.table {
+      if let modeStr = tabBarTable["mode"]?.string,
+        let mode = PanelMode.fromConfig(modeStr)
+      {
+        config.tabBarMode = mode
+      }
+      if let hide = tabBarTable["hide-when-single-tab"]?.bool {
+        config.hideTabBarWhenSingleTab = hide
+      }
+    }
+    if let autoHideTable = table["auto-hide"]?.table {
+      if let dwell = autoHideTable["dwell-ms"]?.int { config.autoHideDwellMs = dwell }
+      if let dismiss = autoHideTable["dismiss-delay-ms"]?.int {
+        config.autoHideDismissDelayMs = dismiss
+      }
+      if let hints = autoHideTable["show-hints"]?.bool { config.autoHideShowHints = hints }
+    }
     if let popupArray = table["popup"]?.array {
       config.popups = popupArray.compactMap { entry -> PopupDefinition? in
         guard let t = entry.table else { return nil }
@@ -109,7 +140,18 @@ struct MisttyConfig: Sendable, Equatable {
     lines.append("font_family = \"\(fontFamily)\"")
     lines.append("cursor_style = \"\(cursorStyle)\"")
     lines.append("scrollback_lines = \(scrollbackLines)")
-    lines.append("sidebar_visible = \(sidebarVisible)")
+    lines.append("")
+    lines.append("[sidebar]")
+    lines.append("mode = \"\(sidebarMode.configValue)\"")
+    lines.append("")
+    lines.append("[tab-bar]")
+    lines.append("mode = \"\(tabBarMode.configValue)\"")
+    lines.append("hide-when-single-tab = \(hideTabBarWhenSingleTab)")
+    lines.append("")
+    lines.append("[auto-hide]")
+    lines.append("dwell-ms = \(autoHideDwellMs)")
+    lines.append("dismiss-delay-ms = \(autoHideDismissDelayMs)")
+    lines.append("show-hints = \(autoHideShowHints)")
     for popup in popups {
       lines.append("")
       lines.append("[[popup]]")
