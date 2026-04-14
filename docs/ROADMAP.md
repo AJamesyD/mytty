@@ -1,7 +1,7 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 11
+Iteration: 12
 
 ## Principles
 
@@ -45,13 +45,15 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 ### Remaining 1b features
 - [x] Sidebar visual rework: accent bar on active session (via `listRowBackground`), tab count badge, pane count indicator, active tab highlight, increased indentation, session spacing. Spec: `/tmp/ai-design-sidebar-visual-rework.md`. Future work: per-session colors (needs config system), hover close buttons, pane sub-rows.
 - [ ] Session/tab renaming (sidebar + tab bar only). `/spec` before implementation. Scope: double-click to rename in sidebar and tab bar. Right-click context menu with "Rename" option. CLI rename and OSC 0/1/2 title integration deferred to Phase 2/3. Prior art: Kitty `tab_title_template`, iTerm2 session naming.
-- [ ] Tab bar visibility mode: "always", "never", "if-multiple" (hide when only 1 tab). Prior art: Kitty `tab_bar_min_tabs`, WezTerm `hide_tab_bar_if_only_one_tab`, neovim bufferline. Hardcode "if-multiple" as default, expose via config in Phase 4.
+- [ ] Tab bar visibility mode: "always", "never", "if-multiple" (hide when only 1 tab). Small enough to implement directly (no `/spec` needed). Prior art: Kitty `tab_bar_min_tabs`, WezTerm `hide_tab_bar_if_only_one_tab`, neovim bufferline. Hardcode "if-multiple" as default, expose via config in Phase 4.
 - [ ] Tab drag-and-drop reordering. `/spec` before implementation. Prior art: iTerm2, Kitty, browser tab bars.
 - [ ] Dropdown / Quake mode. `/spec` before implementation: NSPanel, global hotkey, animation, multi-monitor behavior, interaction with auto-hide panels. Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty quick terminal.
 
 - Complexity: 3 (visual polish items are individually small, but dropdown mode is a real feature)
 
-**Done when:** no system alert sounds on standard shortcuts, clear visual boundaries between all UI regions, sessions and tabs renameable, tab bar hides with single tab, tabs reorderable by drag, global hotkey summons dropdown terminal.
+**Done when (core):** no system alert sounds on standard shortcuts, clear visual boundaries between all UI regions, sessions and tabs renameable, tab bar hides with single tab, tabs reorderable by drag.
+
+**Done when (stretch):** global hotkey summons dropdown terminal.
 
 ---
 
@@ -83,7 +85,7 @@ Sidebar and tab bar support Pinned / Auto-hide / Hidden modes. Auto-hide: overla
 
 **Why this phase:** the sidebar is Mistty's most visible differentiator from Ghostty. Right now it's a list of names. This phase makes it the "you never leave your flow" feature.
 
-Merges the old 1b (OSC Foundation) and 2a (Rich Sidebar Metadata) into one coherent feature.
+Merges OSC foundation and rich sidebar metadata into one coherent feature.
 
 ### OSC Foundation
 Build the OSC parser as part of this feature. It's the foundation for Phase 4 (shell integration) and Phase 6 (block-based output).
@@ -105,7 +107,7 @@ Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prom
 - Gap analysis: cmux has notification rings. No one else combines notifications + git + ports + working directory in a sidebar.
 - `/spec` required: OSC parser architecture, notification ring visual design, sidebar metadata layout, OSC title sequence handling (OSC 0/1/2 for session/tab renaming). Prior art: `/tmp/ai-research-sidebar-patterns.md`, `/tmp/ai-research-terminal-ui-ux-patterns.md`.
 
-**Done when:** sidebar shows git branch, working directory, and port info per session. Unfocused panes with output show notification badges. Cmd+Shift+U jumps to the next unread pane. Cmd+Up/Down jumps between prompts.
+**Done when:** sidebar shows git branch, working directory, and port info per session. Unfocused panes with output show notification badges. Cmd+Shift+U jumps to the next unread pane. Cmd+Up/Down jumps between prompts. OSC 0/1/2 title sequences update tab names dynamically.
 
 ---
 
@@ -128,7 +130,7 @@ Unix domain socket (`/tmp/mistty-$UID.sock`). JSON-RPC protocol. Extends the exi
 smart-splits.nvim integration via socket API. Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes.
 
 - Complexity: 2 (once 3a exists)
-- Spec required: smart-splits.nvim integration protocol, edge cases (nested neovim, multiple neovim instances).
+- `/spec` required: smart-splits.nvim integration protocol, edge cases (nested neovim, multiple neovim instances).
 - Depends on: 3a
 - Why unsolved in Ghostty: deliberate design choice (no IPC). Mistty can solve it.
 - Personal pain point.
@@ -167,7 +169,7 @@ Key questions to answer from real usage:
 ### 4b. Session Resurrection
 Auto-save (layout, working directories, scrollback) on quit. Auto-restore on launch.
 
-- Spec required: what state is saved, serialization format, built-in vs shpool/zmx integration decision.
+- `/spec` required: what state is saved (including custom session/tab names), serialization format, built-in vs shpool/zmx integration decision.
 - Consider the unbundled alternative: integrate with shpool or zmx for session persistence instead of building from scratch. Trade external dependency for reduced complexity.
 
 - Complexity: 3 (built-in) or 2 (shpool/zmx integration)
@@ -229,6 +231,7 @@ Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide inte
 Sidebar configurable to appear on left or right side of the window.
 
 - Complexity: 1
+- `/spec` not needed (straightforward layout flip).
 - Depends on: 4a (config system for persistence)
 
 **Done when:** project layouts load from `.mistty.toml` with save-current-layout command, floating panes work, Ghostty themes import, hints mode selects visible targets, command palette searches all actions, session manager shows frecency-ranked results with icons.
