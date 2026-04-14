@@ -1,15 +1,15 @@
 # Mistty
 
-A macOS terminal emulator built on [libghostty](https://github.com/ghostty-org/ghostty) with native session management. Mistty brings tmux-style workflows directly into the terminal — sessions, tabs, split panes, and a fuzzy session switcher, all without a separate multiplexer.
+A macOS terminal emulator built on [libghostty](https://github.com/ghostty-org/ghostty) with native session management. Mistty brings tmux-style workflows directly into the terminal: sessions, tabs, split panes, and a fuzzy session switcher, all without a separate multiplexer.
 
 ## Features (planned)
 
-- **Session manager** (`Cmd+J`) — fuzzy-find and switch between sessions, recent directories (via zoxide), and SSH hosts
-- **Tabs and split panes** — standard terminal multiplexing built in
-- **Sidebar** — persistent session tree, collapsible with `Cmd+S`
-- **Keyboard-driven** — every function accessible via keyboard shortcut
-- **Configurable** — XDG-compliant config at `~/.config/mistty/config.toml`
-- **Native macOS** — SwiftUI interface, system integration
+- **Session manager** (`Cmd+J`): fuzzy-find and switch between sessions, recent directories (via zoxide), and SSH hosts
+- **Tabs and split panes**: standard terminal multiplexing built in
+- **Sidebar**: persistent session tree, collapsible with `Cmd+S`
+- **Keyboard-driven**: every function accessible via keyboard shortcut
+- **Configurable**: XDG-compliant config at `~/.config/mistty/config.toml`
+- **Native macOS**: SwiftUI interface, system integration
 
 ## CLI Control
 
@@ -41,11 +41,32 @@ mistty-cli session list --json
 ## Prerequisites
 
 - macOS 14 (Sonoma) or later
-- Xcode 16+ (for Swift 6 and the Metal Toolchain)
-- [Nix](https://nixos.org/download/) (for the build environment — provides Zig)
+- Xcode 16.3 (for building libghostty via Zig)
+- Xcode 26+ (for Swift 6.3 build, if on macOS 26)
+- [Nix](https://nixos.org/download/) (provides Zig 0.15.2 for the Ghostty build)
 - [just](https://github.com/casey/just) (command runner, optional but recommended)
 
-If the Metal Toolchain is not installed, run:
+### macOS 26 (Tahoe) notes
+
+Building on macOS 26 requires two Xcode versions:
+
+- **Xcode 16.3** for the zig/libghostty build (the macOS 15 SDK has arm64 tbd stubs that zig needs; the macOS 26 SDK only has arm64e stubs)
+- **Xcode 26+** for the Swift build (Swift 6.3 support)
+
+Install both via [xcodes](https://github.com/XcodesOrg/xcodes) (included in the nix devshell):
+
+```sh
+xcodes install 16.3
+xcodes install 26.0
+```
+
+The `just build-libghostty` recipe automatically selects Xcode 16.3 via `DEVELOPER_DIR`. Set your default Xcode to 26.x for Swift builds:
+
+```sh
+sudo xcode-select -s /Applications/Xcode-26.0.app/Contents/Developer
+```
+
+If the Metal Toolchain is not installed:
 
 ```sh
 xcodebuild -downloadComponent MetalToolchain
@@ -102,8 +123,9 @@ direnv allow
 ```
 mistty/
   Mistty/              # App source
-    MisttyApp.swift     # App entry point
-    ContentView.swift   # Root SwiftUI view
+    App/
+      MisttyApp.swift   # App entry point
+      ContentView.swift # Root SwiftUI view
     Spike/              # libghostty integration spike (temporary)
   MisttyTests/          # Tests
   vendor/ghostty/       # Ghostty git submodule
@@ -119,9 +141,9 @@ mistty/
 
 Mistty uses a three-layer architecture:
 
-- **UI Layer** (SwiftUI) — sidebar, session manager, tab bar, terminal views
-- **Session Layer** (Swift protocols) — `SessionStore` > `MisttySession` > `MisttyTab` > `MisttyPane`, designed for future migration from in-memory to a background daemon
-- **Terminal Layer** (libghostty) — `NSViewRepresentable` wrapping a `ghostty_surface_t` for terminal rendering
+- **UI Layer** (SwiftUI): sidebar, session manager, tab bar, terminal views
+- **Session Layer** (Swift protocols): `SessionStore` > `MisttySession` > `MisttyTab` > `MisttyPane`, designed for future migration from in-memory to a background daemon
+- **Terminal Layer** (libghostty): `NSViewRepresentable` wrapping a `ghostty_surface_t` for terminal rendering
 
 See [docs/plans/2026-03-06-mistty-design.md](docs/plans/2026-03-06-mistty-design.md) for the full design document.
 
