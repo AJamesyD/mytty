@@ -225,6 +225,17 @@ Phase 3:
   3c (socket API) ──> 3d (neovim nav)
 ```
 
+## Visual polish (unscheduled, fold into nearby work)
+
+- Which-key overlay: make position, styling, and trigger key configurable (depends on 2c config system).
+
+- Cmd+/- font size: ghostty handles the key, but no menu item claims it, so AppKit beeps. Add no-op menu commands to suppress.
+- Sidebar/terminal divider: no visible boundary between panels. Add 1px separator or shadow.
+- Tab active/inactive contrast: current highlight too subtle.
+- Sidebar icons and grouping: entries all look the same, truncated with no tooltips.
+- Typography hierarchy: sidebar text same weight/size as terminal text.
+- Color theming foundation: small palette for chrome colors (partially covered by 4c Ghostty config compat).
+
 ## What's NOT on this roadmap
 
 - CI/CD (GitHub Actions): deferred until contributors exist
