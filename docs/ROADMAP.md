@@ -77,11 +77,26 @@ Enhance Cmd+J: frecency-ranked directories (zoxide integration), Nerd Font icons
 - Complexity: 2 | Score: 4.00
 - Depends on: nothing
 
-### 2c. Configurable Keybindings
-TOML config file (`~/.config/mistty/keys.toml`) for all keybindings. Which-key overlay (1a) reads from this config. Power users remap everything.
+### 2c. Configuration System (investigate + build)
+Research and build Mistty's configuration system. This is foundational: keybindings, appearance, behavior, panel modes, and plugin-like extensibility all flow from this.
 
-- Complexity: 2
-- Retroactively enhances 1a.
+**Investigation scope** (research prior art, then decide):
+- **TOML/YAML** (Ghostty, Alacritty, zellij): static config, simple, well-understood. Ghostty's config is the gold standard for terminal config UX (flat key=value, no nesting hell).
+- **Lua** (WezTerm, Neovim, Hammerspoon): dynamic, scriptable, enables event hooks and computed config. WezTerm's Lua config is extremely powerful but can become complex.
+- **KDL** (zellij layouts): document-oriented, good for hierarchical data like layouts. Less tooling than TOML/Lua.
+- **Hybrid** (e.g., TOML for static config + Lua for hooks/scripting): best of both? Or worst of both?
+- **Swift-native** (SwiftUI Settings + plist): zero-dependency, native macOS feel. But not portable or scriptable.
+
+**Key questions to answer:**
+1. What needs to be configurable? (keybindings, appearance, behavior, layouts, hooks)
+2. Does Mistty need runtime scripting (event hooks, dynamic keybinds) or just static config?
+3. What's the migration story from Ghostty config?
+4. How does the config interact with the which-key overlay (1a) and project layouts (4a)?
+5. What's the XDG-compliant path? (`~/.config/mistty/config.toml` or similar)
+
+- Complexity: 3 (investigation) + 2-3 (implementation depending on choice)
+- Retroactively enhances 1a (which-key reads keybindings from config).
+- Enables: 4a (project layouts), 4c (Ghostty config compat)
 
 ### 2d. Session Resurrection
 Auto-save (layout, working directories, scrollback) on quit. Auto-restore on launch. Invisible.
@@ -89,7 +104,7 @@ Auto-save (layout, working directories, scrollback) on quit. Auto-restore on lau
 - Complexity: 3
 - Why genuinely hard: process state (running commands, env vars, file descriptors) can't be serialized. Layout + scrollback + cwd is the achievable subset.
 
-**Done when:** sidebar shows git branch and ports, Cmd+J shows zoxide results, keybindings are configurable, quit+relaunch restores layout.
+**Done when:** sidebar shows git branch and ports, Cmd+J shows zoxide results, config system chosen and implemented (keybindings configurable at minimum), quit+relaunch restores layout.
 
 ---
 
@@ -196,13 +211,14 @@ Named save points with timeline. "Bookmark this moment" before risky operations.
 Phase 0 (cleanup) ──────────────────────────────────────────────────────────>
 
 Phase 1 (all parallel, no cross-deps):
-  1a (which-key) ·····················> 2c (config keys) enhances it
+  1a (which-key) ·····················> 2c (config system) enhances it
   1b (notifications + OSC) ──> 2a (rich sidebar)
                            └──> 3b (shell integration) ──> 5b (blocks)
   1c (auto-hide) ·····················> standalone
 
 Phase 2:
   2b (fuzzy switcher) ················> standalone
+  2c (config system) ──> 4a (project layouts), 4c (Ghostty config compat)
   2d (session resurrection) ──> 4a (project layouts)
 
 Phase 3:
