@@ -6,41 +6,6 @@ import SwiftUI
 extension ContentView {
   var contentWithNotifications: some View {
     contentWithOverlays
-      .onReceive(NotificationCenter.default.publisher(for: .misttyPopupToggle)) { notification in
-        handlePopupToggle(notification)
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyClosePane)) { _ in
-        handleClosePane()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyWindowMode)) { _ in
-        handleWindowMode()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyCopyMode)) { _ in
-        handleCopyMode()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyWhichKey)) { _ in
-        if whichKeyManager.isActive {
-          whichKeyManager.deactivate()
-        } else {
-          // NOTE: only one keyboard mode can be active at a time. Each mode
-          // installs its own NSEvent monitor; competing monitors cause
-          // unpredictable event routing.
-          if let tab = store.activeSession?.activeTab {
-            if tab.isWindowModeActive {
-              tab.windowModeState = .inactive
-              windowModeManager.deactivate()
-            }
-            if tab.isCopyModeActive {
-              copyModeManager.exit()
-            }
-          }
-          whichKeyManager.activate(
-            bindings: WhichKeyManager.defaultBindings(store: store))
-        }
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyCloseTab)) { _ in
-        handleCloseTab()
-      }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttySetTitle)) { notification in
         handleSetTitle(notification)
       }
@@ -75,18 +40,6 @@ extension ContentView {
           removeKeyMonitor()
           sessionManagerVM = nil
         }
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyNewTab)) { _ in
-        store.activeSession?.addTab()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttySplitHorizontal)) { _ in
-        splitPane(direction: .horizontal)
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttySplitVertical)) { _ in
-        splitPane(direction: .vertical)
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttySessionManager)) { _ in
-        showingSessionManager = true
       }
       .paneNavigation(store: store, showingSessionManager: $showingSessionManager)
   }
@@ -135,10 +88,8 @@ extension ContentView {
 
   // MARK: - Notification Handlers
 
-  func handlePopupToggle(_ notification: Notification) {
-    guard let session = store.activeSession,
-      let name = notification.userInfo?["name"] as? String
-    else { return }
+  func handlePopupToggle(name: String) {
+    guard let session = store.activeSession else { return }
     let config = MisttyConfig.load()
     guard let definition = config.popups.first(where: { $0.name == name }) else { return }
     session.togglePopup(definition: definition)
@@ -181,6 +132,24 @@ extension ContentView {
       copyModeManager.exit()
     } else {
       copyModeManager.enter(store: store)
+    }
+  }
+
+  func handleWhichKey() {
+    if whichKeyManager.isActive {
+      whichKeyManager.deactivate()
+    } else {
+      if let tab = store.activeSession?.activeTab {
+        if tab.isWindowModeActive {
+          tab.windowModeState = .inactive
+          windowModeManager.deactivate()
+        }
+        if tab.isCopyModeActive {
+          copyModeManager.exit()
+        }
+      }
+      whichKeyManager.activate(
+        bindings: WhichKeyManager.defaultBindings(store: store, commands: terminalCommands))
     }
   }
 

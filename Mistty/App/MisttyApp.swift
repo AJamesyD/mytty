@@ -2,16 +2,12 @@ import Foundation
 import GhosttyKit
 import SwiftUI
 
-// TODO(2026-04-14): replace NotificationCenter menu commands with FocusedValue/focusedSceneValue.
-// Current approach broadcasts to all windows and is type-unsafe. FocusedValue gives type safety,
-// auto-disables menu items when no terminal is active, and routes to the correct window.
-// Scope: 16 notification names, 15 receivers in ContentView, all menu Button actions here.
-
 @main
 struct MisttyApp: App {
   @State private var store = SessionStore()
   @State private var ipcListener: IPCListener?
   @AppStorage("sidebarVisible") var sidebarVisible = true
+  @FocusedValue(\.terminalCommands) var commands
 
   init() {
     _ = GhosttyAppManager.shared
@@ -47,49 +43,49 @@ struct MisttyApp: App {
         .keyboardShortcut("s", modifiers: .command)
 
         Button("New Tab") {
-          NotificationCenter.default.post(name: .misttyNewTab, object: nil)
+          commands?.newTab()
         }
         .keyboardShortcut("t", modifiers: .command)
 
         Button("Split Pane Horizontally") {
-          NotificationCenter.default.post(name: .misttySplitHorizontal, object: nil)
+          commands?.splitHorizontal()
         }
         .keyboardShortcut("d", modifiers: .command)
 
         Button("Split Pane Vertically") {
-          NotificationCenter.default.post(name: .misttySplitVertical, object: nil)
+          commands?.splitVertical()
         }
         .keyboardShortcut("d", modifiers: [.command, .shift])
 
         Button("Session Manager") {
-          NotificationCenter.default.post(name: .misttySessionManager, object: nil)
+          commands?.sessionManager()
         }
         .keyboardShortcut("j", modifiers: .command)
 
         Divider()
 
         Button("Close Pane") {
-          NotificationCenter.default.post(name: .misttyClosePane, object: nil)
+          commands?.closePane()
         }
         .keyboardShortcut("w", modifiers: .command)
 
         Button("Close Tab") {
-          NotificationCenter.default.post(name: .misttyCloseTab, object: nil)
+          commands?.closeTab()
         }
         .keyboardShortcut("w", modifiers: [.command, .shift])
 
         Button("Window Mode") {
-          NotificationCenter.default.post(name: .misttyWindowMode, object: nil)
+          commands?.windowMode()
         }
         .keyboardShortcut("x", modifiers: .command)
 
         Button("Copy Mode") {
-          NotificationCenter.default.post(name: .misttyCopyMode, object: nil)
+          commands?.copyMode()
         }
         .keyboardShortcut("c", modifiers: [.command, .shift])
 
         Button("Which-Key") {
-          NotificationCenter.default.post(name: .misttyWhichKey, object: nil)
+          commands?.whichKey()
         }
         .keyboardShortcut(.space, modifiers: .control)
 
@@ -108,32 +104,28 @@ struct MisttyApp: App {
 
         ForEach(1...9, id: \.self) { index in
           Button("Focus Tab \(index)") {
-            NotificationCenter.default.post(
-              name: .misttyFocusTabByIndex,
-              object: nil,
-              userInfo: ["index": index - 1]
-            )
+            commands?.focusTab(index - 1)
           }
           .keyboardShortcut(KeyEquivalent(Character("\(index)")), modifiers: .command)
         }
 
         Button("Next Tab") {
-          NotificationCenter.default.post(name: .misttyNextTab, object: nil)
+          commands?.nextTab()
         }
         .keyboardShortcut("]", modifiers: .command)
 
         Button("Previous Tab") {
-          NotificationCenter.default.post(name: .misttyPrevTab, object: nil)
+          commands?.prevTab()
         }
         .keyboardShortcut("[", modifiers: .command)
 
         Button("Previous Session") {
-          NotificationCenter.default.post(name: .misttyPrevSession, object: nil)
+          commands?.prevSession()
         }
         .keyboardShortcut(.upArrow, modifiers: [.command, .shift])
 
         Button("Next Session") {
-          NotificationCenter.default.post(name: .misttyNextSession, object: nil)
+          commands?.nextSession()
         }
         .keyboardShortcut(.downArrow, modifiers: [.command, .shift])
 
@@ -144,11 +136,7 @@ struct MisttyApp: App {
             let modifiers = parseShortcutModifiers(popup.shortcut)
           {
             Button("Toggle \(popup.name)") {
-              NotificationCenter.default.post(
-                name: .misttyPopupToggle,
-                object: nil,
-                userInfo: ["name": popup.name]
-              )
+              commands?.togglePopup(popup.name)
             }
             .keyboardShortcut(key, modifiers: modifiers)
           }
@@ -193,21 +181,6 @@ struct MisttyApp: App {
 }
 
 extension Notification.Name {
-  static let misttyNewTab = Notification.Name("misttyNewTab")
-  static let misttySplitHorizontal = Notification.Name("misttySplitHorizontal")
-  static let misttySplitVertical = Notification.Name("misttySplitVertical")
-  static let misttySessionManager = Notification.Name("misttySessionManager")
-  static let misttyClosePane = Notification.Name("misttyClosePane")
-  static let misttyCloseTab = Notification.Name("misttyCloseTab")
   static let misttyRenameTab = Notification.Name("misttyRenameTab")
   static let misttyRenameSession = Notification.Name("misttyRenameSession")
-  static let misttyWindowMode = Notification.Name("misttyWindowMode")
-  static let misttyCopyMode = Notification.Name("misttyCopyMode")
-  static let misttyPopupToggle = Notification.Name("misttyPopupToggle")
-  static let misttyFocusTabByIndex = Notification.Name("misttyFocusTabByIndex")
-  static let misttyNextTab = Notification.Name("misttyNextTab")
-  static let misttyPrevTab = Notification.Name("misttyPrevTab")
-  static let misttyNextSession = Notification.Name("misttyNextSession")
-  static let misttyPrevSession = Notification.Name("misttyPrevSession")
-  static let misttyWhichKey = Notification.Name("misttyWhichKey")
 }

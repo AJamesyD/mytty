@@ -16,26 +16,32 @@ struct ContentView: View {
 
   var body: some View {
     contentWithNotifications
-      .onReceive(NotificationCenter.default.publisher(for: .misttyFocusTabByIndex)) {
-        notification in
+      .focusedSceneValue(\.terminalCommands, terminalCommands)
+  }
+
+  var terminalCommands: TerminalCommands {
+    TerminalCommands(
+      newTab: { store.activeSession?.addTab() },
+      closeTab: { handleCloseTab() },
+      nextTab: { store.activeSession?.nextTab() },
+      prevTab: { store.activeSession?.prevTab() },
+      focusTab: { index in
         guard let session = store.activeSession,
-          let index = notification.userInfo?["index"] as? Int,
           index < session.tabs.count
         else { return }
         session.activeTab = session.tabs[index]
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyNextTab)) { _ in
-        store.activeSession?.nextTab()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyPrevTab)) { _ in
-        store.activeSession?.prevTab()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyNextSession)) { _ in
-        store.nextSession()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .misttyPrevSession)) { _ in
-        store.prevSession()
-      }
+      },
+      nextSession: { store.nextSession() },
+      prevSession: { store.prevSession() },
+      splitHorizontal: { splitPane(direction: .horizontal) },
+      splitVertical: { splitPane(direction: .vertical) },
+      closePane: { handleClosePane() },
+      windowMode: { handleWindowMode() },
+      copyMode: { handleCopyMode() },
+      whichKey: { handleWhichKey() },
+      sessionManager: { showingSessionManager = true },
+      togglePopup: { name in handlePopupToggle(name: name) }
+    )
   }
 
   var mainContent: some View {

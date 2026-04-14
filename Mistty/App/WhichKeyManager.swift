@@ -100,7 +100,7 @@ final class WhichKeyManager {
     }
   }
 
-  static func defaultBindings(store: SessionStore) -> [WhichKeyBinding] {
+  static func defaultBindings(store: SessionStore, commands: TerminalCommands) -> [WhichKeyBinding] {
     [
       WhichKeyBinding(
         key: "w",
@@ -182,17 +182,17 @@ final class WhichKeyManager {
             WhichKeyBinding(
               key: "v",
               action: .command(label: "Vertical Split") {
-                NotificationCenter.default.post(name: .misttySplitVertical, object: nil)
+                commands.splitVertical()
               }),
             WhichKeyBinding(
               key: "h",
               action: .command(label: "Horizontal Split") {
-                NotificationCenter.default.post(name: .misttySplitHorizontal, object: nil)
+                commands.splitHorizontal()
               }),
             WhichKeyBinding(
               key: "x",
               action: .command(label: "Close Pane") {
-                NotificationCenter.default.post(name: .misttyClosePane, object: nil)
+                commands.closePane()
               }),
           ])),
       WhichKeyBinding(
@@ -210,7 +210,7 @@ final class WhichKeyManager {
             WhichKeyBinding(
               key: "j",
               action: .command(label: "Session Manager") {
-                NotificationCenter.default.post(name: .misttySessionManager, object: nil)
+                commands.sessionManager()
               }),
             WhichKeyBinding(
               key: "c",
@@ -227,22 +227,19 @@ final class WhichKeyManager {
             WhichKeyBinding(
               key: "n",
               action: .command(label: "New Tab") {
-                NotificationCenter.default.post(name: .misttyNewTab, object: nil)
+                commands.newTab()
               }),
             WhichKeyBinding(
               key: "x",
               action: .command(label: "Close Tab") {
-                NotificationCenter.default.post(name: .misttyCloseTab, object: nil)
+                commands.closeTab()
               }),
           ]
             + (1...9).map { i in
               WhichKeyBinding(
                 key: Character("\(i)"),
                 action: .command(label: "Tab \(i)") {
-                  NotificationCenter.default.post(
-                    name: .misttyFocusTabByIndex,
-                    object: nil,
-                    userInfo: ["index": i - 1])
+                  commands.focusTab(i - 1)
                 })
             })),
     ]
