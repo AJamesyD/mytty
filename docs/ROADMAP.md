@@ -79,10 +79,10 @@ Sidebar and tab bar support Pinned / Auto-hide / Hidden modes. Auto-hide: overla
 ---
 
 ### Cleanup gate (before Phase 2)
-- [ ] `/cleanup` **Swiftlint + swift format pass**: ensure zero violations before adding OSC parser and sidebar metadata code.
-- [ ] `/cleanup` **Test coverage audit**: review test gaps for sidebar, tab bar, and pane management. Add tests for any untested code paths that Phase 2 will build on.
-- [ ] `/refactor` **Manager pattern review**: the 4 manager classes (WindowMode, CopyMode, WhichKey, PaneNavigation) use similar activate/deactivate + NSEvent monitor patterns. Use `/refactor` to evaluate: extract shared protocol or base if 3+ share identical structure. If not, document the pattern for Phase 2's attention coordinator.
-- [ ] `/cleanup` **MisttyTheme token audit**: review token usage after 1b/1c work. Remove unused tokens, add any missing ones discovered during auto-hide implementation.
+- [x] `/cleanup` **Swiftlint + swift format pass**: `2d4522c` style: swift format pass. Zero violations.
+- [x] `/cleanup` **Test coverage audit**: `c6e79ee` test: PanelStateTests, MisttyConfigTests additions, MisttySessionTests. 275 → 304 tests. Remaining gaps: manager classes (NSEvent-dependent), view files (need UI tests).
+- [x] `/refactor` **Manager pattern review**: evaluated. The 4 managers share ~8 lines of boilerplate (monitor field, isActive guard, deactivate cleanup) but differ in activate signatures, state shape, and event handling. CopyMode has exit/deactivate split. Extraction not warranted (shared code is trivial, managers won't change together). Pattern for Phase 2's attention coordinator: `@Observable` class, `@ObservationIgnored nonisolated(unsafe) var monitor: Any?`, `isActive` flag, `activate(...)` installs `NSEvent.addLocalMonitorForEvents(.keyDown)`, `deactivate()` removes monitor and nils state.
+- [x] `/cleanup` **MisttyTheme token audit**: all existing tokens in use. Added `panelOverlayShadow` and `autoHideHint` tokens for Phase 1c hardcoded colors.
 
 ## Phase 2: Contextual Sidebar
 

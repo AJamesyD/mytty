@@ -116,7 +116,7 @@ struct ContentView: View {
             VStack(spacing: 0) {
               TabBarView(session: session)
                 .background(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.1), radius: 0, x: 0, y: 1)
+                .shadow(color: MisttyTheme.panelOverlayShadow, radius: 0, x: 0, y: 1)
               Spacer()
             }
             .transition(.move(edge: .top))
@@ -150,7 +150,7 @@ struct ContentView: View {
           {
             VStack {
               RoundedRectangle(cornerRadius: 1)
-                .fill(Color.primary.opacity(0.15))
+                .fill(MisttyTheme.autoHideHint)
                 .frame(width: 24, height: 2)
                 .frame(maxWidth: .infinity)
                 .allowsHitTesting(false)
@@ -191,7 +191,7 @@ struct ContentView: View {
         if panelState.isSidebarRevealed {
           sidebarPanel
             .background(.ultraThinMaterial)
-            .shadow(color: .black.opacity(0.1), radius: 2, x: 1, y: 0)
+            .shadow(color: MisttyTheme.panelOverlayShadow, radius: 2, x: 1, y: 0)
             .transition(.move(edge: .leading))
         }
 
@@ -216,7 +216,7 @@ struct ContentView: View {
           && !panelState.isSidebarRevealed
         {
           RoundedRectangle(cornerRadius: 1)
-            .fill(Color.primary.opacity(0.15))
+            .fill(MisttyTheme.autoHideHint)
             .frame(width: 2, height: 24)
             .frame(maxHeight: .infinity)
             .allowsHitTesting(false)

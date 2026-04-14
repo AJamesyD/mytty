@@ -54,4 +54,8 @@ enum MisttyTheme {
 
   // Destructive actions
   static let destructiveAction = Color.red
+
+  // Auto-hide panels
+  static let panelOverlayShadow = Color.black.opacity(0.1)
+  static let autoHideHint = Color.primary.opacity(0.15)
 }
