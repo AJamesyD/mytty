@@ -10,7 +10,7 @@ struct ContentView: View {
   @State var showingSessionManager = false
   @State private var sessionManagerVM: SessionManagerViewModel?
   @State private var eventMonitor: Any?
-  @State private var windowModeMonitor: Any?
+  @State private var windowModeManager = WindowModeManager()
   @State private var copyModeMonitor: Any?
 
   var body: some View {
@@ -172,6 +172,7 @@ struct ContentView: View {
       }
     }
     .onAppear {
+      windowModeManager.onNeedExitCopyMode = { exitCopyMode() }
       DispatchQueue.main.async {
         if let window = NSApplication.shared.keyWindow {
           _ = store.registerWindow(window)
@@ -185,7 +186,7 @@ struct ContentView: View {
         }
       }
       removeKeyMonitor()
-      removeWindowModeMonitor()
+      windowModeManager.deactivate()
       removeCopyModeMonitor()
       store.activeSession?.activeTab?.windowModeState = .inactive
       if store.activeSession?.activeTab?.isCopyModeActive == true {
@@ -313,10 +314,10 @@ struct ContentView: View {
     guard let tab = store.activeSession?.activeTab else { return }
     if tab.isWindowModeActive {
       tab.windowModeState = .inactive
-      removeWindowModeMonitor()
+      windowModeManager.deactivate()
     } else {
       tab.windowModeState = .normal
-      installWindowModeMonitor()
+      windowModeManager.activate(store: store)
     }
   }
 
@@ -438,165 +439,6 @@ struct ContentView: View {
     }
   }
 
-  private func installWindowModeMonitor() {
-    if store.activeSession?.activeTab?.isCopyModeActive == true {
-      exitCopyMode()
-    }
-    windowModeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-      // Join-pick mode: number keys select target tab
-      if store.activeSession?.activeTab?.windowModeState == .joinPick {
-        if event.keyCode == 53 {  // Escape — back to normal window mode
-          store.activeSession?.activeTab?.windowModeState = .normal
-          return nil
-        }
-        if let chars = event.characters, let num = Int(chars), num >= 1, num <= 9 {
-          joinPaneToTab(targetIndex: num - 1)
-          return nil
-        }
-        return nil  // Consume all other keys in join-pick mode
-      }
-
-      // Cmd+Arrow to resize
-      if event.modifierFlags.contains(.command) {
-        switch event.keyCode {
-        case 123:  // Cmd+Left — shrink horizontal
-          resizeActivePane(delta: -0.05, along: .horizontal)
-          return nil
-        case 124:  // Cmd+Right — grow horizontal
-          resizeActivePane(delta: 0.05, along: .horizontal)
-          return nil
-        case 126:  // Cmd+Up — shrink vertical
-          resizeActivePane(delta: -0.05, along: .vertical)
-          return nil
-        case 125:  // Cmd+Down — grow vertical
-          resizeActivePane(delta: 0.05, along: .vertical)
-          return nil
-        default: break
-        }
-      }
-
-      switch event.keyCode {
-      case 53:  // Escape — exit window mode
-        store.activeSession?.activeTab?.windowModeState = .inactive
-        removeWindowModeMonitor()
-        return nil
-      case 123:  // Left arrow
-        swapActivePane(.left)
-        return nil
-      case 124:  // Right arrow
-        swapActivePane(.right)
-        return nil
-      case 126:  // Up arrow
-        swapActivePane(.up)
-        return nil
-      case 125:  // Down arrow
-        swapActivePane(.down)
-        return nil
-      case 6:  // z — zoom toggle
-        toggleZoom()
-        return nil
-      case 11:  // b — break pane to new tab
-        breakPaneToTab()
-        return nil
-      case 15:  // r — rotate split direction
-        rotateActivePane()
-        return nil
-      case 46:  // m — join pane to tab
-        guard let tab = store.activeSession?.activeTab else { return nil }
-        tab.windowModeState = .joinPick
-        return nil
-      case 18, 19, 20, 21, 23:  // 1-5: standard layouts
-        if let tab = store.activeSession?.activeTab, tab.panes.count >= 2 {
-          let standardLayout: StandardLayout =
-            switch event.keyCode {
-            case 18: .evenHorizontal
-            case 19: .evenVertical
-            case 20: .mainHorizontal
-            case 21: .mainVertical
-            case 23: .tiled
-            default: .evenHorizontal
-            }
-          tab.applyStandardLayout(standardLayout)
-          tab.windowModeState = .inactive
-          removeWindowModeMonitor()
-        }
-        return nil
-      default:
-        return event
-      }
-    }
-  }
-
-  private func joinPaneToTab(targetIndex: Int) {
-    guard let session = store.activeSession,
-      let sourceTab = session.activeTab,
-      let pane = sourceTab.activePane
-    else { return }
-    let targetTabs = session.tabs.filter { $0.id != sourceTab.id }
-    guard targetIndex < targetTabs.count else { return }
-    let targetTab = targetTabs[targetIndex]
-
-    // Exit window mode before modifying tabs
-    sourceTab.windowModeState = .inactive
-    removeWindowModeMonitor()
-
-    sourceTab.closePane(pane)
-    if sourceTab.panes.isEmpty { session.closeTab(sourceTab) }
-    targetTab.addExistingPane(pane, direction: .horizontal)
-    session.activeTab = targetTab
-  }
-
-  private func breakPaneToTab() {
-    guard let session = store.activeSession,
-      let tab = session.activeTab,
-      let pane = tab.activePane,
-      tab.panes.count > 1
-    else { return }  // Don't break if it's the only pane
-
-    tab.windowModeState = .inactive
-    removeWindowModeMonitor()
-
-    tab.closePane(pane)
-    if tab.panes.isEmpty { session.closeTab(tab) }
-    session.addTabWithPane(pane)
-  }
-
-  private func toggleZoom() {
-    guard let tab = store.activeSession?.activeTab else { return }
-    if tab.zoomedPane != nil {
-      tab.zoomedPane = nil
-    } else {
-      tab.zoomedPane = tab.activePane
-    }
-  }
-
-  private func swapActivePane(_ direction: NavigationDirection) {
-    guard let tab = store.activeSession?.activeTab,
-      let current = tab.activePane
-    else { return }
-    tab.layout.swapPane(current, direction: direction)
-  }
-
-  private func rotateActivePane() {
-    guard let tab = store.activeSession?.activeTab,
-      let pane = tab.activePane
-    else { return }
-    tab.layout.rotateDirection(containing: pane)
-  }
-
-  private func resizeActivePane(delta: CGFloat, along direction: SplitDirection) {
-    guard let tab = store.activeSession?.activeTab,
-      let pane = tab.activePane
-    else { return }
-    tab.layout.resizeSplit(containing: pane, delta: delta, along: direction)
-  }
-
-  private func removeWindowModeMonitor() {
-    if let monitor = windowModeMonitor {
-      NSEvent.removeMonitor(monitor)
-      windowModeMonitor = nil
-    }
-  }
 
   // MARK: - Copy Mode
 
@@ -604,7 +446,7 @@ struct ContentView: View {
     guard let tab = store.activeSession?.activeTab else { return }
     if tab.isWindowModeActive {
       tab.windowModeState = .inactive
-      removeWindowModeMonitor()
+      windowModeManager.deactivate()
     }
 
     // Get actual terminal dimensions and cursor position from ghostty
