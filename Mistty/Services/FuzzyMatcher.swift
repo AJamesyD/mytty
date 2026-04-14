@@ -125,7 +125,7 @@ struct FuzzyMatcher {
     var indices: [Int] = []
     var score: Double = 0.0
     var qi = 0
-    var prevMatchIdx: Int? = nil
+    var prevMatchIdx: Int?
 
     for i in start..<target.count {
       guard qi < query.count else { break }

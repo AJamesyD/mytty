@@ -48,19 +48,14 @@ function_parameter_count:
   warning: 6
   error: 8
 
-# GhosttyApp.swift has C callback signatures we can't change
-unused_closure_parameter:
-  severity: warning
-
-closure_parameter_position:
-  severity: warning
-
-# Disable rules that conflict with swift-format or are noise
+# Disable rules that conflict with swift-format, C callbacks, or are noise
 disabled_rules:
   - todo
   - trailing_comma
   - opening_brace
   - multiple_closures_with_trailing_closure
+  - unused_closure_parameter
+  - closure_parameter_position
 
 # Opt-in rules worth enabling
 opt_in_rules:

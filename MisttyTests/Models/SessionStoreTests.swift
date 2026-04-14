@@ -156,7 +156,7 @@ final class SessionStoreTests: XCTestCase {
 
   func test_unregisterWindow() {
     let window = NSWindow()
-    let _ = store.registerWindow(window)
+    _ = store.registerWindow(window)
     store.unregisterWindow(window)
     XCTAssertTrue(store.trackedWindows.isEmpty)
   }
@@ -211,8 +211,8 @@ final class SessionStoreTests: XCTestCase {
   }
 
   func test_nextSession_wrapsAround() {
-    let _ = store.createSession(name: "a", directory: URL(fileURLWithPath: "/tmp"))
-    let _ = store.createSession(name: "b", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "a", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "b", directory: URL(fileURLWithPath: "/tmp"))
     let s3 = store.createSession(name: "c", directory: URL(fileURLWithPath: "/tmp"))
     XCTAssertEqual(store.activeSession?.id, s3.id)
     store.nextSession()
@@ -221,8 +221,8 @@ final class SessionStoreTests: XCTestCase {
 
   func test_prevSession_wrapsAround() {
     let s1 = store.createSession(name: "a", directory: URL(fileURLWithPath: "/tmp"))
-    let _ = store.createSession(name: "b", directory: URL(fileURLWithPath: "/tmp"))
-    let _ = store.createSession(name: "c", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "b", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "c", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = s1
     store.prevSession()
     XCTAssertEqual(store.activeSession?.name, "c")

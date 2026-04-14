@@ -240,7 +240,7 @@ final class CopyModeStateTests: XCTestCase {
     // Line is only 11 chars but cursor is at col 50 (can happen before clamping kicks in)
     let reader: (Int) -> String? = { _ in "hello world" }
     // This should not crash — just no match found
-    let _ = state.handleKey(key: "F", keyCode: 0, modifiers: [], lineReader: reader)
+    _ = state.handleKey(key: "F", keyCode: 0, modifiers: [], lineReader: reader)
     _ = state.handleKey(key: "x", keyCode: 0, modifiers: [], lineReader: reader)
     // cursor gets clamped to content end
     XCTAssertEqual(state.cursorCol, 10)

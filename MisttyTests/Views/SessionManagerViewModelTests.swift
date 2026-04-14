@@ -7,7 +7,7 @@ final class SessionManagerViewModelTests: XCTestCase {
   func test_hideCurrentSession() async {
     let store = SessionStore()
     let s1 = store.createSession(name: "current", directory: URL(fileURLWithPath: "/tmp"))
-    let _ = store.createSession(name: "other", directory: URL(fileURLWithPath: "/home"))
+    _ = store.createSession(name: "other", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = s1
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -80,8 +80,8 @@ final class SessionManagerViewModelTests: XCTestCase {
     service.recordAccess(for: "session:other")
     service.recordAccess(for: "session:other")
 
-    let _ = store.createSession(name: "first", directory: URL(fileURLWithPath: "/tmp"))
-    let _ = store.createSession(name: "other", directory: URL(fileURLWithPath: "/home"))
+    _ = store.createSession(name: "first", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "other", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(
@@ -97,7 +97,7 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_fuzzyFilter_subsequence() async {
     let store = SessionStore()
-    let _ = store.createSession(name: "my-project", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "my-project", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -113,9 +113,9 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_fuzzyFilter_multiToken_AND() async {
     let store = SessionStore()
-    let _ = store.createSession(
+    _ = store.createSession(
       name: "work-bazel", directory: URL(fileURLWithPath: "/tmp/workspace"))
-    let _ = store.createSession(name: "work-other", directory: URL(fileURLWithPath: "/tmp/other"))
+    _ = store.createSession(name: "work-other", directory: URL(fileURLWithPath: "/tmp/other"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -140,8 +140,8 @@ final class SessionManagerViewModelTests: XCTestCase {
     service.recordAccess(for: "session:dev-tools")
     service.recordAccess(for: "session:dev-tools")
 
-    let _ = store.createSession(name: "dev", directory: URL(fileURLWithPath: "/tmp"))
-    let _ = store.createSession(name: "dev-tools", directory: URL(fileURLWithPath: "/home"))
+    _ = store.createSession(name: "dev", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "dev-tools", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(
@@ -158,7 +158,7 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_fuzzyFilter_storesMatchResults() async {
     let store = SessionStore()
-    let _ = store.createSession(name: "my-project", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "my-project", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -176,8 +176,8 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_fuzzyFilter_emptyQuery_showsAll() async {
     let store = SessionStore()
-    let _ = store.createSession(name: "alpha", directory: URL(fileURLWithPath: "/tmp"))
-    let _ = store.createSession(name: "beta", directory: URL(fileURLWithPath: "/home"))
+    _ = store.createSession(name: "alpha", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "beta", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -196,7 +196,7 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_fuzzyFilter_whitespaceOnly_treatedAsEmpty() async {
     let store = SessionStore()
-    let _ = store.createSession(name: "alpha", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "alpha", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -215,7 +215,7 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_newOption_plainText_appearsAtTop() async {
     let store = SessionStore()
-    let _ = store.createSession(name: "existing", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "existing", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -230,7 +230,7 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_newOption_notSelectedByDefault() async {
     let store = SessionStore()
-    let _ = store.createSession(name: "project", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "project", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -454,7 +454,7 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_typoTolerance_endToEnd() async {
     let store = SessionStore()
-    let _ = store.createSession(name: "bazel-build", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "bazel-build", directory: URL(fileURLWithPath: "/tmp"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })
@@ -470,8 +470,8 @@ final class SessionManagerViewModelTests: XCTestCase {
 
   func test_fullFlow_typeFilterSelectConfirm() async {
     let store = SessionStore()
-    let _ = store.createSession(name: "work-project", directory: URL(fileURLWithPath: "/tmp/work"))
-    let _ = store.createSession(name: "personal", directory: URL(fileURLWithPath: "/tmp/personal"))
+    _ = store.createSession(name: "work-project", directory: URL(fileURLWithPath: "/tmp/work"))
+    _ = store.createSession(name: "personal", directory: URL(fileURLWithPath: "/tmp/personal"))
     store.activeSession = nil
 
     let vm = SessionManagerViewModel(store: store, zoxideProvider: { [] }, sshProvider: { [] })

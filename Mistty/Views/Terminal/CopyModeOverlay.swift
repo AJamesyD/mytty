@@ -6,7 +6,7 @@ struct CopyModeOverlay: View {
   let cellHeight: CGFloat
   var gridOffsetX: CGFloat = 0
   var gridOffsetY: CGFloat = 0
-  var lineReader: ((Int) -> String?)? = nil
+  var lineReader: ((Int) -> String?)?
 
   var body: some View {
     ZStack(alignment: .topLeading) {

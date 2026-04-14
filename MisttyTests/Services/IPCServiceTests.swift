@@ -264,7 +264,7 @@ final class IPCServiceTests: XCTestCase {
     let paneId = session.activeTab!.activePane!.id
 
     let expectation = XCTestExpectation(description: "send keys")
-    service.sendKeys(paneId: paneId, keys: "hello") { data, error in
+    service.sendKeys(paneId: paneId, keys: "hello") { _, error in
       // Pane found but surface is nil in test → operationFailed
       if let error = error as? NSError {
         XCTAssertEqual(error.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
@@ -276,7 +276,7 @@ final class IPCServiceTests: XCTestCase {
 
   func testSendKeysPaneNotFound() async throws {
     let expectation = XCTestExpectation(description: "send keys not found")
-    service.sendKeys(paneId: 999, keys: "hello") { data, error in
+    service.sendKeys(paneId: 999, keys: "hello") { _, error in
       XCTAssertNotNil(error)
       XCTAssertEqual((error! as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
       expectation.fulfill()
@@ -285,10 +285,10 @@ final class IPCServiceTests: XCTestCase {
   }
 
   func testSendKeysActivePane() async throws {
-    let _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
 
     let expectation = XCTestExpectation(description: "send keys active")
-    service.sendKeys(paneId: 0, keys: "hello") { data, error in
+    service.sendKeys(paneId: 0, keys: "hello") { _, error in
       // Resolves active pane, surface nil → operationFailed
       if let error = error as? NSError {
         XCTAssertEqual(error.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
@@ -300,7 +300,7 @@ final class IPCServiceTests: XCTestCase {
 
   func testRunCommandDelegatesToSendKeys() async throws {
     let expectation = XCTestExpectation(description: "run command not found")
-    service.runCommand(paneId: 999, command: "ls") { data, error in
+    service.runCommand(paneId: 999, command: "ls") { _, error in
       XCTAssertNotNil(error)
       XCTAssertEqual((error! as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
       expectation.fulfill()
@@ -315,7 +315,7 @@ final class IPCServiceTests: XCTestCase {
     let paneId = session.activeTab!.activePane!.id
 
     let expectation = XCTestExpectation(description: "get text")
-    service.getText(paneId: paneId) { data, error in
+    service.getText(paneId: paneId) { _, error in
       if let error = error as? NSError {
         XCTAssertEqual(error.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
       }
@@ -326,7 +326,7 @@ final class IPCServiceTests: XCTestCase {
 
   func testGetTextPaneNotFound() async throws {
     let expectation = XCTestExpectation(description: "get text not found")
-    service.getText(paneId: 999) { data, error in
+    service.getText(paneId: 999) { _, error in
       XCTAssertNotNil(error)
       XCTAssertEqual((error! as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
       expectation.fulfill()
@@ -335,10 +335,10 @@ final class IPCServiceTests: XCTestCase {
   }
 
   func testGetTextActivePane() async throws {
-    let _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
 
     let expectation = XCTestExpectation(description: "get text active")
-    service.getText(paneId: 0) { data, error in
+    service.getText(paneId: 0) { _, error in
       // Resolves active pane, surface nil → operationFailed
       if let error = error as? NSError {
         XCTAssertEqual(error.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
@@ -369,10 +369,10 @@ final class IPCServiceTests: XCTestCase {
   }
 
   func testFocusPaneByDirectionInvalid() async throws {
-    let _ = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
 
     let expectation = XCTestExpectation(description: "focus by direction invalid")
-    service.focusPaneByDirection(direction: "diagonal", sessionId: 0) { data, error in
+    service.focusPaneByDirection(direction: "diagonal", sessionId: 0) { _, error in
       XCTAssertNotNil(error)
       XCTAssertEqual((error! as NSError).code, MisttyIPC.ErrorCode.invalidArgument.rawValue)
       expectation.fulfill()

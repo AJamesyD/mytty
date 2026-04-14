@@ -10,7 +10,7 @@ struct SearchHighlightView: View {
   let rows: Int
 
   var body: some View {
-    Canvas { context, size in
+    Canvas { context, _ in
       guard !query.isEmpty else { return }
 
       for row in 0..<rows {

@@ -34,7 +34,7 @@ struct MisttyConfig: Sendable, Equatable {
   var scrollbackLines: Int = 10000
   var sidebarVisible: Bool = true
   var popups: [PopupDefinition] = []
-  var ssh: SSHConfig = SSHConfig()
+  var ssh = SSHConfig()
 
   static let `default` = MisttyConfig()
 
