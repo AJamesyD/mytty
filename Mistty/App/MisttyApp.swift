@@ -75,6 +75,11 @@ struct MisttyApp: App {
         }
         .keyboardShortcut("c", modifiers: [.command, .shift])
 
+        Button("Which-Key") {
+          NotificationCenter.default.post(name: .misttyWhichKey, object: nil)
+        }
+        .keyboardShortcut(.space, modifiers: .control)
+
         Divider()
 
         Button("Rename Tab") {
@@ -186,4 +191,5 @@ extension Notification.Name {
   static let misttyPrevTab = Notification.Name("misttyPrevTab")
   static let misttyNextSession = Notification.Name("misttyNextSession")
   static let misttyPrevSession = Notification.Name("misttyPrevSession")
+  static let misttyWhichKey = Notification.Name("misttyWhichKey")
 }

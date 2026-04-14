@@ -50,10 +50,10 @@ final class FrecencyServiceTests: XCTestCase {
     XCTAssertGreaterThan(newScore, oldScore)
   }
 
-  func test_corruptedJSON_recoversGracefully() {
+  func test_corruptedJSON_recoversGracefully() throws {
     let corruptURL = FileManager.default.temporaryDirectory
       .appendingPathComponent("frecency-corrupt-\(UUID().uuidString).json")
-    try! Data("not json".utf8).write(to: corruptURL)
+    try Data("not json".utf8).write(to: corruptURL)
     defer { try? FileManager.default.removeItem(at: corruptURL) }
 
     let corruptService = FrecencyService(storageURL: corruptURL)

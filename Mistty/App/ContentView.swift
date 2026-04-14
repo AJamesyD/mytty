@@ -12,6 +12,7 @@ struct ContentView: View {
   @State private var eventMonitor: Any?
   @State private var windowModeManager = WindowModeManager()
   @State private var copyModeManager = CopyModeManager()
+  @State private var whichKeyManager = WhichKeyManager()
 
   var body: some View {
     contentWithNotifications
@@ -51,6 +52,14 @@ struct ContentView: View {
       .onReceive(NotificationCenter.default.publisher(for: .misttyCopyMode)) { _ in
         handleCopyMode()
       }
+      .onReceive(NotificationCenter.default.publisher(for: .misttyWhichKey)) { _ in
+        if whichKeyManager.isActive {
+          whichKeyManager.deactivate()
+        } else {
+          whichKeyManager.activate(
+            bindings: WhichKeyManager.defaultBindings(store: store))
+        }
+      }
       .onReceive(NotificationCenter.default.publisher(for: .misttyCloseTab)) { _ in
         handleCloseTab()
       }
@@ -72,6 +81,13 @@ struct ContentView: View {
     mainContent
       .overlay { sessionManagerOverlay }
       .overlay { popupOverlay }
+      .overlay {
+        WhichKeyOverlay(
+          bindings: whichKeyManager.currentBindings,
+          breadcrumb: whichKeyManager.breadcrumb,
+          isActive: whichKeyManager.isActive
+        )
+      }
       .onChange(of: showingSessionManager) { _, isShowing in
         if isShowing {
           let vm = SessionManagerViewModel(store: store)
