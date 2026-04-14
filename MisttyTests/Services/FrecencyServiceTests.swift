@@ -7,13 +7,13 @@ final class FrecencyServiceTests: XCTestCase {
   var service: FrecencyService!
   var testURL: URL!
 
-  override func setUp() {
+  override func setUp() async throws {
     testURL = FileManager.default.temporaryDirectory
       .appendingPathComponent("frecency-test-\(UUID().uuidString).json")
     service = FrecencyService(storageURL: testURL)
   }
 
-  override func tearDown() {
+  override func tearDown() async throws {
     try? FileManager.default.removeItem(at: testURL)
   }
 

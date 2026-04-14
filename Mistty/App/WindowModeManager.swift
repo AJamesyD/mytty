@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor @Observable
 final class WindowModeManager {
-  nonisolated(unsafe) private var monitor: Any?
+  @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private(set) var isActive = false
   private var store: SessionStore?
   var onNeedExitCopyMode: () -> Void = {}

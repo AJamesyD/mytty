@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor @Observable
 final class PaneNavigationManager {
-  nonisolated(unsafe) private var monitor: Any?
+  @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private var isActive = false
   private var store: SessionStore?
   var isSessionManagerShowing: () -> Bool = { false }

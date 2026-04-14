@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor @Observable
 final class CopyModeManager {
-  nonisolated(unsafe) private var monitor: Any?
+  @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private(set) var isActive = false
   private var store: SessionStore?
   var onNeedExitWindowMode: () -> Void = {}
