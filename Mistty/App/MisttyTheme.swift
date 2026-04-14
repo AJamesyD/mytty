@@ -48,6 +48,10 @@ enum MisttyTheme {
     static let popupBorder = Color.white.opacity(0.1)
     static let popupShadow = Color.black.opacity(0.5)
 
+    // Sidebar
+    static let sessionAccent = Color.accentColor
+    static let tabCountBadge = Color.secondary.opacity(0.6)
+
     // Destructive actions
     static let destructiveAction = Color.red
 }
