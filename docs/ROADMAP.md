@@ -1,7 +1,7 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 8
+Iteration: 10
 
 ## Principles
 
@@ -13,6 +13,7 @@ Iteration: 8
 6. **Visual quality is not optional**: polish ships with features, not after them.
 7. **Spec before code**: every feature gets a written spec (prior art, what's opinionated vs configurable, interaction patterns, edge cases) before implementation begins. Spec can be brief (20 lines for small features) or a full design doc. Approved before coding starts.
 8. **Opinionated defaults, constrained configuration**: ship one good design. When configuration is needed, prefer presets over arbitrary values. Don't push design decisions to the user. Code must be written with the assumption that hardcoded values will become configurable later: access through abstractions (e.g., `theme.surface` not `Color.white.opacity(0.03)`), even when the backing store is a static singleton.
+9. **Cleanup gates before major phases**: every major phase has a cleanup/refactor prerequisite that addresses tech debt which would make the phase harder or messier. Cleanup gates are not optional. They prevent debt from compounding across phases.
 
 ---
 
@@ -37,16 +38,23 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 - [x] Inactive pane dimming: black overlay on inactive split panes
 - [x] Muted inactive sidebar text
 - [x] Sidebar truncation: tooltips on hover for truncated session names
+### Cleanup gate (before remaining 1b work)
+- [ ] **Theme file extraction**: create `MisttyTheme.swift` with semantic color tokens. Migrate all hardcoded `Color.white.opacity(X)` / `Color.black.opacity(X)` calls across views to use theme tokens. Pure refactor, no visual change. This is the abstraction boundary that principle #8 demands.
+
+### Remaining 1b features (require theme file)
 - [ ] Sidebar visual rework: session cards, spacing, accent borders, pane count indicators. Spec required: `/tmp/ai-research-sidebar-patterns.md` has prior art, needs a concrete spec before implementation.
 - [ ] Tab drag-and-drop reordering. Spec required.
 - [ ] Dropdown / Quake mode. Spec required: NSPanel, global hotkey, animation, interaction patterns.
-- [ ] Theme file extraction: centralize ad-hoc colors into `MisttyTheme.swift` with semantic tokens. Spec required: define the token set.
 
 - Complexity: 3 (visual polish items are individually small, but dropdown mode is a real feature)
 
 **Done when:** no system alert sounds on standard shortcuts, clear visual boundaries between all UI regions, tabs are reorderable by drag, global hotkey summons dropdown terminal.
 
 ---
+
+### Cleanup gate (before Phase 1c)
+- [ ] **@FocusedValue migration** (moved from Phase 3a): replace NotificationCenter menu commands with @FocusedValue. Currently 45 NotificationCenter usages across MisttyApp.swift and ContentView.swift. Every new feature adds more. Fix now before auto-hide panels add more notification-based toggles. Fixes multi-window menu targeting bug.
+- [ ] **ContentView extraction**: split ContentView.swift (472 lines, growing) into focused components. Extract notification routing, overlay management, and keyboard monitor setup into separate files. Pure refactor.
 
 ## Phase 1c: Auto-Hide Panels
 
@@ -60,6 +68,11 @@ Sidebar and tab bar support Pinned / Auto-hide / Hidden modes. Auto-hide: overla
 **Done when:** sidebar and tab bar can be set to auto-hide, panels overlay without reflowing terminal content, keyboard shortcuts work in all modes.
 
 ---
+
+### Cleanup gate (before Phase 2)
+- [ ] **Swiftlint + swift format pass**: ensure zero violations before adding OSC parser and sidebar metadata code.
+- [ ] **Test coverage audit**: review test gaps for sidebar, tab bar, and pane management. Add tests for any untested code paths that Phase 2 will build on.
+- [ ] **Manager pattern review**: the 4 manager classes (WindowMode, CopyMode, WhichKey, PaneNavigation) use similar activate/deactivate + NSEvent monitor patterns. Extract shared protocol or base if 3+ share identical structure. If not, document the pattern for Phase 2's attention coordinator.
 
 ## Phase 2: Contextual Sidebar
 
@@ -91,35 +104,36 @@ Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prom
 
 ---
 
+### Cleanup gate (before Phase 3)
+- [ ] **IPC audit**: review existing IPCService.swift (549 lines) and IPCListener.swift (318 lines). Understand current IPC mechanism before designing socket API replacement. Document what works, what's fragile, what the socket API replaces vs extends.
+
 ## Phase 3: Platform
 
-**Why this phase:** the socket API is the foundation for neovim navigation (personal pain point), CLI scripting, Raycast/Hammerspoon integration, and future automation. Phase 2 and Phase 3 have no dependency between them and can run in parallel.
+**Why this phase:** the socket API is the foundation for neovim navigation (personal pain point), CLI scripting, Raycast/Hammerspoon integration, and future automation. Phase 2 and Phase 3 are independent; choose one to complete first. Recommend Phase 2 first (daily-driver value, unblocks 6b).
 
-### 3a. @FocusedValue Migration
-Replace NotificationCenter menu commands with @FocusedValue. Publish MisttySession (not SessionStore). Fixes multi-window menu targeting bug.
-
-- Complexity: 2
-- Spec required: audit current NotificationCenter usage, map each to FocusedValue equivalent.
-
-### 3b. Socket API + CLI
+### 3a. Socket API + CLI
 Unix domain socket (`/tmp/mistty-$UID.sock`). JSON-RPC protocol. Extends the existing `MisttyCLI` binary (currently uses direct IPC) to use the socket as transport. Access control via file permissions.
 
 - Complexity: 3
 - Spec required: protocol design (JSON-RPC methods, error codes), migration plan from current IPC.
-- Enables: 3c, Raycast/Hammerspoon integration, scripting
+- Enables: 3b, Raycast/Hammerspoon integration, scripting
 
-### 3c. Neovim Split Navigation
+### 3b. Neovim Split Navigation
 smart-splits.nvim integration via socket API. Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes.
 
-- Complexity: 2 (once 3b exists)
+- Complexity: 2 (once 3a exists)
 - Spec required: smart-splits.nvim integration protocol, edge cases (nested neovim, multiple neovim instances).
-- Depends on: 3b
+- Depends on: 3a
 - Why unsolved in Ghostty: deliberate design choice (no IPC). Mistty can solve it.
 - Personal pain point.
 
 **Done when:** menu commands work correctly in multi-window, `mistty pane list` returns JSON, Ctrl+h/j/k/l crosses neovim/Mistty boundary.
 
 ---
+
+### Cleanup gate (before Phase 4)
+- [ ] **Config audit**: catalog every hardcoded value that users have wanted to change during daily driving (keybindings, colors, panel modes, hotkeys). This becomes the requirements list for the config system spec.
+- [ ] **MisttyTheme review**: by this point the theme file has been in use for several phases. Review whether the token set is complete, whether any tokens are unused, and whether the abstraction is right for supporting multiple preset themes.
 
 ## Phase 4: Configuration + Persistence
 
@@ -138,6 +152,7 @@ Key questions to answer from real usage:
 1. What have you actually wanted to configure in the past weeks?
 2. Does Mistty need runtime scripting or just static config?
 3. What's the migration story from Ghostty config?
+4. Hot-reload strategy: live (file watcher), on-save, or restart-only? Affects architecture (file watcher, diffing, partial apply).
 
 - Complexity: 3 (investigation) + 2-3 (implementation)
 - Retroactively enhances: which-key (1a reads keybindings from config), auto-hide (1c modes configurable)
@@ -154,6 +169,10 @@ Auto-save (layout, working directories, scrollback) on quit. Auto-restore on lau
 **Done when:** config file controls keybindings and appearance, quit+relaunch restores layout.
 
 ---
+
+### Cleanup gate (before Phase 5)
+- [ ] **Integration test coverage**: ensure socket API (3a) and config system (4a) have tests covering the interfaces that Phase 5 features build on. 5a and 5c depend directly on these.
+- [ ] **API stability review**: review socket API method signatures and config file format for breaking changes before building features on top of them.
 
 ## Phase 5: Differentiators
 
@@ -239,7 +258,7 @@ Expose surface state (cells, colors, cursor position) via the socket API for scr
 
 - Complexity: 3
 - Spec required: API surface, read vs write operations, security model.
-- Depends on: 3b (socket API)
+- Depends on: 3a (socket API)
 - Only ghostty-automator exists in this space, and it's Ghostty-specific.
 
 ### 6e. SSH Workspace Creation
@@ -256,32 +275,29 @@ Expose surface state (cells, colors, cursor position) via the socket API for scr
 Completed:
   Phase 0 (cleanup) ✓
   Phase 1a (which-key) ✓
+  Phase 1b partial (beep fix, divider, tab contrast, typography, pane dim, sidebar mute) ✓
 
-Active path:
-  1b (polish + dropdown) ──> 1c (auto-hide)
-                                  │
-  Phase 2 and 3 can run in parallel after 1c:
-                                  │
-  Phase 2 (contextual sidebar):   │
-    OSC parser ──> notifications + rich metadata + shell integration
-                       │
-                       └──> 6b (block-based output)
+Sequential path (solo developer, no parallel phases):
+  cleanup: theme extraction
+    ──> 1b remaining (sidebar rework, drag-drop, dropdown)
+      ──> cleanup: FocusedValue migration + ContentView extraction
+        ──> 1c (auto-hide)
+          ──> cleanup: lint/test/manager review
+            ──> Phase 2 (contextual sidebar + OSC + shell integration)
+              ──> cleanup: IPC audit
+                ──> Phase 3 (socket API + neovim nav)
+                  ──> cleanup: config audit + theme review
+                    ──> Phase 4 (config + persist)
+                      ──> cleanup: integration tests + API stability
+                        ──> Phase 5 (differentiators)
+                          ──> Phase 6 (moonshots)
 
-  Phase 3 (platform):
-    3a (FocusedValue) ──> 3b (socket API) ──> 3c (neovim nav)
-                              │
-                              └──> 6d (automation API)
-
-  Phase 4 (config + persist):
-    4a (config) ──> 5a (layouts), 5c (Ghostty compat)
-    4b (resurrection) ──> 5a (layouts)
-
-Standalone (slot anywhere after their dependencies):
-  5b (floating panes)
-  5d (hints) ··> 6c (inline previews)
-  5e (command palette)
-  5f (enhanced session manager)
-  5g (sidebar position, depends on 4a)
+Late dependencies:
+  Phase 2 ──> 6b (block-based output)
+  Phase 3a ──> 6d (automation API)
+  Phase 4a ──> 5a (layouts), 5c (Ghostty compat), 5g (sidebar position)
+  Phase 4b ──> 5a (layouts)
+  5d (hints) ──> 6c (inline previews)
 ```
 
 ## What's NOT on this roadmap
