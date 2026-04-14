@@ -1,0 +1,78 @@
+# SwiftLint configuration for Mistty
+
+excluded:
+  - .build
+  - vendor
+  - MisttyCLI
+
+# Allow short names that are idiomatic in Swift
+identifier_name:
+  min_length:
+    warning: 1
+    error: 0
+  max_length:
+    warning: 50
+    error: 60
+  excluded:
+    - F
+    - T
+
+# Tuned thresholds
+cyclomatic_complexity:
+  warning: 12
+  error: 20
+
+function_body_length:
+  warning: 60
+  error: 120
+
+file_length:
+  warning: 500
+  error: 1000
+
+type_body_length:
+  warning: 400
+  error: 800
+
+line_length:
+  warning: 120
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+large_tuple:
+  warning: 4
+  error: 5
+
+function_parameter_count:
+  warning: 6
+  error: 8
+
+# GhosttyApp.swift has C callback signatures we can't change
+unused_closure_parameter:
+  severity: warning
+
+closure_parameter_position:
+  severity: warning
+
+# Disable rules that conflict with swift-format or are noise
+disabled_rules:
+  - todo
+  - trailing_comma
+  - opening_brace
+  - multiple_closures_with_trailing_closure
+
+# Opt-in rules worth enabling
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - contains_over_first_not_nil
+  - fatal_error_message
+  - first_where
+  - joined_default_parameter
+  - last_where
+  - modifier_order
+  - redundant_type_annotation
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+  - vertical_whitespace_closing_braces
