@@ -69,9 +69,12 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 Sidebar and tab bar support Pinned / Auto-hide / Hidden modes. Auto-hide: overlay slides in on edge hover (150ms dwell, 20px trigger zone), out on mouse leave (300ms delay). Panels overlay terminal content (no resize/reflow). Keyboard shortcuts always work regardless of mode.
 
 - Complexity: 2
-- `/spec` review: /tmp/ai-design-autohide-panels.md exists but predates tab bar visibility mode. Update spec to cover interaction between auto-hide and "if-multiple" tab bar mode before implementation.
+- [x] `/spec` review: spec updated with Iteration 4 (hide-when-single-tab interaction, WezTerm-style config shape).
+- [x] `d088f29` feat(ui): add auto-hide panels for sidebar and tab bar. Three modes (pinned/auto-hide/hidden), EdgeTriggerView with NSTrackingArea, modal suppression, Reduce Motion support, Settings UI pickers.
 
-**Done when:** sidebar and tab bar can be set to auto-hide, panels overlay without reflowing terminal content, keyboard shortcuts work in all modes. Menu commands target the correct window in multi-window (verified by @FocusedValue migration in cleanup gate).
+**Future opportunity:** live config reload (watch config file with DispatchSource, push changes to PanelState without restart). Panel modes are good candidates since they don't require terminal reflow.
+
+**Done when:** ~~sidebar and tab bar can be set to auto-hide, panels overlay without reflowing terminal content, keyboard shortcuts work in all modes. Menu commands target the correct window in multi-window (verified by @FocusedValue migration in cleanup gate).~~ Done 2026-04-14. Visually verified all six acceptance criteria.
 
 ---
 
