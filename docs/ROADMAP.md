@@ -44,9 +44,9 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 
 ### Remaining 1b features
 - [x] Sidebar visual rework: accent bar on active session (via `listRowBackground`), tab count badge, pane count indicator, active tab highlight, increased indentation, session spacing. Spec: `/tmp/ai-design-sidebar-visual-rework.md`. Future work: per-session colors (needs config system), hover close buttons, pane sub-rows.
-- [ ] Session/tab renaming (sidebar + tab bar only). `/spec` before implementation. Scope: double-click to rename in sidebar and tab bar. Right-click context menu with "Rename" option. CLI rename and OSC 0/1/2 title integration deferred to Phase 2/3. Prior art: Kitty `tab_title_template`, iTerm2 session naming.
-- [ ] Tab bar visibility mode: "always", "never", "if-multiple" (hide when only 1 tab). Small enough to implement directly (no `/spec` needed). Prior art: Kitty `tab_bar_min_tabs`, WezTerm `hide_tab_bar_if_only_one_tab`, neovim bufferline. Hardcode "if-multiple" as default, expose via config in Phase 4.
-- [ ] Tab drag-and-drop reordering. `/spec` before implementation. Prior art: iTerm2, Kitty, browser tab bars.
+- [x] Session/tab renaming (sidebar + tab bar only). `/spec` before implementation. Scope: double-click to rename in sidebar and tab bar. Right-click context menu with "Rename" option. CLI rename and OSC 0/1/2 title integration deferred to Phase 2/3. Prior art: Kitty `tab_title_template`, iTerm2 session naming. Spec: /tmp/ai-design-session-tab-renaming.md.
+- [x] Tab bar visibility mode: "always", "never", "if-multiple" (hide when only 1 tab). Small enough to implement directly (no `/spec` needed). Prior art: Kitty `tab_bar_min_tabs`, WezTerm `hide_tab_bar_if_only_one_tab`, neovim bufferline. Hardcode "if-multiple" as default, expose via config in Phase 4.
+- [x] Tab drag-and-drop reordering. `/spec` before implementation. Prior art: iTerm2, Kitty, browser tab bars. Spec: /tmp/ai-design-tab-drag-drop.md.
 - [ ] Dropdown / Quake mode. `/spec` before implementation: NSPanel, global hotkey, animation, multi-monitor behavior, interaction with auto-hide panels. Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty quick terminal.
 
 - Complexity: 3 (visual polish items are individually small, but dropdown mode is a real feature)
