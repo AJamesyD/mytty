@@ -38,6 +38,7 @@ struct TabBarItem: View {
   let onClose: () -> Void
   @State private var isEditing = false
   @State private var editText = ""
+  @State private var isHovered = false
   @FocusState private var editFocused: Bool
 
   var body: some View {
@@ -76,13 +77,14 @@ struct TabBarItem: View {
           .font(.system(size: 9))
       }
       .buttonStyle(.plain)
-      .opacity(isActive ? 1 : 0)
+      .opacity(isActive || isHovered ? 1 : 0)
     }
     .padding(.horizontal, 10)
     .padding(.vertical, 6)
-    .background(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
+    .background(isActive ? Color.accentColor.opacity(0.3) : Color.white.opacity(0.05))
     .cornerRadius(6)
     .onTapGesture { onSelect() }
+    .onHover { isHovered = $0 }
     .onReceive(NotificationCenter.default.publisher(for: .misttyRenameTab)) { _ in
       if isActive {
         editText = tab.displayTitle

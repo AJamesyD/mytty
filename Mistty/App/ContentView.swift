@@ -135,7 +135,9 @@ struct ContentView: View {
             get: { CGFloat(sidebarWidth) },
             set: { sidebarWidth = Double($0) }
           ))
-        Divider()
+        Rectangle()
+          .fill(Color.white.opacity(0.1))
+          .frame(width: 1)
       }
 
       Group {

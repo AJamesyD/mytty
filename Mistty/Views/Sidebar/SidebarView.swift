@@ -59,6 +59,7 @@ struct SessionRowView: View {
           }
           Text(tab.displayTitle)
             .font(.system(size: 12))
+            .help(tab.displayTitle)
           Spacer()
         }
         .padding(.leading, 8)
@@ -71,7 +72,9 @@ struct SessionRowView: View {
       }
     } label: {
       Text(session.name)
+        .font(.system(size: 13))
         .fontWeight(isActive ? .semibold : .regular)
+        .help(session.name)
         .contentShape(Rectangle())
         .onTapGesture { store.activeSession = session }
     }

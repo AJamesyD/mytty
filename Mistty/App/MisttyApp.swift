@@ -33,6 +33,14 @@ struct MisttyApp: App {
       CommandGroup(after: .toolbar) {
         Divider()
 
+        Button("Increase Font Size") {}
+          .keyboardShortcut("+", modifiers: .command)
+
+        Button("Decrease Font Size") {}
+          .keyboardShortcut("-", modifiers: .command)
+
+        Divider()
+
         Button("Toggle Sidebar") {
           sidebarVisible.toggle()
         }
