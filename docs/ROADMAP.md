@@ -1,7 +1,7 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 7 (final)
+Iteration: 8
 
 ## Principles
 
@@ -11,6 +11,8 @@ Iteration: 7 (final)
 4. **Infrastructure ships with features**: build plumbing when a feature needs it, not before.
 5. **Dependency-ordered**: phases are sequenced by what unblocks what. No fake timelines.
 6. **Visual quality is not optional**: polish ships with features, not after them.
+7. **Spec before code**: every feature gets a written spec (prior art, what's opinionated vs configurable, interaction patterns, edge cases) before implementation begins. Spec can be brief (20 lines for small features) or a full design doc. Approved before coding starts.
+8. **Opinionated defaults, constrained configuration**: ship one good design. When configuration is needed, prefer presets over arbitrary values. Don't push design decisions to the user. Code must be written with the assumption that hardcoded values will become configurable later: access through abstractions (e.g., `theme.surface` not `Color.white.opacity(0.03)`), even when the backing store is a static singleton.
 
 ---
 
@@ -28,13 +30,17 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 
 **Why first:** the app works but looks like a prototype. Every user's first impression is visual. These items are the difference between "interesting project" and "I could use this."
 
-- [ ] Cmd+/- beep fix: add no-op menu commands so AppKit stops alerting (ghostty handles font size internally)
-- [ ] Sidebar/terminal divider: 1px separator or subtle shadow between panels
-- [ ] Tab active/inactive contrast: increase highlight difference
-- [ ] Typography hierarchy: lighter weight or smaller size for sidebar labels vs terminal text
-- [ ] Tab drag-and-drop reordering: SwiftUI `onDrag`/`onDrop` on sidebar and tab bar items
-- [ ] Sidebar truncation: tooltips on hover for truncated session names
-- [ ] Dropdown / Quake mode: global hotkey summons a floating terminal panel (NSPanel, slides from top). Hardcoded hotkey initially, configurable when 4a lands. Top-voted WezTerm issue, natural macOS fit.
+- [x] Cmd+/- beep fix: add no-op menu commands so AppKit stops alerting (ghostty handles font size internally)
+- [x] Sidebar/terminal divider: 1px separator or subtle shadow between panels
+- [x] Tab active/inactive contrast: increase highlight difference
+- [x] Typography hierarchy: lighter weight or smaller size for sidebar labels vs terminal text
+- [x] Inactive pane dimming: black overlay on inactive split panes
+- [x] Muted inactive sidebar text
+- [x] Sidebar truncation: tooltips on hover for truncated session names
+- [ ] Sidebar visual rework: session cards, spacing, accent borders, pane count indicators. Spec required: `/tmp/ai-research-sidebar-patterns.md` has prior art, needs a concrete spec before implementation.
+- [ ] Tab drag-and-drop reordering. Spec required.
+- [ ] Dropdown / Quake mode. Spec required: NSPanel, global hotkey, animation, interaction patterns.
+- [ ] Theme file extraction: centralize ad-hoc colors into `MisttyTheme.swift` with semantic tokens. Spec required: define the token set.
 
 - Complexity: 3 (visual polish items are individually small, but dropdown mode is a real feature)
 
@@ -49,7 +55,7 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 Sidebar and tab bar support Pinned / Auto-hide / Hidden modes. Auto-hide: overlay slides in on edge hover (150ms dwell, 20px trigger zone), out on mouse leave (300ms delay). Panels overlay terminal content (no resize/reflow). Keyboard shortcuts always work regardless of mode.
 
 - Complexity: 2
-- Design: /tmp/ai-design-autohide-panels.md
+- Spec: /tmp/ai-design-autohide-panels.md (exists, review before implementation)
 
 **Done when:** sidebar and tab bar can be set to auto-hide, panels overlay without reflowing terminal content, keyboard shortcuts work in all modes.
 
@@ -79,6 +85,7 @@ Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prom
 
 - Complexity: 3 (largest phase; the OSC parser is shared infrastructure, consumers are incremental)
 - Gap analysis: cmux has notification rings. No one else combines notifications + git + ports + working directory in a sidebar.
+- Spec required: OSC parser architecture, notification ring visual design, sidebar metadata layout. Prior art: `/tmp/ai-research-sidebar-patterns.md`, `/tmp/ai-research-terminal-ui-ux-patterns.md`.
 
 **Done when:** sidebar shows git branch, working directory, and port info per session. Unfocused panes with output show notification badges. Cmd+Shift+U jumps to the next unread pane. Cmd+Up/Down jumps between prompts.
 
@@ -92,18 +99,20 @@ Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prom
 Replace NotificationCenter menu commands with @FocusedValue. Publish MisttySession (not SessionStore). Fixes multi-window menu targeting bug.
 
 - Complexity: 2
-- Architectural cleanup that fixes a real bug. Needed before socket API for correctness.
+- Spec required: audit current NotificationCenter usage, map each to FocusedValue equivalent.
 
 ### 3b. Socket API + CLI
 Unix domain socket (`/tmp/mistty-$UID.sock`). JSON-RPC protocol. Extends the existing `MisttyCLI` binary (currently uses direct IPC) to use the socket as transport. Access control via file permissions.
 
 - Complexity: 3
+- Spec required: protocol design (JSON-RPC methods, error codes), migration plan from current IPC.
 - Enables: 3c, Raycast/Hammerspoon integration, scripting
 
 ### 3c. Neovim Split Navigation
 smart-splits.nvim integration via socket API. Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes.
 
 - Complexity: 2 (once 3b exists)
+- Spec required: smart-splits.nvim integration protocol, edge cases (nested neovim, multiple neovim instances).
 - Depends on: 3b
 - Why unsolved in Ghostty: deliberate design choice (no IPC). Mistty can solve it.
 - Personal pain point.
@@ -119,7 +128,8 @@ smart-splits.nvim integration via socket API. Bidirectional Ctrl+h/j/k/l between
 ### 4a. Configuration System
 Research and build Mistty's configuration system. Keybindings, appearance, behavior, panel modes.
 
-Investigation scope (research prior art, then decide):
+- Spec required: full design doc. Investigation scope, format decision, what's configurable vs opinionated, preset themes vs arbitrary values. Prior art research exists; needs a decision spec.
+- Investigation scope (research prior art, then decide):
 - TOML (Ghostty, Alacritty): static, simple, well-understood
 - Lua (WezTerm, Neovim): dynamic, scriptable, event hooks
 - Hybrid (TOML for static + Lua for hooks)
@@ -136,7 +146,8 @@ Key questions to answer from real usage:
 ### 4b. Session Resurrection
 Auto-save (layout, working directories, scrollback) on quit. Auto-restore on launch.
 
-Consider the unbundled alternative: integrate with shpool or zmx for session persistence instead of building from scratch. Trade external dependency for reduced complexity.
+- Spec required: what state is saved, serialization format, built-in vs shpool/zmx integration decision.
+- Consider the unbundled alternative: integrate with shpool or zmx for session persistence instead of building from scratch. Trade external dependency for reduced complexity.
 
 - Complexity: 3 (built-in) or 2 (shpool/zmx integration)
 
@@ -152,23 +163,27 @@ Consider the unbundled alternative: integrate with shpool or zmx for session per
 Includes Layout Manager UI: "Save current layout" command that generates `.mistty.toml` from the live workspace.
 
 - Complexity: 2
+- Spec required: file format, trust model, layout manager UI design.
 - Depends on: 4a (config format), 4b (serialization format)
 
 ### 5b. Floating Panes
 Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. Panes keep running when hidden. Drag to reposition.
 
 - Complexity: 3
+- Spec required: z-ordering, resize behavior, keyboard navigation between floating and tiled panes.
 - 201 votes on Ghostty. Mistty's SwiftUI architecture makes this easier than Ghostty's renderer-level splits.
 
 ### 5c. Ghostty Config Compatibility
 Read `~/.config/ghostty/config` for themes, fonts, colors. Zero-friction migration.
 
 - Complexity: 2
+- Spec required: which Ghostty config keys to support, conflict resolution with Mistty config.
 
 ### 5d. Hints Mode
 Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type the label to act (open, copy, insert). Keyboard-driven alternative to clicking links.
 
 - Complexity: 2
+- Spec required: label assignment algorithm, action menu, visual overlay design. Prior art: Kitty hints kitten.
 - Kitty ships this ("hints kitten"). Ghostty has ~180 combined votes across related discussions.
 - Pairs with 6c (inline preview panes): hints selects targets, previews displays them.
 
@@ -176,11 +191,19 @@ Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type
 Fuzzy-searchable floating panel. All actions with shortcuts. Lower priority because which-key (1a) covers discoverability.
 
 - Complexity: 2
+- Spec required: action registry, search ranking, visual design. Prior art: Raycast, Nova, Linear.
 
 ### 5f. Enhanced Session Manager
 Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide integration already exists), Nerd Font icons, preview pane showing recent output. Cmd+\` for instant last-workspace toggle.
 
 - Complexity: 2
+- Spec required: preview pane content, icon mapping, frecency algorithm tuning.
+
+### 5g. Sidebar Position
+Sidebar configurable to appear on left or right side of the window.
+
+- Complexity: 1
+- Depends on: 4a (config system for persistence)
 
 **Done when:** project layouts load from `.mistty.toml` with save-current-layout command, floating panes work, Ghostty themes import, hints mode selects visible targets, command palette searches all actions, session manager shows frecency-ranked results with icons.
 
@@ -192,13 +215,14 @@ Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide inte
 Render tmux panes as native Mistty splits via `tmux -CC`. The headline feature. Only iTerm2 has this.
 
 - Complexity: 5
-- Why genuinely hard: protocol is complex, poorly documented. Bidirectional sync edge cases (resize reflow, pane reordering, Unicode). iTerm2 invested years.
+- Spec required: full design doc. Protocol analysis, sync model, edge case catalog. Study iTerm2's implementation.
 - Defensible moat: hard to copy.
 
 ### 6b. Block-Based Output
 Command+output as selectable blocks. Metadata: exit code, duration, cwd. Click to select entire block. Cmd+Up/Down to navigate.
 
 - Complexity: 4
+- Spec required: block detection from OSC 133, visual design, selection model, keyboard navigation.
 - Depends on: Phase 2 (shell integration / OSC 133)
 - Only Warp has this.
 
@@ -206,6 +230,7 @@ Command+output as selectable blocks. Metadata: exit code, duration, cwd. Click t
 Hover file paths in terminal output for Quick Look preview. Click to open in split pane.
 
 - Complexity: 4
+- Spec required: path detection, Quick Look integration, split-pane creation flow.
 - No terminal does this. Novel.
 - Pairs with 5d (hints mode provides keyboard-driven target selection).
 
@@ -213,6 +238,7 @@ Hover file paths in terminal output for Quick Look preview. Click to open in spl
 Expose surface state (cells, colors, cursor position) via the socket API for scripting and testing. The "Playwright for terminals" gap: AI agents can write TUI code but can't see the rendered result.
 
 - Complexity: 3
+- Spec required: API surface, read vs write operations, security model.
 - Depends on: 3b (socket API)
 - Only ghostty-automator exists in this space, and it's Ghostty-specific.
 
@@ -220,6 +246,7 @@ Expose surface state (cells, colors, cursor position) via the socket API for scr
 `mistty ssh user@host` creates a dedicated workspace with port detection, sidebar metadata, and proper cleanup on disconnect. Optional Eternal Terminal (`et`) integration for connection persistence.
 
 - Complexity: 4
+- Spec required: workspace lifecycle, port detection mechanism, et integration model.
 
 ---
 
@@ -254,6 +281,7 @@ Standalone (slot anywhere after their dependencies):
   5d (hints) ··> 6c (inline previews)
   5e (command palette)
   5f (enhanced session manager)
+  5g (sidebar position, depends on 4a)
 ```
 
 ## What's NOT on this roadmap
