@@ -58,9 +58,9 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 ---
 
 ### Cleanup gate (before Phase 1c)
-- [ ] `/refactor` **@FocusedValue migration** (moved from Phase 3a): replace NotificationCenter menu commands with @FocusedValue. Currently 45 NotificationCenter usages across MisttyApp.swift and ContentView.swift. Every new feature adds more. Fix now before auto-hide panels add more notification-based toggles. Fixes multi-window menu targeting bug.
-- [ ] `/refactor` **ContentView extraction**: split ContentView.swift (472 lines, growing) into focused components. Extract notification routing, overlay management, and keyboard monitor setup into separate files. Pure refactor.
-- [ ] `/cleanup` **Sidebar interaction audit**: review sidebar tap targets, hover states, and accessibility traits after the visual rework. Ensure VoiceOver reads session/tab hierarchy correctly.
+- [x] `/refactor` **@FocusedValue migration** (moved from Phase 3a): replace NotificationCenter menu commands with @FocusedValue. Currently 45 NotificationCenter usages across MisttyApp.swift and ContentView.swift. Every new feature adds more. Fix now before auto-hide panels add more notification-based toggles. Fixes multi-window menu targeting bug. Done: TerminalCommands struct with closures, .focusedSceneValue. 15 notification names removed.
+- [x] `/refactor` **ContentView extraction**: split ContentView.swift (472 lines, growing) into focused components. Extract notification routing, overlay management, and keyboard monitor setup into separate files. Pure refactor. Done: split into ContentView.swift (layout) and ContentView+Handlers.swift (event routing).
+- [x] `/cleanup` **Sidebar interaction audit**: review sidebar tap targets, hover states, and accessibility traits after the visual rework. Ensure VoiceOver reads session/tab hierarchy correctly. Done: tap targets correct, accessibility labels added for bell, pane count, tab count.
 
 ## Phase 1c: Auto-Hide Panels
 
