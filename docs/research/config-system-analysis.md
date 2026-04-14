@@ -126,3 +126,99 @@ cmux does exactly this. Mistty's own config overrides Ghostty's (loaded after).
 - vendor/ghostty/src/config/CApi.zig (Ghostty config C API)
 - vendor/ghostty/include/ghostty.h (C API declarations)
 - /tmp/ai-research-cmux-patterns.md (cmux's GhosttyConfig.swift)
+
+## Example config file
+
+Shows the full shape of what `~/.config/mistty/config.toml` could look like:
+
+```toml
+# ~/.config/mistty/config.toml
+
+# Appearance (overrides Ghostty config if read-ghostty-config = true)
+font-family = "Berkeley Mono"
+font-size = 13
+theme = "catppuccin-mocha"
+cursor-style = "block"
+cursor-blink = false
+window-opacity = 1.0
+padding = 4
+
+# Panels
+sidebar-position = "left"       # left | right
+sidebar-mode = "auto-hide"      # pinned | auto-hide | hidden
+sidebar-width = 220
+tab-bar-mode = "pinned"          # pinned | auto-hide | hidden
+auto-hide-dwell-ms = 150
+auto-hide-dismiss-ms = 300
+
+# Terminal
+shell = "/bin/zsh"
+scrollback-lines = 10000
+close-confirm = "when-running"   # always | when-running | never
+new-tab-cwd = "current"          # current | home | <path>
+new-split-cwd = "current"
+word-delimiters = " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?│"
+
+# Bell
+bell-mode = "badge"              # badge | sound | notification | none
+
+# Sessions
+auto-restore = true
+scrollback-persist-lines = 5000
+default-session-name = "directory"  # directory | git-repo | custom
+
+# Notifications
+notification-style = "ring"      # ring | dot | highlight | none
+notification-color = "blue"
+dock-badge = true
+
+# Which-key
+leader-key = "ctrl+space"
+which-key-timeout-ms = 3000
+which-key-enabled = true
+
+# Copy mode
+copy-mode-keys = "vi"            # vi | emacs
+search-case-sensitive = false
+yank-to-clipboard = true
+
+# Window mode
+resize-step = 0.05
+
+# Integration
+read-ghostty-config = true
+shell-integration = true
+socket-api = "off"               # off | local | automation
+
+# Keybindings
+[keybind]
+"cmd+j" = "session-manager"
+"cmd+s" = "toggle-sidebar"
+"cmd+t" = "new-tab"
+"cmd+w" = "close-pane"
+"cmd+d" = "split-right"
+"cmd+shift+d" = "split-down"
+"ctrl+h" = "navigate-left"
+"ctrl+j" = "navigate-down"
+"ctrl+k" = "navigate-up"
+"ctrl+l" = "navigate-right"
+"cmd+shift+u" = "jump-to-unread"
+"cmd+`" = "last-workspace"
+
+# Popups (existing feature)
+[[popup]]
+name = "htop"
+command = "htop"
+shortcut = "cmd+shift+h"
+width = 0.8
+height = 0.8
+close_on_exit = true
+
+# SSH overrides (existing feature)
+[ssh]
+default_command = "ssh"
+
+[[ssh.host]]
+hostname = "devbox"
+command = "et"
+```
