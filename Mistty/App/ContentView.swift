@@ -145,8 +145,10 @@ struct ContentView: View {
           let tab = session.activeTab
         {
           VStack(spacing: 0) {
-            TabBarView(session: session)
-            Divider()
+            if session.tabs.count > 1 {
+              TabBarView(session: session)
+              Divider()
+            }
             let joinPickTabNames = session.tabs
               .filter { $0.id != tab.id }
               .map { $0.displayTitle }
