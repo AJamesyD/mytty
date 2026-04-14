@@ -29,12 +29,15 @@ final class WhichKeyManager {
     resetTimeout()
 
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      guard let self,
-        let chars = event.charactersIgnoringModifiers,
+      guard let self else { return event }
+      // Pass through events with command/option modifiers (Cmd+Q, Cmd+W, etc.)
+      if event.modifierFlags.intersection([.command, .option]).isEmpty == false {
+        return event
+      }
+      guard let chars = event.charactersIgnoringModifiers,
         let key = chars.first
       else { return event }
-      self.handleKey(key)
-      return nil
+      return self.handleKey(key) ? nil : event
     }
   }
 
@@ -52,16 +55,17 @@ final class WhichKeyManager {
     dismissTask = nil
   }
 
-  func handleKey(_ key: Character) {
+  /// Returns true if the key was consumed by which-key.
+  func handleKey(_ key: Character) -> Bool {
     if key == "\u{1B}" {
       deactivate()
-      return
+      return true
     }
 
     resetTimeout()
 
     guard let binding = currentBindings.first(where: { $0.key == key }) else {
-      return
+      return false
     }
 
     switch binding.action {
@@ -72,6 +76,7 @@ final class WhichKeyManager {
       breadcrumb.append(label)
       currentBindings = children
     }
+    return true
   }
 
   private func resetTimeout() {

@@ -56,6 +56,15 @@ struct ContentView: View {
         if whichKeyManager.isActive {
           whichKeyManager.deactivate()
         } else {
+          if let tab = store.activeSession?.activeTab {
+            if tab.isWindowModeActive {
+              tab.windowModeState = .inactive
+              windowModeManager.deactivate()
+            }
+            if tab.isCopyModeActive {
+              copyModeManager.exit()
+            }
+          }
           whichKeyManager.activate(
             bindings: WhichKeyManager.defaultBindings(store: store))
         }

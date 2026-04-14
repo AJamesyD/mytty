@@ -56,20 +56,20 @@ final class WhichKeyManagerTests: XCTestCase {
 
   func test_escapeKey_deactivates() {
     manager.activate(bindings: makeBindings())
-    manager.handleKey("\u{1B}")
+    XCTAssertTrue(manager.handleKey("\u{1B}"))
     XCTAssertFalse(manager.isActive)
   }
 
   func test_commandKey_executesAndDeactivates() {
     manager.activate(bindings: makeBindings())
-    manager.handleKey("a")
+    XCTAssertTrue(manager.handleKey("a"))
     XCTAssertTrue(flagSet)
     XCTAssertFalse(manager.isActive)
   }
 
   func test_groupKey_navigatesDeeper() {
     manager.activate(bindings: makeBindings())
-    manager.handleKey("g")
+    XCTAssertTrue(manager.handleKey("g"))
     XCTAssertTrue(manager.isActive)
     XCTAssertEqual(manager.currentBindings.count, 1)
     XCTAssertEqual(manager.currentBindings.first?.key, "x")
@@ -78,7 +78,7 @@ final class WhichKeyManagerTests: XCTestCase {
 
   func test_unknownKey_ignored() {
     manager.activate(bindings: makeBindings())
-    manager.handleKey("z")
+    XCTAssertFalse(manager.handleKey("z"))
     XCTAssertTrue(manager.isActive)
     XCTAssertEqual(manager.currentBindings.count, 2)
   }
