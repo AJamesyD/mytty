@@ -253,7 +253,14 @@ Global hotkey summons a dropdown terminal (NSPanel). Also support floating termi
 - Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty QuickTerminal (study for edge cases: screen switching, activation policy, window level, animation timing).
 - Does not depend on other Phase 5 items.
 
-**Done when:** project layouts load from `.mistty.toml` with save-current-layout command, floating panes work, Ghostty themes import, hints mode selects visible targets, command palette searches all actions, session manager shows frecency-ranked results with icons, global hotkey summons dropdown terminal, floating terminal windows overlay other apps.
+**Done when:** project layouts load from `.mistty.toml` with save-current-layout command, floating panes work, Ghostty themes import, hints mode selects visible targets, command palette searches all actions, session manager shows frecency-ranked results with icons, global hotkey summons dropdown terminal, floating terminal windows overlay other apps, panel animations feel polished.
+
+### 5i. Panel Animation Polish
+Refine sidebar and tab bar reveal/dismiss animations to feel more satisfying. Current implementation uses basic easeOut/easeIn curves. Investigate spring animations, velocity-matched transitions, and subtle scale/opacity effects. Reference: Zen Browser's sidebar animations.
+
+- Complexity: 1
+- `/spec` not needed (iterative visual tuning).
+- Depends on: 1c (auto-hide panels, done)
 
 ---
 
