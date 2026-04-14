@@ -2,9 +2,10 @@ import Foundation
 import GhosttyKit
 import SwiftUI
 
-// TODO(2026-04-14): replace NotificationCenter menu commands with FocusedValue/focusedSceneValue
-// for type safety, auto-disable, and correct multi-window behavior.
-// See /tmp/ai-research-swift-best-practices.md section 6.
+// TODO(2026-04-14): replace NotificationCenter menu commands with FocusedValue/focusedSceneValue.
+// Current approach broadcasts to all windows and is type-unsafe. FocusedValue gives type safety,
+// auto-disables menu items when no terminal is active, and routes to the correct window.
+// Scope: 16 notification names, 15 receivers in ContentView, all menu Button actions here.
 
 @main
 struct MisttyApp: App {

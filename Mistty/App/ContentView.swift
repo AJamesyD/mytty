@@ -56,6 +56,9 @@ struct ContentView: View {
         if whichKeyManager.isActive {
           whichKeyManager.deactivate()
         } else {
+          // NOTE: only one keyboard mode can be active at a time. Each mode
+          // installs its own NSEvent monitor; competing monitors cause
+          // unpredictable event routing.
           if let tab = store.activeSession?.activeTab {
             if tab.isWindowModeActive {
               tab.windowModeState = .inactive

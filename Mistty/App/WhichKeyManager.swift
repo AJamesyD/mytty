@@ -14,6 +14,9 @@ struct WhichKeyBinding: Identifiable {
 
 @MainActor @Observable
 final class WhichKeyManager {
+  // NOTE: @ObservationIgnored prevents the @Observable macro from wrapping this
+  // property with @ObservationTracked, which conflicts with nonisolated(unsafe)
+  // on Swift 6.3. The monitor handle must be nonisolated for deinit access.
   @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private(set) var isActive = false
   private(set) var currentBindings: [WhichKeyBinding] = []
@@ -80,6 +83,8 @@ final class WhichKeyManager {
     return true
   }
 
+  // NOTE: 3s matches macOS Dock's autohide-delay feel. Resets on each keypress
+  // so navigating deep trees doesn't race the clock.
   private func resetTimeout() {
     dismissTask?.cancel()
     dismissTask = Task {
