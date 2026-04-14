@@ -433,24 +433,20 @@ struct CopyModeState {
 
     if kind.isForward {
       let searchStart = min(cursorCol + 1, chars.count)
-      for i in searchStart..<chars.count {
-        if chars[i] == char {
-          found += 1
-          if found == count {
-            targetCol = (kind == .t) ? i - 1 : i
-            break
-          }
+      for i in searchStart..<chars.count where chars[i] == char {
+        found += 1
+        if found == count {
+          targetCol = (kind == .t) ? i - 1 : i
+          break
         }
       }
     } else {
       let searchStart = min(cursorCol - 1, chars.count - 1)
-      for i in stride(from: searchStart, through: 0, by: -1) {
-        if chars[i] == char {
-          found += 1
-          if found == count {
-            targetCol = (kind == .T) ? i + 1 : i
-            break
-          }
+      for i in stride(from: searchStart, through: 0, by: -1) where chars[i] == char {
+        found += 1
+        if found == count {
+          targetCol = (kind == .T) ? i + 1 : i
+          break
         }
       }
     }

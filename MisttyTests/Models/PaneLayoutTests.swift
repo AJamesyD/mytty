@@ -135,7 +135,11 @@ final class PaneLayoutTests: XCTestCase {
 
     // Get initial ratio
     let ratioBefore: CGFloat
-    if case .split(_, _, _, let r) = layout.root { ratioBefore = r } else { return XCTFail() }
+    if case .split(_, _, _, let r) = layout.root {
+      ratioBefore = r
+    } else {
+      return XCTFail("Expected split layout")
+    }
 
     // Resizing a vertical split with horizontal direction should be a no-op
     layout.resizeSplit(containing: panes[0], delta: 0.1, along: .horizontal)

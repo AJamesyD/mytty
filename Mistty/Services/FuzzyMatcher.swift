@@ -58,13 +58,11 @@ struct FuzzyMatcher {
     // and record the end position
     var qi = 0
     var endIdx = 0
-    for i in 0..<tLen {
-      if target[i] == query[qi] {
-        qi += 1
-        if qi == qLen {
-          endIdx = i + 1
-          break
-        }
+    for i in 0..<tLen where target[i] == query[qi] {
+      qi += 1
+      if qi == qLen {
+        endIdx = i + 1
+        break
       }
     }
     guard qi == qLen else { return nil }
@@ -72,13 +70,11 @@ struct FuzzyMatcher {
     // Pass 2: backward scan from endIdx to find tightest window
     qi = qLen - 1
     var startIdx = endIdx - 1
-    for i in stride(from: endIdx - 1, through: 0, by: -1) {
-      if target[i] == query[qi] {
-        qi -= 1
-        if qi < 0 {
-          startIdx = i
-          break
-        }
+    for i in stride(from: endIdx - 1, through: 0, by: -1) where target[i] == query[qi] {
+      qi -= 1
+      if qi < 0 {
+        startIdx = i
+        break
       }
     }
 

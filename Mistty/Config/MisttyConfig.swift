@@ -20,8 +20,8 @@ struct SSHConfig: Sendable, Equatable {
   var hosts: [SSHHostOverride] = []
 
   func resolveCommand(for host: String) -> String {
-    for override in hosts {
-      if override.matches(host) { return override.command }
+    for override in hosts where override.matches(host) {
+      return override.command
     }
     return defaultCommand
   }

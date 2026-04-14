@@ -20,11 +20,15 @@ final class IPCServiceTests: XCTestCase {
     service.createSession(name: "test", directory: "/tmp", exec: nil) { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let response = try! JSONDecoder().decode(SessionResponse.self, from: data!)
-      XCTAssertEqual(response.name, "test")
-      XCTAssertEqual(response.directory, "/tmp")
-      XCTAssertEqual(response.tabCount, 1)
-      XCTAssertFalse(response.tabIds.isEmpty)
+      do {
+        let response = try JSONDecoder().decode(SessionResponse.self, from: data!)
+        XCTAssertEqual(response.name, "test")
+        XCTAssertEqual(response.directory, "/tmp")
+        XCTAssertEqual(response.tabCount, 1)
+        XCTAssertFalse(response.tabIds.isEmpty)
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -37,8 +41,12 @@ final class IPCServiceTests: XCTestCase {
     service.createSession(name: "home", directory: nil, exec: nil) { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let response = try! JSONDecoder().decode(SessionResponse.self, from: data!)
-      XCTAssertEqual(response.name, "home")
+      do {
+        let response = try JSONDecoder().decode(SessionResponse.self, from: data!)
+        XCTAssertEqual(response.name, "home")
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -52,10 +60,14 @@ final class IPCServiceTests: XCTestCase {
     service.listSessions { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let responses = try! JSONDecoder().decode([SessionResponse].self, from: data!)
-      XCTAssertEqual(responses.count, 2)
-      XCTAssertEqual(responses[0].name, "alpha")
-      XCTAssertEqual(responses[1].name, "beta")
+      do {
+        let responses = try JSONDecoder().decode([SessionResponse].self, from: data!)
+        XCTAssertEqual(responses.count, 2)
+        XCTAssertEqual(responses[0].name, "alpha")
+        XCTAssertEqual(responses[1].name, "beta")
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -66,8 +78,12 @@ final class IPCServiceTests: XCTestCase {
     service.listSessions { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let responses = try! JSONDecoder().decode([SessionResponse].self, from: data!)
-      XCTAssertTrue(responses.isEmpty)
+      do {
+        let responses = try JSONDecoder().decode([SessionResponse].self, from: data!)
+        XCTAssertTrue(responses.isEmpty)
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -80,10 +96,14 @@ final class IPCServiceTests: XCTestCase {
     service.getSession(id: session.id) { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let response = try! JSONDecoder().decode(SessionResponse.self, from: data!)
-      XCTAssertEqual(response.id, session.id)
-      XCTAssertEqual(response.name, "myproject")
-      XCTAssertEqual(response.directory, "/tmp")
+      do {
+        let response = try JSONDecoder().decode(SessionResponse.self, from: data!)
+        XCTAssertEqual(response.id, session.id)
+        XCTAssertEqual(response.name, "myproject")
+        XCTAssertEqual(response.directory, "/tmp")
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -138,10 +158,14 @@ final class IPCServiceTests: XCTestCase {
     service.createTab(sessionId: session.id, name: "build", exec: nil) { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let response = try! JSONDecoder().decode(TabResponse.self, from: data!)
-      XCTAssertEqual(response.title, "build")
-      XCTAssertEqual(response.paneCount, 1)
-      XCTAssertFalse(response.paneIds.isEmpty)
+      do {
+        let response = try JSONDecoder().decode(TabResponse.self, from: data!)
+        XCTAssertEqual(response.title, "build")
+        XCTAssertEqual(response.paneCount, 1)
+        XCTAssertFalse(response.paneIds.isEmpty)
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -156,8 +180,12 @@ final class IPCServiceTests: XCTestCase {
     service.listTabs(sessionId: session.id) { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let responses = try! JSONDecoder().decode([TabResponse].self, from: data!)
-      XCTAssertEqual(responses.count, 2)
+      do {
+        let responses = try JSONDecoder().decode([TabResponse].self, from: data!)
+        XCTAssertEqual(responses.count, 2)
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -187,8 +215,12 @@ final class IPCServiceTests: XCTestCase {
     service.renameTab(id: tab.id, name: "logs") { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let response = try! JSONDecoder().decode(TabResponse.self, from: data!)
-      XCTAssertEqual(response.title, "logs")
+      do {
+        let response = try JSONDecoder().decode(TabResponse.self, from: data!)
+        XCTAssertEqual(response.title, "logs")
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -205,8 +237,12 @@ final class IPCServiceTests: XCTestCase {
     service.listPanes(tabId: tab.id) { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let responses = try! JSONDecoder().decode([PaneResponse].self, from: data!)
-      XCTAssertEqual(responses.count, 1)
+      do {
+        let responses = try JSONDecoder().decode([PaneResponse].self, from: data!)
+        XCTAssertEqual(responses.count, 1)
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -220,8 +256,12 @@ final class IPCServiceTests: XCTestCase {
     service.activePane { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let response = try! JSONDecoder().decode(PaneResponse.self, from: data!)
-      XCTAssertEqual(response.id, pane.id)
+      do {
+        let response = try JSONDecoder().decode(PaneResponse.self, from: data!)
+        XCTAssertEqual(response.id, pane.id)
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -360,8 +400,12 @@ final class IPCServiceTests: XCTestCase {
     service.focusPaneByDirection(direction: "left", sessionId: session.id) { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let response = try! JSONDecoder().decode(PaneResponse.self, from: data!)
-      XCTAssertEqual(response.id, leftPane.id)
+      do {
+        let response = try JSONDecoder().decode(PaneResponse.self, from: data!)
+        XCTAssertEqual(response.id, leftPane.id)
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -392,8 +436,12 @@ final class IPCServiceTests: XCTestCase {
     service.focusPane(id: firstPane.id) { data, error in
       XCTAssertNil(error)
       XCTAssertNotNil(data)
-      let response = try! JSONDecoder().decode(PaneResponse.self, from: data!)
-      XCTAssertEqual(response.id, firstPane.id)
+      do {
+        let response = try JSONDecoder().decode(PaneResponse.self, from: data!)
+        XCTAssertEqual(response.id, firstPane.id)
+      } catch {
+        XCTFail("Decoding failed: \(error)")
+      }
       expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
