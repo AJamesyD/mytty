@@ -74,6 +74,7 @@ struct SessionRowView: View {
       Text(session.name)
         .font(.system(size: 13))
         .fontWeight(isActive ? .semibold : .regular)
+        .foregroundStyle(isActive ? .primary : .secondary)
         .help(session.name)
         .contentShape(Rectangle())
         .onTapGesture { store.activeSession = session }

@@ -31,6 +31,12 @@ struct PaneView: View {
         }
       }
       .overlay {
+        if !isActive {
+          Color.black.opacity(0.2)
+            .allowsHitTesting(false)
+        }
+      }
+      .overlay {
         if isActive && windowModeState != .inactive {
           RoundedRectangle(cornerRadius: 2)
             .stroke(Color.orange, lineWidth: 2)

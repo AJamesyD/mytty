@@ -136,7 +136,7 @@ struct ContentView: View {
             set: { sidebarWidth = Double($0) }
           ))
         Rectangle()
-          .fill(Color.white.opacity(0.1))
+          .fill(Color.white.opacity(0.08))
           .frame(width: 1)
       }
 
