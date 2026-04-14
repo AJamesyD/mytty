@@ -1,5 +1,10 @@
 # Mistty - macOS terminal emulator built on libghostty
 
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# Xcode 16.3 path for zig/libghostty builds (macOS 26 needs two Xcode versions)
+DEVELOPER_DIR := "/Applications/Xcode-16.3.app/Contents/Developer"
+
 # Default recipe
 default: build
 
@@ -81,9 +86,17 @@ run: install
 run-release: install-release
     open /Applications/Mistty.app
 
+# Open the installed app (no rebuild)
+open:
+    open /Applications/Mistty.app
+
 # Run tests
 test:
     swift test
+
+# Run tests matching a filter
+test-filter PATTERN:
+    swift test --filter {{PATTERN}}
 
 # Clean build artifacts
 clean:
@@ -92,7 +105,7 @@ clean:
 
 # Build libghostty from the vendored submodule (requires nix)
 build-libghostty:
-    nix develop --command bash -c "cd vendor/ghostty && DEVELOPER_DIR=/Applications/Xcode-16.3.app/Contents/Developer zig build -Dapp-runtime=none -Demit-xcframework=true -Doptimize=ReleaseFast"
+    nix develop --command bash -c "cd vendor/ghostty && DEVELOPER_DIR={{DEVELOPER_DIR}} zig build -Dapp-runtime=none -Demit-xcframework=true -Doptimize=ReleaseFast"
 
 # Enter the nix dev shell
 dev:
@@ -103,13 +116,34 @@ setup:
     git submodule update --init --recursive
     @echo "Now run 'just build-libghostty' to build libghostty"
 
-# Format Swift code (requires swift-format)
-fmt:
+# Format Swift code
+fmt-swift:
     swift format --in-place --recursive Mistty/ MisttyTests/
 
 # Check formatting without modifying
 fmt-check:
     swift format --recursive Mistty/ MisttyTests/
+
+# Lint Swift code
+lint:
+    swiftlint lint --quiet
+
+# Lint and auto-fix Swift code
+lint-fix:
+    swiftlint lint --fix --quiet
+
+# Format nix files
+nix-fmt:
+    nix fmt .
+
+# Format all code (Swift + Nix)
+fmt-all: fmt-swift nix-fmt
+
+# Format all code
+fmt: fmt-all
+
+# Pre-commit check: format, lint, test
+check: fmt-check lint test
 
 # Show project info
 info:
