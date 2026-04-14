@@ -318,6 +318,11 @@ final class TerminalSurfaceView: NSView {
     if flags.contains(.capsLock) { raw |= GHOSTTY_MODS_CAPS.rawValue }
     return ghostty_input_mods_e(rawValue: raw)
   }
+  override func doCommand(by selector: Selector) {
+    // Intentionally empty: prevents NSBeep when interpretKeyEvents
+    // dispatches selectors (insertTab:, insertNewline:, etc.) that
+    // have no handler in the responder chain.
+  }
 }
 
 // MARK: - NSTextInputClient
