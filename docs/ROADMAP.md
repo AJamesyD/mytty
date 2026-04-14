@@ -115,6 +115,7 @@ Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prom
 ---
 
 ### Cleanup gate (before Phase 3)
+- [ ] `/refactor` **Event handler extraction**: extract NSEvent monitor closure bodies into testable `handleKeyDown(_ event: NSEvent) -> NSEvent?` methods on each manager (WindowMode, CopyMode, WhichKey, PaneNavigation, and Phase 2's attention coordinator). Monitor becomes a one-liner that delegates. Tests call the method directly with `NSEvent.keyEvent(with:...)`. Research: `/tmp/ai-research-nsevent-testing.md`.
 - [ ] `/refactor` **IPC audit**: review existing IPCService.swift and IPCListener.swift. Use `/refactor` to evaluate: understand current IPC mechanism before designing socket API replacement. Document what works, what's fragile, what the socket API replaces vs extends.
 - [ ] `/cleanup` **OSC parser test coverage**: ensure OSC parser from Phase 2 has tests covering all supported sequences before building socket API on top.
 - [ ] `/cleanup` **IPC parity check**: verify all stable noun+verb operations from Phases 1b and 2 have IPC methods per Principle 10. Backfill any gaps (session rename, tab move, etc.).
@@ -389,3 +390,5 @@ Late dependencies:
 - /tmp/ai-research-wezterm-kitty-comparison.md (WezTerm and Kitty comparison, 2026-04-14)
 - /tmp/ai-design-session-tab-renaming.md (session/tab renaming spec, 2026-04-14)
 - /tmp/ai-design-tab-drag-drop.md (tab drag-and-drop spec, 2026-04-14)
+- /tmp/ai-research-nsevent-testing.md (NSEvent monitor testing strategies, 2026-04-14)
+- /tmp/ai-research-terminal-tab-bar-config.md (tab bar visibility config comparison, 2026-04-14)
