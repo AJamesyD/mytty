@@ -1,4 +1,4 @@
-# Mistty — macOS terminal emulator built on libghostty
+# Mistty - macOS terminal emulator built on libghostty
 
 # Default recipe
 default: build
@@ -92,7 +92,7 @@ clean:
 
 # Build libghostty from the vendored submodule (requires nix)
 build-libghostty:
-    nix develop --command bash -c "cd vendor/ghostty && zig build -Dapp-runtime=none -Doptimize=ReleaseFast"
+    nix develop --command bash -c "cd vendor/ghostty && DEVELOPER_DIR=/Applications/Xcode-16.3.app/Contents/Developer zig build -Dapp-runtime=none -Demit-xcframework=true -Doptimize=ReleaseFast"
 
 # Enter the nix dev shell
 dev:
@@ -113,7 +113,7 @@ fmt-check:
 
 # Show project info
 info:
-    @echo "Mistty — macOS terminal emulator"
+    @echo "Mistty - macOS terminal emulator"
     @echo ""
     @echo "Swift package:"
     @swift package describe 2>/dev/null | head -20
