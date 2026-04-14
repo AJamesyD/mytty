@@ -12,6 +12,24 @@ final class MisttyPane: Identifiable {
   var useCommandField: Bool = true
 
   var processTitle: String?
+  var workingDirectory: URL?
+  var lastCommandResult: CommandResult?
+  var progressState: ProgressState?
+
+  @ObservationIgnored
+  var progressExpiryTask: DispatchWorkItem?
+
+  struct CommandResult {
+    let exitCode: Int16
+    let duration: UInt64
+  }
+
+  enum ProgressState {
+    case set(progress: Int8)
+    case error
+    case indeterminate
+    case pause
+  }
 
   var isRunningVimLike: Bool {
     guard let title = processTitle?.lowercased() else { return false }

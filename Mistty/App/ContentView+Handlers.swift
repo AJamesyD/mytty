@@ -2,6 +2,10 @@ import AppKit
 import GhosttyKit
 import MisttyShared
 import SwiftUI
+import UserNotifications
+
+@MainActor
+private var hasRequestedNotificationPermission = false
 
 extension ContentView {
   var isAnyModalActive: Bool {
@@ -24,6 +28,21 @@ extension ContentView {
       }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyCloseSurface)) { notification in
         handleCloseSurface(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyPwd)) { notification in
+        handlePwd(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttySetTabTitle)) { notification in
+        handleSetTabTitle(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyDesktopNotification)) { notification in
+        handleDesktopNotification(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyCommandFinished)) { notification in
+        handleCommandFinished(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyProgressReport)) { notification in
+        handleProgressReport(notification)
       }
   }
 
@@ -206,7 +225,12 @@ extension ContentView {
       for tab in session.tabs {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
           pane.processTitle = title
-          tab.title = title
+          tab.titleDebounceTask?.cancel()
+          let task = DispatchWorkItem { [weak tab] in
+            tab?.title = title
+          }
+          tab.titleDebounceTask = task
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.075, execute: task)
           return
         }
       }
@@ -248,6 +272,105 @@ extension ContentView {
       for tab in session.tabs {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
           closePaneInTab(pane, tab: tab, session: session)
+          return
+        }
+      }
+    }
+  }
+
+  func handlePwd(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let pwd = notification.userInfo?["pwd"] as? String
+    else { return }
+    for session in store.sessions {
+      for tab in session.tabs {
+        if let pane = tab.panes.first(where: { $0.id == paneID }) {
+          pane.workingDirectory = URL(fileURLWithPath: pwd)
+          return
+        }
+      }
+    }
+  }
+
+  func handleSetTabTitle(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let title = notification.userInfo?["title"] as? String
+    else { return }
+    for session in store.sessions {
+      for tab in session.tabs {
+        if tab.panes.contains(where: { $0.id == paneID }) {
+          tab.tabTitle = title
+          return
+        }
+      }
+    }
+  }
+
+  func handleDesktopNotification(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let title = notification.userInfo?["title"] as? String,
+      let body = notification.userInfo?["body"] as? String
+    else { return }
+    if store.activeSession?.activeTab?.activePane?.id == paneID { return }
+    if !hasRequestedNotificationPermission {
+      hasRequestedNotificationPermission = true
+      UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+    let content = UNMutableNotificationContent()
+    content.title = title
+    content.body = body
+    content.userInfo = ["paneID": paneID]
+    let request = UNNotificationRequest(
+      identifier: UUID().uuidString, content: content, trigger: nil)
+    UNUserNotificationCenter.current().add(request)
+  }
+
+  func handleCommandFinished(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let exitCode = notification.userInfo?["exitCode"] as? Int16,
+      let duration = notification.userInfo?["duration"] as? UInt64
+    else { return }
+    for session in store.sessions {
+      for tab in session.tabs {
+        if let pane = tab.panes.first(where: { $0.id == paneID }) {
+          pane.lastCommandResult = MisttyPane.CommandResult(
+            exitCode: exitCode, duration: duration)
+          return
+        }
+      }
+    }
+  }
+
+  func handleProgressReport(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let stateRaw = notification.userInfo?["state"] as? UInt32,
+      let progress = notification.userInfo?["progress"] as? Int8
+    else { return }
+    for session in store.sessions {
+      for tab in session.tabs {
+        if let pane = tab.panes.first(where: { $0.id == paneID }) {
+          pane.progressExpiryTask?.cancel()
+          if stateRaw == GHOSTTY_PROGRESS_STATE_REMOVE.rawValue {
+            pane.progressState = nil
+            return
+          }
+          switch stateRaw {
+          case GHOSTTY_PROGRESS_STATE_SET.rawValue:
+            pane.progressState = .set(progress: progress)
+          case GHOSTTY_PROGRESS_STATE_ERROR.rawValue:
+            pane.progressState = .error
+          case GHOSTTY_PROGRESS_STATE_INDETERMINATE.rawValue:
+            pane.progressState = .indeterminate
+          case GHOSTTY_PROGRESS_STATE_PAUSE.rawValue:
+            pane.progressState = .pause
+          default:
+            return
+          }
+          let task = DispatchWorkItem { [weak pane] in
+            pane?.progressState = nil
+          }
+          pane.progressExpiryTask = task
+          DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: task)
           return
         }
       }

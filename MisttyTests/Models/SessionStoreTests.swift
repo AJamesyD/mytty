@@ -301,4 +301,59 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(store.sessions.count, 1)
     XCTAssertEqual(store.activeSession?.id, s1.id)
   }
+
+  // MARK: - Phase 2a: OSC Foundation
+
+  func test_tabDisplayTitlePriority() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.tabs[0]
+    XCTAssertEqual(tab.displayTitle, "Shell")
+    tab.title = "vim"
+    XCTAssertEqual(tab.displayTitle, "vim")
+    tab.tabTitle = "editor"
+    XCTAssertEqual(tab.displayTitle, "editor")
+    tab.customTitle = "My Editor"
+    XCTAssertEqual(tab.displayTitle, "My Editor")
+    tab.customTitle = nil
+    XCTAssertEqual(tab.displayTitle, "editor")
+    tab.tabTitle = nil
+    XCTAssertEqual(tab.displayTitle, "vim")
+  }
+
+  func test_paneWorkingDirectory() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    XCTAssertNil(pane.workingDirectory)
+    pane.workingDirectory = URL(fileURLWithPath: "/Users/test")
+    XCTAssertEqual(pane.workingDirectory?.path, "/Users/test")
+  }
+
+  func test_paneCommandResult() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    XCTAssertNil(pane.lastCommandResult)
+    pane.lastCommandResult = MisttyPane.CommandResult(exitCode: 0, duration: 1_000_000_000)
+    XCTAssertEqual(pane.lastCommandResult?.exitCode, 0)
+    XCTAssertEqual(pane.lastCommandResult?.duration, 1_000_000_000)
+    pane.lastCommandResult = MisttyPane.CommandResult(exitCode: 1, duration: 500_000_000)
+    XCTAssertEqual(pane.lastCommandResult?.exitCode, 1)
+  }
+
+  func test_paneProgressState() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    XCTAssertNil(pane.progressState)
+    pane.progressState = .set(progress: 50)
+    if case .set(let progress) = pane.progressState {
+      XCTAssertEqual(progress, 50)
+    } else {
+      XCTFail("Expected .set state")
+    }
+    pane.progressState = .error
+    if case .error = pane.progressState {} else {
+      XCTFail("Expected .error state")
+    }
+    pane.progressState = nil
+    XCTAssertNil(pane.progressState)
+  }
 }

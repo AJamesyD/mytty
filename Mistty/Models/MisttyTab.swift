@@ -5,10 +5,14 @@ import Foundation
 final class MisttyTab: Identifiable {
   let id: Int
   var title: String = "Shell"
+  var tabTitle: String?
   var customTitle: String?
 
+  @ObservationIgnored
+  var titleDebounceTask: DispatchWorkItem?
+
   var displayTitle: String {
-    customTitle ?? title
+    customTitle ?? tabTitle ?? title
   }
   let directory: URL?
   private(set) var panes: [MisttyPane] = []

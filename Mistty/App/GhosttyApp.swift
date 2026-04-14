@@ -74,6 +74,100 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
     }
     return true
 
+  case GHOSTTY_ACTION_PWD:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      guard let pwd = action.action.pwd.pwd else { return true }
+      let pwdStr = String(cString: pwd)
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyPwd,
+          object: nil,
+          userInfo: ["paneID": view.pane?.id as Any, "pwd": pwdStr]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_SET_TAB_TITLE:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      guard let title = action.action.set_tab_title.title else { return true }
+      let titleStr = String(cString: title)
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttySetTabTitle,
+          object: nil,
+          userInfo: ["paneID": view.pane?.id as Any, "title": titleStr]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_DESKTOP_NOTIFICATION:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      guard let title = action.action.desktop_notification.title,
+        let body = action.action.desktop_notification.body
+      else { return true }
+      let titleStr = String(cString: title)
+      let bodyStr = String(cString: body)
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyDesktopNotification,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any, "title": titleStr, "body": bodyStr,
+          ]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_COMMAND_FINISHED:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let exitCode = action.action.command_finished.exit_code
+      let duration = action.action.command_finished.duration
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyCommandFinished,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any, "exitCode": exitCode, "duration": duration,
+          ]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_PROGRESS_REPORT:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let state = action.action.progress_report.state.rawValue
+      let progress = action.action.progress_report.progress
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyProgressReport,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any, "state": state, "progress": progress,
+          ]
+        )
+      }
+    }
+    return true
+
   default:
     return false
   }
@@ -128,6 +222,11 @@ extension Notification.Name {
   static let ghosttySetTitle = Notification.Name("ghosttySetTitle")
   static let ghosttyCloseSurface = Notification.Name("ghosttyCloseSurface")
   static let ghosttyRingBell = Notification.Name("ghosttyRingBell")
+  static let ghosttyPwd = Notification.Name("ghosttyPwd")
+  static let ghosttySetTabTitle = Notification.Name("ghosttySetTabTitle")
+  static let ghosttyDesktopNotification = Notification.Name("ghosttyDesktopNotification")
+  static let ghosttyCommandFinished = Notification.Name("ghosttyCommandFinished")
+  static let ghosttyProgressReport = Notification.Name("ghosttyProgressReport")
 }
 
 // MARK: - GhosttyAppManager
