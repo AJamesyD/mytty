@@ -10,3 +10,4 @@ result-*
 .direnv/
 .worktrees/
 .session.md
+Xcode.app/
