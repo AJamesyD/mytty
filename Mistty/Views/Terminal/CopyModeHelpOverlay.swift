@@ -60,12 +60,12 @@ struct CopyModeHelpOverlay: View {
       }
     }
     .font(.system(size: 11, design: .monospaced))
-    .foregroundStyle(.white)
+    .foregroundStyle(MisttyTheme.overlayText)
     .padding(12)
-    .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 8))
+    .background(MisttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))
     .overlay(
       RoundedRectangle(cornerRadius: 8)
-        .stroke(Color.orange.opacity(0.6), lineWidth: 1)
+        .stroke(MisttyTheme.overlayBorder, lineWidth: 1)
     )
   }
 
@@ -82,7 +82,7 @@ struct CopyModeHelpOverlay: View {
             .padding(.vertical, 1)
             .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 2))
           Text(hint.label)
-            .foregroundStyle(.white.opacity(0.8))
+            .foregroundStyle(MisttyTheme.overlayTextMuted)
         }
       }
     }

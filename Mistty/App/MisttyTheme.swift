@@ -1,0 +1,53 @@
+import SwiftUI
+
+// Semantic color tokens for Mistty chrome and overlays.
+// Future: generative theme from base color, accent color, and contrast level
+// (see /tmp/ai-research-terminal-ui-ux-patterns.md recommendation #9).
+
+enum MisttyTheme {
+    // Pane
+    static let paneDimOverlay = Color.black.opacity(0.2)
+
+    // Backdrops
+    static let modalBackdrop = Color.black.opacity(0.3)
+    static let popupBackdrop = Color.black.opacity(0.4)
+
+    // Overlay HUDs (WhichKey, CopyModeHelp, etc.)
+    static let overlayBackground = Color.black.opacity(0.85)
+    static let overlayBorder = Color.orange.opacity(0.6)
+    static let overlayText = Color.white
+    static let overlayTextMuted = Color.white.opacity(0.8)
+    static let overlayKeyBadge = Color.white.opacity(0.2)
+
+    // Mode indicators
+    static let modeIndicatorBackground = Color.orange.opacity(0.8)
+    static let bellIndicator = Color.orange
+
+    // Search
+    static let searchCurrentMatch = Color.orange.opacity(0.6)
+    static let searchMatch = Color.yellow.opacity(0.3)
+
+    // Copy mode
+    static let copyModeCursor = Color.yellow.opacity(0.7)
+    static let copyModeSearchBar = Color.blue.opacity(0.8)
+    static let selectionHighlight = Color.blue.opacity(0.3)
+
+    // Pane borders
+    static let activePaneBorder = Color.accentColor
+    static let windowModePaneBorder = Color.orange
+
+    // Tab bar
+    static let activeTabBackground = Color.accentColor.opacity(0.3)
+    static let inactiveTabBackground = Color.white.opacity(0.05)
+
+    // Selection
+    static let selectedRowBackground = Color.accentColor.opacity(0.2)
+
+    // Chrome
+    static let sidebarDivider = Color.white.opacity(0.08)
+    static let popupBorder = Color.white.opacity(0.1)
+    static let popupShadow = Color.black.opacity(0.5)
+
+    // Destructive actions
+    static let destructiveAction = Color.red
+}

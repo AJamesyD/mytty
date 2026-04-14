@@ -32,18 +32,18 @@ struct PaneView: View {
       }
       .overlay {
         if !isActive {
-          Color.black.opacity(0.2)
+          MisttyTheme.paneDimOverlay
             .allowsHitTesting(false)
         }
       }
       .overlay {
         if isActive && windowModeState != .inactive {
           RoundedRectangle(cornerRadius: 2)
-            .stroke(Color.orange, lineWidth: 2)
+            .stroke(MisttyTheme.windowModePaneBorder, lineWidth: 2)
             .allowsHitTesting(false)
         } else if isActive {
           RoundedRectangle(cornerRadius: 2)
-            .stroke(Color.accentColor, lineWidth: 1)
+            .stroke(MisttyTheme.activePaneBorder, lineWidth: 1)
             .allowsHitTesting(false)
         }
       }
@@ -51,10 +51,10 @@ struct PaneView: View {
         if isZoomed {
           Text("⊕ ZOOMED")
             .font(.system(size: 11, weight: .bold, design: .monospaced))
-            .foregroundStyle(.white)
+            .foregroundStyle(MisttyTheme.overlayText)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
-            .background(Color.orange.opacity(0.8), in: RoundedRectangle(cornerRadius: 4))
+            .background(MisttyTheme.modeIndicatorBackground, in: RoundedRectangle(cornerRadius: 4))
             .padding(6)
             .allowsHitTesting(false)
         }

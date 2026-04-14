@@ -21,9 +21,9 @@ struct WhichKeyOverlay: View {
         }
       }
       .font(.system(size: 12, design: .monospaced))
-      .foregroundStyle(.white)
+      .foregroundStyle(MisttyTheme.overlayText)
       .padding(12)
-      .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 8))
+      .background(MisttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))
       .transition(.opacity)
       .animation(.easeInOut(duration: 0.15), value: isActive)
     }
@@ -35,7 +35,7 @@ struct WhichKeyOverlay: View {
       Text(String(binding.key))
         .padding(.horizontal, 5)
         .padding(.vertical, 2)
-        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
+        .background(MisttyTheme.overlayKeyBadge, in: RoundedRectangle(cornerRadius: 3))
       Text(label + (isGroup ? " >" : ""))
     }
   }

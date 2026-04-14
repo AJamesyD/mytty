@@ -8,7 +8,7 @@ struct PopupOverlayView: View {
   var body: some View {
     ZStack {
       // Semi-transparent backdrop
-      Color.black.opacity(0.4)
+      MisttyTheme.popupBackdrop
         .ignoresSafeArea()
         .onTapGesture { onDismiss() }
 
@@ -39,9 +39,9 @@ struct PopupOverlayView: View {
       .clipShape(RoundedRectangle(cornerRadius: 8))
       .overlay(
         RoundedRectangle(cornerRadius: 8)
-          .stroke(Color.white.opacity(0.1), lineWidth: 1)
+          .stroke(MisttyTheme.popupBorder, lineWidth: 1)
       )
-      .shadow(color: .black.opacity(0.5), radius: 20, y: 5)
+      .shadow(color: MisttyTheme.popupShadow, radius: 20, y: 5)
     }
   }
 }

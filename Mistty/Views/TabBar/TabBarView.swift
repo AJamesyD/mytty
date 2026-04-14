@@ -45,7 +45,7 @@ struct TabBarItem: View {
     HStack(spacing: 4) {
       if tab.hasBell {
         Circle()
-          .fill(Color.orange)
+          .fill(MisttyTheme.bellIndicator)
           .frame(width: 6, height: 6)
       }
 
@@ -81,7 +81,7 @@ struct TabBarItem: View {
     }
     .padding(.horizontal, 10)
     .padding(.vertical, 6)
-    .background(isActive ? Color.accentColor.opacity(0.3) : Color.white.opacity(0.05))
+    .background(isActive ? MisttyTheme.activeTabBackground : MisttyTheme.inactiveTabBackground)
     .cornerRadius(6)
     .onTapGesture { onSelect() }
     .onHover { isHovered = $0 }

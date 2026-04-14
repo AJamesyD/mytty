@@ -40,7 +40,7 @@ struct CopyModeOverlay: View {
 
       // Cursor
       Rectangle()
-        .fill(Color.yellow.opacity(0.7))
+        .fill(MisttyTheme.copyModeCursor)
         .frame(width: cellWidth, height: cellHeight)
         .offset(
           x: gridOffsetX + CGFloat(state.cursorCol) * cellWidth,
@@ -54,17 +54,17 @@ struct CopyModeOverlay: View {
           if state.subMode == .searchForward || state.subMode == .searchReverse {
             Text(searchBarText)
               .font(.system(size: 11, weight: .bold, design: .monospaced))
-              .foregroundStyle(.white)
+              .foregroundStyle(MisttyTheme.overlayText)
               .padding(.horizontal, 8)
               .padding(.vertical, 2)
-              .background(Color.blue.opacity(0.8), in: RoundedRectangle(cornerRadius: 4))
+              .background(MisttyTheme.copyModeSearchBar, in: RoundedRectangle(cornerRadius: 4))
           } else {
             Text(modeIndicatorText)
               .font(.system(size: 11, weight: .bold, design: .monospaced))
-              .foregroundStyle(.white)
+              .foregroundStyle(MisttyTheme.overlayText)
               .padding(.horizontal, 8)
               .padding(.vertical, 2)
-              .background(Color.orange.opacity(0.8), in: RoundedRectangle(cornerRadius: 4))
+              .background(MisttyTheme.modeIndicatorBackground, in: RoundedRectangle(cornerRadius: 4))
           }
           Spacer()
         }
@@ -75,7 +75,7 @@ struct CopyModeOverlay: View {
       if state.showingHelp {
         CopyModeHelpOverlay()
           .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .background(Color.black.opacity(0.3))
+          .background(MisttyTheme.modalBackdrop)
       }
     }
     .allowsHitTesting(false)
@@ -167,7 +167,7 @@ struct SelectionHighlightView: View {
         x1 = size.width
       }
       let rect = CGRect(x: x0, y: CGFloat(row) * cellHeight, width: x1 - x0, height: cellHeight)
-      context.fill(Path(rect), with: .color(.blue.opacity(0.3)))
+      context.fill(Path(rect), with: .color(MisttyTheme.selectionHighlight))
     }
   }
 
@@ -178,7 +178,7 @@ struct SelectionHighlightView: View {
       let lineLen = lineReader?(row)?.count ?? 0
       let x1 = lineLen > 0 ? CGFloat(lineLen) * cellWidth : size.width
       let rect = CGRect(x: 0, y: CGFloat(row) * cellHeight, width: x1, height: cellHeight)
-      context.fill(Path(rect), with: .color(.blue.opacity(0.3)))
+      context.fill(Path(rect), with: .color(MisttyTheme.selectionHighlight))
     }
   }
 
@@ -196,7 +196,7 @@ struct SelectionHighlightView: View {
       let x0 = CGFloat(minCol) * cellWidth
       let x1 = CGFloat(rightCol + 1) * cellWidth
       let rect = CGRect(x: x0, y: CGFloat(row) * cellHeight, width: x1 - x0, height: cellHeight)
-      context.fill(Path(rect), with: .color(.blue.opacity(0.3)))
+      context.fill(Path(rect), with: .color(MisttyTheme.selectionHighlight))
     }
   }
 }

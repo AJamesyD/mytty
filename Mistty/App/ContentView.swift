@@ -136,7 +136,7 @@ struct ContentView: View {
             set: { sidebarWidth = Double($0) }
           ))
         Rectangle()
-          .fill(Color.white.opacity(0.08))
+          .fill(MisttyTheme.sidebarDivider)
           .frame(width: 1)
       }
 
@@ -230,7 +230,7 @@ struct ContentView: View {
   @ViewBuilder
   private var sessionManagerOverlay: some View {
     if showingSessionManager, let vm = sessionManagerVM {
-      Color.black.opacity(0.3)
+      MisttyTheme.modalBackdrop
         .ignoresSafeArea()
         .onTapGesture { showingSessionManager = false }
 

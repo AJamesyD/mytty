@@ -82,7 +82,7 @@ struct SessionManagerView: View {
               }
               .padding(.horizontal, 14)
               .padding(.vertical, 8)
-              .background(index == vm.selectedIndex ? Color.accentColor.opacity(0.2) : Color.clear)
+              .background(index == vm.selectedIndex ? MisttyTheme.selectedRowBackground : Color.clear)
               .id(index)
               .contentShape(Rectangle())
               .onTapGesture {

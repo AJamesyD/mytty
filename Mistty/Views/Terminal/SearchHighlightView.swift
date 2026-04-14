@@ -26,8 +26,8 @@ struct SearchHighlightView: View {
           let isCurrent = row == currentMatchRow && col == currentMatchCol
           let color: Color =
             isCurrent
-            ? .orange.opacity(0.6)
-            : .yellow.opacity(0.3)
+            ? MisttyTheme.searchCurrentMatch
+            : MisttyTheme.searchMatch
 
           let rect = CGRect(
             x: CGFloat(col) * cellWidth,

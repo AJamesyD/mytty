@@ -46,7 +46,7 @@ struct SettingsView: View {
                 saveConfig()
               } label: {
                 Image(systemName: "minus.circle.fill")
-                  .foregroundStyle(.red)
+                  .foregroundStyle(MisttyTheme.destructiveAction)
               }
               .buttonStyle(.plain)
             }
@@ -134,7 +134,7 @@ struct SettingsView: View {
               saveConfig()
             } label: {
               Image(systemName: "minus.circle.fill")
-                .foregroundStyle(.red)
+                .foregroundStyle(MisttyTheme.destructiveAction)
             }
             .buttonStyle(.plain)
           }

@@ -62,7 +62,7 @@ struct WindowModeHints: View {
       content()
     }
     .font(.system(size: 11, design: .monospaced))
-    .foregroundStyle(.white)
+    .foregroundStyle(MisttyTheme.overlayText)
     .padding(.horizontal, 10)
     .padding(.vertical, 5)
     .background(Color.orange.opacity(0.85), in: RoundedRectangle(cornerRadius: 6))
@@ -73,7 +73,7 @@ struct WindowModeHints: View {
       Text(key)
         .padding(.horizontal, 4)
         .padding(.vertical, 1)
-        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
+        .background(MisttyTheme.overlayKeyBadge, in: RoundedRectangle(cornerRadius: 3))
       Text(label)
     }
   }

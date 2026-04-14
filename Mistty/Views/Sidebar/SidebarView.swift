@@ -54,7 +54,7 @@ struct SessionRowView: View {
         HStack {
           if tab.hasBell {
             Circle()
-              .fill(Color.orange)
+              .fill(MisttyTheme.bellIndicator)
               .frame(width: 6, height: 6)
           }
           Text(tab.displayTitle)
