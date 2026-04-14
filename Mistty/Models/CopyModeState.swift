@@ -297,27 +297,39 @@ struct CopyModeState {
 
     // Word motions
     case "w":
-      return wordMotion(count: count, pendingMotionType: .wordForward(bigWord: false), lineReader: lineReader) { line, col in
+      return wordMotion(
+        count: count, pendingMotionType: .wordForward(bigWord: false), lineReader: lineReader
+      ) { line, col in
         WordMotion.nextWordStart(in: line, from: col, bigWord: false)
       }
     case "W":
-      return wordMotion(count: count, pendingMotionType: .wordForward(bigWord: true), lineReader: lineReader) { line, col in
+      return wordMotion(
+        count: count, pendingMotionType: .wordForward(bigWord: true), lineReader: lineReader
+      ) { line, col in
         WordMotion.nextWordStart(in: line, from: col, bigWord: true)
       }
     case "b":
-      return wordMotionBackward(count: count, pendingMotionType: .wordBackward(bigWord: false), lineReader: lineReader) { line, col in
+      return wordMotionBackward(
+        count: count, pendingMotionType: .wordBackward(bigWord: false), lineReader: lineReader
+      ) { line, col in
         WordMotion.prevWordStart(in: line, from: col, bigWord: false)
       }
     case "B":
-      return wordMotionBackward(count: count, pendingMotionType: .wordBackward(bigWord: true), lineReader: lineReader) { line, col in
+      return wordMotionBackward(
+        count: count, pendingMotionType: .wordBackward(bigWord: true), lineReader: lineReader
+      ) { line, col in
         WordMotion.prevWordStart(in: line, from: col, bigWord: true)
       }
     case "e":
-      return wordMotion(count: count, pendingMotionType: .wordEndForward(bigWord: false), lineReader: lineReader) { line, col in
+      return wordMotion(
+        count: count, pendingMotionType: .wordEndForward(bigWord: false), lineReader: lineReader
+      ) { line, col in
         WordMotion.nextWordEnd(in: line, from: col, bigWord: false)
       }
     case "E":
-      return wordMotion(count: count, pendingMotionType: .wordEndForward(bigWord: true), lineReader: lineReader) { line, col in
+      return wordMotion(
+        count: count, pendingMotionType: .wordEndForward(bigWord: true), lineReader: lineReader
+      ) { line, col in
         WordMotion.nextWordEnd(in: line, from: col, bigWord: true)
       }
 
@@ -348,13 +360,17 @@ struct CopyModeState {
     case "e":
       let count = pendingCount ?? 1
       pendingCount = nil
-      return wordMotionBackward(count: count, pendingMotionType: .wordEndBackward(bigWord: false), lineReader: lineReader) { line, col in
+      return wordMotionBackward(
+        count: count, pendingMotionType: .wordEndBackward(bigWord: false), lineReader: lineReader
+      ) { line, col in
         WordMotion.prevWordEnd(in: line, from: col, bigWord: false)
       }
     case "E":
       let count = pendingCount ?? 1
       pendingCount = nil
-      return wordMotionBackward(count: count, pendingMotionType: .wordEndBackward(bigWord: true), lineReader: lineReader) { line, col in
+      return wordMotionBackward(
+        count: count, pendingMotionType: .wordEndBackward(bigWord: true), lineReader: lineReader
+      ) { line, col in
         WordMotion.prevWordEnd(in: line, from: col, bigWord: true)
       }
     case "?":
@@ -594,9 +610,13 @@ struct CopyModeState {
       }
 
       if isForward {
-        return wordMotion(count: continuation.remaining - 1, pendingMotionType: continuation.motion, lineReader: lineReader, motion: motionFn)
+        return wordMotion(
+          count: continuation.remaining - 1, pendingMotionType: continuation.motion,
+          lineReader: lineReader, motion: motionFn)
       } else {
-        return wordMotionBackward(count: continuation.remaining - 1, pendingMotionType: continuation.motion, lineReader: lineReader, motion: motionFn)
+        return wordMotionBackward(
+          count: continuation.remaining - 1, pendingMotionType: continuation.motion,
+          lineReader: lineReader, motion: motionFn)
       }
     }
 

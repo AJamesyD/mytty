@@ -42,7 +42,8 @@ final class CopyModeManager {
   func exit() {
     // Scroll back to bottom (active area) when leaving copy mode
     if let pane = store?.activeSession?.activeTab?.activePane,
-       let surface = pane.surfaceView.surface {
+      let surface = pane.surfaceView.surface
+    {
       let actionStr = "scroll_to_bottom"
       _ = ghostty_surface_binding_action(surface, actionStr, UInt(actionStr.utf8.count))
     }
@@ -60,7 +61,8 @@ final class CopyModeManager {
   private func installMonitor() {
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
       guard let self,
-            var state = self.store?.activeSession?.activeTab?.copyModeState else { return event }
+        var state = self.store?.activeSession?.activeTab?.copyModeState
+      else { return event }
 
       // Pass through system shortcuts (Cmd+*) when not searching
       if event.modifierFlags.contains(.command) && !state.isSearching {
@@ -156,7 +158,8 @@ final class CopyModeManager {
 
   private func scrollViewport(_ state: inout CopyModeState, delta: Int) {
     guard let pane = store?.activeSession?.activeTab?.activePane,
-          let surface = pane.surfaceView.surface else { return }
+      let surface = pane.surfaceView.surface
+    else { return }
     let actionStr = "scroll_page_lines:\(delta)"
     _ = ghostty_surface_binding_action(surface, actionStr, UInt(actionStr.utf8.count))
     // Update scrollbar offset synchronously, the async callback will
@@ -231,7 +234,9 @@ final class CopyModeManager {
   ) -> Int? {
     var bestCol: Int?
     var searchStart = line.startIndex
-    while let range = line.range(of: query, options: .caseInsensitive, range: searchStart..<line.endIndex) {
+    while let range = line.range(
+      of: query, options: .caseInsensitive, range: searchStart..<line.endIndex)
+    {
       let col = line.distance(from: line.startIndex, to: range.lowerBound)
       if forward {
         if col > cursorCol {

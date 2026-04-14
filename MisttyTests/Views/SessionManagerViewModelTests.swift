@@ -84,7 +84,8 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "other", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store, frecencyService: service, zoxideProvider: { [] }, sshProvider: { [] })
+    let vm = SessionManagerViewModel(
+      store: store, frecencyService: service, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
 
     let names = vm.filteredItems.compactMap { item -> String? in
@@ -143,7 +144,8 @@ final class SessionManagerViewModelTests: XCTestCase {
     let _ = store.createSession(name: "dev-tools", directory: URL(fileURLWithPath: "/home"))
     store.activeSession = nil
 
-    let vm = SessionManagerViewModel(store: store, frecencyService: service, zoxideProvider: { [] }, sshProvider: { [] })
+    let vm = SessionManagerViewModel(
+      store: store, frecencyService: service, zoxideProvider: { [] }, sshProvider: { [] })
     await vm.load()
     vm.updateQuery("dev")
 

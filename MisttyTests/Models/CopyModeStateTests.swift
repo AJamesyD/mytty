@@ -318,10 +318,10 @@ final class CopyModeStateTests: XCTestCase {
     let reader: (Int) -> String? = { row in
       switch row {
       case 0: return "01234567890123456789"  // 20 chars
-      case 1: return "abc"                    // 3 chars
-      case 2: return "abcde"                  // 5 chars
-      case 3: return "ab"                     // 2 chars
-      case 4: return "abcdefghij"             // 10 chars
+      case 1: return "abc"  // 3 chars
+      case 2: return "abcde"  // 5 chars
+      case 3: return "ab"  // 2 chars
+      case 4: return "abcdefghij"  // 10 chars
       case 5: return "01234567890123456789"  // 20 chars
       default: return ""
       }
@@ -337,8 +337,8 @@ final class CopyModeStateTests: XCTestCase {
     var state = makeState(cursorRow: 5, cursorCol: 10)
     let reader: (Int) -> String? = { row in
       switch row {
-      case 5: return "hello world!!"          // 13 chars
-      case 6: return "               "        // whitespace-only
+      case 5: return "hello world!!"  // 13 chars
+      case 6: return "               "  // whitespace-only
       case 7: return "another long line here"  // 22 chars
       default: return ""
       }
@@ -358,32 +358,37 @@ final class CopyModeStateTests: XCTestCase {
 
   func test_ctrlD_returnsScrollDown() {
     var state = makeState(rows: 24, cursorRow: 10, cursorCol: 0)
-    let actions = state.handleKey(key: "d", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
+    let actions = state.handleKey(
+      key: "d", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
     XCTAssertTrue(actions.contains(.scroll(deltaRows: 12)))
   }
 
   func test_ctrlU_returnsScrollUp() {
     var state = makeState(rows: 24, cursorRow: 10, cursorCol: 0)
-    let actions = state.handleKey(key: "u", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
+    let actions = state.handleKey(
+      key: "u", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
     XCTAssertTrue(actions.contains(.scroll(deltaRows: -12)))
   }
 
   func test_ctrlF_returnsFullPageDown() {
     var state = makeState(rows: 24, cursorRow: 10, cursorCol: 0)
-    let actions = state.handleKey(key: "f", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
+    let actions = state.handleKey(
+      key: "f", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
     XCTAssertTrue(actions.contains(.scroll(deltaRows: 24)))
   }
 
   func test_ctrlB_returnsFullPageUp() {
     var state = makeState(rows: 24, cursorRow: 10, cursorCol: 0)
-    let actions = state.handleKey(key: "b", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
+    let actions = state.handleKey(
+      key: "b", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
     XCTAssertTrue(actions.contains(.scroll(deltaRows: -24)))
   }
 
   func test_5ctrlD_pagesDown5HalfScreens() {
     var state = makeState(rows: 24, cursorRow: 10, cursorCol: 0)
     _ = state.handleKey(key: "5", keyCode: 0, modifiers: [], lineReader: emptyLineReader)
-    let actions = state.handleKey(key: "d", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
+    let actions = state.handleKey(
+      key: "d", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
     XCTAssertTrue(actions.contains(.scroll(deltaRows: 60)))
   }
 
@@ -414,7 +419,11 @@ final class CopyModeStateTests: XCTestCase {
   func test_j_inMiddle_noScroll() {
     var state = makeState(rows: 24, cursorRow: 10, cursorCol: 0)
     let actions = state.handleKey(key: "j", keyCode: 0, modifiers: [], lineReader: emptyLineReader)
-    XCTAssertFalse(actions.contains(where: { if case .scroll = $0 { return true }; return false }))
+    XCTAssertFalse(
+      actions.contains(where: {
+        if case .scroll = $0 { return true }
+        return false
+      }))
     XCTAssertEqual(state.cursorRow, 11)
   }
 

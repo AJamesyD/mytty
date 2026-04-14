@@ -17,12 +17,15 @@ struct SearchHighlightView: View {
         guard let line = lineReader(row) else { continue }
 
         var searchStart = line.startIndex
-        while let range = line.range(of: query, options: .caseInsensitive, range: searchStart..<line.endIndex) {
+        while let range = line.range(
+          of: query, options: .caseInsensitive, range: searchStart..<line.endIndex)
+        {
           let col = line.distance(from: line.startIndex, to: range.lowerBound)
           let matchLen = line.distance(from: range.lowerBound, to: range.upperBound)
 
           let isCurrent = row == currentMatchRow && col == currentMatchCol
-          let color: Color = isCurrent
+          let color: Color =
+            isCurrent
             ? .orange.opacity(0.6)
             : .yellow.opacity(0.3)
 

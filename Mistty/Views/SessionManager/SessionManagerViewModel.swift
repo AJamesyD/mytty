@@ -84,7 +84,9 @@ final class SessionManagerViewModel {
   init(
     store: SessionStore,
     frecencyService: FrecencyService = FrecencyService(),
-    zoxideProvider: @Sendable @escaping () async -> [URL] = { await ZoxideService.recentDirectories() },
+    zoxideProvider: @Sendable @escaping () async -> [URL] = {
+      await ZoxideService.recentDirectories()
+    },
     sshProvider: @Sendable @escaping () -> [SSHHost] = { SSHConfigService.loadHosts() }
   ) {
     self.store = store

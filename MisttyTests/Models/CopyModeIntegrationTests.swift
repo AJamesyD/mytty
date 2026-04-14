@@ -180,14 +180,16 @@ final class CopyModeIntegrationTests: XCTestCase {
 
   func test_ctrlD_returnsHalfPageScroll() {
     var state = makeState(cursorRow: 10, cursorCol: 0)
-    let actions = state.handleKey(key: "d", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
+    let actions = state.handleKey(
+      key: "d", keyCode: 0, modifiers: .control, lineReader: emptyLineReader)
     XCTAssertTrue(actions.contains(.scroll(deltaRows: 12)))
   }
 
   func test_escape_clearsContinuation() {
     var state = makeState(cursorRow: 10, cursorCol: 0)
     state.pendingContinuation = ContinuationState(motion: .lineDown, remaining: 1)
-    let actions = state.handleKey(key: "\u{1B}", keyCode: 53, modifiers: [], lineReader: emptyLineReader)
+    let actions = state.handleKey(
+      key: "\u{1B}", keyCode: 53, modifiers: [], lineReader: emptyLineReader)
     XCTAssertNil(state.pendingContinuation)
     XCTAssertTrue(actions.contains(.exitCopyMode))
   }

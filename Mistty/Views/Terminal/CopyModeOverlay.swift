@@ -127,7 +127,9 @@ struct SelectionHighlightView: View {
 
       switch mode {
       case .visual:
-        drawCharacterWise(context: context, size: size, minRow: minRow, maxRow: maxRow, visibleMin: visibleMin, visibleMax: visibleMax)
+        drawCharacterWise(
+          context: context, size: size, minRow: minRow, maxRow: maxRow, visibleMin: visibleMin,
+          visibleMax: visibleMax)
       case .visualLine:
         drawLineWise(context: context, size: size, visibleMin: visibleMin, visibleMax: visibleMax)
       case .visualBlock:
@@ -138,7 +140,10 @@ struct SelectionHighlightView: View {
     }
   }
 
-  private func drawCharacterWise(context: GraphicsContext, size: CGSize, minRow: Int, maxRow: Int, visibleMin: Int, visibleMax: Int) {
+  private func drawCharacterWise(
+    context: GraphicsContext, size: CGSize, minRow: Int, maxRow: Int, visibleMin: Int,
+    visibleMax: Int
+  ) {
     for row in visibleMin...visibleMax {
       let x0: CGFloat
       let x1: CGFloat
@@ -166,7 +171,9 @@ struct SelectionHighlightView: View {
     }
   }
 
-  private func drawLineWise(context: GraphicsContext, size: CGSize, visibleMin: Int, visibleMax: Int) {
+  private func drawLineWise(
+    context: GraphicsContext, size: CGSize, visibleMin: Int, visibleMax: Int
+  ) {
     for row in visibleMin...visibleMax {
       let lineLen = lineReader?(row)?.count ?? 0
       let x1 = lineLen > 0 ? CGFloat(lineLen) * cellWidth : size.width
@@ -175,7 +182,9 @@ struct SelectionHighlightView: View {
     }
   }
 
-  private func drawBlockWise(context: GraphicsContext, size: CGSize, visibleMin: Int, visibleMax: Int) {
+  private func drawBlockWise(
+    context: GraphicsContext, size: CGSize, visibleMin: Int, visibleMax: Int
+  ) {
     let minCol = min(start.col, end.col)
     let logicalRightCol = max(start.col, end.col)
 
