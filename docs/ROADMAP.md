@@ -1,10 +1,11 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 12
+Iteration: 13
 
 ## Principles
 
+0. **macOS-only**: no Windows, ever. Linux is a distant stretch goal. This means: lean fully into SwiftUI and AppKit, use macOS system APIs directly (NSPanel, NSUserActivity, CGEvent taps), no cross-platform abstraction layers.
 1. **Time to daily driver**: optimize for the shortest path to replacing your current terminal setup.
 2. **Personal-first, generalizable**: solve your own workflow pain, design interfaces that generalize.
 3. **Contextual awareness**: Mistty's identity is "you never leave your flow to check what's happening."
@@ -14,6 +15,7 @@ Iteration: 12
 7. **Spec before code**: every feature gets a written spec (prior art, what's opinionated vs configurable, interaction patterns, edge cases) before implementation begins. Spec can be brief (20 lines for small features) or a full design doc. Approved before coding starts.
 8. **Opinionated defaults, constrained configuration**: ship one good design. When configuration is needed, prefer presets over arbitrary values. Don't push design decisions to the user. Code must be written with the assumption that hardcoded values will become configurable later: access through abstractions (e.g., `theme.surface` not `Color.white.opacity(0.03)`), even when the backing store is a static singleton.
 9. **Cleanup gates before major phases**: every major phase has a cleanup/refactor prerequisite that addresses tech debt which would make the phase harder or messier. Cleanup gates are not optional. They prevent debt from compounding across phases.
+10. **IPC parity for stable operations**: operations that map to a noun+verb CLI command (session rename, tab move, pane split) get their IPC method in the same commit as the GUI. Exploratory features (UI modes, visual behaviors) get IPC when the interface stabilizes. This builds a consistent API surface incrementally rather than bolting it on in Phase 3. Adopted in iteration 13; pre-existing gaps (session rename IPC, tab move IPC) are tracked in Phase 3a.
 
 ---
 
@@ -47,13 +49,11 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 - [x] Session/tab renaming (sidebar + tab bar only). `/spec` before implementation. Scope: double-click to rename in sidebar and tab bar. Right-click context menu with "Rename" option. CLI rename and OSC 0/1/2 title integration deferred to Phase 2/3. Prior art: Kitty `tab_title_template`, iTerm2 session naming. Spec: /tmp/ai-design-session-tab-renaming.md.
 - [x] Tab bar visibility mode: "always", "never", "if-multiple" (hide when only 1 tab). Small enough to implement directly (no `/spec` needed). Prior art: Kitty `tab_bar_min_tabs`, WezTerm `hide_tab_bar_if_only_one_tab`, neovim bufferline. Hardcode "if-multiple" as default, expose via config in Phase 4.
 - [x] Tab drag-and-drop reordering. `/spec` before implementation. Prior art: iTerm2, Kitty, browser tab bars. Spec: /tmp/ai-design-tab-drag-drop.md.
-- [ ] Dropdown / Quake mode. `/spec` before implementation: NSPanel, global hotkey, animation, multi-monitor behavior, interaction with auto-hide panels. Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty quick terminal.
+- ~~Dropdown / Quake mode~~: moved to Phase 5 as 5h (not blocking daily driver use).
 
-- Complexity: 3 (visual polish items are individually small, but dropdown mode is a real feature)
+- Complexity: 2 (visual polish items are individually small; dropdown moved to Phase 5)
 
 **Done when (core):** no system alert sounds on standard shortcuts, clear visual boundaries between all UI regions, sessions and tabs renameable, tab bar hides with single tab, tabs reorderable by drag.
-
-**Done when (stretch):** global hotkey summons dropdown terminal.
 
 ---
 
@@ -71,7 +71,7 @@ Sidebar and tab bar support Pinned / Auto-hide / Hidden modes. Auto-hide: overla
 - Complexity: 2
 - `/spec` review: /tmp/ai-design-autohide-panels.md exists but predates tab bar visibility mode. Update spec to cover interaction between auto-hide and "if-multiple" tab bar mode before implementation.
 
-**Done when:** sidebar and tab bar can be set to auto-hide, panels overlay without reflowing terminal content, keyboard shortcuts work in all modes.
+**Done when:** sidebar and tab bar can be set to auto-hide, panels overlay without reflowing terminal content, keyboard shortcuts work in all modes. Menu commands target the correct window in multi-window (verified by @FocusedValue migration in cleanup gate).
 
 ---
 
@@ -101,7 +101,7 @@ Per-pane output badges (colored ring on the pane border), sidebar session badges
 Git branch + dirty indicator, working directory (from OSC 7), listening ports per session row.
 
 ### Shell Integration (OSC 133)
-Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prompts, per-command exit code and duration display. Enables 6b (block-based output).
+Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prompts, per-command exit code and duration display. Line-level navigation; 6b upgrades this to visual block selection. Enables 6b (block-based output).
 
 - Complexity: 3 (largest phase; the OSC parser is shared infrastructure, consumers are incremental)
 - Gap analysis: cmux has notification rings. No one else combines notifications + git + ports + working directory in a sidebar.
@@ -114,6 +114,7 @@ Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prom
 ### Cleanup gate (before Phase 3)
 - [ ] `/refactor` **IPC audit**: review existing IPCService.swift and IPCListener.swift. Use `/refactor` to evaluate: understand current IPC mechanism before designing socket API replacement. Document what works, what's fragile, what the socket API replaces vs extends.
 - [ ] `/cleanup` **OSC parser test coverage**: ensure OSC parser from Phase 2 has tests covering all supported sequences before building socket API on top.
+- [ ] `/cleanup` **IPC parity check**: verify all stable noun+verb operations from Phases 1b and 2 have IPC methods per Principle 10. Backfill any gaps (session rename, tab move, etc.).
 
 ## Phase 3: Platform
 
@@ -135,7 +136,15 @@ smart-splits.nvim integration via socket API. Bidirectional Ctrl+h/j/k/l between
 - Why unsolved in Ghostty: deliberate design choice (no IPC). Mistty can solve it.
 - Personal pain point.
 
-**Done when:** menu commands work correctly in multi-window, `mistty pane list` returns JSON, Ctrl+h/j/k/l crosses neovim/Mistty boundary.
+### 3c. Basic Session Persistence
+Save session/tab/pane tree to disk on quit. Restore layout on launch (shells restart fresh). Uses `Codable` serialization of the session tree + `NSApplicationDelegate.applicationShouldTerminate`.
+
+- Complexity: 2
+- `/spec` required: what state is saved (session names, tab names, pane layout, working directories), serialization format, restore behavior when shells can't restart.
+- Does not depend on 3a (socket API) or config system.
+- Advanced version (scrollback persistence, shpool/zmx integration) stays in Phase 4b.
+
+**Done when:** `mistty pane list` returns JSON, Ctrl+h/j/k/l crosses neovim/Mistty boundary, quit+relaunch restores session layout.
 
 ---
 
@@ -166,15 +175,14 @@ Key questions to answer from real usage:
 - Retroactively enhances: which-key (1a reads keybindings from config), auto-hide (1c modes configurable)
 - Enables: 5a (project layouts), 5c (Ghostty config compat)
 
-### 4b. Session Resurrection
-Auto-save (layout, working directories, scrollback) on quit. Auto-restore on launch.
+### 4b. Advanced Session Persistence
+Extends 3c with scrollback persistence, running command restoration, and optional shpool/zmx integration for shell survival across app restarts.
 
-- `/spec` required: what state is saved (including custom session/tab names), serialization format, built-in vs shpool/zmx integration decision.
-- Consider the unbundled alternative: integrate with shpool or zmx for session persistence instead of building from scratch. Trade external dependency for reduced complexity.
-
+- `/spec` required: scrollback serialization format, shpool/zmx integration decision, migration from basic persistence (3c).
 - Complexity: 3 (built-in) or 2 (shpool/zmx integration)
+- Depends on: 3c
 
-**Done when:** config file controls keybindings and appearance, quit+relaunch restores layout.
+**Done when:** config file controls keybindings and appearance, advanced persistence restores scrollback and running commands.
 
 ---
 
@@ -192,7 +200,7 @@ Includes Layout Manager UI: "Save current layout" command that generates `.mistt
 
 - Complexity: 2
 - `/spec` required: file format, trust model, layout manager UI design.
-- Depends on: 4a (config format), 4b (serialization format)
+- Depends on: 4a (config format), 3c (layout serialization format)
 
 ### 5b. Floating Panes
 Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. Panes keep running when hidden. Drag to reposition.
@@ -234,7 +242,15 @@ Sidebar configurable to appear on left or right side of the window.
 - `/spec` not needed (straightforward layout flip).
 - Depends on: 4a (config system for persistence)
 
-**Done when:** project layouts load from `.mistty.toml` with save-current-layout command, floating panes work, Ghostty themes import, hints mode selects visible targets, command palette searches all actions, session manager shows frecency-ranked results with icons.
+### 5h. Dropdown / Quake / Float Mode
+Global hotkey summons a dropdown terminal (NSPanel). Also support floating terminal windows that overlay other apps.
+
+- Complexity: 3
+- `/spec` before implementation: NSPanel, global hotkey, animation, multi-monitor behavior, interaction with auto-hide panels. Also design float variant (persistent overlay window, not just dropdown).
+- Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty QuickTerminal (study for edge cases: screen switching, activation policy, window level, animation timing).
+- Does not depend on other Phase 5 items.
+
+**Done when:** project layouts load from `.mistty.toml` with save-current-layout command, floating panes work, Ghostty themes import, hints mode selects visible targets, command palette searches all actions, session manager shows frecency-ranked results with icons, global hotkey summons dropdown terminal, floating terminal windows overlay other apps.
 
 ---
 
@@ -246,6 +262,7 @@ Render tmux panes as native Mistty splits via `tmux -CC`. The headline feature. 
 - Complexity: 5
 - `/spec` required: full design doc. Protocol analysis, sync model, edge case catalog. Study iTerm2's implementation.
 - Defensible moat: hard to copy.
+- Ghostty's tmux control mode is in progress (DCS parser landed as of 2026-04-14). If it ships, Mistty could use libghostty's tmux support to render tmux panes as native splits, reducing the implementation effort here.
 
 ### 6b. Block-Based Output
 Command+output as selectable blocks. Metadata: exit code, duration, cwd. Click to select entire block. Cmd+Up/Down to navigate.
@@ -253,6 +270,7 @@ Command+output as selectable blocks. Metadata: exit code, duration, cwd. Click t
 - Complexity: 4
 - `/spec` required: block detection from OSC 133, visual design, selection model, keyboard navigation.
 - Depends on: Phase 2 (shell integration / OSC 133)
+- Extends Phase 2 shell integration: upgrades line-level prompt navigation to visual block selection with metadata.
 - Only Warp has this.
 
 ### 6c. Inline Preview Panes
@@ -291,7 +309,7 @@ Completed:
   Phase 1b: tab-completion beep fix (doCommand override) ✓
 
 Sequential path (solo developer, no parallel phases):
-  1b remaining (rename, tab-bar-visibility, drag-drop, dropdown)
+  1b remaining (rename, tab-bar-visibility, drag-drop) ✓
     ──> /refactor + /cleanup: FocusedValue migration, ContentView extraction, sidebar audit
       ──> /spec review: auto-hide panel spec update
         ──> 1c (auto-hide)
@@ -299,27 +317,31 @@ Sequential path (solo developer, no parallel phases):
             ──> /spec: Phase 2 (OSC parser, notification rings, sidebar metadata, OSC titles)
               ──> Phase 2 (contextual sidebar + OSC + shell integration)
                 ──> /refactor + /cleanup: IPC audit, OSC parser tests
-                  ──> /spec: Phase 3 (socket API protocol, CLI rename methods)
-                    ──> Phase 3 (socket API + neovim nav)
+                  ──> /spec: Phase 3 (socket API protocol, session persistence, CLI rename methods)
+                    ──> Phase 3 (socket API + neovim nav + basic session persistence)
                       ──> /cleanup + /refactor: config audit, theme review
                         ──> /spec: Phase 4 (config format, tab title templates)
                           ──> Phase 4 (config + persist)
                             ──> /cleanup + /refactor: integration tests, API stability, dead code
-                              ──> Phase 5 (differentiators, each with /spec)
+                              ──> Phase 5 (differentiators incl. dropdown/float, each with /spec)
                                 ──> Phase 6 (moonshots, each with /spec)
 
 Late dependencies:
   Phase 2 ──> 6b (block-based output)
   Phase 3a ──> 6d (automation API)
   Phase 4a ──> 5a (layouts), 5c (Ghostty compat), 5g (sidebar position)
-  Phase 4b ──> 5a (layouts)
+  Phase 3c ──> 5a (layouts)
   5d (hints) ──> 6c (inline previews)
+  Phase 3c ──> 4b (advanced persistence)
+  Phase 4a ──> 5h (dropdown hotkey config; hardcoded hotkey works without config, like Phase 1a keybindings)
 ```
 
 ## What's NOT on this roadmap
 
+- **Daemon architecture**: evaluated and deferred. A headless process owning sessions (like tmux's server) would give CLI/GUI parity and attach/detach, but the daemon-to-surface rendering bridge is unsolved for native GUI terminals. The IPC protocol boundary is the escape hatch if this becomes needed later.
+- **Alternative terminal base**: evaluated WezTerm (stalled, last release 2024-02) and Kitty (strong IPC but no embeddable library). Neither is embeddable. libghostty is the only option for a native macOS app with custom UI chrome.
 - CI/CD (GitHub Actions): deferred until contributors exist
-- IPC service refactoring: works, not broken
+- IPC service refactoring as standalone effort: works, not broken. Phase 3 cleanup gate audits it as input to socket API design.
 - C callback notification replacement: works, low priority
 - Cursor trail: likely ships upstream in Ghostty. Track, don't build.
 - Smooth/pixel scrolling: depends on libghostty upstream. Track, don't build.
@@ -335,6 +357,8 @@ Late dependencies:
 - Cursor trail (347 votes on Ghostty)
 - Smooth pixel scrolling (112 votes on Ghostty, Kitty shipped in 0.46)
 - RTL/BiDi text support
+- Ghostty scripting API (planned, no timeline; 109+ comments on Discussion #2353)
+- Ghostty tmux control mode (in progress; DCS parser landed, Issue #1935)
 
 ## Sources
 
@@ -350,3 +374,8 @@ Late dependencies:
 - /tmp/ai-research-terminal-feature-requests.md
 - ~/Documents/research/terminal/terminal-session-management-research.md
 - /tmp/ai-design-sidebar-visual-rework.md (sidebar visual rework spec, 2026-04-14)
+- /tmp/ai-research-ghostty-planned-features.md (Ghostty feature overlap analysis, 2026-04-14)
+- /tmp/ai-research-ghostty-rejected-features.md (Ghostty rejected/out-of-scope features, 2026-04-14)
+- /tmp/ai-research-wezterm-kitty-comparison.md (WezTerm and Kitty comparison, 2026-04-14)
+- /tmp/ai-design-session-tab-renaming.md (session/tab renaming spec, 2026-04-14)
+- /tmp/ai-design-tab-drag-drop.md (tab drag-and-drop spec, 2026-04-14)
