@@ -46,6 +46,7 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 - [x] Sidebar visual rework: accent bar on active session (via `listRowBackground`), tab count badge, pane count indicator, active tab highlight, increased indentation, session spacing. Spec: `/tmp/ai-design-sidebar-visual-rework.md`. Future work: per-session colors (needs config system), hover close buttons, pane sub-rows.
 - [ ] Session/tab renaming. Spec required: double-click rename in sidebar, right-click context menu, CLI (`mistty-cli session rename`), OSC 0/1/2 title sequences. Prior art: Kitty's `tab_title_template` with `{title}`, `{index}`, `{layout_name}` variables. Touches sidebar, tab bar, CLI, and OSC handling. Consider scoping to sidebar + tab bar rename first, OSC integration with Phase 2.
 - [ ] Tab drag-and-drop reordering. Spec required.
+- [ ] Tab bar visibility mode: "always", "never", "if-multiple" (hide when only 1 tab). Prior art: Kitty `tab_bar_min_tabs`, WezTerm `hide_tab_bar_if_only_one_tab`, neovim bufferline. Small feature, no config system needed (hardcode "if-multiple" as default, expose via config in Phase 4).
 - [ ] Dropdown / Quake mode. Spec required: NSPanel, global hotkey, animation, interaction patterns.
 
 - Complexity: 3 (visual polish items are individually small, but dropdown mode is a real feature)
