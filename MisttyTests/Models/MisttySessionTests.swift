@@ -11,9 +11,18 @@ final class MisttySessionTests: XCTestCase {
     return MisttySession(
       id: 1, name: name,
       directory: URL(fileURLWithPath: "/tmp"),
-      tabIDGenerator: { defer { nextTab += 1 }; return nextTab },
-      paneIDGenerator: { defer { nextPane += 1 }; return nextPane },
-      popupIDGenerator: { defer { nextPopup += 1 }; return nextPopup }
+      tabIDGenerator: {
+        defer { nextTab += 1 }
+        return nextTab
+      },
+      paneIDGenerator: {
+        defer { nextPane += 1 }
+        return nextPane
+      },
+      popupIDGenerator: {
+        defer { nextPopup += 1 }
+        return nextPopup
+      }
     )
   }
 

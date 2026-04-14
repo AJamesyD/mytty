@@ -6,6 +6,7 @@ import SwiftUI
 struct MisttyApp: App {
   @State private var store = SessionStore()
   @State private var ipcListener: IPCListener?
+  @State private var persistenceService: PersistenceService?
   @FocusedValue(\.terminalCommands) var commands
 
   init() {
@@ -16,6 +17,12 @@ struct MisttyApp: App {
     WindowGroup {
       ContentView(store: store)
         .onAppear {
+          if persistenceService == nil {
+            let ps = PersistenceService(store: store)
+            ps.restore()
+            ps.startObserving()
+            persistenceService = ps
+          }
           if ipcListener == nil {
             let service = MisttyIPCService(store: store)
             let listener = IPCListener(service: service)

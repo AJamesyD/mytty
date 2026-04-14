@@ -134,4 +134,8 @@ final class MisttySession: Identifiable {
     else { return }
     activeTab = tabs[(index - 1 + tabs.count) % tabs.count]
   }
+
+  func replaceTabs(_ newTabs: [MisttyTab]) {
+    tabs = newTabs
+  }
 }

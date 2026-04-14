@@ -35,13 +35,16 @@ extension ContentView {
       .onReceive(NotificationCenter.default.publisher(for: .ghosttySetTabTitle)) { notification in
         handleSetTabTitle(notification)
       }
-      .onReceive(NotificationCenter.default.publisher(for: .ghosttyDesktopNotification)) { notification in
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyDesktopNotification)) {
+        notification in
         handleDesktopNotification(notification)
       }
-      .onReceive(NotificationCenter.default.publisher(for: .ghosttyCommandFinished)) { notification in
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyCommandFinished)) {
+        notification in
         handleCommandFinished(notification)
       }
-      .onReceive(NotificationCenter.default.publisher(for: .ghosttyProgressReport)) { notification in
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyProgressReport)) {
+        notification in
         handleProgressReport(notification)
       }
   }

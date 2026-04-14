@@ -350,7 +350,8 @@ final class SessionStoreTests: XCTestCase {
       XCTFail("Expected .set state")
     }
     pane.progressState = .error
-    if case .error = pane.progressState {} else {
+    if case .error = pane.progressState {
+    } else {
       XCTFail("Expected .error state")
     }
     pane.progressState = nil

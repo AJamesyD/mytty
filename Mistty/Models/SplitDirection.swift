@@ -1,4 +1,4 @@
-enum SplitDirection: Sendable, Equatable {
+enum SplitDirection: Sendable, Equatable, Codable {
   case horizontal, vertical
 
   var toggled: SplitDirection {

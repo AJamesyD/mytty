@@ -165,4 +165,124 @@ final class SessionStore {
     else { return nil }
     return (session, tab, pane)
   }
+
+  // MARK: - Persistence
+
+  func toPersistentState() -> PersistentState {
+    let activeIndex = activeSession.flatMap { active in
+      sessions.firstIndex(where: { $0.id == active.id })
+    }
+    return PersistentState(
+      version: PersistentState.currentVersion,
+      activeSessionIndex: activeIndex,
+      sessions: sessions.map { session in
+        let activeTabIndex = session.activeTab.flatMap { active in
+          session.tabs.firstIndex(where: { $0.id == active.id })
+        }
+        return PersistentSession(
+          name: session.name,
+          directory: session.directory,
+          sshCommand: session.sshCommand,
+          activeTabIndex: activeTabIndex,
+          tabs: session.tabs.map { tab in
+            let activePaneIndex = tab.activePane.flatMap { active in
+              tab.panes.firstIndex(where: { $0.id == active.id })
+            }
+            return PersistentTab(
+              customTitle: tab.customTitle,
+              directory: tab.directory,
+              activePaneIndex: activePaneIndex,
+              layout: persistLayoutNode(tab.layout.root)
+            )
+          }
+        )
+      }
+    )
+  }
+
+  func restore(from state: PersistentState) {
+    let fm = FileManager.default
+    let home = fm.homeDirectoryForCurrentUser
+
+    // TODO: createSession and MisttyTab.init each create a throwaway default
+    // tab+pane that gets replaced immediately. Add a restore-specific init path
+    // that skips the default children to avoid wasting IDs.
+    for persistedSession in state.sessions {
+      let dir =
+        fm.fileExists(atPath: persistedSession.directory.path)
+        ? persistedSession.directory : home
+      let session = createSession(name: persistedSession.name, directory: dir)
+      session.sshCommand = persistedSession.sshCommand
+
+      if !persistedSession.tabs.isEmpty {
+        var restoredTabs: [MisttyTab] = []
+
+        for persistedTab in persistedSession.tabs {
+          let tab = MisttyTab(
+            id: generateTabID(),
+            directory: persistedTab.directory,
+            paneIDGenerator: { [weak self] in self?.generatePaneID() ?? 0 }
+          )
+          tab.customTitle = persistedTab.customTitle
+
+          let (rootNode, panes) = restoreLayoutNode(persistedTab.layout, home: home)
+          tab.layout = PaneLayout(root: rootNode)
+          tab.replacePanes(panes)
+          tab.activePane =
+            persistedTab.activePaneIndex.flatMap { idx in
+              idx < panes.count ? panes[idx] : nil
+            } ?? panes.first
+
+          restoredTabs.append(tab)
+        }
+
+        session.replaceTabs(restoredTabs)
+        session.activeTab =
+          persistedSession.activeTabIndex.flatMap { idx in
+            idx < restoredTabs.count ? restoredTabs[idx] : nil
+          } ?? restoredTabs.first
+      }
+    }
+
+    activeSession =
+      state.activeSessionIndex.flatMap { idx in
+        idx < sessions.count ? sessions[idx] : nil
+      } ?? sessions.first
+  }
+
+  private func persistLayoutNode(_ node: PaneLayoutNode) -> PersistentLayoutNode {
+    switch node {
+    case .leaf(let pane):
+      return .leaf(
+        PersistentPane(
+          directory: pane.workingDirectory ?? pane.directory,
+          command: pane.command,
+          useCommandField: pane.useCommandField
+        ))
+    case .empty:
+      return .leaf(PersistentPane(directory: nil, command: nil, useCommandField: true))
+    case .split(let dir, let a, let b, let ratio):
+      return .split(dir, persistLayoutNode(a), persistLayoutNode(b), ratio)
+    }
+  }
+
+  private func restoreLayoutNode(_ node: PersistentLayoutNode, home: URL) -> (
+    PaneLayoutNode, [MisttyPane]
+  ) {
+    let fm = FileManager.default
+    switch node {
+    case .leaf(let persistedPane):
+      let pane = MisttyPane(id: generatePaneID())
+      let dir =
+        persistedPane.directory.flatMap { fm.fileExists(atPath: $0.path) ? $0 : home } ?? home
+      pane.directory = dir
+      pane.command = persistedPane.command
+      pane.useCommandField = persistedPane.useCommandField
+      return (.leaf(pane), [pane])
+    case .split(let direction, let left, let right, let ratio):
+      let (leftNode, leftPanes) = restoreLayoutNode(left, home: home)
+      let (rightNode, rightPanes) = restoreLayoutNode(right, home: home)
+      return (.split(direction, leftNode, rightNode, ratio), leftPanes + rightPanes)
+    }
+  }
 }

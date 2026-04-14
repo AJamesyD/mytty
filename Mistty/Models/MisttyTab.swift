@@ -84,4 +84,8 @@ final class MisttyTab: Identifiable {
     layout = PaneLayout(root: LayoutEngine.apply(standardLayout, to: currentPanes))
     panes = layout.leaves
   }
+
+  func replacePanes(_ newPanes: [MisttyPane]) {
+    panes = newPanes
+  }
 }
