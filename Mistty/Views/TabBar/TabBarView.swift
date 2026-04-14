@@ -7,13 +7,21 @@ struct TabBarView: View {
     HStack(spacing: 0) {
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 2) {
-          ForEach(session.tabs) { tab in
+          ForEach(Array(session.tabs.enumerated()), id: \.element.id) { index, tab in
             TabBarItem(
               tab: tab,
               isActive: session.activeTab?.id == tab.id,
               onSelect: { session.activeTab = tab },
               onClose: { session.closeTab(tab) }
             )
+            .draggable(String(tab.id))
+            .dropDestination(for: String.self) { droppedIDs, _ in
+              guard let idString = droppedIDs.first,
+                    let id = Int(idString)
+              else { return false }
+              session.moveTab(withID: id, toIndex: index)
+              return true
+            }
           }
         }
         .padding(.horizontal, 4)

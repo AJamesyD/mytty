@@ -52,6 +52,14 @@ final class MisttySession: Identifiable {
     if activeTab?.id == tab.id { activeTab = tabs.last }
   }
 
+  func moveTab(withID id: Int, toIndex destination: Int) {
+    guard let sourceIndex = tabs.firstIndex(where: { $0.id == id }),
+          sourceIndex != destination
+    else { return }
+    tabs.move(fromOffsets: IndexSet(integer: sourceIndex),
+              toOffset: destination > sourceIndex ? destination + 1 : destination)
+  }
+
   func togglePopup(definition: PopupDefinition) {
     // If popup already exists for this definition, toggle visibility
     if let existing = popups.first(where: { $0.definition.name == definition.name }) {
