@@ -6,7 +6,8 @@ enum WhichKeyAction {
   case command(label: String, action: @MainActor () -> Void)
 }
 
-struct WhichKeyBinding {
+struct WhichKeyBinding: Identifiable {
+  var id: Character { key }
   let key: Character
   let action: WhichKeyAction
 }

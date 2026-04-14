@@ -2,6 +2,10 @@ import Foundation
 import GhosttyKit
 import SwiftUI
 
+// TODO(2026-04-14): replace NotificationCenter menu commands with FocusedValue/focusedSceneValue
+// for type safety, auto-disable, and correct multi-window behavior.
+// See /tmp/ai-research-swift-best-practices.md section 6.
+
 @main
 struct MisttyApp: App {
   @State private var store = SessionStore()

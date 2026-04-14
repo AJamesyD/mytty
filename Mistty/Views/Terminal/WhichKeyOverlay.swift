@@ -14,7 +14,7 @@ struct WhichKeyOverlay: View {
         }
         ForEach(Array(chunked(bindings, size: 4).enumerated()), id: \.offset) { _, row in
           HStack(spacing: 14) {
-            ForEach(row, id: \.key) { binding in
+            ForEach(row) { binding in
               hintBadge(binding: binding)
             }
           }
