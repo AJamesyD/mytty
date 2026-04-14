@@ -32,6 +32,7 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 **Why first:** the app works but looks like a prototype. Every user's first impression is visual. These items are the difference between "interesting project" and "I could use this."
 
 - [x] Cmd+/- beep fix: add no-op menu commands so AppKit stops alerting (ghostty handles font size internally)
+- [x] Tab-completion beep fix: add `doCommand(by:)` override to TerminalSurfaceView so `interpretKeyEvents` selectors don't fall through to NSBeep (matches Ghostty's approach)
 - [x] Sidebar/terminal divider: 1px separator or subtle shadow between panels
 - [x] Tab active/inactive contrast: increase highlight difference
 - [x] Typography hierarchy: lighter weight or smaller size for sidebar labels vs terminal text
@@ -39,10 +40,11 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 - [x] Muted inactive sidebar text
 - [x] Sidebar truncation: tooltips on hover for truncated session names
 ### Cleanup gate (before remaining 1b work)
-- [ ] **Theme file extraction**: create `MisttyTheme.swift` with semantic color tokens. Migrate all hardcoded `Color.white.opacity(X)` / `Color.black.opacity(X)` calls across views to use theme tokens. Pure refactor, no visual change. This is the abstraction boundary that principle #8 demands.
+- [x] **Theme file extraction**: `MisttyTheme.swift` with 25 semantic color tokens. All hardcoded color values migrated across 12 view files. Spec: `/tmp/ai-design-sidebar-visual-rework.md`.
 
-### Remaining 1b features (require theme file)
-- [ ] Sidebar visual rework: session cards, spacing, accent borders, pane count indicators. Spec required: `/tmp/ai-research-sidebar-patterns.md` has prior art, needs a concrete spec before implementation.
+### Remaining 1b features
+- [x] Sidebar visual rework: accent bar on active session (via `listRowBackground`), tab count badge, pane count indicator, active tab highlight, increased indentation, session spacing. Spec: `/tmp/ai-design-sidebar-visual-rework.md`. Future work: per-session colors (needs config system), hover close buttons, pane sub-rows.
+- [ ] Session/tab renaming. Spec required: double-click rename in sidebar, right-click context menu, CLI (`mistty-cli session rename`), OSC 0/1/2 title sequences. Prior art: Kitty's `tab_title_template` with `{title}`, `{index}`, `{layout_name}` variables. Touches sidebar, tab bar, CLI, and OSC handling. Consider scoping to sidebar + tab bar rename first, OSC integration with Phase 2.
 - [ ] Tab drag-and-drop reordering. Spec required.
 - [ ] Dropdown / Quake mode. Spec required: NSPanel, global hotkey, animation, interaction patterns.
 
@@ -276,11 +278,13 @@ Completed:
   Phase 0 (cleanup) ✓
   Phase 1a (which-key) ✓
   Phase 1b partial (beep fix, divider, tab contrast, typography, pane dim, sidebar mute) ✓
+  Phase 1b cleanup gate: theme extraction ✓
+  Phase 1b: sidebar visual rework ✓
+  Phase 1b: tab-completion beep fix (doCommand override) ✓
 
 Sequential path (solo developer, no parallel phases):
-  cleanup: theme extraction
-    ──> 1b remaining (sidebar rework, drag-drop, dropdown)
-      ──> cleanup: FocusedValue migration + ContentView extraction
+  1b remaining (session/tab rename, drag-drop, dropdown)
+    ──> cleanup: FocusedValue migration + ContentView extraction
         ──> 1c (auto-hide)
           ──> cleanup: lint/test/manager review
             ──> Phase 2 (contextual sidebar + OSC + shell integration)
