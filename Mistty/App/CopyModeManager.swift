@@ -10,6 +10,7 @@ final class CopyModeManager {
   var onNeedExitWindowMode: () -> Void = {}
 
   func enter(store: SessionStore) {
+    guard !isActive else { return }
     guard let tab = store.activeSession?.activeTab else { return }
     if tab.isWindowModeActive {
       onNeedExitWindowMode()
@@ -125,20 +126,21 @@ final class CopyModeManager {
         case .scroll(let deltaRows):
           self.scrollViewport(&state, delta: deltaRows)
         case .needsContinuation:
-          let continuationActions = state.continuePendingMotion(lineReader: lineReader)
-          for contAction in continuationActions {
-            switch contAction {
-            case .scroll(let delta):
-              self.scrollViewport(&state, delta: delta)
-            case .needsContinuation:
-              let more = state.continuePendingMotion(lineReader: lineReader)
-              for a in more {
-                if case .scroll(let d) = a {
-                  self.scrollViewport(&state, delta: d)
-                }
+          var pending = true
+          var iterations = 0
+          while pending && iterations < 100 {
+            iterations += 1
+            pending = false
+            let continuationActions = state.continuePendingMotion(lineReader: lineReader)
+            for contAction in continuationActions {
+              switch contAction {
+              case .scroll(let delta):
+                self.scrollViewport(&state, delta: delta)
+              case .needsContinuation:
+                pending = true
+              default:
+                break
               }
-            default:
-              break
             }
           }
         }
