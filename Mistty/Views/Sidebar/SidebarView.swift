@@ -84,7 +84,10 @@ struct SessionRowView: View {
               .font(.system(size: 12))
               .lineLimit(1)
               .help(tab.displayTitle)
-              .onTapGesture(count: 2) { editText = tab.displayTitle; editingTabID = tab.id }
+              .onTapGesture(count: 2) {
+                editText = tab.displayTitle
+                editingTabID = tab.id
+              }
           }
           if tab.panes.count >= 2 {
             Image(systemName: "rectangle.split.2x1")
@@ -108,7 +111,10 @@ struct SessionRowView: View {
         )
         .contentShape(Rectangle())
         .contextMenu {
-          Button("Rename Tab") { editText = tab.displayTitle; editingTabID = tab.id }
+          Button("Rename Tab") {
+            editText = tab.displayTitle
+            editingTabID = tab.id
+          }
           Button("Close Tab") {
             session.closeTab(tab)
             if session.tabs.isEmpty { store.closeSession(session) }
@@ -144,7 +150,10 @@ struct SessionRowView: View {
             .foregroundStyle(isActive ? .primary : .secondary)
             .lineLimit(1)
             .help(session.name)
-            .onTapGesture(count: 2) { editText = session.name; isEditingSession = true }
+            .onTapGesture(count: 2) {
+              editText = session.name
+              isEditingSession = true
+            }
         }
         if !isExpanded || session.tabs.count >= 2 {
           Text("\(session.tabs.count)")
@@ -161,7 +170,10 @@ struct SessionRowView: View {
       }
       .contentShape(Rectangle())
       .contextMenu {
-        Button("Rename Session") { editText = session.name; isEditingSession = true }
+        Button("Rename Session") {
+          editText = session.name
+          isEditingSession = true
+        }
         Button("Close Session") { store.closeSession(session) }
       }
       .onTapGesture { store.activeSession = session }

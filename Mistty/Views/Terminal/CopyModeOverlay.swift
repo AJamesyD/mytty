@@ -64,7 +64,8 @@ struct CopyModeOverlay: View {
               .foregroundStyle(MisttyTheme.overlayText)
               .padding(.horizontal, 8)
               .padding(.vertical, 2)
-              .background(MisttyTheme.modeIndicatorBackground, in: RoundedRectangle(cornerRadius: 4))
+              .background(
+                MisttyTheme.modeIndicatorBackground, in: RoundedRectangle(cornerRadius: 4))
           }
           Spacer()
         }

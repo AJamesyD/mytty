@@ -17,7 +17,7 @@ struct TabBarView: View {
             .draggable(String(tab.id))
             .dropDestination(for: String.self) { droppedIDs, _ in
               guard let idString = droppedIDs.first,
-                    let id = Int(idString)
+                let id = Int(idString)
               else { return false }
               session.moveTab(withID: id, toIndex: index)
               return true
@@ -96,7 +96,10 @@ struct TabBarItem: View {
     .background(isActive ? MisttyTheme.activeTabBackground : MisttyTheme.inactiveTabBackground)
     .cornerRadius(6)
     .contextMenu {
-      Button("Rename Tab") { editText = tab.displayTitle; isEditing = true }
+      Button("Rename Tab") {
+        editText = tab.displayTitle
+        isEditing = true
+      }
       Button("Close Tab") { onClose() }
     }
     .onTapGesture { onSelect() }

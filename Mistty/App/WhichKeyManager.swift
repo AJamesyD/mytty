@@ -100,7 +100,8 @@ final class WhichKeyManager {
     }
   }
 
-  static func defaultBindings(store: SessionStore, commands: TerminalCommands) -> [WhichKeyBinding] {
+  static func defaultBindings(store: SessionStore, commands: TerminalCommands) -> [WhichKeyBinding]
+  {
     [
       WhichKeyBinding(
         key: "w",

@@ -54,10 +54,11 @@ final class MisttySession: Identifiable {
 
   func moveTab(withID id: Int, toIndex destination: Int) {
     guard let sourceIndex = tabs.firstIndex(where: { $0.id == id }),
-          sourceIndex != destination
+      sourceIndex != destination
     else { return }
-    tabs.move(fromOffsets: IndexSet(integer: sourceIndex),
-              toOffset: destination > sourceIndex ? destination + 1 : destination)
+    tabs.move(
+      fromOffsets: IndexSet(integer: sourceIndex),
+      toOffset: destination > sourceIndex ? destination + 1 : destination)
   }
 
   func togglePopup(definition: PopupDefinition) {
