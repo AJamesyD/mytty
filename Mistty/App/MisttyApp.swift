@@ -100,6 +100,10 @@ struct MisttyApp: App {
         }
         .keyboardShortcut("r", modifiers: [.command, .shift])
 
+        Button("Rename Session") {
+          NotificationCenter.default.post(name: .misttyRenameSession, object: nil)
+        }
+
         Divider()
 
         ForEach(1...9, id: \.self) { index in
@@ -196,6 +200,7 @@ extension Notification.Name {
   static let misttyClosePane = Notification.Name("misttyClosePane")
   static let misttyCloseTab = Notification.Name("misttyCloseTab")
   static let misttyRenameTab = Notification.Name("misttyRenameTab")
+  static let misttyRenameSession = Notification.Name("misttyRenameSession")
   static let misttyWindowMode = Notification.Name("misttyWindowMode")
   static let misttyCopyMode = Notification.Name("misttyCopyMode")
   static let misttyPopupToggle = Notification.Name("misttyPopupToggle")

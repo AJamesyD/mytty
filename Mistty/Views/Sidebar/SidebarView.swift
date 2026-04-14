@@ -45,6 +45,10 @@ struct SessionRowView: View {
   @Bindable var session: MisttySession
   @Bindable var store: SessionStore
   @State private var isExpanded = true
+  @State private var isEditingSession = false
+  @State private var editingTabID: Int? = nil
+  @State private var editText = ""
+  @FocusState private var editFocused: Bool
 
   var isActive: Bool { store.activeSession?.id == session.id }
 
@@ -58,10 +62,29 @@ struct SessionRowView: View {
               .fill(MisttyTheme.bellIndicator)
               .frame(width: 6, height: 6)
           }
-          Text(tab.displayTitle)
+          if editingTabID == tab.id {
+            TextField(
+              "Tab name", text: $editText,
+              onCommit: {
+                tab.customTitle = editText.isEmpty ? nil : editText
+                editingTabID = nil
+              }
+            )
+            .textFieldStyle(.plain)
             .font(.system(size: 12))
-            .lineLimit(1)
-            .help(tab.displayTitle)
+            .focused($editFocused)
+            .onExitCommand { editingTabID = nil }
+            .onAppear { editFocused = true }
+            .onChange(of: editFocused) {
+              if !editFocused { editingTabID = nil }
+            }
+          } else {
+            Text(tab.displayTitle)
+              .font(.system(size: 12))
+              .lineLimit(1)
+              .help(tab.displayTitle)
+              .onTapGesture(count: 2) { editText = tab.displayTitle; editingTabID = tab.id }
+          }
           if tab.panes.count >= 2 {
             Image(systemName: "rectangle.split.2x1")
               .font(.system(size: 9))
@@ -81,6 +104,13 @@ struct SessionRowView: View {
           in: RoundedRectangle(cornerRadius: 4)
         )
         .contentShape(Rectangle())
+        .contextMenu {
+          Button("Rename Tab") { editText = tab.displayTitle; editingTabID = tab.id }
+          Button("Close Tab") {
+            session.closeTab(tab)
+            if session.tabs.isEmpty { store.closeSession(session) }
+          }
+        }
         .onTapGesture {
           store.activeSession = session
           session.activeTab = tab
@@ -88,12 +118,31 @@ struct SessionRowView: View {
       }
     } label: {
       HStack(spacing: 6) {
-        Text(session.name)
+        if isEditingSession {
+          TextField(
+            "Session name", text: $editText,
+            onCommit: {
+              session.name = editText.isEmpty ? session.directory.lastPathComponent : editText
+              isEditingSession = false
+            }
+          )
+          .textFieldStyle(.plain)
           .font(.system(size: 13))
-          .fontWeight(isActive ? .semibold : .regular)
-          .foregroundStyle(isActive ? .primary : .secondary)
-          .lineLimit(1)
-          .help(session.name)
+          .focused($editFocused)
+          .onExitCommand { isEditingSession = false }
+          .onAppear { editFocused = true }
+          .onChange(of: editFocused) {
+            if !editFocused { isEditingSession = false }
+          }
+        } else {
+          Text(session.name)
+            .font(.system(size: 13))
+            .fontWeight(isActive ? .semibold : .regular)
+            .foregroundStyle(isActive ? .primary : .secondary)
+            .lineLimit(1)
+            .help(session.name)
+            .onTapGesture(count: 2) { editText = session.name; isEditingSession = true }
+        }
         if !isExpanded || session.tabs.count >= 2 {
           Text("\(session.tabs.count)")
             .font(.system(size: 10, design: .monospaced))
@@ -107,6 +156,10 @@ struct SessionRowView: View {
         }
       }
       .contentShape(Rectangle())
+      .contextMenu {
+        Button("Rename Session") { editText = session.name; isEditingSession = true }
+        Button("Close Session") { store.closeSession(session) }
+      }
       .onTapGesture { store.activeSession = session }
     }
     .listRowBackground(
@@ -118,5 +171,11 @@ struct SessionRowView: View {
       }
     )
     .padding(.top, 4)
+    .onReceive(NotificationCenter.default.publisher(for: .misttyRenameSession)) { _ in
+      if isActive {
+        editText = session.name
+        isEditingSession = true
+      }
+    }
   }
 }

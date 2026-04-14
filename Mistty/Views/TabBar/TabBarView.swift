@@ -61,7 +61,11 @@ struct TabBarItem: View {
         .font(.system(size: 12))
         .focused($editFocused)
         .frame(maxWidth: 120)
+        .onExitCommand { isEditing = false }
         .onAppear { editFocused = true }
+        .onChange(of: editFocused) {
+          if !editFocused && isEditing { isEditing = false }
+        }
       } else {
         Text(tab.displayTitle)
           .font(.system(size: 12))
@@ -83,6 +87,10 @@ struct TabBarItem: View {
     .padding(.vertical, 6)
     .background(isActive ? MisttyTheme.activeTabBackground : MisttyTheme.inactiveTabBackground)
     .cornerRadius(6)
+    .contextMenu {
+      Button("Rename Tab") { editText = tab.displayTitle; isEditing = true }
+      Button("Close Tab") { onClose() }
+    }
     .onTapGesture { onSelect() }
     .onHover { isHovered = $0 }
     .onReceive(NotificationCenter.default.publisher(for: .misttyRenameTab)) { _ in
