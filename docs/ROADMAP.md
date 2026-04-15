@@ -1,7 +1,7 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 16
+Iteration: 18
 
 ## Principles
 
@@ -159,10 +159,10 @@ Save session/tab/pane tree to disk on quit. Restore layout on launch (shells res
 ---
 
 ### Cleanup gate (before Phase 3)
-- [ ] `/refactor` **Event handler extraction**: extract NSEvent monitor closure bodies into testable `handleKeyDown(_ event: NSEvent) -> NSEvent?` methods on each manager (WindowMode, CopyMode, WhichKey, PaneNavigation, and Phase 2's attention coordinator). Monitor becomes a one-liner that delegates. Tests call the method directly with `NSEvent.keyEvent(with:...)`. Research: `/tmp/ai-research-nsevent-testing.md`.
-- [ ] `/refactor` **IPC audit**: review existing IPCService.swift and IPCListener.swift. Use `/refactor` to evaluate: understand current IPC mechanism before designing socket API replacement. Document what works, what's fragile, what the socket API replaces vs extends.
-- [ ] `/cleanup` **OSC action handler test coverage**: ensure Phase 2a action handlers and Phase 2b notification/git logic have tests covering all supported actions before building socket API on top.
-- [ ] `/cleanup` **IPC parity check**: verify all stable noun+verb operations from Phases 1b, 2a, and 2b have IPC methods per Principle 10. Backfill any gaps (session rename, tab move, etc.).
+- [x] `/refactor` **Event handler extraction**: extract NSEvent monitor closure bodies into testable `handleKeyDown(_ event: NSEvent) -> NSEvent?` methods on each manager (WindowMode, CopyMode, WhichKey, PaneNavigation, and Phase 2's attention coordinator). Monitor becomes a one-liner that delegates. Tests call the method directly with `NSEvent.keyEvent(with:...)`. Research: `/tmp/ai-research-nsevent-testing.md`. Done: `d8e7336`.
+- [x] `/refactor` **IPC audit**: review existing IPCService.swift and IPCListener.swift. Use `/refactor` to evaluate: understand current IPC mechanism before designing socket API replacement. Document what works, what's fragile, what the socket API replaces vs extends. Done: `/tmp/ai-research-ipc-audit.md`.
+- [x] `/cleanup` **OSC action handler test coverage**: ensure Phase 2a action handlers and Phase 2b notification/git logic have tests covering all supported actions before building socket API on top. Done: `5a51875`.
+- [x] `/cleanup` **IPC parity check**: verify all stable noun+verb operations from Phases 1b, 2a, and 2b have IPC methods per Principle 10. Backfill any gaps (session rename, tab move, etc.). Done: `c071d82` (added `renameSession`, `moveTab`).
 
 ## Phase 3: Platform
 
@@ -382,7 +382,7 @@ Parallel track (completed):
   Phase 2c (basic session persistence) ✓
 
 After Phase 2b:
-  ──> /refactor + /cleanup: event handler extraction, IPC audit, OSC tests, IPC parity
+  ──> /refactor + /cleanup: event handler extraction, IPC audit, OSC tests, IPC parity ✓
     ──> /spec: Phase 3a (socket API)
       ──> Phase 3a (socket API + CLI)
         ──> Phase 3b (neovim nav)
