@@ -52,13 +52,15 @@ struct TabBarItem: View {
   var body: some View {
     HStack(spacing: 4) {
       if tab.hasFailedCommand {
-        Image(systemName: "xmark.circle.fill")
-          .font(.system(size: 10))
-          .foregroundStyle(MisttyTheme.commandFailedIndicator)
+        Circle()
+          .fill(MisttyTheme.commandFailedIndicator)
+          .frame(width: 6, height: 6)
+          .shadow(color: MisttyTheme.commandFailedIndicator, radius: 3)
       } else if tab.hasBell {
-        Image(systemName: "bell.fill")
-          .font(.system(size: 10))
-          .foregroundStyle(.red)
+        Circle()
+          .fill(.red)
+          .frame(width: 6, height: 6)
+          .shadow(color: .red, radius: 3)
       }
 
       if isEditing {
@@ -99,6 +101,13 @@ struct TabBarItem: View {
     .padding(.vertical, 6)
     .background(isActive ? MisttyTheme.activeTabBackground : MisttyTheme.inactiveTabBackground)
     .cornerRadius(6)
+    .overlay(alignment: .bottom) {
+      if isActive {
+        MisttyTheme.sessionAccent
+          .frame(height: 2)
+          .clipShape(RoundedRectangle(cornerRadius: 1))
+      }
+    }
     .contextMenu {
       Button("Rename Tab") {
         editText = tab.displayTitle

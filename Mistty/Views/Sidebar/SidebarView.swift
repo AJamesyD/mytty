@@ -58,14 +58,16 @@ struct SessionRowView: View {
         let isActiveTab = isActive && session.activeTab?.id == tab.id
         HStack(spacing: 4) {
           if tab.hasFailedCommand {
-            Image(systemName: "xmark.circle.fill")
-              .font(.system(size: 10))
-              .foregroundStyle(MisttyTheme.commandFailedIndicator)
+            Circle()
+              .fill(MisttyTheme.commandFailedIndicator)
+              .frame(width: 6, height: 6)
+              .shadow(color: MisttyTheme.commandFailedIndicator, radius: 3)
               .accessibilityLabel("Command failed")
           } else if tab.hasBell {
-            Image(systemName: "bell.fill")
-              .font(.system(size: 10))
-              .foregroundStyle(.red)
+            Circle()
+              .fill(.red)
+              .frame(width: 6, height: 6)
+              .shadow(color: .red, radius: 3)
               .accessibilityLabel("Bell notification")
           }
           if editingTabID == tab.id {
