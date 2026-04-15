@@ -186,8 +186,8 @@ Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes via smart-spli
 ---
 
 ### Cleanup gate (before Phase 4)
-- [ ] `/cleanup` **Config audit**: catalog every hardcoded value that users have wanted to change during daily driving (keybindings, colors, panel modes, hotkeys, tab bar visibility mode). This becomes the requirements list for the config system spec.
-- [ ] `/refactor` **MisttyTheme review**: by this point the theme file has been in use for several phases. Use `/refactor` to evaluate: is the token set complete? Are any tokens unused? Is the abstraction right for supporting multiple preset themes and the generative color system from the research?
+- [x] `/cleanup` **Config audit**: catalog every hardcoded value that users have wanted to change during daily driving (keybindings, colors, panel modes, hotkeys, tab bar visibility mode). Done 2026-04-15: `/tmp/ai-research-config-audit.md`. ~50 keybindings, 7 raw colors (fixed), ~15 behavior values.
+- [x] `/refactor` **MisttyTheme review**: 29 tokens, all raw colors in views extracted. 5 new tokens added (bellGlow, commandSuccessIndicator, sessionManagerShadow, windowModeHUD, copyModeKeyBadge). Zero raw Color literals remain in view files.
 
 ## Phase 4: Configuration + Persistence
 
