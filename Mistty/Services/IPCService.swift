@@ -3,17 +3,7 @@ import Foundation
 import GhosttyKit
 import MisttyShared
 
-/// Wraps a non-Sendable reply closure so it can be captured by a @MainActor Task.
-/// Reply handlers are thread-safe by design — they just aren't annotated as @Sendable.
-private struct Reply: @unchecked Sendable {
-  let handler: (Data?, Error?) -> Void
-
-  func callAsFunction(_ data: Data?, _ error: Error?) {
-    handler(data, error)
-  }
-}
-
-final class MisttyIPCService: MisttyServiceProtocol, Sendable {
+@MainActor final class MisttyIPCService: MisttyServiceProtocol {
   private let store: SessionStore
 
   init(store: SessionStore) {
@@ -26,8 +16,8 @@ final class MisttyIPCService: MisttyServiceProtocol, Sendable {
     try? JSONEncoder().encode(value)
   }
 
-  private func notImplemented(_ reply: @escaping (Data?, Error?) -> Void) {
-    reply(nil, MisttyIPC.error(.operationFailed, "Not implemented"))
+  private func notImplemented() throws -> Data {
+    throw MisttyIPC.error(.operationFailed, "Not implemented")
   }
 
   @MainActor private func sessionResponse(_ session: MisttySession) -> SessionResponse {
@@ -66,508 +56,374 @@ final class MisttyIPCService: MisttyServiceProtocol, Sendable {
     )
   }
 
+  private func encodeOrThrow<T: Encodable>(_ value: T) throws -> Data {
+    guard let data = encode(value) else {
+      throw MisttyIPC.error(.operationFailed, "Encoding failed")
+    }
+    return data
+  }
+
   // MARK: - Sessions
 
-  func createSession(
-    name: String, directory: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void
-  ) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      let dir = URL(
-        fileURLWithPath: directory ?? FileManager.default.homeDirectoryForCurrentUser.path)
-      let session = self.store.createSession(name: name, directory: dir, exec: exec)
-      reply(self.encode(self.sessionResponse(session)), nil)
-    }
+  func createSession(name: String, directory: String?, exec: String?) async throws -> Data {
+    let dir = URL(
+      fileURLWithPath: directory ?? FileManager.default.homeDirectoryForCurrentUser.path)
+    let session = store.createSession(name: name, directory: dir, exec: exec)
+    return try encodeOrThrow(sessionResponse(session))
   }
 
-  func listSessions(reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      let responses = self.store.sessions.map { self.sessionResponse($0) }
-      reply(self.encode(responses), nil)
-    }
+  func listSessions() async throws -> Data {
+    let responses = store.sessions.map { sessionResponse($0) }
+    return try encodeOrThrow(responses)
   }
 
-  func getSession(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let session = self.store.session(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(id) not found"))
-        return
-      }
-      reply(self.encode(self.sessionResponse(session)), nil)
+  func getSession(id: Int) async throws -> Data {
+    guard let session = store.session(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Session \(id) not found")
     }
+    return try encodeOrThrow(sessionResponse(session))
   }
 
-  func closeSession(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let session = self.store.session(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(id) not found"))
-        return
-      }
-      self.store.closeSession(session)
-      reply(self.encode([String: String]()), nil)
+  func closeSession(id: Int) async throws -> Data {
+    guard let session = store.session(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Session \(id) not found")
     }
+    store.closeSession(session)
+    return try encodeOrThrow([String: String]())
   }
 
-  func renameSession(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let session = self.store.session(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(id) not found"))
-        return
-      }
-      session.name = name
-      reply(self.encode(self.sessionResponse(session)), nil)
+  func renameSession(id: Int, name: String) async throws -> Data {
+    guard let session = store.session(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Session \(id) not found")
     }
+    session.name = name
+    return try encodeOrThrow(sessionResponse(session))
   }
 
   // MARK: - Tabs
 
-  func createTab(
-    sessionId: Int, name: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void
-  ) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let session = self.store.session(byId: sessionId) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found"))
-        return
-      }
-      session.addTab(exec: exec)
-      guard let tab = session.tabs.last else {
-        reply(nil, MisttyIPC.error(.operationFailed, "Failed to create tab"))
-        return
-      }
-      if let name { tab.customTitle = name }
-      reply(self.encode(self.tabResponse(tab)), nil)
+  func createTab(sessionId: Int, name: String?, exec: String?) async throws -> Data {
+    guard let session = store.session(byId: sessionId) else {
+      throw MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found")
     }
+    session.addTab(exec: exec)
+    guard let tab = session.tabs.last else {
+      throw MisttyIPC.error(.operationFailed, "Failed to create tab")
+    }
+    if let name { tab.customTitle = name }
+    return try encodeOrThrow(tabResponse(tab))
   }
 
-  func listTabs(sessionId: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let session = self.store.session(byId: sessionId) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found"))
-        return
-      }
-      let responses = session.tabs.map { self.tabResponse($0) }
-      reply(self.encode(responses), nil)
+  func listTabs(sessionId: Int) async throws -> Data {
+    guard let session = store.session(byId: sessionId) else {
+      throw MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found")
     }
+    let responses = session.tabs.map { tabResponse($0) }
+    return try encodeOrThrow(responses)
   }
 
-  func getTab(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (_, tab) = self.store.tab(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Tab \(id) not found"))
-        return
-      }
-      reply(self.encode(self.tabResponse(tab)), nil)
+  func getTab(id: Int) async throws -> Data {
+    guard let (_, tab) = store.tab(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Tab \(id) not found")
     }
+    return try encodeOrThrow(tabResponse(tab))
   }
 
-  func closeTab(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (session, tab) = self.store.tab(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Tab \(id) not found"))
-        return
-      }
-      session.closeTab(tab)
-      reply(self.encode([String: String]()), nil)
+  func closeTab(id: Int) async throws -> Data {
+    guard let (session, tab) = store.tab(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Tab \(id) not found")
     }
+    session.closeTab(tab)
+    return try encodeOrThrow([String: String]())
   }
 
-  func renameTab(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (_, tab) = self.store.tab(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Tab \(id) not found"))
-        return
-      }
-      tab.customTitle = name
-      reply(self.encode(self.tabResponse(tab)), nil)
+  func renameTab(id: Int, name: String) async throws -> Data {
+    guard let (_, tab) = store.tab(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Tab \(id) not found")
     }
+    tab.customTitle = name
+    return try encodeOrThrow(tabResponse(tab))
   }
 
-  func moveTab(id: Int, toIndex: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (session, tab) = self.store.tab(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Tab \(id) not found"))
-        return
-      }
-      session.moveTab(withID: id, toIndex: toIndex)
-      reply(self.encode(self.tabResponse(tab)), nil)
+  func moveTab(id: Int, toIndex: Int) async throws -> Data {
+    guard let (session, tab) = store.tab(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Tab \(id) not found")
     }
+    session.moveTab(withID: id, toIndex: toIndex)
+    return try encodeOrThrow(tabResponse(tab))
   }
 
   // MARK: - Panes
 
-  func createPane(tabId: Int, direction: String?, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (_, tab) = self.store.tab(byId: tabId) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Tab \(tabId) not found"))
-        return
-      }
-      let splitDir: SplitDirection = direction == "horizontal" ? .horizontal : .vertical
-      tab.splitActivePane(direction: splitDir)
-      guard let newPane = tab.panes.last else {
-        reply(nil, MisttyIPC.error(.operationFailed, "Failed to create pane"))
-        return
-      }
-      reply(self.encode(self.paneResponse(newPane)), nil)
+  func createPane(tabId: Int, direction: String?) async throws -> Data {
+    guard let (_, tab) = store.tab(byId: tabId) else {
+      throw MisttyIPC.error(.entityNotFound, "Tab \(tabId) not found")
     }
+    let splitDir: SplitDirection = direction == "horizontal" ? .horizontal : .vertical
+    tab.splitActivePane(direction: splitDir)
+    guard let newPane = tab.panes.last else {
+      throw MisttyIPC.error(.operationFailed, "Failed to create pane")
+    }
+    return try encodeOrThrow(paneResponse(newPane))
   }
 
-  func listPanes(tabId: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (_, tab) = self.store.tab(byId: tabId) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Tab \(tabId) not found"))
-        return
-      }
-      let responses = tab.panes.map { self.paneResponse($0) }
-      reply(self.encode(responses), nil)
+  func listPanes(tabId: Int) async throws -> Data {
+    guard let (_, tab) = store.tab(byId: tabId) else {
+      throw MisttyIPC.error(.entityNotFound, "Tab \(tabId) not found")
     }
+    let responses = tab.panes.map { paneResponse($0) }
+    return try encodeOrThrow(responses)
   }
 
-  func getPane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (_, _, pane) = self.store.pane(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Pane \(id) not found"))
-        return
-      }
-      reply(self.encode(self.paneResponse(pane)), nil)
+  func getPane(id: Int) async throws -> Data {
+    guard let (_, _, pane) = store.pane(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Pane \(id) not found")
     }
+    return try encodeOrThrow(paneResponse(pane))
   }
 
-  func closePane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (_, tab, pane) = self.store.pane(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Pane \(id) not found"))
-        return
-      }
-      tab.closePane(pane)
-      reply(self.encode([String: String]()), nil)
+  func closePane(id: Int) async throws -> Data {
+    guard let (_, tab, pane) = store.pane(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Pane \(id) not found")
     }
+    tab.closePane(pane)
+    return try encodeOrThrow([String: String]())
   }
 
-  func focusPane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (session, tab, pane) = self.store.pane(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Pane \(id) not found"))
-        return
-      }
-      self.store.activeSession = session
-      session.activeTab = tab
-      tab.activePane = pane
-      reply(self.encode(self.paneResponse(pane)), nil)
+  func focusPane(id: Int) async throws -> Data {
+    guard let (session, tab, pane) = store.pane(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Pane \(id) not found")
     }
+    store.activeSession = session
+    session.activeTab = tab
+    tab.activePane = pane
+    return try encodeOrThrow(paneResponse(pane))
   }
 
-  func focusPaneByDirection(
-    direction: String, sessionId: Int, reply: @escaping (Data?, Error?) -> Void
-  ) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      let session: MisttySession?
-      if sessionId == 0 {
-        session = self.store.activeSession
-      } else {
-        session = self.store.session(byId: sessionId)
-      }
-      guard let session else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session not found"))
-        return
-      }
-      guard let tab = session.activeTab,
-        let pane = tab.activePane
-      else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "No active pane"))
-        return
-      }
-
-      let navDirection: NavigationDirection
-      switch direction {
-      case "left": navDirection = .left
-      case "right": navDirection = .right
-      case "up": navDirection = .up
-      case "down": navDirection = .down
-      default:
-        reply(
-          nil,
-          MisttyIPC.error(
-            .invalidArgument, "Invalid direction: \(direction). Use left, right, up, or down"))
-        return
-      }
-
-      guard let target = tab.layout.adjacentPane(from: pane, direction: navDirection) else {
-        reply(nil, MisttyIPC.error(.operationFailed, "No pane in direction \(direction)"))
-        return
-      }
-
-      tab.activePane = target
-      reply(self.encode(self.paneResponse(target)), nil)
+  func focusPaneByDirection(direction: String, sessionId: Int) async throws -> Data {
+    let session: MisttySession?
+    if sessionId == 0 {
+      session = store.activeSession
+    } else {
+      session = store.session(byId: sessionId)
     }
+    guard let session else {
+      throw MisttyIPC.error(.entityNotFound, "Session not found")
+    }
+    guard let tab = session.activeTab,
+      let pane = tab.activePane
+    else {
+      throw MisttyIPC.error(.entityNotFound, "No active pane")
+    }
+
+    let navDirection: NavigationDirection
+    switch direction {
+    case "left": navDirection = .left
+    case "right": navDirection = .right
+    case "up": navDirection = .up
+    case "down": navDirection = .down
+    default:
+      throw MisttyIPC.error(
+        .invalidArgument, "Invalid direction: \(direction). Use left, right, up, or down")
+    }
+
+    guard let target = tab.layout.adjacentPane(from: pane, direction: navDirection) else {
+      throw MisttyIPC.error(.operationFailed, "No pane in direction \(direction)")
+    }
+
+    tab.activePane = target
+    return try encodeOrThrow(paneResponse(target))
   }
 
-  func resizePane(id: Int, direction: String, amount: Int, reply: @escaping (Data?, Error?) -> Void)
-  {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (_, tab, pane) = self.store.pane(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Pane \(id) not found"))
-        return
-      }
-      let delta = CGFloat(amount) / 100.0
-      let splitDir: SplitDirection?
-      let sign: CGFloat
-      switch direction {
-      case "left":
-        splitDir = .horizontal
-        sign = -1.0
-      case "right":
-        splitDir = .horizontal
-        sign = 1.0
-      case "up":
-        splitDir = .vertical
-        sign = -1.0
-      case "down":
-        splitDir = .vertical
-        sign = 1.0
-      default:
-        reply(
-          nil,
-          MisttyIPC.error(
-            .invalidArgument, "Invalid direction: \(direction). Use left, right, up, or down"))
-        return
-      }
-      tab.layout.resizeSplit(containing: pane, delta: delta * sign, along: splitDir)
-      reply(Data("{}".utf8), nil)
+  func resizePane(id: Int, direction: String, amount: Int) async throws -> Data {
+    guard let (_, tab, pane) = store.pane(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Pane \(id) not found")
     }
+    let delta = CGFloat(amount) / 100.0
+    let splitDir: SplitDirection?
+    let sign: CGFloat
+    switch direction {
+    case "left":
+      splitDir = .horizontal
+      sign = -1.0
+    case "right":
+      splitDir = .horizontal
+      sign = 1.0
+    case "up":
+      splitDir = .vertical
+      sign = -1.0
+    case "down":
+      splitDir = .vertical
+      sign = 1.0
+    default:
+      throw MisttyIPC.error(
+        .invalidArgument, "Invalid direction: \(direction). Use left, right, up, or down")
+    }
+    tab.layout.resizeSplit(containing: pane, delta: delta * sign, along: splitDir)
+    return Data("{}".utf8)
   }
 
-  func activePane(reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (_, _, pane) = self.store.activePaneInfo() else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "No active pane"))
-        return
-      }
-      reply(self.encode(self.paneResponse(pane)), nil)
+  func activePane() async throws -> Data {
+    guard let (_, _, pane) = store.activePaneInfo() else {
+      throw MisttyIPC.error(.entityNotFound, "No active pane")
     }
+    return try encodeOrThrow(paneResponse(pane))
   }
 
-  func sendKeys(paneId: Int, keys: String, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor [store] in
-      let targetPane: MisttyPane?
-      if paneId == 0 {
-        targetPane = store.activePaneInfo()?.pane
-      } else {
-        targetPane = store.pane(byId: paneId)?.pane
-      }
-      guard let pane = targetPane else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Pane \(paneId) not found"))
-        return
-      }
-      let view = pane.surfaceView
-      guard let surface = view.surface else {
-        reply(nil, MisttyIPC.error(.operationFailed, "Pane has no active surface"))
-        return
-      }
-      keys.withCString { ptr in
-        ghostty_surface_text(surface, ptr, UInt(keys.utf8.count))
-      }
-      reply(self.encode([String: String]()), nil)
+  func sendKeys(paneId: Int, keys: String) async throws -> Data {
+    let targetPane: MisttyPane?
+    if paneId == 0 {
+      targetPane = store.activePaneInfo()?.pane
+    } else {
+      targetPane = store.pane(byId: paneId)?.pane
     }
+    guard let pane = targetPane else {
+      throw MisttyIPC.error(.entityNotFound, "Pane \(paneId) not found")
+    }
+    let view = pane.surfaceView
+    guard let surface = view.surface else {
+      throw MisttyIPC.error(.operationFailed, "Pane has no active surface")
+    }
+    keys.withCString { ptr in
+      ghostty_surface_text(surface, ptr, UInt(keys.utf8.count))
+    }
+    return try encodeOrThrow([String: String]())
   }
 
-  func runCommand(paneId: Int, command: String, reply: @escaping (Data?, Error?) -> Void) {
-    sendKeys(paneId: paneId, keys: command + "\n", reply: reply)
+  func runCommand(paneId: Int, command: String) async throws -> Data {
+    try await sendKeys(paneId: paneId, keys: command + "\n")
   }
 
-  func getText(paneId: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      let targetPane: MisttyPane?
-      if paneId == 0 {
-        targetPane = self.store.activePaneInfo()?.pane
-      } else {
-        targetPane = self.store.pane(byId: paneId)?.pane
-      }
-      guard let pane = targetPane else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Pane \(paneId) not found"))
-        return
-      }
-      guard let surface = pane.surfaceView.surface else {
-        reply(nil, MisttyIPC.error(.operationFailed, "Pane has no active surface"))
-        return
-      }
-
-      let size = ghostty_surface_size(surface)
-      let rows = Int(size.rows)
-      let cols = Int(size.columns)
-
-      // Read the entire visible viewport as a single selection
-      var sel = ghostty_selection_s()
-      sel.top_left.tag = GHOSTTY_POINT_VIEWPORT
-      sel.top_left.coord = GHOSTTY_POINT_COORD_EXACT
-      sel.top_left.x = 0
-      sel.top_left.y = 0
-      sel.bottom_right.tag = GHOSTTY_POINT_VIEWPORT
-      sel.bottom_right.coord = GHOSTTY_POINT_COORD_EXACT
-      sel.bottom_right.x = UInt32(cols - 1)
-      sel.bottom_right.y = UInt32(rows - 1)
-      sel.rectangle = false
-
-      var text = ghostty_text_s()
-      guard ghostty_surface_read_text(surface, sel, &text) else {
-        reply(nil, MisttyIPC.error(.operationFailed, "Failed to read text from surface"))
-        return
-      }
-      defer { ghostty_surface_free_text(surface, &text) }
-
-      let content: String
-      if let ptr = text.text {
-        content = String(cString: ptr)
-      } else {
-        content = ""
-      }
-
-      reply(self.encode(["text": content]), nil)
+  func getText(paneId: Int) async throws -> Data {
+    let targetPane: MisttyPane?
+    if paneId == 0 {
+      targetPane = store.activePaneInfo()?.pane
+    } else {
+      targetPane = store.pane(byId: paneId)?.pane
     }
+    guard let pane = targetPane else {
+      throw MisttyIPC.error(.entityNotFound, "Pane \(paneId) not found")
+    }
+    guard let surface = pane.surfaceView.surface else {
+      throw MisttyIPC.error(.operationFailed, "Pane has no active surface")
+    }
+
+    let size = ghostty_surface_size(surface)
+    let rows = Int(size.rows)
+    let cols = Int(size.columns)
+
+    var sel = ghostty_selection_s()
+    sel.top_left.tag = GHOSTTY_POINT_VIEWPORT
+    sel.top_left.coord = GHOSTTY_POINT_COORD_EXACT
+    sel.top_left.x = 0
+    sel.top_left.y = 0
+    sel.bottom_right.tag = GHOSTTY_POINT_VIEWPORT
+    sel.bottom_right.coord = GHOSTTY_POINT_COORD_EXACT
+    sel.bottom_right.x = UInt32(cols - 1)
+    sel.bottom_right.y = UInt32(rows - 1)
+    sel.rectangle = false
+
+    var text = ghostty_text_s()
+    guard ghostty_surface_read_text(surface, sel, &text) else {
+      throw MisttyIPC.error(.operationFailed, "Failed to read text from surface")
+    }
+    defer { ghostty_surface_free_text(surface, &text) }
+
+    let content: String
+    if let ptr = text.text {
+      content = String(cString: ptr)
+    } else {
+      content = ""
+    }
+
+    return try encodeOrThrow(["text": content])
   }
 
   // MARK: - Windows
 
-  func createWindow(reply: @escaping (Data?, Error?) -> Void) {
-    reply(
-      nil,
-      MisttyIPC.error(
-        .operationFailed,
-        "Not supported: programmatic window creation is not available with SwiftUI WindowGroup"))
+  func createWindow() async throws -> Data {
+    throw MisttyIPC.error(
+      .operationFailed,
+      "Not supported: programmatic window creation is not available with SwiftUI WindowGroup")
   }
 
-  func listWindows(reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      let responses = self.store.trackedWindows.map { tracked in
-        WindowResponse(id: tracked.id, sessionCount: self.store.sessions.count)
-      }
-      reply(self.encode(responses), nil)
+  func listWindows() async throws -> Data {
+    let responses = store.trackedWindows.map { tracked in
+      WindowResponse(id: tracked.id, sessionCount: store.sessions.count)
     }
+    return try encodeOrThrow(responses)
   }
 
-  func getWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let tracked = self.store.trackedWindow(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Window \(id) not found"))
-        return
-      }
-      reply(
-        self.encode(WindowResponse(id: tracked.id, sessionCount: self.store.sessions.count)), nil)
+  func getWindow(id: Int) async throws -> Data {
+    guard let tracked = store.trackedWindow(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Window \(id) not found")
     }
+    return try encodeOrThrow(
+      WindowResponse(id: tracked.id, sessionCount: store.sessions.count))
   }
 
-  func closeWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let tracked = self.store.trackedWindow(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Window \(id) not found"))
-        return
-      }
-      tracked.window.close()
-      self.store.unregisterWindow(tracked.window)
-      reply(self.encode([String: String]()), nil)
+  func closeWindow(id: Int) async throws -> Data {
+    guard let tracked = store.trackedWindow(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Window \(id) not found")
     }
+    tracked.window.close()
+    store.unregisterWindow(tracked.window)
+    return try encodeOrThrow([String: String]())
   }
 
-  func focusWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let tracked = self.store.trackedWindow(byId: id) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Window \(id) not found"))
-        return
-      }
-      tracked.window.makeKeyAndOrderFront(nil)
-      reply(self.encode([String: String]()), nil)
+  func focusWindow(id: Int) async throws -> Data {
+    guard let tracked = store.trackedWindow(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Window \(id) not found")
     }
+    tracked.window.makeKeyAndOrderFront(nil)
+    return try encodeOrThrow([String: String]())
   }
 
   // MARK: - Popups
 
   func openPopup(
-    sessionId: Int, name: String, exec: String, width: Double, height: Double, closeOnExit: Bool,
-    reply: @escaping (Data?, Error?) -> Void
-  ) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let session = self.store.session(byId: sessionId) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found"))
-        return
-      }
-      let definition = PopupDefinition(
-        name: name, command: exec, width: width, height: height, closeOnExit: closeOnExit)
-      session.openPopup(definition: definition)
-      guard let popup = session.activePopup else {
-        reply(nil, MisttyIPC.error(.operationFailed, "Failed to create popup"))
-        return
-      }
-      reply(self.encode(self.popupResponse(popup)), nil)
+    sessionId: Int, name: String, exec: String, width: Double, height: Double, closeOnExit: Bool
+  ) async throws -> Data {
+    guard let session = store.session(byId: sessionId) else {
+      throw MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found")
     }
+    let definition = PopupDefinition(
+      name: name, command: exec, width: width, height: height, closeOnExit: closeOnExit)
+    session.openPopup(definition: definition)
+    guard let popup = session.activePopup else {
+      throw MisttyIPC.error(.operationFailed, "Failed to create popup")
+    }
+    return try encodeOrThrow(popupResponse(popup))
   }
 
-  func closePopup(popupId: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let (session, popup) = self.store.popup(byId: popupId) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Popup \(popupId) not found"))
-        return
-      }
-      session.closePopup(popup)
-      reply(self.encode([String: String]()), nil)
+  func closePopup(popupId: Int) async throws -> Data {
+    guard let (session, popup) = store.popup(byId: popupId) else {
+      throw MisttyIPC.error(.entityNotFound, "Popup \(popupId) not found")
     }
+    session.closePopup(popup)
+    return try encodeOrThrow([String: String]())
   }
 
-  func togglePopup(sessionId: Int, name: String, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let session = self.store.session(byId: sessionId) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found"))
-        return
-      }
-      let config = MisttyConfig.load()
-      guard let definition = config.popups.first(where: { $0.name == name }) else {
-        reply(
-          nil, MisttyIPC.error(.entityNotFound, "Popup definition '\(name)' not found in config"))
-        return
-      }
-      session.togglePopup(definition: definition)
-      if let popup = session.popups.first(where: { $0.definition.name == name }) {
-        reply(self.encode(self.popupResponse(popup)), nil)
-      } else {
-        reply(self.encode([String: String]()), nil)
-      }
+  func togglePopup(sessionId: Int, name: String) async throws -> Data {
+    guard let session = store.session(byId: sessionId) else {
+      throw MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found")
     }
+    let config = MisttyConfig.load()
+    guard let definition = config.popups.first(where: { $0.name == name }) else {
+      throw MisttyIPC.error(.entityNotFound, "Popup definition '\(name)' not found in config")
+    }
+    session.togglePopup(definition: definition)
+    if let popup = session.popups.first(where: { $0.definition.name == name }) {
+      return try encodeOrThrow(popupResponse(popup))
+    }
+    return try encodeOrThrow([String: String]())
   }
 
-  func listPopups(sessionId: Int, reply: @escaping (Data?, Error?) -> Void) {
-    let reply = Reply(handler: reply)
-    Task { @MainActor in
-      guard let session = self.store.session(byId: sessionId) else {
-        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found"))
-        return
-      }
-      let responses = session.popups.map { self.popupResponse($0) }
-      reply(self.encode(responses), nil)
+  func listPopups(sessionId: Int) async throws -> Data {
+    guard let session = store.session(byId: sessionId) else {
+      throw MisttyIPC.error(.entityNotFound, "Session \(sessionId) not found")
     }
+    let responses = session.popups.map { popupResponse($0) }
+    return try encodeOrThrow(responses)
   }
 }

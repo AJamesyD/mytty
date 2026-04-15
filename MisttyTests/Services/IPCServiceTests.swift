@@ -16,136 +16,76 @@ final class IPCServiceTests: XCTestCase {
   }
 
   func testCreateSession() async throws {
-    let expectation = XCTestExpectation(description: "create session")
-    service.createSession(name: "test", directory: "/tmp", exec: nil) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let response = try JSONDecoder().decode(SessionResponse.self, from: data!)
-        XCTAssertEqual(response.name, "test")
-        XCTAssertEqual(response.directory, "/tmp")
-        XCTAssertEqual(response.tabCount, 1)
-        XCTAssertFalse(response.tabIds.isEmpty)
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
-    // Verify store was updated
+    let data = try await service.createSession(name: "test", directory: "/tmp", exec: nil)
+    let response = try JSONDecoder().decode(SessionResponse.self, from: data)
+    XCTAssertEqual(response.name, "test")
+    XCTAssertEqual(response.directory, "/tmp")
+    XCTAssertEqual(response.tabCount, 1)
+    XCTAssertFalse(response.tabIds.isEmpty)
     XCTAssertEqual(store.sessions.count, 1)
   }
 
   func testCreateSessionDefaultDirectory() async throws {
-    let expectation = XCTestExpectation(description: "create session default dir")
-    service.createSession(name: "home", directory: nil, exec: nil) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let response = try JSONDecoder().decode(SessionResponse.self, from: data!)
-        XCTAssertEqual(response.name, "home")
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.createSession(name: "home", directory: nil, exec: nil)
+    let response = try JSONDecoder().decode(SessionResponse.self, from: data)
+    XCTAssertEqual(response.name, "home")
   }
 
   func testListSessions() async throws {
     store.createSession(name: "alpha", directory: URL(fileURLWithPath: "/tmp"))
     store.createSession(name: "beta", directory: URL(fileURLWithPath: "/tmp"))
 
-    let expectation = XCTestExpectation(description: "list sessions")
-    service.listSessions { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let responses = try JSONDecoder().decode([SessionResponse].self, from: data!)
-        XCTAssertEqual(responses.count, 2)
-        XCTAssertEqual(responses[0].name, "alpha")
-        XCTAssertEqual(responses[1].name, "beta")
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.listSessions()
+    let responses = try JSONDecoder().decode([SessionResponse].self, from: data)
+    XCTAssertEqual(responses.count, 2)
+    XCTAssertEqual(responses[0].name, "alpha")
+    XCTAssertEqual(responses[1].name, "beta")
   }
 
   func testListSessionsEmpty() async throws {
-    let expectation = XCTestExpectation(description: "list sessions empty")
-    service.listSessions { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let responses = try JSONDecoder().decode([SessionResponse].self, from: data!)
-        XCTAssertTrue(responses.isEmpty)
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.listSessions()
+    let responses = try JSONDecoder().decode([SessionResponse].self, from: data)
+    XCTAssertTrue(responses.isEmpty)
   }
 
   func testGetSession() async throws {
     let session = store.createSession(name: "myproject", directory: URL(fileURLWithPath: "/tmp"))
 
-    let expectation = XCTestExpectation(description: "get session")
-    service.getSession(id: session.id) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let response = try JSONDecoder().decode(SessionResponse.self, from: data!)
-        XCTAssertEqual(response.id, session.id)
-        XCTAssertEqual(response.name, "myproject")
-        XCTAssertEqual(response.directory, "/tmp")
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.getSession(id: session.id)
+    let response = try JSONDecoder().decode(SessionResponse.self, from: data)
+    XCTAssertEqual(response.id, session.id)
+    XCTAssertEqual(response.name, "myproject")
+    XCTAssertEqual(response.directory, "/tmp")
   }
 
   func testGetSessionNotFound() async throws {
-    let expectation = XCTestExpectation(description: "get session not found")
-    service.getSession(id: 999) { data, error in
-      XCTAssertNil(data)
-      XCTAssertNotNil(error)
-      let nsError = error! as NSError
+    do {
+      _ = try await service.getSession(id: 999)
+      XCTFail("Expected error")
+    } catch {
+      let nsError = error as NSError
       XCTAssertEqual(nsError.domain, MisttyIPC.errorDomain)
       XCTAssertEqual(nsError.code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
-      expectation.fulfill()
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   func testCloseSession() async throws {
     let session = store.createSession(name: "doomed", directory: URL(fileURLWithPath: "/tmp"))
     XCTAssertEqual(store.sessions.count, 1)
 
-    let expectation = XCTestExpectation(description: "close session")
-    service.closeSession(id: session.id) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.closeSession(id: session.id)
+    XCTAssertNotNil(data)
     XCTAssertTrue(store.sessions.isEmpty)
   }
 
   func testCloseSessionNotFound() async throws {
-    let expectation = XCTestExpectation(description: "close session not found")
-    service.closeSession(id: 999) { data, error in
-      XCTAssertNil(data)
-      XCTAssertNotNil(error)
-      let nsError = error! as NSError
+    do {
+      _ = try await service.closeSession(id: 999)
+      XCTFail("Expected error")
+    } catch {
+      let nsError = error as NSError
       XCTAssertEqual(nsError.code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
-      expectation.fulfill()
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   // MARK: - Tab Tests
@@ -154,21 +94,11 @@ final class IPCServiceTests: XCTestCase {
     let session = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
     XCTAssertEqual(session.tabs.count, 1)
 
-    let expectation = XCTestExpectation(description: "create tab")
-    service.createTab(sessionId: session.id, name: "build", exec: nil) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let response = try JSONDecoder().decode(TabResponse.self, from: data!)
-        XCTAssertEqual(response.title, "build")
-        XCTAssertEqual(response.paneCount, 1)
-        XCTAssertFalse(response.paneIds.isEmpty)
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.createTab(sessionId: session.id, name: "build", exec: nil)
+    let response = try JSONDecoder().decode(TabResponse.self, from: data)
+    XCTAssertEqual(response.title, "build")
+    XCTAssertEqual(response.paneCount, 1)
+    XCTAssertFalse(response.paneIds.isEmpty)
     XCTAssertEqual(session.tabs.count, 2)
   }
 
@@ -176,19 +106,9 @@ final class IPCServiceTests: XCTestCase {
     let session = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
     session.addTab()
 
-    let expectation = XCTestExpectation(description: "list tabs")
-    service.listTabs(sessionId: session.id) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let responses = try JSONDecoder().decode([TabResponse].self, from: data!)
-        XCTAssertEqual(responses.count, 2)
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.listTabs(sessionId: session.id)
+    let responses = try JSONDecoder().decode([TabResponse].self, from: data)
+    XCTAssertEqual(responses.count, 2)
   }
 
   func testCloseTab() async throws {
@@ -197,13 +117,8 @@ final class IPCServiceTests: XCTestCase {
     XCTAssertEqual(session.tabs.count, 2)
     let tabId = session.tabs[0].id
 
-    let expectation = XCTestExpectation(description: "close tab")
-    service.closeTab(id: tabId) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.closeTab(id: tabId)
+    XCTAssertNotNil(data)
     XCTAssertEqual(session.tabs.count, 1)
   }
 
@@ -211,19 +126,9 @@ final class IPCServiceTests: XCTestCase {
     let session = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
     let tab = session.tabs[0]
 
-    let expectation = XCTestExpectation(description: "rename tab")
-    service.renameTab(id: tab.id, name: "logs") { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let response = try JSONDecoder().decode(TabResponse.self, from: data!)
-        XCTAssertEqual(response.title, "logs")
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.renameTab(id: tab.id, name: "logs")
+    let response = try JSONDecoder().decode(TabResponse.self, from: data)
+    XCTAssertEqual(response.title, "logs")
     XCTAssertEqual(tab.customTitle, "logs")
   }
 
@@ -233,68 +138,40 @@ final class IPCServiceTests: XCTestCase {
     let session = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
     let tab = session.tabs[0]
 
-    let expectation = XCTestExpectation(description: "list panes")
-    service.listPanes(tabId: tab.id) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let responses = try JSONDecoder().decode([PaneResponse].self, from: data!)
-        XCTAssertEqual(responses.count, 1)
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.listPanes(tabId: tab.id)
+    let responses = try JSONDecoder().decode([PaneResponse].self, from: data)
+    XCTAssertEqual(responses.count, 1)
   }
 
   func testActivePane() async throws {
     let session = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
     let pane = session.tabs[0].panes[0]
 
-    let expectation = XCTestExpectation(description: "active pane")
-    service.activePane { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let response = try JSONDecoder().decode(PaneResponse.self, from: data!)
-        XCTAssertEqual(response.id, pane.id)
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.activePane()
+    let response = try JSONDecoder().decode(PaneResponse.self, from: data)
+    XCTAssertEqual(response.id, pane.id)
   }
 
   func testClosePane() async throws {
     let session = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
     let tab = session.tabs[0]
-    // Split to get two panes so we can close one
     tab.splitActivePane(direction: .vertical)
     XCTAssertEqual(tab.panes.count, 2)
     let paneToClose = tab.panes[0]
 
-    let expectation = XCTestExpectation(description: "close pane")
-    service.closePane(id: paneToClose.id) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.closePane(id: paneToClose.id)
+    XCTAssertNotNil(data)
     XCTAssertEqual(tab.panes.count, 1)
   }
 
   func testGetPaneNotFound() async throws {
-    let expectation = XCTestExpectation(description: "get pane not found")
-    service.getPane(id: 999) { data, error in
-      XCTAssertNil(data)
-      XCTAssertNotNil(error)
-      let nsError = error! as NSError
+    do {
+      _ = try await service.getPane(id: 999)
+      XCTFail("Expected error")
+    } catch {
+      let nsError = error as NSError
       XCTAssertEqual(nsError.code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
-      expectation.fulfill()
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   // MARK: - SendKeys / RunCommand Tests
@@ -303,49 +180,41 @@ final class IPCServiceTests: XCTestCase {
     let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
     let paneId = session.activeTab!.activePane!.id
 
-    let expectation = XCTestExpectation(description: "send keys")
-    service.sendKeys(paneId: paneId, keys: "hello") { _, error in
-      // Pane found but surface is nil in test → operationFailed
-      if let error = error as? NSError {
-        XCTAssertEqual(error.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
-      }
-      expectation.fulfill()
+    do {
+      _ = try await service.sendKeys(paneId: paneId, keys: "hello")
+    } catch {
+      let nsError = error as NSError
+      XCTAssertEqual(nsError.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   func testSendKeysPaneNotFound() async throws {
-    let expectation = XCTestExpectation(description: "send keys not found")
-    service.sendKeys(paneId: 999, keys: "hello") { _, error in
-      XCTAssertNotNil(error)
-      XCTAssertEqual((error! as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
-      expectation.fulfill()
+    do {
+      _ = try await service.sendKeys(paneId: 999, keys: "hello")
+      XCTFail("Expected error")
+    } catch {
+      XCTAssertEqual((error as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   func testSendKeysActivePane() async throws {
     _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
 
-    let expectation = XCTestExpectation(description: "send keys active")
-    service.sendKeys(paneId: 0, keys: "hello") { _, error in
-      // Resolves active pane, surface nil → operationFailed
-      if let error = error as? NSError {
-        XCTAssertEqual(error.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
-      }
-      expectation.fulfill()
+    do {
+      _ = try await service.sendKeys(paneId: 0, keys: "hello")
+    } catch {
+      let nsError = error as NSError
+      XCTAssertEqual(nsError.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   func testRunCommandDelegatesToSendKeys() async throws {
-    let expectation = XCTestExpectation(description: "run command not found")
-    service.runCommand(paneId: 999, command: "ls") { _, error in
-      XCTAssertNotNil(error)
-      XCTAssertEqual((error! as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
-      expectation.fulfill()
+    do {
+      _ = try await service.runCommand(paneId: 999, command: "ls")
+      XCTFail("Expected error")
+    } catch {
+      XCTAssertEqual((error as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   // MARK: - GetText Tests
@@ -354,38 +223,32 @@ final class IPCServiceTests: XCTestCase {
     let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
     let paneId = session.activeTab!.activePane!.id
 
-    let expectation = XCTestExpectation(description: "get text")
-    service.getText(paneId: paneId) { _, error in
-      if let error = error as? NSError {
-        XCTAssertEqual(error.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
-      }
-      expectation.fulfill()
+    do {
+      _ = try await service.getText(paneId: paneId)
+    } catch {
+      let nsError = error as NSError
+      XCTAssertEqual(nsError.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   func testGetTextPaneNotFound() async throws {
-    let expectation = XCTestExpectation(description: "get text not found")
-    service.getText(paneId: 999) { _, error in
-      XCTAssertNotNil(error)
-      XCTAssertEqual((error! as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
-      expectation.fulfill()
+    do {
+      _ = try await service.getText(paneId: 999)
+      XCTFail("Expected error")
+    } catch {
+      XCTAssertEqual((error as NSError).code, MisttyIPC.ErrorCode.entityNotFound.rawValue)
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   func testGetTextActivePane() async throws {
     _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
 
-    let expectation = XCTestExpectation(description: "get text active")
-    service.getText(paneId: 0) { _, error in
-      // Resolves active pane, surface nil → operationFailed
-      if let error = error as? NSError {
-        XCTAssertEqual(error.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
-      }
-      expectation.fulfill()
+    do {
+      _ = try await service.getText(paneId: 0)
+    } catch {
+      let nsError = error as NSError
+      XCTAssertEqual(nsError.code, MisttyIPC.ErrorCode.operationFailed.rawValue)
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   func testFocusPaneByDirection() async throws {
@@ -396,32 +259,21 @@ final class IPCServiceTests: XCTestCase {
     let rightPane = tab.panes[1]
     XCTAssertEqual(tab.activePane?.id, rightPane.id)
 
-    let expectation = XCTestExpectation(description: "focus by direction")
-    service.focusPaneByDirection(direction: "left", sessionId: session.id) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let response = try JSONDecoder().decode(PaneResponse.self, from: data!)
-        XCTAssertEqual(response.id, leftPane.id)
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.focusPaneByDirection(direction: "left", sessionId: session.id)
+    let response = try JSONDecoder().decode(PaneResponse.self, from: data)
+    XCTAssertEqual(response.id, leftPane.id)
     XCTAssertEqual(tab.activePane?.id, leftPane.id)
   }
 
   func testFocusPaneByDirectionInvalid() async throws {
     _ = store.createSession(name: "proj", directory: URL(fileURLWithPath: "/tmp"))
 
-    let expectation = XCTestExpectation(description: "focus by direction invalid")
-    service.focusPaneByDirection(direction: "diagonal", sessionId: 0) { _, error in
-      XCTAssertNotNil(error)
-      XCTAssertEqual((error! as NSError).code, MisttyIPC.ErrorCode.invalidArgument.rawValue)
-      expectation.fulfill()
+    do {
+      _ = try await service.focusPaneByDirection(direction: "diagonal", sessionId: 0)
+      XCTFail("Expected error")
+    } catch {
+      XCTAssertEqual((error as NSError).code, MisttyIPC.ErrorCode.invalidArgument.rawValue)
     }
-    await fulfillment(of: [expectation], timeout: 2)
   }
 
   func testFocusPane() async throws {
@@ -429,22 +281,11 @@ final class IPCServiceTests: XCTestCase {
     let tab = session.tabs[0]
     tab.splitActivePane(direction: .vertical)
     let firstPane = tab.panes[0]
-    // Active pane should be the second (newly split) pane
     XCTAssertNotEqual(tab.activePane?.id, firstPane.id)
 
-    let expectation = XCTestExpectation(description: "focus pane")
-    service.focusPane(id: firstPane.id) { data, error in
-      XCTAssertNil(error)
-      XCTAssertNotNil(data)
-      do {
-        let response = try JSONDecoder().decode(PaneResponse.self, from: data!)
-        XCTAssertEqual(response.id, firstPane.id)
-      } catch {
-        XCTFail("Decoding failed: \(error)")
-      }
-      expectation.fulfill()
-    }
-    await fulfillment(of: [expectation], timeout: 2)
+    let data = try await service.focusPane(id: firstPane.id)
+    let response = try JSONDecoder().decode(PaneResponse.self, from: data)
+    XCTAssertEqual(response.id, firstPane.id)
     XCTAssertEqual(tab.activePane?.id, firstPane.id)
     XCTAssertEqual(store.activeSession?.id, session.id)
     XCTAssertEqual(session.activeTab?.id, tab.id)

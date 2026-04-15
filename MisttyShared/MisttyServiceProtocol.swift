@@ -3,61 +3,58 @@ import Foundation
 public protocol MisttyServiceProtocol {
   // MARK: - Sessions
 
-  func createSession(
-    name: String, directory: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void)
-  func listSessions(reply: @escaping (Data?, Error?) -> Void)
-  func getSession(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func closeSession(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func renameSession(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void)
+  @MainActor func createSession(name: String, directory: String?, exec: String?) async throws
+    -> Data
+  @MainActor func listSessions() async throws -> Data
+  @MainActor func getSession(id: Int) async throws -> Data
+  @MainActor func closeSession(id: Int) async throws -> Data
+  @MainActor func renameSession(id: Int, name: String) async throws -> Data
 
   // MARK: - Tabs
 
-  func createTab(
-    sessionId: Int, name: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void)
-  func listTabs(sessionId: Int, reply: @escaping (Data?, Error?) -> Void)
-  func getTab(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func closeTab(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func renameTab(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void)
-  func moveTab(id: Int, toIndex: Int, reply: @escaping (Data?, Error?) -> Void)
+  @MainActor func createTab(sessionId: Int, name: String?, exec: String?) async throws -> Data
+  @MainActor func listTabs(sessionId: Int) async throws -> Data
+  @MainActor func getTab(id: Int) async throws -> Data
+  @MainActor func closeTab(id: Int) async throws -> Data
+  @MainActor func renameTab(id: Int, name: String) async throws -> Data
+  @MainActor func moveTab(id: Int, toIndex: Int) async throws -> Data
 
   // MARK: - Panes
 
-  func createPane(tabId: Int, direction: String?, reply: @escaping (Data?, Error?) -> Void)
-  func listPanes(tabId: Int, reply: @escaping (Data?, Error?) -> Void)
-  func getPane(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func closePane(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func focusPane(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func focusPaneByDirection(
-    direction: String, sessionId: Int, reply: @escaping (Data?, Error?) -> Void)
-  func resizePane(id: Int, direction: String, amount: Int, reply: @escaping (Data?, Error?) -> Void)
-  func activePane(reply: @escaping (Data?, Error?) -> Void)
+  @MainActor func createPane(tabId: Int, direction: String?) async throws -> Data
+  @MainActor func listPanes(tabId: Int) async throws -> Data
+  @MainActor func getPane(id: Int) async throws -> Data
+  @MainActor func closePane(id: Int) async throws -> Data
+  @MainActor func focusPane(id: Int) async throws -> Data
+  @MainActor func focusPaneByDirection(direction: String, sessionId: Int) async throws -> Data
+  @MainActor func resizePane(id: Int, direction: String, amount: Int) async throws -> Data
+  @MainActor func activePane() async throws -> Data
   /// Use paneId 0 as sentinel for "active pane".
-  func sendKeys(paneId: Int, keys: String, reply: @escaping (Data?, Error?) -> Void)
+  @MainActor func sendKeys(paneId: Int, keys: String) async throws -> Data
   /// Use paneId 0 as sentinel for "active pane".
-  func runCommand(paneId: Int, command: String, reply: @escaping (Data?, Error?) -> Void)
+  @MainActor func runCommand(paneId: Int, command: String) async throws -> Data
   /// Use paneId 0 as sentinel for "active pane".
-  func getText(paneId: Int, reply: @escaping (Data?, Error?) -> Void)
+  @MainActor func getText(paneId: Int) async throws -> Data
 
   // MARK: - Windows
 
-  func createWindow(reply: @escaping (Data?, Error?) -> Void)
-  func listWindows(reply: @escaping (Data?, Error?) -> Void)
-  func getWindow(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func closeWindow(id: Int, reply: @escaping (Data?, Error?) -> Void)
-  func focusWindow(id: Int, reply: @escaping (Data?, Error?) -> Void)
+  @MainActor func createWindow() async throws -> Data
+  @MainActor func listWindows() async throws -> Data
+  @MainActor func getWindow(id: Int) async throws -> Data
+  @MainActor func closeWindow(id: Int) async throws -> Data
+  @MainActor func focusWindow(id: Int) async throws -> Data
 
   // MARK: - Popups
 
-  func openPopup(
+  @MainActor func openPopup(
     sessionId: Int,
     name: String,
     exec: String,
     width: Double,
     height: Double,
-    closeOnExit: Bool,
-    reply: @escaping (Data?, Error?) -> Void
-  )
-  func closePopup(popupId: Int, reply: @escaping (Data?, Error?) -> Void)
-  func togglePopup(sessionId: Int, name: String, reply: @escaping (Data?, Error?) -> Void)
-  func listPopups(sessionId: Int, reply: @escaping (Data?, Error?) -> Void)
+    closeOnExit: Bool
+  ) async throws -> Data
+  @MainActor func closePopup(popupId: Int) async throws -> Data
+  @MainActor func togglePopup(sessionId: Int, name: String) async throws -> Data
+  @MainActor func listPopups(sessionId: Int) async throws -> Data
 }

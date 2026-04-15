@@ -3,14 +3,11 @@ import Foundation
 import MisttyShared
 import os
 
-/// Thread-safe state shared between the main thread and the accept loop.
 private struct ListenerState: Sendable {
   var serverFD: Int32 = -1
   var running = false
 }
 
-/// Unix domain socket IPC listener. The app binds to a socket and accepts
-/// one-shot connections from the CLI: read request, dispatch, write response, close.
 @MainActor
 final class IPCListener {
   private let service: MisttyIPCService
@@ -24,22 +21,18 @@ final class IPCListener {
   func start() {
     let path = MisttyIPC.socketPath
 
-    // Ensure parent directory exists with 0700 permissions
     let dir = (path as NSString).deletingLastPathComponent
     try? FileManager.default.createDirectory(
       atPath: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
 
-    // Unconditionally unlink any stale socket
     unlink(path)
 
-    // Create socket
     let fd = socket(AF_UNIX, SOCK_STREAM, 0)
     guard fd >= 0 else {
       print("Warning: failed to create IPC socket: \(String(cString: strerror(errno)))")
       return
     }
 
-    // Bind
     var addr = sockaddr_un()
     addr.sun_family = sa_family_t(AF_UNIX)
     let pathBytes = path.utf8CString
@@ -67,14 +60,12 @@ final class IPCListener {
       return
     }
 
-    // Listen
     guard Darwin.listen(fd, 5) == 0 else {
       print("Warning: failed to listen on IPC socket: \(String(cString: strerror(errno)))")
       Darwin.close(fd)
       return
     }
 
-    // Publish state atomically before launching accept loop
     state.withLock { s in
       s.serverFD = fd
       s.running = true
@@ -93,7 +84,6 @@ final class IPCListener {
       s.serverFD = -1
       return fd
     }
-    // Closing the fd unblocks the accept() call in the background thread
     if fd >= 0 { Darwin.close(fd) }
     unlink(MisttyIPC.socketPath)
   }
@@ -109,31 +99,27 @@ final class IPCListener {
 
       let clientFD = Darwin.accept(fd, nil, nil)
       guard clientFD >= 0 else {
-        // Check if we were stopped (fd closed)
         let stillRunning = state.withLock { $0.running }
         if !stillRunning { break }
         continue
       }
 
-      // Set SO_NOSIGPIPE to avoid SIGPIPE on write to closed socket
       var on: Int32 = 1
       setsockopt(clientFD, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
 
-      // Set read/write timeout (5 seconds)
       var tv = timeval(tv_sec: 5, tv_usec: 0)
       setsockopt(clientFD, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
       setsockopt(clientFD, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
 
-      // Handle connection on a separate queue to not block accept loop
-      DispatchQueue.global(qos: .userInitiated).async {
-        handleConnection(clientFD, service: service)
+      Task {
+        await handleConnection(clientFD, service: service)
       }
     }
   }
 
   // MARK: - Connection Handling
 
-  private nonisolated static func handleConnection(_ fd: Int32, service: MisttyIPCService) {
+  private nonisolated static func handleConnection(_ fd: Int32, service: MisttyIPCService) async {
     defer { Darwin.close(fd) }
 
     var byte: UInt8 = 0
@@ -141,15 +127,17 @@ final class IPCListener {
     guard peeked == 1 else { return }
 
     if byte == 0x43 {
-      handleJSONRPCConnection(fd, service: service)
+      await handleJSONRPCConnection(fd, service: service)
     } else {
-      handleLegacyConnection(fd, service: service)
+      await handleLegacyConnection(fd, service: service)
     }
   }
 
   // MARK: - JSON-RPC Connection Handling
 
-  private nonisolated static func handleJSONRPCConnection(_ fd: Int32, service: MisttyIPCService) {
+  private nonisolated static func handleJSONRPCConnection(
+    _ fd: Int32, service: MisttyIPCService
+  ) async {
     let encoder = JSONEncoder()
 
     while true {
@@ -176,7 +164,7 @@ final class IPCListener {
         response = .success(id: request.id, result: result)
 
       default:
-        response = dispatchJSONRPCMethod(request, service: service)
+        response = await dispatchJSONRPCMethod(request, service: service)
       }
 
       guard let data = try? encoder.encode(response) else { return }
@@ -184,129 +172,17 @@ final class IPCListener {
     }
   }
 
-  private nonisolated static func dispatchJSONRPCMethod(
-    _ request: JSONRPCMessage.Request, service: MisttyIPCService
-  ) -> JSONRPCMessage.Response {
-    let params = request.params ?? [:]
-
-    func str(_ key: String) -> String? {
-      if case .string(let s) = params[key] { return s }
-      return nil
-    }
-    func int(_ key: String) -> Int {
-      if case .int(let i) = params[key] { return i }
-      return 0
-    }
-    func dbl(_ key: String) -> Double {
-      if case .double(let d) = params[key] { return d }
-      if case .int(let i) = params[key] { return Double(i) }
-      return 0
-    }
-    func boo(_ key: String) -> Bool {
-      if case .bool(let b) = params[key] { return b }
-      return false
-    }
-
-    let semaphore = DispatchSemaphore(value: 0)
-    var responseData: Data?
-    var responseError: Error?
-
-    let reply: (Data?, Error?) -> Void = { data, error in
-      responseData = data
-      responseError = error
-      semaphore.signal()
-    }
-
-    switch request.method {
-    // Sessions
-    case "session.create":
-      service.createSession(
-        name: str("name") ?? "Default", directory: str("directory"), exec: str("exec"), reply: reply
-      )
-    case "session.list":
-      service.listSessions(reply: reply)
-    case "session.get":
-      service.getSession(id: int("id"), reply: reply)
-    case "session.close":
-      service.closeSession(id: int("id"), reply: reply)
-    case "session.rename":
-      service.renameSession(id: int("id"), name: str("name") ?? "", reply: reply)
-
-    // Tabs
-    case "tab.create":
-      service.createTab(
-        sessionId: int("sessionId"), name: str("name"), exec: str("exec"), reply: reply)
-    case "tab.list":
-      service.listTabs(sessionId: int("sessionId"), reply: reply)
-    case "tab.get":
-      service.getTab(id: int("id"), reply: reply)
-    case "tab.close":
-      service.closeTab(id: int("id"), reply: reply)
-    case "tab.rename":
-      service.renameTab(id: int("id"), name: str("name") ?? "", reply: reply)
-    case "tab.move":
-      service.moveTab(id: int("id"), toIndex: int("toIndex"), reply: reply)
-
-    // Panes
-    case "pane.create":
-      service.createPane(tabId: int("tabId"), direction: str("direction"), reply: reply)
-    case "pane.list":
-      service.listPanes(tabId: int("tabId"), reply: reply)
-    case "pane.get":
-      service.getPane(id: int("id"), reply: reply)
-    case "pane.close":
-      service.closePane(id: int("id"), reply: reply)
-    case "pane.focus":
-      service.focusPane(id: int("id"), reply: reply)
-    case "pane.focusByDirection":
-      service.focusPaneByDirection(
-        direction: str("direction") ?? "", sessionId: int("sessionId"), reply: reply)
-    case "pane.resize":
-      service.resizePane(
-        id: int("id"), direction: str("direction") ?? "", amount: int("amount"), reply: reply)
-    case "pane.active":
-      service.activePane(reply: reply)
-    case "pane.sendKeys":
-      service.sendKeys(paneId: int("paneId"), keys: str("keys") ?? "", reply: reply)
-    case "pane.runCommand":
-      service.runCommand(paneId: int("paneId"), command: str("command") ?? "", reply: reply)
-    case "pane.getText":
-      service.getText(paneId: int("paneId"), reply: reply)
-
-    // Windows
-    case "window.create":
-      service.createWindow(reply: reply)
-    case "window.list":
-      service.listWindows(reply: reply)
-    case "window.get":
-      service.getWindow(id: int("id"), reply: reply)
-    case "window.close":
-      service.closeWindow(id: int("id"), reply: reply)
-    case "window.focus":
-      service.focusWindow(id: int("id"), reply: reply)
-
-    // Popups
-    case "popup.open":
-      service.openPopup(
-        sessionId: int("sessionId"), name: str("name") ?? "",
-        exec: str("exec") ?? "", width: dbl("width"), height: dbl("height"),
-        closeOnExit: boo("closeOnExit"), reply: reply)
-    case "popup.list":
-      service.listPopups(sessionId: int("sessionId"), reply: reply)
-    case "popup.close":
-      service.closePopup(popupId: int("popupId"), reply: reply)
-    case "popup.toggle":
-      service.togglePopup(sessionId: int("sessionId"), name: str("name") ?? "", reply: reply)
-
-    default:
-      return .error(
-        id: request.id, code: MisttyIPC.JSONRPCErrorCode.methodNotFound,
-        message: "Method not found: \(request.method)")
-    }
-
-    semaphore.wait()
-
-    if let error = responseError as? NSError {
+  private nonisolated static func callService(
+    _ request: JSONRPCMessage.Request,
+    _ body: @Sendable () async throws -> Data
+  ) async -> JSONRPCMessage.Response {
+    do {
+      let data = try await body()
+      if let result = try? JSONDecoder().decode(JSONValue.self, from: data) {
+        return .success(id: request.id, result: result)
+      }
+      return .success(id: request.id, result: .null)
+    } catch let error as NSError {
       let rpcCode: Int
       switch MisttyIPC.ErrorCode(rawValue: error.code) {
       case .entityNotFound: rpcCode = MisttyIPC.JSONRPCErrorCode.entityNotFound
@@ -316,25 +192,162 @@ final class IPCListener {
       }
       return .error(id: request.id, code: rpcCode, message: error.localizedDescription)
     }
-
-    if let data = responseData, let result = try? JSONDecoder().decode(JSONValue.self, from: data) {
-      return .success(id: request.id, result: result)
-    }
-
-    return .success(id: request.id, result: .null)
   }
 
-  private nonisolated static func handleLegacyConnection(_ fd: Int32, service: MisttyIPCService) {
-    // Read length prefix (4 bytes, big-endian UInt32)
+  private nonisolated static func dispatchJSONRPCMethod(
+    _ request: JSONRPCMessage.Request, service: MisttyIPCService
+  ) async -> JSONRPCMessage.Response {
+    let params = request.params ?? [:]
+
+    let str: @Sendable (String) -> String? = { key in
+      if case .string(let s) = params[key] { return s }
+      return nil
+    }
+    let int: @Sendable (String) -> Int = { key in
+      if case .int(let i) = params[key] { return i }
+      return 0
+    }
+    let dbl: @Sendable (String) -> Double = { key in
+      if case .double(let d) = params[key] { return d }
+      if case .int(let i) = params[key] { return Double(i) }
+      return 0
+    }
+    let boo: @Sendable (String) -> Bool = { key in
+      if case .bool(let b) = params[key] { return b }
+      return false
+    }
+
+    switch request.method {
+    // Sessions
+    case "session.create":
+      return await callService(request) {
+        try await service.createSession(
+          name: str("name") ?? "Default", directory: str("directory"), exec: str("exec"))
+      }
+    case "session.list":
+      return await callService(request) { try await service.listSessions() }
+    case "session.get":
+      return await callService(request) { try await service.getSession(id: int("id")) }
+    case "session.close":
+      return await callService(request) { try await service.closeSession(id: int("id")) }
+    case "session.rename":
+      return await callService(request) {
+        try await service.renameSession(id: int("id"), name: str("name") ?? "")
+      }
+
+    // Tabs
+    case "tab.create":
+      return await callService(request) {
+        try await service.createTab(
+          sessionId: int("sessionId"), name: str("name"), exec: str("exec"))
+      }
+    case "tab.list":
+      return await callService(request) {
+        try await service.listTabs(sessionId: int("sessionId"))
+      }
+    case "tab.get":
+      return await callService(request) { try await service.getTab(id: int("id")) }
+    case "tab.close":
+      return await callService(request) { try await service.closeTab(id: int("id")) }
+    case "tab.rename":
+      return await callService(request) {
+        try await service.renameTab(id: int("id"), name: str("name") ?? "")
+      }
+    case "tab.move":
+      return await callService(request) {
+        try await service.moveTab(id: int("id"), toIndex: int("toIndex"))
+      }
+
+    // Panes
+    case "pane.create":
+      return await callService(request) {
+        try await service.createPane(tabId: int("tabId"), direction: str("direction"))
+      }
+    case "pane.list":
+      return await callService(request) {
+        try await service.listPanes(tabId: int("tabId"))
+      }
+    case "pane.get":
+      return await callService(request) { try await service.getPane(id: int("id")) }
+    case "pane.close":
+      return await callService(request) { try await service.closePane(id: int("id")) }
+    case "pane.focus":
+      return await callService(request) { try await service.focusPane(id: int("id")) }
+    case "pane.focusByDirection":
+      return await callService(request) {
+        try await service.focusPaneByDirection(
+          direction: str("direction") ?? "", sessionId: int("sessionId"))
+      }
+    case "pane.resize":
+      return await callService(request) {
+        try await service.resizePane(
+          id: int("id"), direction: str("direction") ?? "", amount: int("amount"))
+      }
+    case "pane.active":
+      return await callService(request) { try await service.activePane() }
+    case "pane.sendKeys":
+      return await callService(request) {
+        try await service.sendKeys(paneId: int("paneId"), keys: str("keys") ?? "")
+      }
+    case "pane.runCommand":
+      return await callService(request) {
+        try await service.runCommand(paneId: int("paneId"), command: str("command") ?? "")
+      }
+    case "pane.getText":
+      return await callService(request) {
+        try await service.getText(paneId: int("paneId"))
+      }
+
+    // Windows
+    case "window.create":
+      return await callService(request) { try await service.createWindow() }
+    case "window.list":
+      return await callService(request) { try await service.listWindows() }
+    case "window.get":
+      return await callService(request) { try await service.getWindow(id: int("id")) }
+    case "window.close":
+      return await callService(request) { try await service.closeWindow(id: int("id")) }
+    case "window.focus":
+      return await callService(request) { try await service.focusWindow(id: int("id")) }
+
+    // Popups
+    case "popup.open":
+      return await callService(request) {
+        try await service.openPopup(
+          sessionId: int("sessionId"), name: str("name") ?? "",
+          exec: str("exec") ?? "", width: dbl("width"), height: dbl("height"),
+          closeOnExit: boo("closeOnExit"))
+      }
+    case "popup.list":
+      return await callService(request) {
+        try await service.listPopups(sessionId: int("sessionId"))
+      }
+    case "popup.close":
+      return await callService(request) {
+        try await service.closePopup(popupId: int("popupId"))
+      }
+    case "popup.toggle":
+      return await callService(request) {
+        try await service.togglePopup(sessionId: int("sessionId"), name: str("name") ?? "")
+      }
+
+    default:
+      return .error(
+        id: request.id, code: MisttyIPC.JSONRPCErrorCode.methodNotFound,
+        message: "Method not found: \(request.method)")
+    }
+  }
+
+  private nonisolated static func handleLegacyConnection(
+    _ fd: Int32, service: MisttyIPCService
+  ) async {
     guard let lengthBytes = readExact(fd: fd, count: 4) else { return }
     let length = lengthBytes.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
 
     guard length > 0, length <= MisttyIPC.maxMessageSize else { return }
 
-    // Read request payload
     guard let requestData = readExact(fd: fd, count: Int(length)) else { return }
 
-    // Parse request
     guard let json = try? JSONSerialization.jsonObject(with: requestData) as? [String: Any],
       let method = json["method"] as? String
     else {
@@ -342,26 +355,13 @@ final class IPCListener {
       return
     }
 
-    // Dispatch to service (synchronous via semaphore)
-    let semaphore = DispatchSemaphore(value: 0)
-    var responseData: Data?
-    var responseError: String?
-
-    let reply: (Data?, Error?) -> Void = { data, error in
-      responseData = data
-      responseError = error?.localizedDescription
-      semaphore.signal()
-    }
-
-    IPCListener.dispatch(service: service, method: method, params: json, reply: reply)
-    semaphore.wait()
-
-    if let errorMsg = responseError {
-      writeResponse(fd: fd, data: errorResponse(errorMsg))
-    } else {
+    do {
+      let data = try await dispatch(service: service, method: method, params: json)
       var result = Data([0x00])
-      if let d = responseData { result.append(d) }
+      result.append(data)
       writeResponse(fd: fd, data: result)
+    } catch {
+      writeResponse(fd: fd, data: errorResponse(error.localizedDescription))
     }
   }
 
@@ -373,7 +373,6 @@ final class IPCListener {
 
   // MARK: - Socket I/O Helpers
 
-  /// Read exactly `count` bytes, looping for short reads and EINTR. Returns nil on error/timeout.
   private nonisolated static func readExact(fd: Int32, count: Int) -> Data? {
     var buffer = Data(count: count)
     var offset = 0
@@ -388,13 +387,10 @@ final class IPCListener {
     return buffer
   }
 
-  /// Write response with length prefix, looping for short writes.
   private nonisolated static func writeResponse(fd: Int32, data: Data) {
-    // Write length prefix
     var length = UInt32(data.count).bigEndian
     let lengthData = Data(bytes: &length, count: 4)
     writeAll(fd: fd, data: lengthData)
-    // Write payload
     writeAll(fd: fd, data: data)
   }
 
@@ -442,9 +438,8 @@ final class IPCListener {
   nonisolated static func dispatch(
     service: MisttyIPCService,
     method: String,
-    params: [String: Any],
-    reply: @escaping (Data?, Error?) -> Void
-  ) {
+    params: [String: Any]
+  ) async throws -> Data {
     func str(_ key: String) -> String? { params[key] as? String }
     func int(_ key: String) -> Int { params[key] as? Int ?? 0 }
     func dbl(_ key: String) -> Double { params[key] as? Double ?? 0 }
@@ -453,86 +448,85 @@ final class IPCListener {
     switch method {
     // Sessions
     case "createSession":
-      service.createSession(
-        name: str("name") ?? "Default", directory: str("directory"), exec: str("exec"), reply: reply
-      )
+      return try await service.createSession(
+        name: str("name") ?? "Default", directory: str("directory"), exec: str("exec"))
     case "listSessions":
-      service.listSessions(reply: reply)
+      return try await service.listSessions()
     case "getSession":
-      service.getSession(id: int("id"), reply: reply)
+      return try await service.getSession(id: int("id"))
     case "closeSession":
-      service.closeSession(id: int("id"), reply: reply)
+      return try await service.closeSession(id: int("id"))
     case "renameSession":
-      service.renameSession(id: int("id"), name: str("name") ?? "", reply: reply)
+      return try await service.renameSession(id: int("id"), name: str("name") ?? "")
 
     // Tabs
     case "createTab":
-      service.createTab(
-        sessionId: int("sessionId"), name: str("name"), exec: str("exec"), reply: reply)
+      return try await service.createTab(
+        sessionId: int("sessionId"), name: str("name"), exec: str("exec"))
     case "listTabs":
-      service.listTabs(sessionId: int("sessionId"), reply: reply)
+      return try await service.listTabs(sessionId: int("sessionId"))
     case "getTab":
-      service.getTab(id: int("id"), reply: reply)
+      return try await service.getTab(id: int("id"))
     case "closeTab":
-      service.closeTab(id: int("id"), reply: reply)
+      return try await service.closeTab(id: int("id"))
     case "renameTab":
-      service.renameTab(id: int("id"), name: str("name") ?? "", reply: reply)
+      return try await service.renameTab(id: int("id"), name: str("name") ?? "")
     case "moveTab":
-      service.moveTab(id: int("id"), toIndex: int("toIndex"), reply: reply)
+      return try await service.moveTab(id: int("id"), toIndex: int("toIndex"))
 
     // Panes
     case "createPane":
-      service.createPane(tabId: int("tabId"), direction: str("direction"), reply: reply)
+      return try await service.createPane(tabId: int("tabId"), direction: str("direction"))
     case "listPanes":
-      service.listPanes(tabId: int("tabId"), reply: reply)
+      return try await service.listPanes(tabId: int("tabId"))
     case "getPane":
-      service.getPane(id: int("id"), reply: reply)
+      return try await service.getPane(id: int("id"))
     case "closePane":
-      service.closePane(id: int("id"), reply: reply)
+      return try await service.closePane(id: int("id"))
     case "focusPane":
-      service.focusPane(id: int("id"), reply: reply)
+      return try await service.focusPane(id: int("id"))
     case "focusPaneByDirection":
-      service.focusPaneByDirection(
-        direction: str("direction") ?? "", sessionId: int("sessionId"), reply: reply)
+      return try await service.focusPaneByDirection(
+        direction: str("direction") ?? "", sessionId: int("sessionId"))
     case "resizePane":
-      service.resizePane(
-        id: int("id"), direction: str("direction") ?? "", amount: int("amount"), reply: reply)
+      return try await service.resizePane(
+        id: int("id"), direction: str("direction") ?? "", amount: int("amount"))
     case "sendKeys":
-      service.sendKeys(paneId: int("paneId"), keys: str("keys") ?? "", reply: reply)
+      return try await service.sendKeys(paneId: int("paneId"), keys: str("keys") ?? "")
     case "runCommand":
-      service.runCommand(paneId: int("paneId"), command: str("command") ?? "", reply: reply)
+      return try await service.runCommand(paneId: int("paneId"), command: str("command") ?? "")
     case "getText":
-      service.getText(paneId: int("paneId"), reply: reply)
+      return try await service.getText(paneId: int("paneId"))
     case "activePane":
-      service.activePane(reply: reply)
+      return try await service.activePane()
 
     // Windows
     case "createWindow":
-      service.createWindow(reply: reply)
+      return try await service.createWindow()
     case "listWindows":
-      service.listWindows(reply: reply)
+      return try await service.listWindows()
     case "getWindow":
-      service.getWindow(id: int("id"), reply: reply)
+      return try await service.getWindow(id: int("id"))
     case "closeWindow":
-      service.closeWindow(id: int("id"), reply: reply)
+      return try await service.closeWindow(id: int("id"))
     case "focusWindow":
-      service.focusWindow(id: int("id"), reply: reply)
+      return try await service.focusWindow(id: int("id"))
 
     // Popups
     case "openPopup":
-      service.openPopup(
+      return try await service.openPopup(
         sessionId: int("sessionId"), name: str("name") ?? "",
         exec: str("exec") ?? "", width: dbl("width"), height: dbl("height"),
-        closeOnExit: boo("closeOnExit"), reply: reply)
+        closeOnExit: boo("closeOnExit"))
     case "closePopup":
-      service.closePopup(popupId: int("popupId"), reply: reply)
+      return try await service.closePopup(popupId: int("popupId"))
     case "togglePopup":
-      service.togglePopup(sessionId: int("sessionId"), name: str("name") ?? "", reply: reply)
+      return try await service.togglePopup(sessionId: int("sessionId"), name: str("name") ?? "")
     case "listPopups":
-      service.listPopups(sessionId: int("sessionId"), reply: reply)
+      return try await service.listPopups(sessionId: int("sessionId"))
 
     default:
-      reply(nil, MisttyIPC.error(.operationFailed, "Unknown method: \(method)"))
+      throw MisttyIPC.error(.operationFailed, "Unknown method: \(method)")
     }
   }
 }
