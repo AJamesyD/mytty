@@ -65,9 +65,9 @@ struct SessionRowView: View {
               .accessibilityLabel("Command failed")
           } else if tab.hasBell {
             Circle()
-              .fill(.red)
+              .fill(MisttyTheme.bellGlow)
               .frame(width: 6, height: 6)
-              .shadow(color: .red, radius: 3)
+              .shadow(color: MisttyTheme.bellGlow, radius: 3)
               .accessibilityLabel("Bell notification")
           }
           if editingTabID == tab.id {
@@ -111,7 +111,8 @@ struct SessionRowView: View {
             Image(systemName: result.exitCode == 0 ? "checkmark.circle.fill" : "xmark.circle.fill")
               .font(.system(size: 9))
               .foregroundStyle(
-                result.exitCode == 0 ? .green.opacity(0.5) : MisttyTheme.commandFailedIndicator)
+                result.exitCode == 0
+                  ? MisttyTheme.commandSuccessIndicator : MisttyTheme.commandFailedIndicator)
             if let duration = result.formattedDuration {
               Text(duration)
                 .font(.system(size: 10, design: .monospaced))

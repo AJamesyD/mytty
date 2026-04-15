@@ -65,7 +65,7 @@ struct WindowModeHints: View {
     .foregroundStyle(MisttyTheme.overlayText)
     .padding(.horizontal, 10)
     .padding(.vertical, 5)
-    .background(Color.orange.opacity(0.85), in: RoundedRectangle(cornerRadius: 6))
+    .background(MisttyTheme.windowModeHUD, in: RoundedRectangle(cornerRadius: 6))
   }
 
   private func hintBadge(key: String, label: String) -> some View {

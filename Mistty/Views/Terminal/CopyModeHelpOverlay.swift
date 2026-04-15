@@ -80,7 +80,7 @@ struct CopyModeHelpOverlay: View {
             .frame(minWidth: 60, alignment: .trailing)
             .padding(.horizontal, 3)
             .padding(.vertical, 1)
-            .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 2))
+            .background(MisttyTheme.copyModeKeyBadge, in: RoundedRectangle(cornerRadius: 2))
           Text(hint.label)
             .foregroundStyle(MisttyTheme.overlayTextMuted)
         }

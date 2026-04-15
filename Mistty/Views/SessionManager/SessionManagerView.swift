@@ -105,7 +105,7 @@ struct SessionManagerView: View {
     }
     .frame(width: 560)
     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-    .shadow(color: .black.opacity(0.3), radius: 20)
+    .shadow(color: MisttyTheme.sessionManagerShadow, radius: 20)
     .task { await vm.load() }
   }
 }

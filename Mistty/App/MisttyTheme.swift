@@ -53,6 +53,13 @@ enum MisttyTheme {
   static let sessionAccent = Color.accentColor
   static let tabCountBadge = Color.secondary.opacity(0.6)
 
+  // Bell glow (distinct from bellIndicator dot color)
+  static let bellGlow = Color.red
+  static let commandSuccessIndicator = Color.green.opacity(0.5)
+  static let sessionManagerShadow = Color.black.opacity(0.3)
+  static let windowModeHUD = Color.orange.opacity(0.85)
+  static let copyModeKeyBadge = Color.white.opacity(0.1)
+
   // Destructive actions
   static let destructiveAction = Color.red
 
