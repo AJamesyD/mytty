@@ -18,6 +18,8 @@ struct TerminalCommands {
   var togglePopup: (String) -> Void
   var toggleSidebar: () -> Void
   var toggleTabBar: () -> Void
+  var jumpToPreviousPrompt: () -> Void
+  var jumpToNextPrompt: () -> Void
 }
 
 struct TerminalCommandsKey: FocusedValueKey {

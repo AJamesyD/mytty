@@ -133,10 +133,22 @@ struct MisttyApp: App {
         Button("Previous Session") {
           commands?.prevSession()
         }
-        .keyboardShortcut(.upArrow, modifiers: [.command, .shift])
+        .keyboardShortcut(.upArrow, modifiers: [.command, .option])
 
         Button("Next Session") {
           commands?.nextSession()
+        }
+        .keyboardShortcut(.downArrow, modifiers: [.command, .option])
+
+        Divider()
+
+        Button("Previous Prompt") {
+          commands?.jumpToPreviousPrompt()
+        }
+        .keyboardShortcut(.upArrow, modifiers: [.command, .shift])
+
+        Button("Next Prompt") {
+          commands?.jumpToNextPrompt()
         }
         .keyboardShortcut(.downArrow, modifiers: [.command, .shift])
 

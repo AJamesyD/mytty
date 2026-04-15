@@ -43,7 +43,9 @@ struct ContentView: View {
       sessionManager: { showingSessionManager = true },
       togglePopup: { name in handlePopupToggle(name: name) },
       toggleSidebar: { handleToggleSidebar() },
-      toggleTabBar: { handleToggleTabBar() }
+      toggleTabBar: { handleToggleTabBar() },
+      jumpToPreviousPrompt: { jumpToPrompt(direction: -1) },
+      jumpToNextPrompt: { jumpToPrompt(direction: 1) }
     )
   }
 

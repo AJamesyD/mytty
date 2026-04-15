@@ -428,4 +428,12 @@ extension ContentView {
       eventMonitor = nil
     }
   }
+
+  func jumpToPrompt(direction: Int) {
+    guard let surface = store.activeSession?.activeTab?.activePane?.surfaceView.surface else {
+      return
+    }
+    let action = "jump_to_prompt:\(direction)"
+    _ = ghostty_surface_binding_action(surface, action, UInt(action.utf8.count))
+  }
 }
