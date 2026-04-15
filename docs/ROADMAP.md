@@ -175,16 +175,13 @@ JSON-RPC 2.0 over persistent Unix domain socket connections with Content-Length 
 - Spec: `docs/specs/phase3a-socket-api.md`
 - Research: `/tmp/ai-research-jsonrpc-terminal-ipc.md`
 
-### 3b. Neovim Split Navigation
-smart-splits.nvim integration via socket API. Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes.
+### 3b. Neovim Split Navigation ✅
+Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes via smart-splits.nvim backend. IPC-based pane variables for vim detection (OSC 1337 SetUserVar not available in libghostty). Process detection kept as fallback.
 
-- Complexity: 2 (once 3a exists)
-- `/spec` required: smart-splits.nvim integration protocol, edge cases (nested neovim, multiple neovim instances).
-- Depends on: 3a
-- Why unsolved in Ghostty: deliberate design choice (no IPC). Mistty can solve it.
-- Personal pain point.
-
-**Done when:** `mistty pane list` returns JSON, Ctrl+h/j/k/l crosses neovim/Mistty boundary.
+- Spec: `docs/specs/phase3b-neovim-navigation.md`
+- Backend: `extras/neovim/lua/smart-splits/mux/mistty.lua`
+- New IPC methods: `pane.atEdge`, `pane.setVar`, `pane.getVar`
+- Env vars: `MISTTY_SOCKET`, `TERM_PROGRAM=mistty`
 
 ---
 
