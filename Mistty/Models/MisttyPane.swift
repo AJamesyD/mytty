@@ -22,6 +22,20 @@ final class MisttyPane: Identifiable {
   struct CommandResult {
     let exitCode: Int16
     let duration: UInt64
+
+    var formattedDuration: String? {
+      let seconds = duration / 1_000_000_000
+      if seconds < 1 { return nil }
+      if seconds < 60 { return "\(seconds)s" }
+      let minutes = seconds / 60
+      let remainingSeconds = seconds % 60
+      if minutes < 60 {
+        return remainingSeconds > 0 ? "\(minutes)m \(remainingSeconds)s" : "\(minutes)m"
+      }
+      let hours = minutes / 60
+      let remainingMinutes = minutes % 60
+      return remainingMinutes > 0 ? "\(hours)h \(remainingMinutes)m" : "\(hours)h"
+    }
   }
 
   enum ProgressState {

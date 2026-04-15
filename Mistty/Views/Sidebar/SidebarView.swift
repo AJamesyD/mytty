@@ -107,6 +107,17 @@ struct SessionRowView: View {
               .accessibilityLabel("\(tab.panes.count) panes")
           }
           Spacer()
+          if let result = tab.activePane?.lastCommandResult {
+            Image(systemName: result.exitCode == 0 ? "checkmark.circle.fill" : "xmark.circle.fill")
+              .font(.system(size: 9))
+              .foregroundStyle(
+                result.exitCode == 0 ? .green.opacity(0.5) : MisttyTheme.commandFailedIndicator)
+            if let duration = result.formattedDuration {
+              Text(duration)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.secondary)
+            }
+          }
         }
         .padding(.leading, 12)
         .padding(.vertical, 2)
