@@ -1,5 +1,6 @@
 import AppKit
 import GhosttyKit
+import MisttyShared
 
 final class TerminalSurfaceView: NSView {
   nonisolated(unsafe) private(set) var surface: ghostty_surface_t?
@@ -105,7 +106,19 @@ final class TerminalSurfaceView: NSView {
       }
     }
 
-    createSurface(&cfg)
+    var envVars = [
+      ghostty_env_var_s(key: strdup("MISTTY_SOCKET"), value: strdup(MisttyIPC.socketPath)),
+      ghostty_env_var_s(key: strdup("TERM_PROGRAM"), value: strdup("mistty")),
+    ]
+    envVars.withUnsafeMutableBufferPointer { buffer in
+      cfg.env_vars = buffer.baseAddress
+      cfg.env_var_count = buffer.count
+      createSurface(&cfg)
+    }
+    for env in envVars {
+      free(UnsafeMutablePointer(mutating: env.key))
+      free(UnsafeMutablePointer(mutating: env.value))
+    }
 
     if surface == nil {
       print("[TerminalSurfaceView] ghostty_surface_new failed")
