@@ -290,7 +290,6 @@ extension ContentView {
       for tab in session.tabs {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
           pane.workingDirectory = URL(fileURLWithPath: pwd)
-          GitDetectionService.shared.detectGitInfo(for: pane)
           return
         }
       }
@@ -340,7 +339,6 @@ extension ContentView {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
           pane.lastCommandResult = MisttyPane.CommandResult(
             exitCode: exitCode, duration: duration)
-          GitDetectionService.shared.detectGitInfo(for: pane)
           if exitCode != 0,
             !(store.activeSession?.id == session.id && session.activeTab?.id == tab.id)
           {

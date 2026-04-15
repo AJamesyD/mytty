@@ -15,8 +15,6 @@ final class MisttyPane: Identifiable {
   var workingDirectory: URL?
   var lastCommandResult: CommandResult?
   var progressState: ProgressState?
-  var gitBranch: String?
-  var gitDirty: Bool = false
 
   @ObservationIgnored
   var progressExpiryTask: DispatchWorkItem?
