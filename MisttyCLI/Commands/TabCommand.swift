@@ -12,6 +12,7 @@ struct TabCommand: ParsableCommand {
             Get.self,
             Close.self,
             Rename.self,
+            Move.self,
         ]
     )
 
@@ -204,6 +205,50 @@ struct TabCommand: ParsableCommand {
             let data: Data
             do {
                 data = try client.call("renameTab", ["id": id, "name": name])
+            } catch {
+                OutputFormatter.printError(error.localizedDescription)
+                Foundation.exit(1)
+            }
+
+            switch format {
+            case .json:
+                formatter.printJSON(data)
+            case .human:
+                if let tab = try? JSONDecoder().decode(TabResponse.self, from: data) {
+                    formatter.printSingle([
+                        ("ID", "\(tab.id)"),
+                        ("Title", tab.title),
+                        ("Panes", "\(tab.paneCount)"),
+                    ])
+                }
+            }
+        }
+    }
+
+    struct Move: ParsableCommand {
+        static let configuration = CommandConfiguration(abstract: "Move a tab to a new position")
+
+        @Argument(help: "Tab ID")
+        var id: Int
+
+        @Argument(help: "Destination index (0-based)")
+        var toIndex: Int
+
+        @Flag(name: .long, help: "Output as JSON")
+        var json = false
+
+        @Flag(name: .long, help: "Output as human-readable text")
+        var human = false
+
+        func run() throws {
+            let format = OutputFormat.detect(forceJSON: json, forceHuman: human)
+            let formatter = OutputFormatter(format: format)
+            let client = IPCClient()
+            try client.connect()
+
+            let data: Data
+            do {
+                data = try client.call("moveTab", ["id": id, "toIndex": toIndex])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)

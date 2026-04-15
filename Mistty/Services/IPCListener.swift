@@ -246,6 +246,8 @@ final class IPCListener {
       service.getSession(id: int("id"), reply: reply)
     case "closeSession":
       service.closeSession(id: int("id"), reply: reply)
+    case "renameSession":
+      service.renameSession(id: int("id"), name: str("name") ?? "", reply: reply)
 
     // Tabs
     case "createTab":
@@ -259,6 +261,8 @@ final class IPCListener {
       service.closeTab(id: int("id"), reply: reply)
     case "renameTab":
       service.renameTab(id: int("id"), name: str("name") ?? "", reply: reply)
+    case "moveTab":
+      service.moveTab(id: int("id"), toIndex: int("toIndex"), reply: reply)
 
     // Panes
     case "createPane":

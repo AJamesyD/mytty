@@ -8,6 +8,7 @@ public protocol MisttyServiceProtocol {
   func listSessions(reply: @escaping (Data?, Error?) -> Void)
   func getSession(id: Int, reply: @escaping (Data?, Error?) -> Void)
   func closeSession(id: Int, reply: @escaping (Data?, Error?) -> Void)
+  func renameSession(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void)
 
   // MARK: - Tabs
 
@@ -17,6 +18,7 @@ public protocol MisttyServiceProtocol {
   func getTab(id: Int, reply: @escaping (Data?, Error?) -> Void)
   func closeTab(id: Int, reply: @escaping (Data?, Error?) -> Void)
   func renameTab(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void)
+  func moveTab(id: Int, toIndex: Int, reply: @escaping (Data?, Error?) -> Void)
 
   // MARK: - Panes
 

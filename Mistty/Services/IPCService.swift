@@ -111,6 +111,18 @@ final class MisttyIPCService: MisttyServiceProtocol, Sendable {
     }
   }
 
+  func renameSession(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void) {
+    let reply = Reply(handler: reply)
+    Task { @MainActor in
+      guard let session = self.store.session(byId: id) else {
+        reply(nil, MisttyIPC.error(.entityNotFound, "Session \(id) not found"))
+        return
+      }
+      session.name = name
+      reply(self.encode(self.sessionResponse(session)), nil)
+    }
+  }
+
   // MARK: - Tabs
 
   func createTab(
@@ -175,6 +187,18 @@ final class MisttyIPCService: MisttyServiceProtocol, Sendable {
         return
       }
       tab.customTitle = name
+      reply(self.encode(self.tabResponse(tab)), nil)
+    }
+  }
+
+  func moveTab(id: Int, toIndex: Int, reply: @escaping (Data?, Error?) -> Void) {
+    let reply = Reply(handler: reply)
+    Task { @MainActor in
+      guard let (session, tab) = self.store.tab(byId: id) else {
+        reply(nil, MisttyIPC.error(.entityNotFound, "Tab \(id) not found"))
+        return
+      }
+      session.moveTab(withID: id, toIndex: toIndex)
       reply(self.encode(self.tabResponse(tab)), nil)
     }
   }

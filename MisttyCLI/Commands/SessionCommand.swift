@@ -11,6 +11,7 @@ struct SessionCommand: ParsableCommand {
             List.self,
             Get.self,
             Close.self,
+            Rename.self,
         ]
     )
 
@@ -175,6 +176,51 @@ struct SessionCommand: ParsableCommand {
             }
 
             formatter.printSuccess("Session \(id) closed")
+        }
+    }
+
+    struct Rename: ParsableCommand {
+        static let configuration = CommandConfiguration(abstract: "Rename a session")
+
+        @Argument(help: "Session ID")
+        var id: Int
+
+        @Argument(help: "New name")
+        var name: String
+
+        @Flag(name: .long, help: "Output as JSON")
+        var json = false
+
+        @Flag(name: .long, help: "Output as human-readable text")
+        var human = false
+
+        func run() throws {
+            let format = OutputFormat.detect(forceJSON: json, forceHuman: human)
+            let formatter = OutputFormatter(format: format)
+            let client = IPCClient()
+            try client.connect()
+
+            let data: Data
+            do {
+                data = try client.call("renameSession", ["id": id, "name": name])
+            } catch {
+                OutputFormatter.printError(error.localizedDescription)
+                Foundation.exit(1)
+            }
+
+            switch format {
+            case .json:
+                formatter.printJSON(data)
+            case .human:
+                if let session = try? JSONDecoder().decode(SessionResponse.self, from: data) {
+                    formatter.printSingle([
+                        ("ID", "\(session.id)"),
+                        ("Name", session.name),
+                        ("Directory", session.directory),
+                        ("Tabs", "\(session.tabCount)"),
+                    ])
+                }
+            }
         }
     }
 }
