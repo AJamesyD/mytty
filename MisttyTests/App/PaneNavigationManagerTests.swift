@@ -98,4 +98,25 @@ final class PaneNavigationManagerTests: XCTestCase {
     let result = manager.handleKeyDown(event)
     XCTAssertNotNil(result, "Should pass through when window mode is active")
   }
+
+  func test_handleKeyDown_matchesCtrlKey_withControlCharacterInCharactersIgnoringModifiers() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.tabs[0]
+    tab.splitActivePane(direction: .horizontal)
+
+    // Real macOS events have control characters in both characters and
+    // charactersIgnoringModifiers when Ctrl is held (Ctrl+H = \u{08}).
+    // The fix uses characters(byApplyingModifiers:) which returns "h".
+    guard
+      let event = NSEvent.keyEvent(
+        with: .keyDown, location: .zero, modifierFlags: .control,
+        timestamp: 0, windowNumber: 0, context: nil,
+        characters: "\u{08}", charactersIgnoringModifiers: "\u{08}",
+        isARepeat: false, keyCode: 4
+      )
+    else { return XCTFail("Could not create NSEvent") }
+
+    let result = manager.handleKeyDown(event)
+    XCTAssertNil(result, "Ctrl+H should navigate even when charactersIgnoringModifiers returns control character")
+  }
 }

@@ -54,7 +54,7 @@ final class PaneNavigationManager {
     if let name = Self.keycodeNames[event.keyCode] {
       key = name
     } else {
-      guard let chars = event.charactersIgnoringModifiers?.lowercased() else { return event }
+      guard let chars = event.characters(byApplyingModifiers: [])?.lowercased() else { return event }
       key = chars
     }
 
