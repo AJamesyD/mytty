@@ -1,0 +1,57 @@
+import Foundation
+
+@MainActor
+final class ConfigWatcher {
+  nonisolated(unsafe) private var source: DispatchSourceFileSystemObject?
+  nonisolated(unsafe) private var fileDescriptor: Int32 = -1
+
+  func start() {
+    stop()
+    let path = MisttyConfig.configFileURL.path
+    fileDescriptor = open(path, O_EVTONLY)
+    guard fileDescriptor >= 0 else { return }
+    let source = DispatchSource.makeFileSystemObjectSource(
+      fileDescriptor: fileDescriptor,
+      eventMask: [.write, .rename, .delete],
+      queue: .main
+    )
+    source.setEventHandler { [weak self] in
+      self?.handleChange()
+    }
+    source.setCancelHandler { [weak self] in
+      guard let self, self.fileDescriptor >= 0 else { return }
+      close(self.fileDescriptor)
+      self.fileDescriptor = -1
+    }
+    source.resume()
+    self.source = source
+  }
+
+  func stop() {
+    source?.cancel()
+    source = nil
+  }
+
+  private func handleChange() {
+    let flags = source?.data ?? []
+    if flags.contains(.rename) || flags.contains(.delete) {
+      // Re-open after editor save-and-swap
+      stop()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        self?.start()
+      }
+    }
+    NotificationCenter.default.post(name: .configDidChange, object: nil)
+  }
+
+  deinit {
+    source?.cancel()
+    if fileDescriptor >= 0 {
+      close(fileDescriptor)
+    }
+  }
+}
+
+extension Notification.Name {
+  static let configDidChange = Notification.Name("configDidChange")
+}

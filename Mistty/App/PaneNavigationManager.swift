@@ -26,23 +26,7 @@ final class PaneNavigationManager {
     self.store = store
     isActive = true
 
-    let keybindingStore = MisttyConfig.load().keybindingStore
-    passthroughProcesses = keybindingStore.passthroughProcesses
-    let actionToDirection: [String: NavigationDirection] = [
-      "navigate-left": .left,
-      "navigate-down": .down,
-      "navigate-up": .up,
-      "navigate-right": .right,
-    ]
-    for (action, direction) in actionToDirection {
-      if let trigger = keybindingStore.trigger(for: action, in: .global) {
-        let navKey = NavigationKey(key: trigger.key, modifiers: trigger.modifiers)
-        navigationBindings[navKey] = NavigationBinding(
-          direction: direction,
-          isUnconsumed: trigger.prefix == .unconsumed
-        )
-      }
-    }
+    loadBindings()
 
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
       self?.handleKeyDown(event) ?? event
@@ -108,6 +92,11 @@ final class PaneNavigationManager {
     return event
   }
 
+  func reloadConfig() {
+    guard isActive else { return }
+    loadBindings()
+  }
+
   func deactivate() {
     guard isActive else { return }
     if let monitor {
@@ -118,6 +107,27 @@ final class PaneNavigationManager {
     navigationBindings = [:]
     passthroughProcesses = KeybindingStore.defaultPassthroughProcesses
     isActive = false
+  }
+
+  private func loadBindings() {
+    let keybindingStore = MisttyConfig.load().keybindingStore
+    passthroughProcesses = keybindingStore.passthroughProcesses
+    navigationBindings = [:]
+    let actionToDirection: [String: NavigationDirection] = [
+      "navigate-left": .left,
+      "navigate-down": .down,
+      "navigate-up": .up,
+      "navigate-right": .right,
+    ]
+    for (action, direction) in actionToDirection {
+      if let trigger = keybindingStore.trigger(for: action, in: .global) {
+        let navKey = NavigationKey(key: trigger.key, modifiers: trigger.modifiers)
+        navigationBindings[navKey] = NavigationBinding(
+          direction: direction,
+          isUnconsumed: trigger.prefix == .unconsumed
+        )
+      }
+    }
   }
 
   private func modifiersFromEvent(_ event: NSEvent) -> Set<KeyboardTrigger.Modifier> {
@@ -175,6 +185,9 @@ struct PaneNavigationModifier: ViewModifier {
       }
       .onDisappear {
         manager.deactivate()
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .configDidChange)) { _ in
+        manager.reloadConfig()
       }
   }
 }

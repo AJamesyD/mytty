@@ -14,6 +14,7 @@ struct ContentView: View {
   @State var copyModeManager = CopyModeManager()
   @State var whichKeyManager = WhichKeyManager()
   @State var panelState = PanelState()
+  @State var configWatcher = ConfigWatcher()
 
   var body: some View {
     contentWithNotifications
@@ -230,13 +231,8 @@ struct ContentView: View {
       value: panelState.isSidebarRevealed
     )
     .onAppear {
-      let config = MisttyConfig.load()
-      panelState.sidebarMode = config.sidebarMode
-      panelState.tabBarMode = config.tabBarMode
-      panelState.hideTabBarWhenSingleTab = config.hideTabBarWhenSingleTab
-      panelState.dwellDuration = Double(config.autoHideDwellMs) / 1000.0
-      panelState.dismissDelay = Double(config.autoHideDismissDelayMs) / 1000.0
-      panelState.showHints = config.autoHideShowHints
+      applyConfig(MisttyConfig.load())
+      configWatcher.start()
       windowModeManager.onNeedExitCopyMode = { copyModeManager.exit() }
       copyModeManager.onNeedExitWindowMode = {
         store.activeSession?.activeTab?.windowModeState = .inactive
@@ -249,6 +245,7 @@ struct ContentView: View {
       }
     }
     .onDisappear {
+      configWatcher.stop()
       DispatchQueue.main.async { [store] in
         for tracked in store.trackedWindows where !tracked.window.isVisible {
           store.unregisterWindow(tracked.window)
@@ -301,5 +298,14 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
     }
+  }
+
+  func applyConfig(_ config: MisttyConfig) {
+    panelState.sidebarMode = config.sidebarMode
+    panelState.tabBarMode = config.tabBarMode
+    panelState.hideTabBarWhenSingleTab = config.hideTabBarWhenSingleTab
+    panelState.dwellDuration = Double(config.autoHideDwellMs) / 1000.0
+    panelState.dismissDelay = Double(config.autoHideDismissDelayMs) / 1000.0
+    panelState.showHints = config.autoHideShowHints
   }
 }

@@ -25,6 +25,12 @@ final class WindowModeManager {
     }
   }
 
+  func reloadConfig() {
+    guard isActive else { return }
+    let keybindingStore = MisttyConfig.load().keybindingStore
+    actionLookup = keybindingStore.reverseLookup(in: .windowMode)
+  }
+
   func deactivate() {
     guard isActive else { return }
     if let monitor {

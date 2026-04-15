@@ -48,6 +48,12 @@ extension ContentView {
         notification in
         handleProgressReport(notification)
       }
+      .onReceive(NotificationCenter.default.publisher(for: .configDidChange)) { _ in
+        applyConfig(MisttyConfig.load())
+        if windowModeManager.isActive {
+          windowModeManager.reloadConfig()
+        }
+      }
   }
 
   var contentWithOverlays: some View {
