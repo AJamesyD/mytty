@@ -290,4 +290,49 @@ final class IPCServiceTests: XCTestCase {
     XCTAssertEqual(store.activeSession?.id, session.id)
     XCTAssertEqual(session.activeTab?.id, tab.id)
   }
+
+  // MARK: - Pane Variables
+
+  func testSetAndGetVar() async throws {
+    _ = try await service.createSession(name: "test", directory: "/tmp", exec: nil)
+    _ = try await service.paneSetVar(paneId: 0, key: "is-vim", value: "true")
+    let data = try await service.paneGetVar(paneId: 0, key: "is-vim")
+    let result = try JSONDecoder().decode([String: String?].self, from: data)
+    XCTAssertEqual(result["value"], "true")
+  }
+
+  func testGetVarNotSet() async throws {
+    _ = try await service.createSession(name: "test", directory: "/tmp", exec: nil)
+    let data = try await service.paneGetVar(paneId: 0, key: "nonexistent")
+    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    XCTAssertTrue(json?["value"] is NSNull)
+  }
+
+  func testSetVarNilRemoves() async throws {
+    _ = try await service.createSession(name: "test", directory: "/tmp", exec: nil)
+    _ = try await service.paneSetVar(paneId: 0, key: "is-vim", value: "true")
+    _ = try await service.paneSetVar(paneId: 0, key: "is-vim", value: nil)
+    let data = try await service.paneGetVar(paneId: 0, key: "is-vim")
+    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    XCTAssertTrue(json?["value"] is NSNull)
+  }
+
+  func testPaneAtEdgeSinglePane() async throws {
+    _ = try await service.createSession(name: "test", directory: "/tmp", exec: nil)
+    for dir in ["left", "right", "up", "down"] {
+      let data = try await service.paneAtEdge(direction: dir, sessionId: 0)
+      let result = try JSONDecoder().decode([String: Bool].self, from: data)
+      XCTAssertEqual(result["atEdge"], true, "Expected at edge for direction \(dir)")
+    }
+  }
+
+  func testPaneAtEdgeInvalidDirection() async throws {
+    _ = try await service.createSession(name: "test", directory: "/tmp", exec: nil)
+    do {
+      _ = try await service.paneAtEdge(direction: "diagonal", sessionId: 0)
+      XCTFail("Expected error for invalid direction")
+    } catch {
+      XCTAssertEqual((error as NSError).code, MisttyIPC.ErrorCode.invalidArgument.rawValue)
+    }
+  }
 }
