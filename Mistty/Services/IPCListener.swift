@@ -125,16 +125,7 @@ final class IPCListener {
     _ fd: Int32, service: MisttyIPCService, broker: EventBroker
   ) async {
     defer { Darwin.close(fd) }
-
-    var byte: UInt8 = 0
-    let peeked = recv(fd, &byte, 1, MSG_PEEK)
-    guard peeked == 1 else { return }
-
-    if byte == 0x43 {
-      await handleJSONRPCConnection(fd, service: service, broker: broker)
-    } else {
-      await handleLegacyConnection(fd, service: service)
-    }
+    await handleJSONRPCConnection(fd, service: service, broker: broker)
   }
 
   // MARK: - JSON-RPC Connection Handling
@@ -359,39 +350,6 @@ final class IPCListener {
     }
   }
 
-  private nonisolated static func handleLegacyConnection(
-    _ fd: Int32, service: MisttyIPCService
-  ) async {
-    guard let lengthBytes = readExact(fd: fd, count: 4) else { return }
-    let length = lengthBytes.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-
-    guard length > 0, length <= MisttyIPC.maxMessageSize else { return }
-
-    guard let requestData = readExact(fd: fd, count: Int(length)) else { return }
-
-    guard let json = try? JSONSerialization.jsonObject(with: requestData) as? [String: Any],
-      let method = json["method"] as? String
-    else {
-      writeResponse(fd: fd, data: errorResponse("Invalid request format"))
-      return
-    }
-
-    do {
-      let data = try await dispatch(service: service, method: method, params: json)
-      var result = Data([0x00])
-      result.append(data)
-      writeResponse(fd: fd, data: result)
-    } catch {
-      writeResponse(fd: fd, data: errorResponse(error.localizedDescription))
-    }
-  }
-
-  private nonisolated static func errorResponse(_ message: String) -> Data {
-    var result = Data([0x01])
-    result.append(Data(message.utf8))
-    return result
-  }
-
   // MARK: - Socket I/O Helpers
 
   private nonisolated static func readExact(fd: Int32, count: Int) -> Data? {
@@ -406,13 +364,6 @@ final class IPCListener {
       offset += n
     }
     return buffer
-  }
-
-  private nonisolated static func writeResponse(fd: Int32, data: Data) {
-    var length = UInt32(data.count).bigEndian
-    let lengthData = Data(bytes: &length, count: 4)
-    writeAll(fd: fd, data: lengthData)
-    writeAll(fd: fd, data: data)
   }
 
   private nonisolated static func writeAll(fd: Int32, data: Data) {
@@ -454,100 +405,4 @@ final class IPCListener {
     writeAll(fd: fd, data: data)
   }
 
-  // MARK: - Method Dispatch
-
-  nonisolated static func dispatch(
-    service: MisttyIPCService,
-    method: String,
-    params: [String: Any]
-  ) async throws -> Data {
-    func str(_ key: String) -> String? { params[key] as? String }
-    func int(_ key: String) -> Int { params[key] as? Int ?? 0 }
-    func dbl(_ key: String) -> Double { params[key] as? Double ?? 0 }
-    func boo(_ key: String) -> Bool { params[key] as? Bool ?? false }
-
-    switch method {
-    // Sessions
-    case "createSession":
-      return try await service.createSession(
-        name: str("name") ?? "Default", directory: str("directory"), exec: str("exec"))
-    case "listSessions":
-      return try await service.listSessions()
-    case "getSession":
-      return try await service.getSession(id: int("id"))
-    case "closeSession":
-      return try await service.closeSession(id: int("id"))
-    case "renameSession":
-      return try await service.renameSession(id: int("id"), name: str("name") ?? "")
-
-    // Tabs
-    case "createTab":
-      return try await service.createTab(
-        sessionId: int("sessionId"), name: str("name"), exec: str("exec"))
-    case "listTabs":
-      return try await service.listTabs(sessionId: int("sessionId"))
-    case "getTab":
-      return try await service.getTab(id: int("id"))
-    case "closeTab":
-      return try await service.closeTab(id: int("id"))
-    case "renameTab":
-      return try await service.renameTab(id: int("id"), name: str("name") ?? "")
-    case "moveTab":
-      return try await service.moveTab(id: int("id"), toIndex: int("toIndex"))
-
-    // Panes
-    case "createPane":
-      return try await service.createPane(tabId: int("tabId"), direction: str("direction"))
-    case "listPanes":
-      return try await service.listPanes(tabId: int("tabId"))
-    case "getPane":
-      return try await service.getPane(id: int("id"))
-    case "closePane":
-      return try await service.closePane(id: int("id"))
-    case "focusPane":
-      return try await service.focusPane(id: int("id"))
-    case "focusPaneByDirection":
-      return try await service.focusPaneByDirection(
-        direction: str("direction") ?? "", sessionId: int("sessionId"))
-    case "resizePane":
-      return try await service.resizePane(
-        id: int("id"), direction: str("direction") ?? "", amount: int("amount"))
-    case "sendKeys":
-      return try await service.sendKeys(paneId: int("paneId"), keys: str("keys") ?? "")
-    case "runCommand":
-      return try await service.runCommand(paneId: int("paneId"), command: str("command") ?? "")
-    case "getText":
-      return try await service.getText(paneId: int("paneId"))
-    case "activePane":
-      return try await service.activePane()
-
-    // Windows
-    case "createWindow":
-      return try await service.createWindow()
-    case "listWindows":
-      return try await service.listWindows()
-    case "getWindow":
-      return try await service.getWindow(id: int("id"))
-    case "closeWindow":
-      return try await service.closeWindow(id: int("id"))
-    case "focusWindow":
-      return try await service.focusWindow(id: int("id"))
-
-    // Popups
-    case "openPopup":
-      return try await service.openPopup(
-        sessionId: int("sessionId"), name: str("name") ?? "",
-        exec: str("exec") ?? "", width: dbl("width"), height: dbl("height"),
-        closeOnExit: boo("closeOnExit"))
-    case "closePopup":
-      return try await service.closePopup(popupId: int("popupId"))
-    case "togglePopup":
-      return try await service.togglePopup(sessionId: int("sessionId"), name: str("name") ?? "")
-    case "listPopups":
-      return try await service.listPopups(sessionId: int("sessionId"))
-
-    default:
-      throw MisttyIPC.error(.operationFailed, "Unknown method: \(method)")
-    }
-  }
 }

@@ -80,48 +80,6 @@ final class IPCClient {
         return true
     }
 
-    /// Send an IPC request and return the response data.
-    func call(_ method: String, _ params: [String: Any] = [:]) throws -> Data {
-        guard socketFD >= 0 else {
-            throw IPCClientError.connectionFailed("Not connected")
-        }
-
-        // Build request
-        var request = params
-        request["method"] = method
-        let requestData = try JSONSerialization.data(withJSONObject: request)
-
-        // Write length-prefixed request
-        var length = UInt32(requestData.count).bigEndian
-        let lengthData = Data(bytes: &length, count: 4)
-        try writeAll(data: lengthData)
-        try writeAll(data: requestData)
-
-        // Read length-prefixed response
-        let responseLengthData = try readExact(count: 4)
-        let responseLength = responseLengthData.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
-
-        guard responseLength > 0, responseLength <= MisttyIPC.maxMessageSize else {
-            throw IPCClientError.connectionFailed("Invalid response length")
-        }
-
-        let responseData = try readExact(count: Int(responseLength))
-
-        guard !responseData.isEmpty else {
-            throw IPCClientError.connectionFailed("Empty response")
-        }
-
-        let statusByte = responseData[0]
-        let payload = responseData.dropFirst()
-
-        if statusByte == 0x01 {
-            let message = String(data: Data(payload), encoding: .utf8) ?? "Unknown error"
-            throw IPCClientError.remoteError(message)
-        }
-
-        return Data(payload)
-    }
-
     func callJSONRPC(_ method: String, params: [String: JSONValue]? = nil) throws -> JSONValue {
         let id = nextRequestId
         nextRequestId += 1
