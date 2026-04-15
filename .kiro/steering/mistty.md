@@ -65,3 +65,25 @@ Managers: FooManager.swift in App/ (owns NSEvent monitor lifecycle)
 
 Do not add Apple framework dependencies beyond AppKit, SwiftUI, and
 UserNotifications without discussion.
+
+## Configuration
+
+Config file (`~/.config/mistty/config.toml`) is the single source of truth.
+The Settings GUI (Cmd+,) is read-only. See ADR-006.
+
+Config types live in `Mistty/Config/`:
+- `MisttyConfig.swift`: TOML parser, `load()` entry point, `configFileURL` static
+- `KeybindingStore.swift`: per-mode binding storage, merge/override/unbind/reset
+- `TriggerParser.swift`: parses trigger strings (e.g., `cmd+shift+t`, `unconsumed:ctrl+h`)
+
+Config flows from file to consumers via `MisttyConfig.load().keybindingStore`.
+Each consumer calls `load()` independently (no shared singleton). Consumers:
+- `MisttyApp.swift`: menu shortcuts via `trigger(for:in:.global)?.toKeyboardShortcut()`
+- `PaneNavigationManager.swift`: navigation keys via reverse lookup + `unconsumed:` check
+- `MisttyPane.swift`: passthrough process list via `isPassthroughProcess(processes:)`
+
+Do not add a `save()` method to MisttyConfig. The config file is user-owned.
+A future GUI editor requires format-preserving TOML round-trip (see TODO in SettingsView).
+
+Keybinding actions use kebab-case: `new-tab`, `navigate-left`, `focus-tab-1`.
+TOML config key for the process list: `passthrough-processes`.

@@ -2,7 +2,7 @@
 
 A macOS terminal emulator built on [libghostty](https://github.com/ghostty-org/ghostty) with native session management. Mistty brings tmux-style workflows directly into the terminal: sessions, tabs, split panes, and a fuzzy session switcher, all without a separate multiplexer.
 
-## Features (planned)
+## Features
 
 - **Session manager** (`Cmd+J`): fuzzy-find and switch between sessions, recent directories (via zoxide), and SSH hosts
 - **Tabs and split panes**: standard terminal multiplexing built in
@@ -76,7 +76,7 @@ xcodebuild -downloadComponent MetalToolchain
 
 ```sh
 # Clone with submodules
-git clone --recurse-submodules https://github.com/your-user/mistty.git
+git clone --recurse-submodules mistty.git
 cd mistty
 
 # Or if already cloned:
@@ -104,6 +104,8 @@ just run
 | `just build-libghostty` | Rebuild libghostty from vendored Ghostty |
 | `just dev` | Enter nix dev shell |
 | `just fmt` | Format Swift code |
+| `just lint` | SwiftLint |
+| `just check` | Format + lint + test |
 | `just info` | Show project info |
 
 ### Nix dev shell
@@ -123,18 +125,20 @@ direnv allow
 ```
 mistty/
   Mistty/              # App source
-    App/
-      MisttyApp.swift   # App entry point
-      ContentView.swift # Root SwiftUI view
-    Spike/              # libghostty integration spike (temporary)
-  MisttyTests/          # Tests
-  vendor/ghostty/       # Ghostty git submodule
-  docs/
-    plans/              # Design and implementation docs
-    spike/              # libghostty API research
-  Package.swift         # Swift package manifest
-  flake.nix             # Nix dev environment
-  justfile              # Task runner
+    App/               # Entry point, content view, handlers, managers
+    Config/            # TOML config parser, keybinding store
+    Models/            # Session/Tab/Pane model classes, layout engine
+    Views/             # SwiftUI views by category
+    Services/          # IPC, persistence, fuzzy matching
+    Resources/         # Info.plist, assets
+  MisttyShared/        # IPC protocol, response models, constants
+  MisttyCLI/           # CLI commands and IPC client
+  MisttyTests/         # Unit tests
+  vendor/ghostty/      # Ghostty git submodule
+  docs/                # Design, specs, decisions, research
+  Package.swift        # Swift package manifest
+  flake.nix            # Nix dev environment
+  justfile             # Task runner
 ```
 
 ## Architecture
@@ -145,7 +149,7 @@ Mistty uses a three-layer architecture:
 - **Session Layer** (Swift protocols): `SessionStore` > `MisttySession` > `MisttyTab` > `MisttyPane`, designed for future migration from in-memory to a background daemon
 - **Terminal Layer** (libghostty): `NSViewRepresentable` wrapping a `ghostty_surface_t` for terminal rendering
 
-See [docs/plans/2026-03-06-mistty-design.md](docs/plans/2026-03-06-mistty-design.md) for the full design document.
+See [docs/DESIGN.md](docs/DESIGN.md) for the full design document.
 
 ## License
 

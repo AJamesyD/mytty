@@ -32,7 +32,8 @@ Import only what the file needs.
 Do not import `GhosttyKit` unless the file touches libghostty types directly.
 Files that import `GhosttyKit`: GhosttyApp.swift, ContentView.swift,
 ContentView+Handlers.swift, TerminalSurfaceView.swift, PaneView.swift,
-MisttyApp.swift, CopyModeManager.swift, IPCService.swift.
+MisttyApp.swift, CopyModeManager.swift, PaneNavigationManager.swift,
+IPCService.swift.
 Do not add new `GhosttyKit` imports without verifying the file needs
 direct access to `ghostty_surface_t` or related C types.
 

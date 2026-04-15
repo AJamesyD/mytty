@@ -194,19 +194,40 @@ Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes via smart-spli
 **Why deferred to here:** by this point you've used the app daily for weeks and know what actually needs configuring. The investigation is grounded in real usage, not speculation.
 
 ### 4a. Configuration System
-Extend the existing TOML config. Keybindings, appearance, behavior, panel modes, tab title templates.
 
-- `/spec` required: full design doc. What's configurable vs opinionated, preset themes vs arbitrary values, tab title templates (Kitty-style `{title}`, `{index}`), keybinding format. Prior art research exists; needs a decision spec.
-- Investigation scope (narrowed): extend MisttyConfig TOML parsing. Evaluate Lua hooks only if static config proves insufficient during Phases 2-3.
+Config file (`~/.config/mistty/config.toml`) is the single source of truth. Settings GUI is read-only (shows current values + "Open Config File" button). See ADR-006.
 
-Key questions to answer from real usage:
-1. What have you actually wanted to configure in the past weeks?
-2. What's the migration story from Ghostty config?
-3. Hot-reload strategy: live (file watcher), on-save, or restart-only? Feeds into 4b.
-
+- Spec: `docs/specs/phase4a-config-keybindings.md`
+- Config audit: `/tmp/ai-research-config-audit.md`
 - Complexity: 3
 - Retroactively enhances: which-key (1a reads keybindings from config), auto-hide (1c modes configurable)
 - Enables: 4b (live reload), 5d (Ghostty config compat), 5e (project layouts)
+
+#### 4a-1: Config parsing infrastructure ✅
+TriggerParser, KeybindingStore, TOML `[keybindings]` section parsing. Per-mode sections (global, window-mode, copy-mode), action-as-key format, `unconsumed:` prefix, merge/override/unbind/reset semantics.
+
+- `d94b10f` docs: Phase 4a configurable keybindings spec
+- `3ee6e13` feat: TriggerParser, KeybindingStore, keybindings parsing
+
+#### 4a-2: Wire global keybindings ✅
+Menu shortcuts (MisttyApp), pane navigation (PaneNavigationManager), and passthrough process list (MisttyPane) read from KeybindingStore. `unconsumed:` triggers call `ghostty_surface_key_is_binding()` to let ghostty claim keys before Mistty intercepts. Settings GUI replaced with read-only config viewer.
+
+- `22af138` feat: wire global keybindings from KeybindingStore
+- `d37a787` refactor: rename vimLikeProcesses to passthroughProcesses
+- `e1167bc` fix: replace writable Settings GUI with read-only config viewer
+
+#### Doc maintenance (between 4a-2 and 4a-3)
+- [x] Fix stale facts in steering docs (GhosttyKit import list)
+- [x] Update README (project structure, architecture link)
+- [x] Add config system rules to steering docs
+- [x] ADR-006: config-file-only approach
+- [x] Archive old plan/implementation transcripts to docs/archive/
+
+#### 4a-3: Wire modal keybindings (next)
+Replace hardcoded keybindings in WindowModeManager, CopyModeState, and WhichKeyManager with store lookups. Multi-character trigger dispatch (gg, ge) for copy mode.
+
+- Depends on: 4a-2
+- Key challenge: CopyModeState has stateful dispatch (g-prefix, f/F char-find) interleaved with key matching
 
 ### 4b. Live Config Reload
 Watch config file with `DispatchSource.makeFileSystemObjectSource`. Reload on change. Panel modes, fonts, colors, and keybindings apply immediately. Terminal-affecting options (scrollback size) apply to new panes only.
