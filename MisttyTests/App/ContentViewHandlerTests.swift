@@ -21,9 +21,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = session.tabs[0].panes[0].id
     let view = ContentView(store: store)
 
-    view.handleSetTitle(Notification(
-      name: .ghosttySetTitle, object: nil,
-      userInfo: ["paneID": paneID, "title": "vim"]))
+    view.handleSetTitle(
+      Notification(
+        name: .ghosttySetTitle, object: nil,
+        userInfo: ["paneID": paneID, "title": "vim"]))
 
     XCTAssertEqual(session.tabs[0].panes[0].processTitle, "vim")
   }
@@ -37,9 +38,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = backgroundTab.panes[0].id
     let view = ContentView(store: store)
 
-    view.handleRingBell(Notification(
-      name: .ghosttyRingBell, object: nil,
-      userInfo: ["paneID": paneID]))
+    view.handleRingBell(
+      Notification(
+        name: .ghosttyRingBell, object: nil,
+        userInfo: ["paneID": paneID]))
 
     XCTAssertTrue(backgroundTab.hasBell)
   }
@@ -50,9 +52,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = activeTab.panes[0].id
     let view = ContentView(store: store)
 
-    view.handleRingBell(Notification(
-      name: .ghosttyRingBell, object: nil,
-      userInfo: ["paneID": paneID]))
+    view.handleRingBell(
+      Notification(
+        name: .ghosttyRingBell, object: nil,
+        userInfo: ["paneID": paneID]))
 
     XCTAssertFalse(activeTab.hasBell)
   }
@@ -64,9 +67,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = session.tabs[0].panes[0].id
     let view = ContentView(store: store)
 
-    view.handleCloseSurface(Notification(
-      name: .ghosttyCloseSurface, object: nil,
-      userInfo: ["paneID": paneID]))
+    view.handleCloseSurface(
+      Notification(
+        name: .ghosttyCloseSurface, object: nil,
+        userInfo: ["paneID": paneID]))
 
     XCTAssertTrue(store.sessions.isEmpty)
   }
@@ -78,9 +82,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = session.tabs[0].panes[0].id
     let view = ContentView(store: store)
 
-    view.handlePwd(Notification(
-      name: .ghosttyPwd, object: nil,
-      userInfo: ["paneID": paneID, "pwd": "/Users/test"]))
+    view.handlePwd(
+      Notification(
+        name: .ghosttyPwd, object: nil,
+        userInfo: ["paneID": paneID, "pwd": "/Users/test"]))
 
     XCTAssertEqual(session.tabs[0].panes[0].workingDirectory?.path, "/Users/test")
   }
@@ -92,9 +97,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = session.tabs[0].panes[0].id
     let view = ContentView(store: store)
 
-    view.handleSetTabTitle(Notification(
-      name: .ghosttySetTabTitle, object: nil,
-      userInfo: ["paneID": paneID, "title": "editor"]))
+    view.handleSetTabTitle(
+      Notification(
+        name: .ghosttySetTabTitle, object: nil,
+        userInfo: ["paneID": paneID, "title": "editor"]))
 
     XCTAssertEqual(session.tabs[0].tabTitle, "editor")
   }
@@ -106,9 +112,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = session.activeTab!.activePane!.id
     let view = ContentView(store: store)
 
-    view.handleDesktopNotification(Notification(
-      name: .ghosttyDesktopNotification, object: nil,
-      userInfo: ["paneID": paneID, "title": "done", "body": "task finished"]))
+    view.handleDesktopNotification(
+      Notification(
+        name: .ghosttyDesktopNotification, object: nil,
+        userInfo: ["paneID": paneID, "title": "done", "body": "task finished"]))
   }
 
   // MARK: - handleCommandFinished
@@ -118,9 +125,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = session.tabs[0].panes[0].id
     let view = ContentView(store: store)
 
-    view.handleCommandFinished(Notification(
-      name: .ghosttyCommandFinished, object: nil,
-      userInfo: ["paneID": paneID, "exitCode": Int16(0), "duration": UInt64(1_000_000)]))
+    view.handleCommandFinished(
+      Notification(
+        name: .ghosttyCommandFinished, object: nil,
+        userInfo: ["paneID": paneID, "exitCode": Int16(0), "duration": UInt64(1_000_000)]))
 
     XCTAssertEqual(session.tabs[0].panes[0].lastCommandResult?.exitCode, 0)
   }
@@ -132,9 +140,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = backgroundTab.panes[0].id
     let view = ContentView(store: store)
 
-    view.handleCommandFinished(Notification(
-      name: .ghosttyCommandFinished, object: nil,
-      userInfo: ["paneID": paneID, "exitCode": Int16(1), "duration": UInt64(500)]))
+    view.handleCommandFinished(
+      Notification(
+        name: .ghosttyCommandFinished, object: nil,
+        userInfo: ["paneID": paneID, "exitCode": Int16(1), "duration": UInt64(500)]))
 
     XCTAssertTrue(backgroundTab.hasFailedCommand)
   }
@@ -145,9 +154,10 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = activeTab.panes[0].id
     let view = ContentView(store: store)
 
-    view.handleCommandFinished(Notification(
-      name: .ghosttyCommandFinished, object: nil,
-      userInfo: ["paneID": paneID, "exitCode": Int16(1), "duration": UInt64(500)]))
+    view.handleCommandFinished(
+      Notification(
+        name: .ghosttyCommandFinished, object: nil,
+        userInfo: ["paneID": paneID, "exitCode": Int16(1), "duration": UInt64(500)]))
 
     XCTAssertFalse(activeTab.hasFailedCommand)
   }
@@ -159,13 +169,14 @@ final class ContentViewHandlerTests: XCTestCase {
     let paneID = session.tabs[0].panes[0].id
     let view = ContentView(store: store)
 
-    view.handleProgressReport(Notification(
-      name: .ghosttyProgressReport, object: nil,
-      userInfo: [
-        "paneID": paneID,
-        "state": GHOSTTY_PROGRESS_STATE_SET.rawValue,
-        "progress": Int8(75),
-      ]))
+    view.handleProgressReport(
+      Notification(
+        name: .ghosttyProgressReport, object: nil,
+        userInfo: [
+          "paneID": paneID,
+          "state": GHOSTTY_PROGRESS_STATE_SET.rawValue,
+          "progress": Int8(75),
+        ]))
 
     if case .set(let progress) = session.tabs[0].panes[0].progressState {
       XCTAssertEqual(progress, 75)
@@ -180,13 +191,14 @@ final class ContentViewHandlerTests: XCTestCase {
     pane.progressState = .set(progress: 50)
     let view = ContentView(store: store)
 
-    view.handleProgressReport(Notification(
-      name: .ghosttyProgressReport, object: nil,
-      userInfo: [
-        "paneID": pane.id,
-        "state": GHOSTTY_PROGRESS_STATE_REMOVE.rawValue,
-        "progress": Int8(0),
-      ]))
+    view.handleProgressReport(
+      Notification(
+        name: .ghosttyProgressReport, object: nil,
+        userInfo: [
+          "paneID": pane.id,
+          "state": GHOSTTY_PROGRESS_STATE_REMOVE.rawValue,
+          "progress": Int8(0),
+        ]))
 
     XCTAssertNil(pane.progressState)
   }

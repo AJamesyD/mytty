@@ -38,14 +38,16 @@ struct SessionCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
-            var params: [String: Any] = ["name": name]
-            if let directory { params["directory"] = directory }
-            if let exec { params["exec"] = exec }
+            var params: [String: JSONValue] = ["name": .string(name)]
+            if let directory { params["directory"] = .string(directory) }
+            if let exec { params["exec"] = .string(exec) }
 
             let data: Data
             do {
-                data = try client.call("createSession", params)
+                let result = try client.callJSONRPC("session.create", params: params)
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -81,10 +83,12 @@ struct SessionCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("listSessions")
+                let result = try client.callJSONRPC("session.list")
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -124,10 +128,12 @@ struct SessionCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("getSession", ["id": id])
+                let result = try client.callJSONRPC("session.get", params: ["id": .int(id)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -167,9 +173,10 @@ struct SessionCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("closeSession", ["id": id])
+                _ = try client.callJSONRPC("session.close", params: ["id": .int(id)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -199,10 +206,12 @@ struct SessionCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("renameSession", ["id": id, "name": name])
+                let result = try client.callJSONRPC("session.rename", params: ["id": .int(id), "name": .string(name)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)

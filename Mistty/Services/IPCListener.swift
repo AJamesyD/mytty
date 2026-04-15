@@ -136,6 +136,123 @@ final class IPCListener {
   private nonisolated static func handleConnection(_ fd: Int32, service: MisttyIPCService) {
     defer { Darwin.close(fd) }
 
+    var byte: UInt8 = 0
+    let peeked = recv(fd, &byte, 1, MSG_PEEK)
+    guard peeked == 1 else { return }
+
+    if byte == 0x43 {
+      handleJSONRPCConnection(fd, service: service)
+    } else {
+      handleLegacyConnection(fd, service: service)
+    }
+  }
+
+  // MARK: - JSON-RPC Connection Handling
+
+  private nonisolated static func handleJSONRPCConnection(_ fd: Int32, service: MisttyIPCService) {
+    let encoder = JSONEncoder()
+
+    while true {
+      guard let messageData = readContentLengthMessage(fd: fd) else { return }
+
+      guard let request = try? JSONDecoder().decode(JSONRPCMessage.Request.self, from: messageData)
+      else {
+        let errResp = JSONRPCMessage.Response.error(
+          id: 0, code: MisttyIPC.JSONRPCErrorCode.parseError, message: "Parse error")
+        if let data = try? encoder.encode(errResp) {
+          writeContentLengthMessage(fd: fd, data: data)
+        }
+        continue
+      }
+
+      let response: JSONRPCMessage.Response
+
+      switch request.method {
+      case "initialize":
+        let result: JSONValue = [
+          "serverVersion": .string(MisttyIPC.protocolVersion),
+          "capabilities": ["events": false],
+        ]
+        response = .success(id: request.id, result: result)
+
+      case "session.create", "session.list", "session.get", "session.close", "session.rename":
+        response = dispatchSessionMethod(request, service: service)
+
+      default:
+        response = .error(
+          id: request.id, code: MisttyIPC.JSONRPCErrorCode.methodNotFound,
+          message: "Method not found: \(request.method)")
+      }
+
+      guard let data = try? encoder.encode(response) else { return }
+      writeContentLengthMessage(fd: fd, data: data)
+    }
+  }
+
+  private nonisolated static func dispatchSessionMethod(
+    _ request: JSONRPCMessage.Request, service: MisttyIPCService
+  ) -> JSONRPCMessage.Response {
+    let params = request.params ?? [:]
+
+    func str(_ key: String) -> String? {
+      if case .string(let s) = params[key] { return s }
+      return nil
+    }
+    func int(_ key: String) -> Int {
+      if case .int(let i) = params[key] { return i }
+      return 0
+    }
+
+    let semaphore = DispatchSemaphore(value: 0)
+    var responseData: Data?
+    var responseError: Error?
+
+    let reply: (Data?, Error?) -> Void = { data, error in
+      responseData = data
+      responseError = error
+      semaphore.signal()
+    }
+
+    switch request.method {
+    case "session.create":
+      service.createSession(
+        name: str("name") ?? "Default", directory: str("directory"), exec: str("exec"), reply: reply
+      )
+    case "session.list":
+      service.listSessions(reply: reply)
+    case "session.get":
+      service.getSession(id: int("id"), reply: reply)
+    case "session.close":
+      service.closeSession(id: int("id"), reply: reply)
+    case "session.rename":
+      service.renameSession(id: int("id"), name: str("name") ?? "", reply: reply)
+    default:
+      return .error(
+        id: request.id, code: MisttyIPC.JSONRPCErrorCode.methodNotFound,
+        message: "Method not found: \(request.method)")
+    }
+
+    semaphore.wait()
+
+    if let error = responseError as? NSError {
+      let rpcCode: Int
+      switch MisttyIPC.ErrorCode(rawValue: error.code) {
+      case .entityNotFound: rpcCode = MisttyIPC.JSONRPCErrorCode.entityNotFound
+      case .invalidArgument: rpcCode = MisttyIPC.JSONRPCErrorCode.invalidArgument
+      case .notSupported: rpcCode = MisttyIPC.JSONRPCErrorCode.notSupported
+      default: rpcCode = MisttyIPC.JSONRPCErrorCode.operationFailed
+      }
+      return .error(id: request.id, code: rpcCode, message: error.localizedDescription)
+    }
+
+    if let data = responseData, let result = try? JSONDecoder().decode(JSONValue.self, from: data) {
+      return .success(id: request.id, result: result)
+    }
+
+    return .success(id: request.id, result: .null)
+  }
+
+  private nonisolated static func handleLegacyConnection(_ fd: Int32, service: MisttyIPCService) {
     // Read length prefix (4 bytes, big-endian UInt32)
     guard let lengthBytes = readExact(fd: fd, count: 4) else { return }
     let length = lengthBytes.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
@@ -153,7 +270,7 @@ final class IPCListener {
       return
     }
 
-    // Dispatch to service (synchronous via semaphore — service methods are @MainActor)
+    // Dispatch to service (synchronous via semaphore)
     let semaphore = DispatchSemaphore(value: 0)
     var responseData: Data?
     var responseError: String?
@@ -219,6 +336,33 @@ final class IPCListener {
       if n <= 0 { return }
       offset += n
     }
+  }
+
+  // MARK: - Content-Length Framing
+
+  private nonisolated static func readContentLengthMessage(fd: Int32) -> Data? {
+    var headerBytes = Data()
+    let separator = Data([0x0D, 0x0A, 0x0D, 0x0A])
+    while headerBytes.count < 256 {
+      guard let byte = readExact(fd: fd, count: 1) else { return nil }
+      headerBytes.append(byte)
+      if headerBytes.count >= 4, Data(headerBytes.suffix(4)) == separator {
+        break
+      }
+    }
+    guard headerBytes.count >= 4, Data(headerBytes.suffix(4)) == separator else { return nil }
+    let headerStr = String(data: headerBytes.dropLast(4), encoding: .utf8) ?? ""
+    guard headerStr.hasPrefix("Content-Length: "),
+      let length = Int(headerStr.dropFirst("Content-Length: ".count)),
+      length > 0, length <= MisttyIPC.maxMessageSize
+    else { return nil }
+    return readExact(fd: fd, count: length)
+  }
+
+  private nonisolated static func writeContentLengthMessage(fd: Int32, data: Data) {
+    let header = "Content-Length: \(data.count)\r\n\r\n"
+    writeAll(fd: fd, data: Data(header.utf8))
+    writeAll(fd: fd, data: data)
   }
 
   // MARK: - Method Dispatch

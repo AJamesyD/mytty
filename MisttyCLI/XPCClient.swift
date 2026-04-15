@@ -19,6 +19,7 @@ enum IPCClientError: LocalizedError, CustomStringConvertible {
 /// CLI-side IPC client using Unix domain sockets to communicate with the Mistty app.
 final class IPCClient {
     private var socketFD: Int32 = -1
+    private var nextRequestId: Int = 1
 
     /// Connect to the running Mistty app, launching it if needed.
     func connect() throws {
@@ -121,8 +122,61 @@ final class IPCClient {
         return Data(payload)
     }
 
+    func callJSONRPC(_ method: String, params: [String: JSONValue]? = nil) throws -> JSONValue {
+        let id = nextRequestId
+        nextRequestId += 1
+        let request = JSONRPCMessage.Request(method: method, params: params, id: id)
+        let requestData = try JSONEncoder().encode(request)
+        try writeContentLengthMessage(data: requestData)
+        let responseData = try readContentLengthMessage()
+        let response = try JSONDecoder().decode(JSONRPCMessage.Response.self, from: responseData)
+        if let error = response.error {
+            throw IPCClientError.remoteError("[\(error.code)] \(error.message)")
+        }
+        return response.result ?? .null
+    }
+
+    func initialize() throws {
+        let result = try callJSONRPC("initialize", params: [
+            "clientVersion": .string(MisttyIPC.protocolVersion),
+            "clientName": "mistty-cli",
+        ])
+        _ = result
+    }
+
     deinit {
         if socketFD >= 0 { close(socketFD) }
+    }
+
+    // MARK: - Content-Length Framing
+
+    private func readContentLengthMessage() throws -> Data {
+        var headerBytes = Data()
+        let separator = Data([0x0D, 0x0A, 0x0D, 0x0A])
+        while headerBytes.count < 256 {
+            let byte = try readExact(count: 1)
+            headerBytes.append(byte)
+            if headerBytes.count >= 4, Data(headerBytes.suffix(4)) == separator {
+                break
+            }
+        }
+        guard headerBytes.count >= 4, Data(headerBytes.suffix(4)) == separator else {
+            throw IPCClientError.connectionFailed("Invalid Content-Length header")
+        }
+        let headerStr = String(data: headerBytes.dropLast(4), encoding: .utf8) ?? ""
+        guard headerStr.hasPrefix("Content-Length: "),
+              let length = Int(headerStr.dropFirst("Content-Length: ".count)),
+              length > 0, length <= MisttyIPC.maxMessageSize
+        else {
+            throw IPCClientError.connectionFailed("Invalid Content-Length value")
+        }
+        return try readExact(count: length)
+    }
+
+    private func writeContentLengthMessage(data: Data) throws {
+        let header = "Content-Length: \(data.count)\r\n\r\n"
+        try writeAll(data: Data(header.utf8))
+        try writeAll(data: data)
     }
 
     // MARK: - Socket I/O Helpers
