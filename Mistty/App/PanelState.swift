@@ -26,6 +26,8 @@ extension PanelMode {
 @Observable
 final class PanelState {
   var sidebarMode: PanelMode = .pinned
+  var sidebarPosition: SidebarPosition = .left
+  var sidebarShowTree: Bool = true
   var tabBarMode: PanelMode = .pinned
   var hideTabBarWhenSingleTab: Bool = true
   var dwellDuration: TimeInterval = 0.15

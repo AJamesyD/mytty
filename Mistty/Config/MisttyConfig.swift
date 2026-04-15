@@ -27,12 +27,18 @@ struct SSHConfig: Sendable, Equatable {
   }
 }
 
+enum SidebarPosition: String, Sendable, Equatable {
+  case left, right
+}
+
 struct MisttyConfig: Sendable, Equatable {
   var fontSize: Int = 13
   var fontFamily: String = "monospace"
   var cursorStyle: String = "block"
   var scrollbackLines: Int = 10000
   var sidebarMode: PanelMode = .pinned
+  var sidebarPosition: SidebarPosition = .left
+  var sidebarShowTree: Bool = true
   var tabBarMode: PanelMode = .pinned
   var hideTabBarWhenSingleTab: Bool = true
   var autoHideDwellMs: Int = 150
@@ -56,6 +62,12 @@ struct MisttyConfig: Sendable, Equatable {
         let mode = PanelMode.fromConfig(modeStr)
       {
         config.sidebarMode = mode
+      }
+      if let posStr = sidebarTable["position"]?.string {
+        config.sidebarPosition = SidebarPosition(rawValue: posStr) ?? .left
+      }
+      if let showTree = sidebarTable["show-tree"]?.bool {
+        config.sidebarShowTree = showTree
       }
     }
     if table["sidebar"]?.table == nil, let visible = table["sidebar_visible"]?.bool {

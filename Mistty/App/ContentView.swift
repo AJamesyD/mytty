@@ -56,7 +56,8 @@ struct ContentView: View {
       width: Binding(
         get: { CGFloat(sidebarWidth) },
         set: { sidebarWidth = Double($0) }
-      ))
+      ),
+      showTree: panelState.sidebarShowTree)
   }
 
   var terminalArea: some View {
@@ -178,51 +179,67 @@ struct ContentView: View {
     }
   }
 
+  @ViewBuilder
   var mainContent: some View {
-    ZStack(alignment: .leading) {
+    let isRight = panelState.sidebarPosition == .right
+    ZStack(alignment: isRight ? .trailing : .leading) {
       HStack(spacing: 0) {
-        if panelState.sidebarIsPinned {
+        if panelState.sidebarIsPinned && !isRight {
           sidebarPanel
           Rectangle()
             .fill(MisttyTheme.sidebarDivider)
             .frame(width: 1)
         }
         terminalArea
+        if panelState.sidebarIsPinned && isRight {
+          Rectangle()
+            .fill(MisttyTheme.sidebarDivider)
+            .frame(width: 1)
+          sidebarPanel
+        }
       }
 
       if !panelState.sidebarIsPinned {
         if panelState.isSidebarRevealed {
           sidebarPanel
             .background(.ultraThinMaterial)
-            .shadow(color: MisttyTheme.panelOverlayShadow, radius: 2, x: 1, y: 0)
-            .transition(.move(edge: .leading))
+            .shadow(color: MisttyTheme.panelOverlayShadow, radius: 2, x: isRight ? -1 : 1, y: 0)
+            .transition(.move(edge: isRight ? .trailing : .leading))
         }
 
         if panelState.sidebarMode == .autoHide {
-          EdgeTriggerView(
-            dwellDuration: panelState.dwellDuration,
-            dismissDelay: panelState.dismissDelay,
-            onReveal: {
-              guard !isAnyModalActive else { return }
-              panelState.isSidebarRevealed = true
-            },
-            onDismiss: {
-              guard !panelState.isSidebarTempPinned else { return }
-              panelState.isSidebarRevealed = false
-            }
-          )
-          .frame(width: 20)
-          .frame(maxHeight: .infinity)
+          HStack(spacing: 0) {
+            if isRight { Spacer() }
+            EdgeTriggerView(
+              dwellDuration: panelState.dwellDuration,
+              dismissDelay: panelState.dismissDelay,
+              onReveal: {
+                guard !isAnyModalActive else { return }
+                panelState.isSidebarRevealed = true
+              },
+              onDismiss: {
+                guard !panelState.isSidebarTempPinned else { return }
+                panelState.isSidebarRevealed = false
+              }
+            )
+            .frame(width: 20)
+            .frame(maxHeight: .infinity)
+            if !isRight { Spacer() }
+          }
         }
 
         if panelState.showHints && panelState.sidebarMode == .autoHide
           && !panelState.isSidebarRevealed
         {
-          RoundedRectangle(cornerRadius: 1)
-            .fill(MisttyTheme.autoHideHint)
-            .frame(width: 2, height: 24)
-            .frame(maxHeight: .infinity)
-            .allowsHitTesting(false)
+          HStack(spacing: 0) {
+            if isRight { Spacer() }
+            RoundedRectangle(cornerRadius: 1)
+              .fill(MisttyTheme.autoHideHint)
+              .frame(width: 2, height: 24)
+              .allowsHitTesting(false)
+            if !isRight { Spacer() }
+          }
+          .frame(maxHeight: .infinity)
         }
       }
     }
@@ -302,6 +319,8 @@ struct ContentView: View {
 
   func applyConfig(_ config: MisttyConfig) {
     panelState.sidebarMode = config.sidebarMode
+    panelState.sidebarPosition = config.sidebarPosition
+    panelState.sidebarShowTree = config.sidebarShowTree
     panelState.tabBarMode = config.tabBarMode
     panelState.hideTabBarWhenSingleTab = config.hideTabBarWhenSingleTab
     panelState.dwellDuration = Double(config.autoHideDwellMs) / 1000.0

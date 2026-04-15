@@ -3,11 +3,12 @@ import SwiftUI
 struct SidebarView: View {
   @Bindable var store: SessionStore
   @Binding var width: CGFloat
+  var showTree: Bool = true
 
   var body: some View {
     List {
       ForEach(store.sessions) { session in
-        SessionRowView(session: session, store: store)
+        SessionRowView(session: session, store: store, showTree: showTree)
       }
     }
     .listStyle(.sidebar)
@@ -44,6 +45,7 @@ struct SidebarDragHandle: View {
 struct SessionRowView: View {
   @Bindable var session: MisttySession
   @Bindable var store: SessionStore
+  var showTree: Bool = true
   @State private var isExpanded = true
   @State private var isEditingSession = false
   @State private var editingTabID: Int? = nil
@@ -53,6 +55,24 @@ struct SessionRowView: View {
   var isActive: Bool { store.activeSession?.id == session.id }
 
   var body: some View {
+    Group {
+      if showTree {
+        treeContent
+      } else {
+        sessionLabel
+      }
+    }
+    .listRowBackground(rowBackground)
+    .padding(.top, 4)
+    .onReceive(NotificationCenter.default.publisher(for: .misttyRenameSession)) { _ in
+      if isActive {
+        editText = session.name
+        isEditingSession = true
+      }
+    }
+  }
+
+  var treeContent: some View {
     DisclosureGroup(isExpanded: $isExpanded) {
       ForEach(session.tabs) { tab in
         let isActiveTab = isActive && session.activeTab?.id == tab.id
@@ -145,82 +165,80 @@ struct SessionRowView: View {
         }
       }
     } label: {
-      HStack(spacing: 6) {
-        if isEditingSession {
-          TextField(
-            "Session name", text: $editText,
-            onCommit: {
-              session.name = editText.isEmpty ? session.directory.lastPathComponent : editText
-              isEditingSession = false
-            }
-          )
-          .textFieldStyle(.plain)
-          .font(.system(size: 13))
-          .focused($editFocused)
-          .onExitCommand { isEditingSession = false }
-          .onAppear { editFocused = true }
-          .onChange(of: editFocused) {
-            if !editFocused { isEditingSession = false }
-          }
-        } else {
-          Text(session.name)
-            .font(.system(size: 13))
-            .fontWeight(isActive ? .semibold : .regular)
-            .foregroundStyle(isActive ? .primary : .secondary)
-            .lineLimit(1)
-            .help(session.name)
-            .onTapGesture(count: 2) {
-              editText = session.name
-              isEditingSession = true
-            }
-        }
-        if !isExpanded || session.tabs.count >= 2 {
-          Text("\(session.tabs.count)")
-            .font(.system(size: 10, design: .monospaced))
-            .foregroundStyle(MisttyTheme.tabCountBadge)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(
-              Capsule()
-                .fill(MisttyTheme.tabCountBadge.opacity(0.15))
-            )
-            .accessibilityLabel("\(session.tabs.count) tabs")
-        }
-        if session.notificationCount > 0, let severity = session.notificationSeverity {
-          let color: Color = severity == .commandFailed ? MisttyTheme.commandFailedIndicator : .red
-          Text("\(session.notificationCount)")
-            .font(.system(size: 10, design: .monospaced))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(Capsule().fill(color))
-            .accessibilityLabel("\(session.notificationCount) notifications")
-        }
-      }
-      .contentShape(Rectangle())
-      .contextMenu {
-        Button("Rename Session") {
-          editText = session.name
-          isEditingSession = true
-        }
-        Button("Close Session") { store.closeSession(session) }
-      }
-      .onTapGesture { store.activeSession = session }
+      sessionLabel
     }
-    .listRowBackground(
-      HStack(spacing: 0) {
-        MisttyTheme.sessionAccent
-          .frame(width: 3)
-          .opacity(isActive ? 1 : 0)
-        Color.clear
+  }
+
+  var sessionLabel: some View {
+    HStack(spacing: 6) {
+      if isEditingSession {
+        TextField(
+          "Session name", text: $editText,
+          onCommit: {
+            session.name = editText.isEmpty ? session.directory.lastPathComponent : editText
+            isEditingSession = false
+          }
+        )
+        .textFieldStyle(.plain)
+        .font(.system(size: 13))
+        .focused($editFocused)
+        .onExitCommand { isEditingSession = false }
+        .onAppear { editFocused = true }
+        .onChange(of: editFocused) {
+          if !editFocused { isEditingSession = false }
+        }
+      } else {
+        Text(session.name)
+          .font(.system(size: 13))
+          .fontWeight(isActive ? .semibold : .regular)
+          .foregroundStyle(isActive ? .primary : .secondary)
+          .lineLimit(1)
+          .help(session.name)
+          .onTapGesture(count: 2) {
+            editText = session.name
+            isEditingSession = true
+          }
       }
-    )
-    .padding(.top, 4)
-    .onReceive(NotificationCenter.default.publisher(for: .misttyRenameSession)) { _ in
-      if isActive {
+      if !showTree || !isExpanded || session.tabs.count >= 2 {
+        Text("\(session.tabs.count)")
+          .font(.system(size: 10, design: .monospaced))
+          .foregroundStyle(MisttyTheme.tabCountBadge)
+          .padding(.horizontal, 5)
+          .padding(.vertical, 1)
+          .background(
+            Capsule()
+              .fill(MisttyTheme.tabCountBadge.opacity(0.15))
+          )
+          .accessibilityLabel("\(session.tabs.count) tabs")
+      }
+      if session.notificationCount > 0, let severity = session.notificationSeverity {
+        let color: Color = severity == .commandFailed ? MisttyTheme.commandFailedIndicator : .red
+        Text("\(session.notificationCount)")
+          .font(.system(size: 10, design: .monospaced))
+          .foregroundStyle(.white)
+          .padding(.horizontal, 5)
+          .padding(.vertical, 1)
+          .background(Capsule().fill(color))
+          .accessibilityLabel("\(session.notificationCount) notifications")
+      }
+    }
+    .contentShape(Rectangle())
+    .contextMenu {
+      Button("Rename Session") {
         editText = session.name
         isEditingSession = true
       }
+      Button("Close Session") { store.closeSession(session) }
+    }
+    .onTapGesture { store.activeSession = session }
+  }
+
+  var rowBackground: some View {
+    HStack(spacing: 0) {
+      MisttyTheme.sessionAccent
+        .frame(width: 3)
+        .opacity(isActive ? 1 : 0)
+      Color.clear
     }
   }
 }
