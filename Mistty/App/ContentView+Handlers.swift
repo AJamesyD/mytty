@@ -178,8 +178,11 @@ extension ContentView {
           copyModeManager.exit()
         }
       }
+      let keybindingStore = MisttyConfig.load().keybindingStore
       whichKeyManager.activate(
-        bindings: WhichKeyManager.defaultBindings(store: store, commands: terminalCommands))
+        bindings: WhichKeyManager.buildBindings(
+          store: store, commands: terminalCommands,
+          groups: keybindingStore.whichKeyGroups))
     }
   }
 

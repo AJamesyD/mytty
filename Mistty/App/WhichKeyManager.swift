@@ -102,149 +102,87 @@ final class WhichKeyManager {
     }
   }
 
-  static func defaultBindings(store: SessionStore, commands: TerminalCommands) -> [WhichKeyBinding]
-  {
-    [
-      WhichKeyBinding(
-        key: "w",
-        action: .group(
-          label: "Windows",
-          children: [
-            WhichKeyBinding(
-              key: "h",
-              action: .command(label: "Swap Left") {
-                guard let tab = store.activeSession?.activeTab,
-                  let pane = tab.activePane
-                else { return }
-                tab.layout.swapPane(pane, direction: .left)
-              }),
-            WhichKeyBinding(
-              key: "j",
-              action: .command(label: "Swap Down") {
-                guard let tab = store.activeSession?.activeTab,
-                  let pane = tab.activePane
-                else { return }
-                tab.layout.swapPane(pane, direction: .down)
-              }),
-            WhichKeyBinding(
-              key: "k",
-              action: .command(label: "Swap Up") {
-                guard let tab = store.activeSession?.activeTab,
-                  let pane = tab.activePane
-                else { return }
-                tab.layout.swapPane(pane, direction: .up)
-              }),
-            WhichKeyBinding(
-              key: "l",
-              action: .command(label: "Swap Right") {
-                guard let tab = store.activeSession?.activeTab,
-                  let pane = tab.activePane
-                else { return }
-                tab.layout.swapPane(pane, direction: .right)
-              }),
-            WhichKeyBinding(
-              key: "z",
-              action: .command(label: "Zoom") {
-                guard let tab = store.activeSession?.activeTab else { return }
-                tab.zoomedPane = tab.zoomedPane != nil ? nil : tab.activePane
-              }),
-            WhichKeyBinding(
-              key: "b",
-              action: .command(label: "Break to Tab") {
-                guard let session = store.activeSession,
-                  let tab = session.activeTab,
-                  let pane = tab.activePane,
-                  tab.panes.count > 1
-                else { return }
-                tab.closePane(pane)
-                if tab.panes.isEmpty { session.closeTab(tab) }
-                session.addTabWithPane(pane)
-              }),
-            WhichKeyBinding(
-              key: "r",
-              action: .command(label: "Rotate") {
-                guard let tab = store.activeSession?.activeTab,
-                  let pane = tab.activePane
-                else { return }
-                tab.layout.rotateDirection(containing: pane)
-              }),
-            WhichKeyBinding(
-              key: "=",
-              action: .command(label: "Even Layout") {
-                guard let tab = store.activeSession?.activeTab,
-                  tab.panes.count >= 2
-                else { return }
-                tab.applyStandardLayout(.evenHorizontal)
-              }),
-          ])),
-      WhichKeyBinding(
-        key: "p",
-        action: .group(
-          label: "Panes",
-          children: [
-            WhichKeyBinding(
-              key: "v",
-              action: .command(label: "Vertical Split") {
-                commands.splitVertical()
-              }),
-            WhichKeyBinding(
-              key: "h",
-              action: .command(label: "Horizontal Split") {
-                commands.splitHorizontal()
-              }),
-            WhichKeyBinding(
-              key: "x",
-              action: .command(label: "Close Pane") {
-                commands.closePane()
-              }),
-          ])),
-      WhichKeyBinding(
-        key: "s",
-        action: .group(
-          label: "Sessions",
-          children: [
-            WhichKeyBinding(
-              key: "n",
-              action: .command(label: "New Session") {
-                store.createSession(
-                  name: "New Session",
-                  directory: FileManager.default.homeDirectoryForCurrentUser)
-              }),
-            WhichKeyBinding(
-              key: "j",
-              action: .command(label: "Session Manager") {
-                commands.sessionManager()
-              }),
-            WhichKeyBinding(
-              key: "c",
-              action: .command(label: "Close Session") {
-                guard let session = store.activeSession else { return }
-                store.closeSession(session)
-              }),
-          ])),
-      WhichKeyBinding(
-        key: "t",
-        action: .group(
-          label: "Tabs",
-          children: [
-            WhichKeyBinding(
-              key: "n",
-              action: .command(label: "New Tab") {
-                commands.newTab()
-              }),
-            WhichKeyBinding(
-              key: "x",
-              action: .command(label: "Close Tab") {
-                commands.closeTab()
-              }),
-          ]
-            + (1...9).map { i in
-              WhichKeyBinding(
-                key: Character("\(i)"),
-                action: .command(label: "Tab \(i)") {
-                  commands.focusTab(i - 1)
-                })
-            })),
+  static func buildBindings(
+    store: SessionStore,
+    commands: TerminalCommands,
+    groups: [WhichKeyGroup]
+  ) -> [WhichKeyBinding] {
+    var registry: [String: (label: String, action: @MainActor () -> Void)] = [
+      "swap-left": ("Swap Left", {
+        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+        tab.layout.swapPane(pane, direction: .left)
+      }),
+      "swap-down": ("Swap Down", {
+        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+        tab.layout.swapPane(pane, direction: .down)
+      }),
+      "swap-up": ("Swap Up", {
+        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+        tab.layout.swapPane(pane, direction: .up)
+      }),
+      "swap-right": ("Swap Right", {
+        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+        tab.layout.swapPane(pane, direction: .right)
+      }),
+      "zoom": ("Zoom", {
+        guard let tab = store.activeSession?.activeTab else { return }
+        tab.zoomedPane = tab.zoomedPane != nil ? nil : tab.activePane
+      }),
+      "break-to-tab": ("Break to Tab", {
+        guard let session = store.activeSession,
+          let tab = session.activeTab,
+          let pane = tab.activePane,
+          tab.panes.count > 1
+        else { return }
+        tab.closePane(pane)
+        if tab.panes.isEmpty { session.closeTab(tab) }
+        session.addTabWithPane(pane)
+      }),
+      "rotate": ("Rotate", {
+        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+        tab.layout.rotateDirection(containing: pane)
+      }),
+      "even-layout": ("Even Layout", {
+        guard let tab = store.activeSession?.activeTab, tab.panes.count >= 2 else { return }
+        tab.applyStandardLayout(.evenHorizontal)
+      }),
+      "split-vertical": ("Vertical Split", { commands.splitVertical() }),
+      "split-horizontal": ("Horizontal Split", { commands.splitHorizontal() }),
+      "close-pane": ("Close Pane", { commands.closePane() }),
+      "new-session": ("New Session", {
+        store.createSession(
+          name: "New Session", directory: FileManager.default.homeDirectoryForCurrentUser)
+      }),
+      "session-manager": ("Session Manager", { commands.sessionManager() }),
+      "close-session": ("Close Session", {
+        guard let session = store.activeSession else { return }
+        store.closeSession(session)
+      }),
+      "new-tab": ("New Tab", { commands.newTab() }),
+      "close-tab": ("Close Tab", { commands.closeTab() }),
     ]
+    for i in 1...9 {
+      registry["focus-tab-\(i)"] = ("Tab \(i)", { commands.focusTab(i - 1) })
+    }
+
+    return groups.compactMap { group -> WhichKeyBinding? in
+      let children = group.bindings.compactMap { node -> WhichKeyBinding? in
+        guard let entry = registry[node.action],
+          let key = node.key.first
+        else { return nil }
+        return WhichKeyBinding(
+          key: key,
+          action: .command(label: entry.label, action: entry.action)
+        )
+      }
+      guard !children.isEmpty else { return nil }
+      // Falls back to first character of name when key is empty (e.g. user-defined groups without explicit key)
+      let groupKey = group.key.first ?? group.name.first ?? "?"
+      let groupLabel = group.name.prefix(1).uppercased() + group.name.dropFirst()
+      return WhichKeyBinding(
+        key: groupKey,
+        action: .group(label: groupLabel, children: children)
+      )
+    }
   }
 }

@@ -153,7 +153,7 @@ struct MisttyConfig: Sendable, Equatable {
           guard let value = groupTable[nodeKey]?.string else { continue }
           nodes.append(WhichKeyNode(action: nodeKey, key: value))
         }
-        groups.append(WhichKeyGroup(name: key, bindings: nodes))
+        groups.append(WhichKeyGroup(name: key, key: String(key.prefix(1)), bindings: nodes))
       }
       userWhichKey = groups
     }

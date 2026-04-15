@@ -13,6 +13,7 @@ struct WhichKeyNode: Sendable, Equatable {
 
 struct WhichKeyGroup: Sendable, Equatable {
   var name: String
+  var key: String = ""
   var bindings: [WhichKeyNode]
 }
 
@@ -61,9 +62,24 @@ struct KeybindingStore: Sendable, Equatable {
       "navigate-right": KeyboardTrigger(prefix: .unconsumed, modifiers: [.ctrl], key: "l"),
     ],
     .windowMode: [
-      "zoom": KeyboardTrigger(prefix: nil, modifiers: [], key: "z"),
       "exit": KeyboardTrigger(prefix: nil, modifiers: [], key: "escape"),
       "swap-left": KeyboardTrigger(prefix: nil, modifiers: [], key: "left"),
+      "swap-right": KeyboardTrigger(prefix: nil, modifiers: [], key: "right"),
+      "swap-up": KeyboardTrigger(prefix: nil, modifiers: [], key: "up"),
+      "swap-down": KeyboardTrigger(prefix: nil, modifiers: [], key: "down"),
+      "zoom": KeyboardTrigger(prefix: nil, modifiers: [], key: "z"),
+      "break-to-tab": KeyboardTrigger(prefix: nil, modifiers: [], key: "b"),
+      "rotate": KeyboardTrigger(prefix: nil, modifiers: [], key: "r"),
+      "join-pick": KeyboardTrigger(prefix: nil, modifiers: [], key: "m"),
+      "layout-even-horizontal": KeyboardTrigger(prefix: nil, modifiers: [], key: "1"),
+      "layout-even-vertical": KeyboardTrigger(prefix: nil, modifiers: [], key: "2"),
+      "layout-main-horizontal": KeyboardTrigger(prefix: nil, modifiers: [], key: "3"),
+      "layout-main-vertical": KeyboardTrigger(prefix: nil, modifiers: [], key: "4"),
+      "layout-tiled": KeyboardTrigger(prefix: nil, modifiers: [], key: "5"),
+      "resize-left": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "left"),
+      "resize-right": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "right"),
+      "resize-up": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "up"),
+      "resize-down": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "down"),
     ],
     .copyMode: [
       "yank": KeyboardTrigger(prefix: nil, modifiers: [], key: "y"),
@@ -76,15 +92,41 @@ struct KeybindingStore: Sendable, Equatable {
   static let defaultWhichKeyGroups: [WhichKeyGroup] = [
     WhichKeyGroup(
       name: "window",
+      key: "w",
       bindings: [
-        WhichKeyNode(action: "zoom", key: "z"),
         WhichKeyNode(action: "swap-left", key: "h"),
+        WhichKeyNode(action: "swap-down", key: "j"),
+        WhichKeyNode(action: "swap-up", key: "k"),
+        WhichKeyNode(action: "swap-right", key: "l"),
+        WhichKeyNode(action: "zoom", key: "z"),
+        WhichKeyNode(action: "break-to-tab", key: "b"),
+        WhichKeyNode(action: "rotate", key: "r"),
+        WhichKeyNode(action: "even-layout", key: "="),
       ]),
     WhichKeyGroup(
       name: "pane",
+      key: "p",
       bindings: [
-        WhichKeyNode(action: "split-horizontal", key: "h")
+        WhichKeyNode(action: "split-vertical", key: "v"),
+        WhichKeyNode(action: "split-horizontal", key: "h"),
+        WhichKeyNode(action: "close-pane", key: "x"),
       ]),
+    WhichKeyGroup(
+      name: "session",
+      key: "s",
+      bindings: [
+        WhichKeyNode(action: "new-session", key: "n"),
+        WhichKeyNode(action: "session-manager", key: "j"),
+        WhichKeyNode(action: "close-session", key: "c"),
+      ]),
+    WhichKeyGroup(
+      name: "tab",
+      key: "t",
+      bindings: [
+        WhichKeyNode(action: "new-tab", key: "n"),
+        WhichKeyNode(action: "close-tab", key: "x"),
+      ]
+      + (1...9).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") }),
   ]
 
   init(
