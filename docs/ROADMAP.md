@@ -169,12 +169,11 @@ Save session/tab/pane tree to disk on quit. Restore layout on launch (shells res
 
 **Contingency:** Ghostty is actively designing a text protocol for runtime control (Discussion #2353). If Ghostty ships IPC before Mistty reaches Phase 3, evaluate adopting Ghostty's protocol as transport instead of building a custom socket API. This could reduce 3a scope and accelerate 3b (neovim nav).
 
-### 3a. Socket API + CLI
-Unix domain socket (`/tmp/mistty-$UID.sock`). JSON-RPC protocol. Extends the existing `MisttyCLI` binary (currently uses direct IPC) to use the socket as transport. Access control via file permissions.
+### 3a. Socket API + CLI ✅
+JSON-RPC 2.0 over persistent Unix domain socket connections with Content-Length framing. All 31 service methods migrated to `noun.verb` naming. Structured error codes (1001-1004). Event subscription via `subscribe`/`unsubscribe`. MisttyServiceProtocol migrated to async/await, semaphore bridges eliminated. EventBroker actor ready for model integration.
 
-- Complexity: 3
-- `/spec` required: protocol design (JSON-RPC methods, error codes), migration plan from current IPC. Include session/tab rename methods for CLI integration.
-- Enables: 3b, Raycast/Hammerspoon integration, scripting, CLI rename commands
+- Spec: `docs/specs/phase3a-socket-api.md`
+- Research: `/tmp/ai-research-jsonrpc-terminal-ipc.md`
 
 ### 3b. Neovim Split Navigation
 smart-splits.nvim integration via socket API. Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes.
