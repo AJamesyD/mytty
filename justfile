@@ -12,6 +12,10 @@ default: build
 build:
     swift build
 
+# Build the app (debug with optimization, for responsive UI without full release cost)
+build-dev:
+    swift build -Xswiftc -O
+
 # Build the app (release)
 build-release: build-libghostty
     swift build -c release
@@ -46,6 +50,20 @@ bundle: build
     codesign -s - -f "$APP"
     echo "Bundled: $APP"
 
+# Package as .app bundle (debug, optimized)
+bundle-dev: build-dev
+    #!/usr/bin/env bash
+    set -euo pipefail
+    APP="build/Mistty.app"
+    rm -rf "$APP"
+    mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+    cp .build/debug/Mistty "$APP/Contents/MacOS/Mistty"
+    swift build --target MisttyCLI -Xswiftc -O
+    cp .build/debug/MisttyCLI "$APP/Contents/MacOS/mistty-cli"
+    cp Mistty/Resources/Info.plist "$APP/Contents/"
+    codesign -s - -f "$APP"
+    echo "Bundled: $APP (optimized debug)"
+
 # Package as .app bundle (release)
 bundle-release: build-release
     #!/usr/bin/env bash
@@ -69,6 +87,15 @@ install: bundle
     cp -R build/Mistty.app /Applications/Mistty.app
     echo "Installed: /Applications/Mistty.app"
 
+# Install to /Applications (debug, optimized)
+install-dev: bundle-dev
+    #!/usr/bin/env bash
+    set -euo pipefail
+    osascript -e 'tell application "Mistty" to quit' 2>/dev/null || true
+    rm -rf /Applications/Mistty.app
+    cp -R build/Mistty.app /Applications/Mistty.app
+    echo "Installed: /Applications/Mistty.app (optimized debug)"
+
 # Install to /Applications (release)
 install-release: bundle-release
     #!/usr/bin/env bash
@@ -80,6 +107,10 @@ install-release: bundle-release
 
 # Run the app (debug)
 run: install
+    open /Applications/Mistty.app
+
+# Run the app (debug, optimized: ~10s build, near-release perf, degraded LLDB)
+run-dev: install-dev
     open /Applications/Mistty.app
 
 # Run the app (release)
