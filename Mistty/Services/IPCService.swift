@@ -5,6 +5,7 @@ import MisttyShared
 
 @MainActor final class MisttyIPCService: MisttyServiceProtocol {
   private let store: SessionStore
+  let broker = EventBroker()
 
   init(store: SessionStore) {
     self.store = store
@@ -69,6 +70,11 @@ import MisttyShared
     let dir = URL(
       fileURLWithPath: directory ?? FileManager.default.homeDirectoryForCurrentUser.path)
     let session = store.createSession(name: name, directory: dir, exec: exec)
+    Task {
+      await broker.publish(
+        event: "session.created",
+        params: ["sessionId": .int(session.id), "name": .string(session.name)])
+    }
     return try encodeOrThrow(sessionResponse(session))
   }
 
@@ -89,6 +95,7 @@ import MisttyShared
       throw MisttyIPC.error(.entityNotFound, "Session \(id) not found")
     }
     store.closeSession(session)
+    Task { await broker.publish(event: "session.closed", params: ["sessionId": .int(id)]) }
     return try encodeOrThrow([String: String]())
   }
 
@@ -97,6 +104,10 @@ import MisttyShared
       throw MisttyIPC.error(.entityNotFound, "Session \(id) not found")
     }
     session.name = name
+    Task {
+      await broker.publish(
+        event: "session.renamed", params: ["sessionId": .int(id), "name": .string(name)])
+    }
     return try encodeOrThrow(sessionResponse(session))
   }
 
@@ -111,6 +122,10 @@ import MisttyShared
       throw MisttyIPC.error(.operationFailed, "Failed to create tab")
     }
     if let name { tab.customTitle = name }
+    Task {
+      await broker.publish(
+        event: "tab.created", params: ["tabId": .int(tab.id), "sessionId": .int(sessionId)])
+    }
     return try encodeOrThrow(tabResponse(tab))
   }
 
@@ -134,6 +149,7 @@ import MisttyShared
       throw MisttyIPC.error(.entityNotFound, "Tab \(id) not found")
     }
     session.closeTab(tab)
+    Task { await broker.publish(event: "tab.closed", params: ["tabId": .int(id)]) }
     return try encodeOrThrow([String: String]())
   }
 
@@ -142,6 +158,10 @@ import MisttyShared
       throw MisttyIPC.error(.entityNotFound, "Tab \(id) not found")
     }
     tab.customTitle = name
+    Task {
+      await broker.publish(
+        event: "tab.renamed", params: ["tabId": .int(id), "name": .string(name)])
+    }
     return try encodeOrThrow(tabResponse(tab))
   }
 
@@ -163,6 +183,10 @@ import MisttyShared
     tab.splitActivePane(direction: splitDir)
     guard let newPane = tab.panes.last else {
       throw MisttyIPC.error(.operationFailed, "Failed to create pane")
+    }
+    Task {
+      await broker.publish(
+        event: "pane.created", params: ["paneId": .int(newPane.id), "tabId": .int(tabId)])
     }
     return try encodeOrThrow(paneResponse(newPane))
   }
@@ -187,6 +211,7 @@ import MisttyShared
       throw MisttyIPC.error(.entityNotFound, "Pane \(id) not found")
     }
     tab.closePane(pane)
+    Task { await broker.publish(event: "pane.closed", params: ["paneId": .int(id)]) }
     return try encodeOrThrow([String: String]())
   }
 
@@ -197,6 +222,7 @@ import MisttyShared
     store.activeSession = session
     session.activeTab = tab
     tab.activePane = pane
+    Task { await broker.publish(event: "pane.focused", params: ["paneId": .int(id)]) }
     return try encodeOrThrow(paneResponse(pane))
   }
 
@@ -232,6 +258,7 @@ import MisttyShared
     }
 
     tab.activePane = target
+    Task { await broker.publish(event: "pane.focused", params: ["paneId": .int(target.id)]) }
     return try encodeOrThrow(paneResponse(target))
   }
 

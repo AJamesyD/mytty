@@ -13,7 +13,6 @@ final class IPCListener {
   private let service: MisttyIPCService
   private let state = OSAllocatedUnfairLock(initialState: ListenerState())
   private let queue = DispatchQueue(label: "com.mistty.ipc-listener", qos: .userInitiated)
-  let broker = EventBroker()
 
   init(service: MisttyIPCService) {
     self.service = service
@@ -73,7 +72,7 @@ final class IPCListener {
     }
 
     let service = self.service
-    let broker = self.broker
+    let broker = self.service.broker
     queue.async { [state] in
       IPCListener.acceptLoop(state: state, service: service, broker: broker)
     }
