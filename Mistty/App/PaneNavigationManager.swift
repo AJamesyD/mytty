@@ -40,6 +40,7 @@ final class PaneNavigationManager {
       let pane = tab.activePane
     else { return event }
 
+    if pane.vars["is-vim"] != nil { return event }
     if pane.isRunningVimLike { return event }
 
     if let target = tab.layout.adjacentPane(from: pane, direction: direction) {
