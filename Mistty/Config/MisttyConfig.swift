@@ -195,78 +195,14 @@ struct MisttyConfig: Sendable, Equatable {
     return result
   }
 
+  static let configFileURL = FileManager.default
+    .homeDirectoryForCurrentUser
+    .appendingPathComponent(".config/mistty/config.toml")
+
   static func load() -> MisttyConfig {
-    let configURL = FileManager.default
-      .homeDirectoryForCurrentUser
-      .appendingPathComponent(".config/mistty/config.toml")
-    guard let contents = try? String(contentsOf: configURL, encoding: .utf8) else {
+    guard let contents = try? String(contentsOf: configFileURL, encoding: .utf8) else {
       return .default
     }
     return (try? parse(contents)) ?? .default
-  }
-
-  /// Escape a string for safe TOML serialization.
-  private func tomlEscape(_ value: String) -> String {
-    value
-      .replacingOccurrences(of: "\\", with: "\\\\")
-      .replacingOccurrences(of: "\"", with: "\\\"")
-  }
-
-  func save() throws {
-    let configURL = FileManager.default
-      .homeDirectoryForCurrentUser
-      .appendingPathComponent(".config/mistty/config.toml")
-
-    try FileManager.default.createDirectory(
-      at: configURL.deletingLastPathComponent(),
-      withIntermediateDirectories: true
-    )
-
-    var lines: [String] = []
-    lines.append("font_size = \(fontSize)")
-    lines.append("font_family = \"\(fontFamily)\"")
-    lines.append("cursor_style = \"\(cursorStyle)\"")
-    lines.append("scrollback_lines = \(scrollbackLines)")
-    lines.append("")
-    lines.append("[sidebar]")
-    lines.append("mode = \"\(sidebarMode.configValue)\"")
-    lines.append("")
-    lines.append("[tab-bar]")
-    lines.append("mode = \"\(tabBarMode.configValue)\"")
-    lines.append("hide-when-single-tab = \(hideTabBarWhenSingleTab)")
-    lines.append("")
-    lines.append("[auto-hide]")
-    lines.append("dwell-ms = \(autoHideDwellMs)")
-    lines.append("dismiss-delay-ms = \(autoHideDismissDelayMs)")
-    lines.append("show-hints = \(autoHideShowHints)")
-    for popup in popups {
-      lines.append("")
-      lines.append("[[popup]]")
-      lines.append("name = \"\(popup.name)\"")
-      lines.append("command = \"\(popup.command)\"")
-      if let shortcut = popup.shortcut {
-        lines.append("shortcut = \"\(shortcut)\"")
-      }
-      lines.append("width = \(popup.width)")
-      lines.append("height = \(popup.height)")
-      lines.append("close_on_exit = \(popup.closeOnExit)")
-    }
-    if ssh.defaultCommand != "ssh" || !ssh.hosts.isEmpty {
-      lines.append("")
-      lines.append("[ssh]")
-      lines.append("default_command = \"\(tomlEscape(ssh.defaultCommand))\"")
-      for host in ssh.hosts {
-        lines.append("")
-        lines.append("[[ssh.host]]")
-        if let hostname = host.hostname {
-          lines.append("hostname = \"\(tomlEscape(hostname))\"")
-        }
-        if let regex = host.regex {
-          lines.append("regex = \"\(tomlEscape(regex))\"")
-        }
-        lines.append("command = \"\(tomlEscape(host.command))\"")
-      }
-    }
-    try lines.joined(separator: "\n").write(to: configURL, atomically: true, encoding: .utf8)
   }
 }
