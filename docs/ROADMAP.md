@@ -1,7 +1,7 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 15
+Iteration: 16
 
 ## Principles
 
@@ -130,7 +130,13 @@ Port detection (lsof integration) removed from Phase 2b scope. Standalone item, 
 - [x] `/spec`: `/tmp/ai-design-phase2b-contextual-sidebar.md` (with decision log D1-D8)
 - Depends on: 2a (done)
 
-**Done when:** background tab failures show orange SF Symbol badge, collapsed sessions show count pill, session row shows git branch and working directory, tab row shows process title + last command result, Cmd+Shift+Up/Down jumps between prompts.
+### Clipboard Paste (Cmd+V)
+`readClipboardCallback` in `GhosttyApp.swift` is a stub: reads `NSPasteboard.general` but never calls `ghostty_surface_complete_clipboard_request` to deliver text back to Ghostty. Returns `false` unconditionally. Copy (Cmd+C) works because `writeClipboardCallback` is complete. Fix: complete the callback following the pattern in `vendor/ghostty/macos/Sources/Ghostty/Ghostty.App.swift` (`readClipboard`). Also complete `confirmReadClipboardCallback` for unsafe-paste confirmation.
+
+- Complexity: 1
+- Standalone fix, no spec needed.
+
+**Done when:** background tab failures show orange SF Symbol badge, collapsed sessions show count pill, session row shows git branch and working directory, tab row shows process title + last command result, Cmd+Shift+Up/Down jumps between prompts, Cmd+V pastes clipboard content into terminal.
 
 ## Phase 2c: Basic Session Persistence
 
@@ -429,8 +435,9 @@ Late dependencies:
 - OSC 133 C (command output start) as apprt action: would enable explicit running-state detection in sidebar (Phase 2b D1 revisit condition)
 - Native git branch OSC sequence: would replace event-driven git rev-parse (Phase 2b D4 revisit condition)
 
-## Findings (iteration 15)
+## Findings (iteration 16)
 
+- `readClipboardCallback` in `GhosttyApp.swift` is a stub that never completes the clipboard request. Cmd+V (paste) does not work. Cmd+C (copy) works because `writeClipboardCallback` is complete. Fix pattern exists in `vendor/ghostty/macos/Sources/Ghostty/Ghostty.App.swift`.
 - `jump_to_prompt` exists as a Ghostty binding action (found in `vendor/ghostty/src/input/Binding.zig`). Takes signed integer: negative = previous, positive = next. Callable via `ghostty_surface_binding_action`. Confirmed for Phase 2b prompt navigation.
 - libghostty parses all OSC sequences internally and delivers typed actions via the apprt callback. Mistty does not need its own OSC parser. Phase 2a was action callback handling, not parser construction.
 - Ghostty uses 75ms title debounce and 15s progress auto-expiry. Mistty adopted both patterns.
