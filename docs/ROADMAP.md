@@ -275,12 +275,13 @@ Extends 2c with scrollback persistence, running command restoration, and optiona
 - Complexity: 3 (built-in) or 2 (shpool/zmx integration)
 - Depends on: 2c
 
-### 4d. Sidebar Configuration
+### 4d. Sidebar Configuration ✅
 - Sidebar position: configurable left or right (`sidebar.position = "left" | "right"`)
 - Sidebar tree depth: configurable whether tabs/panes show under sessions or sessions only (`sidebar.show-tree = true | false`)
-- `/spec` before implementation: layout implications of right-side sidebar, animation direction, divider placement
+- Spec: `/tmp/ai-design-phase4d-sidebar-config.md`
 - Complexity: 2
 - Depends on: 4a (config system)
+- `b928716` feat(sidebar): add position and show-tree config
 
 ### 4e. Auto-Hide UX Polish
 Revisit auto-hide panel behavior with better animations and tuning. Study Zen Browser's sidebar auto-hide for inspiration: debounce timing, hover distance thresholds, entry/exit animation curves, edge activation feel.
@@ -438,10 +439,10 @@ Completed:
   Phase 4a-2b (native keybinding defaults) ✓
   Phase 4a-3 (wire modal keybindings) ✓
   Phase 4b (live config reload) ✓
+  Phase 4d (sidebar config) ✓
 
 Current:
-  Phase 4d (sidebar config) — next
-    ──> 4e (auto-hide UX polish)
+  Phase 4e (auto-hide UX polish) — next
 
 After Phase 4:
   ──> cleanup gate (integration tests, API stability, dead code)
