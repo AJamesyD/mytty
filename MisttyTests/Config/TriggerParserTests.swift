@@ -1,3 +1,4 @@
+import SwiftUI
 import XCTest
 
 @testable import Mistty
@@ -146,5 +147,40 @@ final class TriggerParserTests: XCTestCase {
   func test_normalizeWithPrefix() throws {
     let trigger = try TriggerParser.parse("unconsumed:ctrl+h")
     XCTAssertEqual(TriggerParser.normalize(trigger), "unconsumed:ctrl+h")
+  }
+
+  func test_toKeyboardShortcut_singleCharKey() {
+    let trigger = KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "t")
+    XCTAssertNotNil(trigger.toKeyboardShortcut())
+  }
+
+  func test_toKeyboardShortcut_specialKey_upArrow() {
+    let trigger = KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "up")
+    XCTAssertNotNil(trigger.toKeyboardShortcut())
+  }
+
+  func test_toKeyboardShortcut_specialKey_escape() {
+    let trigger = KeyboardTrigger(prefix: nil, modifiers: [], key: "escape")
+    XCTAssertNotNil(trigger.toKeyboardShortcut())
+  }
+
+  func test_toKeyboardShortcut_specialKey_space() {
+    let trigger = KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "space")
+    XCTAssertNotNil(trigger.toKeyboardShortcut())
+  }
+
+  func test_toKeyboardShortcut_unconsumedReturnsNil() {
+    let trigger = KeyboardTrigger(prefix: .unconsumed, modifiers: [.ctrl], key: "h")
+    XCTAssertNil(trigger.toKeyboardShortcut())
+  }
+
+  func test_toKeyboardShortcut_multiCharKeyReturnsNil() {
+    let trigger = KeyboardTrigger(prefix: nil, modifiers: [], key: "gg")
+    XCTAssertNil(trigger.toKeyboardShortcut())
+  }
+
+  func test_toKeyboardShortcut_noModifiers() {
+    let trigger = KeyboardTrigger(prefix: nil, modifiers: [], key: "z")
+    XCTAssertNotNil(trigger.toKeyboardShortcut())
   }
 }

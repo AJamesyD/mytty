@@ -270,6 +270,32 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertFalse(pane.isPassthroughProcess)
   }
 
+  func test_isPassthroughProcess_customList() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+
+    let customList = ["kakoune", "htop"]
+
+    pane.processTitle = "kakoune"
+    XCTAssertTrue(pane.isPassthroughProcess(processes: customList))
+
+    pane.processTitle = "htop"
+    XCTAssertTrue(pane.isPassthroughProcess(processes: customList))
+
+    pane.processTitle = "htop --delay=5"
+    XCTAssertTrue(pane.isPassthroughProcess(processes: customList))
+
+    pane.processTitle = "nvim"
+    XCTAssertFalse(pane.isPassthroughProcess(processes: customList))
+
+    pane.processTitle = "vim"
+    XCTAssertFalse(pane.isPassthroughProcess(processes: customList))
+
+    let emptyList: [String] = []
+    pane.processTitle = "nvim"
+    XCTAssertFalse(pane.isPassthroughProcess(processes: emptyList))
+  }
+
   func test_idsAreSequential() {
     let s1 = store.createSession(name: "a", directory: URL(fileURLWithPath: "/tmp"))
     let s2 = store.createSession(name: "b", directory: URL(fileURLWithPath: "/tmp"))

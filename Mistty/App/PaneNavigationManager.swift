@@ -50,12 +50,16 @@ final class PaneNavigationManager {
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
-    // TODO: special keys (arrows, escape) return Unicode function chars here,
-    // not names like "up". Matching only works for single-character keys for now.
-    guard let chars = event.charactersIgnoringModifiers?.lowercased() else { return event }
+    let key: String
+    if let name = Self.keycodeNames[event.keyCode] {
+      key = name
+    } else {
+      guard let chars = event.charactersIgnoringModifiers?.lowercased() else { return event }
+      key = chars
+    }
 
     let eventMods = modifiersFromEvent(event)
-    let navKey = NavigationKey(key: chars, modifiers: eventMods)
+    let navKey = NavigationKey(key: key, modifiers: eventMods)
     guard let binding = navigationBindings[navKey] else { return event }
     let direction = binding.direction
 
@@ -134,6 +138,22 @@ final class PaneNavigationManager {
     if flags.contains(.capsLock) { raw |= GHOSTTY_MODS_CAPS.rawValue }
     return ghostty_input_mods_e(rawValue: raw)
   }
+
+  private static let keycodeNames: [UInt16: String] = [
+    53: "escape",
+    123: "left",
+    124: "right",
+    125: "down",
+    126: "up",
+    36: "return",
+    48: "tab",
+    49: "space",
+    51: "delete",
+    115: "home",
+    119: "end",
+    116: "pageup",
+    121: "pagedown",
+  ]
 
   deinit {
     if let monitor {

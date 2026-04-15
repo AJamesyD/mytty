@@ -223,6 +223,12 @@ Menu shortcuts (MisttyApp), pane navigation (PaneNavigationManager), and passthr
 - [x] ADR-006: config-file-only approach
 - [x] Archive old plan/implementation transcripts to docs/archive/
 
+#### Hardening gate (4a-2) ✅
+- [x] Tests for `toKeyboardShortcut()` conversion (7 tests)
+- [x] Tests for `isPassthroughProcess(processes:)` with custom lists (1 test)
+- [x] Tests for PaneNavigationManager key matching logic (5 tests)
+- [x] Fix special key matching (arrow keys, escape) via keycode-to-name mapping
+
 #### 4a-3: Wire modal keybindings (next)
 Replace hardcoded keybindings in WindowModeManager, CopyModeState, and WhichKeyManager with store lookups. Multi-character trigger dispatch (gg, ge) for copy mode.
 
