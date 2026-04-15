@@ -30,8 +30,8 @@ final class KeybindingStoreTests: XCTestCase {
   func test_singleOverride() {
     let overrides: [BindingMode: [String: KeyboardTrigger]] = [
       .global: [
-        "split-horizontal": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "d"),
-      ],
+        "split-horizontal": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "d")
+      ]
     ]
     let store = KeybindingStore.build(
       defaults: KeybindingStore.defaultBindings,
@@ -55,8 +55,8 @@ final class KeybindingStoreTests: XCTestCase {
   func test_unbind() {
     let overrides: [BindingMode: [String: KeyboardTrigger]] = [
       .global: [
-        "new-tab": KeyboardTrigger(prefix: nil, modifiers: [], key: "__unbind__"),
-      ],
+        "new-tab": KeyboardTrigger(prefix: nil, modifiers: [], key: "__unbind__")
+      ]
     ]
     let store = KeybindingStore.build(
       defaults: KeybindingStore.defaultBindings,
@@ -73,8 +73,8 @@ final class KeybindingStoreTests: XCTestCase {
   func test_resetMode() {
     let overrides: [BindingMode: [String: KeyboardTrigger]] = [
       .windowMode: [
-        "zoom": KeyboardTrigger(prefix: nil, modifiers: [], key: "x"),
-      ],
+        "zoom": KeyboardTrigger(prefix: nil, modifiers: [], key: "x")
+      ]
     ]
     let store = KeybindingStore.build(
       defaults: KeybindingStore.defaultBindings,
@@ -96,8 +96,8 @@ final class KeybindingStoreTests: XCTestCase {
   func test_globalReset() {
     let overrides: [BindingMode: [String: KeyboardTrigger]] = [
       .global: [
-        "new-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "n"),
-      ],
+        "new-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "n")
+      ]
     ]
     let store = KeybindingStore.build(
       defaults: KeybindingStore.defaultBindings,
@@ -121,7 +121,7 @@ final class KeybindingStoreTests: XCTestCase {
       .global: [
         "action-a": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "d"),
         "action-b": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "d"),
-      ],
+      ]
     ]
     let warnings = KeybindingStore.detectConflicts(bindings: bindings)
     XCTAssertEqual(warnings.count, 1)
@@ -141,9 +141,11 @@ final class KeybindingStoreTests: XCTestCase {
 
   func test_whichKeyOverride() {
     let userGroups = [
-      WhichKeyGroup(name: "custom", bindings: [
-        WhichKeyNode(action: "do-thing", key: "x"),
-      ]),
+      WhichKeyGroup(
+        name: "custom",
+        bindings: [
+          WhichKeyNode(action: "do-thing", key: "x")
+        ])
     ]
     let store = KeybindingStore.build(
       defaults: KeybindingStore.defaultBindings,
@@ -181,7 +183,7 @@ final class KeybindingStoreTests: XCTestCase {
       globalReset: false,
       vimLikeProcesses: nil
     )
-    XCTAssertEqual(store.vimLikeProcesses, ["nvim", "vim", "helix", "lazygit"])
+    XCTAssertEqual(store.vimLikeProcesses, ["nvim", "neovim", "vim", "helix", "lazygit"])
   }
 
   func test_multiBindArray() throws {

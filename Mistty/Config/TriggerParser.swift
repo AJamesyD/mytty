@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum TriggerPrefix: String, Sendable, Equatable {
   case unconsumed
@@ -89,5 +90,43 @@ struct TriggerParser {
       return prefix.rawValue + ":" + body
     }
     return body
+  }
+}
+
+extension KeyboardTrigger {
+  func toKeyboardShortcut() -> KeyboardShortcut? {
+    if prefix == .unconsumed { return nil }
+    guard let keyEquiv = keyEquivalent else { return nil }
+    return KeyboardShortcut(keyEquiv, modifiers: eventModifiers)
+  }
+
+  private var keyEquivalent: KeyEquivalent? {
+    switch key {
+    case "escape": return .escape
+    case "return", "enter": return .return
+    case "tab": return .tab
+    case "space": return .space
+    case "delete", "backspace": return .delete
+    case "up": return .upArrow
+    case "down": return .downArrow
+    case "left": return .leftArrow
+    case "right": return .rightArrow
+    case "home": return .home
+    case "end": return .end
+    case "pageup": return .pageUp
+    case "pagedown": return .pageDown
+    default:
+      guard key.count == 1, let char = key.first else { return nil }
+      return KeyEquivalent(char)
+    }
+  }
+
+  private var eventModifiers: EventModifiers {
+    var result: EventModifiers = []
+    if modifiers.contains(.cmd) { result.insert(.command) }
+    if modifiers.contains(.ctrl) { result.insert(.control) }
+    if modifiers.contains(.alt) { result.insert(.option) }
+    if modifiers.contains(.shift) { result.insert(.shift) }
+    return result
   }
 }

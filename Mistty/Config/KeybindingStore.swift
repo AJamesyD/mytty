@@ -22,15 +22,42 @@ struct KeybindingStore: Sendable, Equatable {
   private(set) var vimLikeProcesses: [String]
   private(set) var warnings: [String] = []
 
-  static let defaultVimLikeProcesses = ["nvim", "vim", "helix", "lazygit"]
+  static let defaultVimLikeProcesses = ["nvim", "neovim", "vim", "helix", "lazygit"]
 
   static let defaultBindings: [BindingMode: [String: KeyboardTrigger]] = [
     .global: [
-      "new-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "t"),
-      "close-pane": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "w"),
-      "split-horizontal": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "d"),
+      "increase-font-size": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "+"),
+      "decrease-font-size": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "-"),
       "toggle-sidebar": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "s"),
+      "toggle-tab-bar": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "t"),
+      "new-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "t"),
+      "split-horizontal": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "d"),
+      "split-vertical": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "d"),
+      "session-manager": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "j"),
+      "close-pane": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "w"),
+      "close-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "w"),
+      "window-mode": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "x"),
+      "copy-mode": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "c"),
+      "which-key": KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "space"),
+      "rename-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "r"),
+      "focus-tab-1": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "1"),
+      "focus-tab-2": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "2"),
+      "focus-tab-3": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "3"),
+      "focus-tab-4": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "4"),
+      "focus-tab-5": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "5"),
+      "focus-tab-6": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "6"),
+      "focus-tab-7": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "7"),
+      "focus-tab-8": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "8"),
+      "focus-tab-9": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "9"),
+      "next-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "]"),
+      "previous-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "["),
+      "previous-session": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .alt], key: "up"),
+      "next-session": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .alt], key: "down"),
+      "previous-prompt": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "up"),
+      "next-prompt": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "down"),
       "navigate-left": KeyboardTrigger(prefix: .unconsumed, modifiers: [.ctrl], key: "h"),
+      "navigate-down": KeyboardTrigger(prefix: .unconsumed, modifiers: [.ctrl], key: "j"),
+      "navigate-up": KeyboardTrigger(prefix: .unconsumed, modifiers: [.ctrl], key: "k"),
       "navigate-right": KeyboardTrigger(prefix: .unconsumed, modifiers: [.ctrl], key: "l"),
     ],
     .windowMode: [
@@ -47,13 +74,17 @@ struct KeybindingStore: Sendable, Equatable {
   ]
 
   static let defaultWhichKeyGroups: [WhichKeyGroup] = [
-    WhichKeyGroup(name: "window", bindings: [
-      WhichKeyNode(action: "zoom", key: "z"),
-      WhichKeyNode(action: "swap-left", key: "h"),
-    ]),
-    WhichKeyGroup(name: "pane", bindings: [
-      WhichKeyNode(action: "split-horizontal", key: "h"),
-    ]),
+    WhichKeyGroup(
+      name: "window",
+      bindings: [
+        WhichKeyNode(action: "zoom", key: "z"),
+        WhichKeyNode(action: "swap-left", key: "h"),
+      ]),
+    WhichKeyGroup(
+      name: "pane",
+      bindings: [
+        WhichKeyNode(action: "split-horizontal", key: "h")
+      ]),
   ]
 
   init(

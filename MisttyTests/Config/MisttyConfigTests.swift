@@ -233,4 +233,3 @@ final class MisttyConfigTests: XCTestCase {
     XCTAssertEqual(config.keybindingStore.vimLikeProcesses, ["nvim", "kakoune"])
   }
 }
-

@@ -13,6 +13,10 @@ struct MisttyApp: App {
     _ = GhosttyAppManager.shared
   }
 
+  private var keybindings: KeybindingStore {
+    MisttyConfig.load().keybindingStore
+  }
+
   var body: some Scene {
     WindowGroup {
       ContentView(store: store)
@@ -36,76 +40,76 @@ struct MisttyApp: App {
         Divider()
 
         Button("Increase Font Size") {}
-          .keyboardShortcut("+", modifiers: .command)
+          .keyboardShortcut(from: keybindings.trigger(for: "increase-font-size", in: .global))
 
         Button("Decrease Font Size") {}
-          .keyboardShortcut("-", modifiers: .command)
+          .keyboardShortcut(from: keybindings.trigger(for: "decrease-font-size", in: .global))
 
         Divider()
 
         Button("Toggle Sidebar") {
           commands?.toggleSidebar()
         }
-        .keyboardShortcut("s", modifiers: .command)
+        .keyboardShortcut(from: keybindings.trigger(for: "toggle-sidebar", in: .global))
 
         Button("Toggle Tab Bar") {
           commands?.toggleTabBar()
         }
-        .keyboardShortcut("t", modifiers: [.command, .shift])
+        .keyboardShortcut(from: keybindings.trigger(for: "toggle-tab-bar", in: .global))
 
         Button("New Tab") {
           commands?.newTab()
         }
-        .keyboardShortcut("t", modifiers: .command)
+        .keyboardShortcut(from: keybindings.trigger(for: "new-tab", in: .global))
 
         Button("Split Pane Horizontally") {
           commands?.splitHorizontal()
         }
-        .keyboardShortcut("d", modifiers: .command)
+        .keyboardShortcut(from: keybindings.trigger(for: "split-horizontal", in: .global))
 
         Button("Split Pane Vertically") {
           commands?.splitVertical()
         }
-        .keyboardShortcut("d", modifiers: [.command, .shift])
+        .keyboardShortcut(from: keybindings.trigger(for: "split-vertical", in: .global))
 
         Button("Session Manager") {
           commands?.sessionManager()
         }
-        .keyboardShortcut("j", modifiers: .command)
+        .keyboardShortcut(from: keybindings.trigger(for: "session-manager", in: .global))
 
         Divider()
 
         Button("Close Pane") {
           commands?.closePane()
         }
-        .keyboardShortcut("w", modifiers: .command)
+        .keyboardShortcut(from: keybindings.trigger(for: "close-pane", in: .global))
 
         Button("Close Tab") {
           commands?.closeTab()
         }
-        .keyboardShortcut("w", modifiers: [.command, .shift])
+        .keyboardShortcut(from: keybindings.trigger(for: "close-tab", in: .global))
 
         Button("Window Mode") {
           commands?.windowMode()
         }
-        .keyboardShortcut("x", modifiers: .command)
+        .keyboardShortcut(from: keybindings.trigger(for: "window-mode", in: .global))
 
         Button("Copy Mode") {
           commands?.copyMode()
         }
-        .keyboardShortcut("c", modifiers: [.command, .shift])
+        .keyboardShortcut(from: keybindings.trigger(for: "copy-mode", in: .global))
 
         Button("Which-Key") {
           commands?.whichKey()
         }
-        .keyboardShortcut(.space, modifiers: .control)
+        .keyboardShortcut(from: keybindings.trigger(for: "which-key", in: .global))
 
         Divider()
 
         Button("Rename Tab") {
           NotificationCenter.default.post(name: .misttyRenameTab, object: nil)
         }
-        .keyboardShortcut("r", modifiers: [.command, .shift])
+        .keyboardShortcut(from: keybindings.trigger(for: "rename-tab", in: .global))
 
         Button("Rename Session") {
           NotificationCenter.default.post(name: .misttyRenameSession, object: nil)
@@ -117,40 +121,40 @@ struct MisttyApp: App {
           Button("Focus Tab \(index)") {
             commands?.focusTab(index - 1)
           }
-          .keyboardShortcut(KeyEquivalent(Character("\(index)")), modifiers: .command)
+          .keyboardShortcut(from: keybindings.trigger(for: "focus-tab-\(index)", in: .global))
         }
 
         Button("Next Tab") {
           commands?.nextTab()
         }
-        .keyboardShortcut("]", modifiers: .command)
+        .keyboardShortcut(from: keybindings.trigger(for: "next-tab", in: .global))
 
         Button("Previous Tab") {
           commands?.prevTab()
         }
-        .keyboardShortcut("[", modifiers: .command)
+        .keyboardShortcut(from: keybindings.trigger(for: "previous-tab", in: .global))
 
         Button("Previous Session") {
           commands?.prevSession()
         }
-        .keyboardShortcut(.upArrow, modifiers: [.command, .option])
+        .keyboardShortcut(from: keybindings.trigger(for: "previous-session", in: .global))
 
         Button("Next Session") {
           commands?.nextSession()
         }
-        .keyboardShortcut(.downArrow, modifiers: [.command, .option])
+        .keyboardShortcut(from: keybindings.trigger(for: "next-session", in: .global))
 
         Divider()
 
         Button("Previous Prompt") {
           commands?.jumpToPreviousPrompt()
         }
-        .keyboardShortcut(.upArrow, modifiers: [.command, .shift])
+        .keyboardShortcut(from: keybindings.trigger(for: "previous-prompt", in: .global))
 
         Button("Next Prompt") {
           commands?.jumpToNextPrompt()
         }
-        .keyboardShortcut(.downArrow, modifiers: [.command, .shift])
+        .keyboardShortcut(from: keybindings.trigger(for: "next-prompt", in: .global))
 
         Divider()
 
@@ -206,4 +210,15 @@ struct MisttyApp: App {
 extension Notification.Name {
   static let misttyRenameTab = Notification.Name("misttyRenameTab")
   static let misttyRenameSession = Notification.Name("misttyRenameSession")
+}
+
+extension View {
+  @ViewBuilder
+  fileprivate func keyboardShortcut(from trigger: KeyboardTrigger?) -> some View {
+    if let shortcut = trigger?.toKeyboardShortcut() {
+      self.keyboardShortcut(shortcut)
+    } else {
+      self
+    }
+  }
 }

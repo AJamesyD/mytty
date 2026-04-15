@@ -1,34 +1,85 @@
 import AppKit
+import GhosttyKit
 import SwiftUI
+
+private struct NavigationKey: Hashable {
+  let key: String
+  let modifiers: Set<KeyboardTrigger.Modifier>
+}
+
+private struct NavigationBinding {
+  let direction: NavigationDirection
+  let isUnconsumed: Bool
+}
 
 @MainActor @Observable
 final class PaneNavigationManager {
   @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private var isActive = false
   private var store: SessionStore?
+  private var navigationBindings: [NavigationKey: NavigationBinding] = [:]
+  private var vimLikeProcesses: [String] = KeybindingStore.defaultVimLikeProcesses
   var isSessionManagerShowing: () -> Bool = { false }
 
   func activate(store: SessionStore) {
     guard !isActive else { return }
     self.store = store
     isActive = true
+
+    let keybindingStore = MisttyConfig.load().keybindingStore
+    vimLikeProcesses = keybindingStore.vimLikeProcesses
+    let actionToDirection: [String: NavigationDirection] = [
+      "navigate-left": .left,
+      "navigate-down": .down,
+      "navigate-up": .up,
+      "navigate-right": .right,
+    ]
+    for (action, direction) in actionToDirection {
+      if let trigger = keybindingStore.trigger(for: action, in: .global) {
+        let navKey = NavigationKey(key: trigger.key, modifiers: trigger.modifiers)
+        navigationBindings[navKey] = NavigationBinding(
+          direction: direction,
+          isUnconsumed: trigger.prefix == .unconsumed
+        )
+      }
+    }
+
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
       self?.handleKeyDown(event) ?? event
     }
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
-    guard event.modifierFlags.contains(.control),
-      let chars = event.charactersIgnoringModifiers?.lowercased()
-    else { return event }
+    // TODO: special keys (arrows, escape) return Unicode function chars here,
+    // not names like "up". Matching only works for single-character keys for now.
+    guard let chars = event.charactersIgnoringModifiers?.lowercased() else { return event }
 
-    let direction: NavigationDirection
-    switch chars {
-    case "h": direction = .left
-    case "j": direction = .down
-    case "k": direction = .up
-    case "l": direction = .right
-    default: return event
+    let eventMods = modifiersFromEvent(event)
+    let navKey = NavigationKey(key: chars, modifiers: eventMods)
+    guard let binding = navigationBindings[navKey] else { return event }
+    let direction = binding.direction
+
+    if binding.isUnconsumed,
+      let surface = store?.activeSession?.activeTab?.activePane?.surfaceView.surface
+    {
+      var keyEvent = ghostty_input_key_s()
+      keyEvent.action = GHOSTTY_ACTION_PRESS
+      keyEvent.keycode = UInt32(event.keyCode)
+      keyEvent.mods = ghosttyMods(event.modifierFlags)
+      keyEvent.consumed_mods = ghostty_input_mods_e(rawValue: 0)
+      keyEvent.text = nil
+      keyEvent.composing = false
+      keyEvent.unshifted_codepoint = 0
+      if let chars = event.characters(byApplyingModifiers: []),
+        let codepoint = chars.unicodeScalars.first
+      {
+        keyEvent.unshifted_codepoint = codepoint.value
+      }
+
+      var flags = ghostty_binding_flags_e(0)
+      if ghostty_surface_key_is_binding(surface, keyEvent, &flags) {
+        return event
+      }
     }
 
     guard !isSessionManagerShowing(),
@@ -41,7 +92,7 @@ final class PaneNavigationManager {
     else { return event }
 
     if pane.vars["is-vim"] != nil { return event }
-    if pane.isRunningVimLike { return event }
+    if pane.isRunningVimLike(processes: vimLikeProcesses) { return event }
 
     if let target = tab.layout.adjacentPane(from: pane, direction: direction) {
       tab.activePane = target
@@ -60,7 +111,28 @@ final class PaneNavigationManager {
     }
     monitor = nil
     store = nil
+    navigationBindings = [:]
+    vimLikeProcesses = KeybindingStore.defaultVimLikeProcesses
     isActive = false
+  }
+
+  private func modifiersFromEvent(_ event: NSEvent) -> Set<KeyboardTrigger.Modifier> {
+    var mods: Set<KeyboardTrigger.Modifier> = []
+    if event.modifierFlags.contains(.command) { mods.insert(.cmd) }
+    if event.modifierFlags.contains(.control) { mods.insert(.ctrl) }
+    if event.modifierFlags.contains(.option) { mods.insert(.alt) }
+    if event.modifierFlags.contains(.shift) { mods.insert(.shift) }
+    return mods
+  }
+
+  private func ghosttyMods(_ flags: NSEvent.ModifierFlags) -> ghostty_input_mods_e {
+    var raw: UInt32 = 0
+    if flags.contains(.shift) { raw |= GHOSTTY_MODS_SHIFT.rawValue }
+    if flags.contains(.control) { raw |= GHOSTTY_MODS_CTRL.rawValue }
+    if flags.contains(.option) { raw |= GHOSTTY_MODS_ALT.rawValue }
+    if flags.contains(.command) { raw |= GHOSTTY_MODS_SUPER.rawValue }
+    if flags.contains(.capsLock) { raw |= GHOSTTY_MODS_CAPS.rawValue }
+    return ghostty_input_mods_e(rawValue: raw)
   }
 
   deinit {

@@ -110,7 +110,6 @@ struct MisttyConfig: Sendable, Equatable {
     return config
   }
 
-
   private static func parseKeybindings(from table: TOMLTable) -> KeybindingStore {
     guard let kbTable = table["keybindings"]?.table else {
       return KeybindingStore.build(

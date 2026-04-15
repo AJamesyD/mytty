@@ -47,9 +47,12 @@ final class MisttyPane: Identifiable {
   }
 
   var isRunningVimLike: Bool {
+    isRunningVimLike(processes: KeybindingStore.defaultVimLikeProcesses)
+  }
+
+  func isRunningVimLike(processes: [String]) -> Bool {
     guard let title = processTitle?.lowercased() else { return false }
-    let vimNames = ["nvim", "neovim", "vim"]
-    return vimNames.contains(where: { title == $0 || title.hasPrefix($0 + " ") })
+    return processes.contains(where: { title == $0 || title.hasPrefix($0 + " ") })
   }
 
   init(id: Int) {
