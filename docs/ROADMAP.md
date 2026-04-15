@@ -2,7 +2,7 @@
 
 Created: 2026-04-14
 Last updated: 2026-04-15
-Iteration: 20
+Iteration: 21
 
 ## Working Agreements
 
@@ -16,6 +16,7 @@ These are process and scope rules that govern the roadmap:
 3. **Infrastructure ships with features**: build plumbing when a feature needs it, not before.
 4. **Dependency-ordered**: phases are sequenced by what unblocks what. No fake timelines.
 5. **Opinionated defaults, constrained configuration**: ship one good design. When configuration is needed, prefer presets over arbitrary values. Don't push design decisions to the user. Code must be written with the assumption that hardcoded values will become configurable later: access through abstractions (e.g., `theme.surface` not `Color.white.opacity(0.03)`), even when the backing store is a static singleton.
+6. **Principle of Least Astonishment**: follow macOS conventions wherever possible. Standard shortcuts (Cmd+S, Cmd+X, Cmd+C/V, Cmd+Q, Cmd+H, Cmd+Shift+]/[) must not be overridden for non-standard purposes. When Mistty needs a shortcut, pick one that doesn't conflict with universal macOS muscle memory. Custom behaviors (modes, which-key, split panes) are fine where macOS has no convention, but defaults should never surprise a user coming from another macOS app. Research: `/tmp/ai-research-macos-native-divergence-framework.md`.
 
 ---
 
@@ -49,7 +50,7 @@ Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=w
 - [x] Session/tab renaming (sidebar + tab bar only). `/spec` before implementation. Scope: double-click to rename in sidebar and tab bar. Right-click context menu with "Rename" option. CLI rename and OSC 0/1/2 title integration deferred to Phase 2/3. Prior art: Kitty `tab_title_template`, iTerm2 session naming. Spec: /tmp/ai-design-session-tab-renaming.md.
 - [x] Tab bar visibility mode: "always", "never", "if-multiple" (hide when only 1 tab). Small enough to implement directly (no `/spec` needed). Prior art: Kitty `tab_bar_min_tabs`, WezTerm `hide_tab_bar_if_only_one_tab`, neovim bufferline. Hardcode "if-multiple" as default, expose via config in Phase 4.
 - [x] Tab drag-and-drop reordering. `/spec` before implementation. Prior art: iTerm2, Kitty, browser tab bars. Spec: /tmp/ai-design-tab-drag-drop.md.
-- ~~Dropdown / Quake mode~~: moved to Phase 5 as 5h (not blocking daily driver use).
+- ~~Dropdown / Quake mode~~: moved to Phase 5 as 5a (not blocking daily driver use).
 
 - Complexity: 2 (visual polish items are individually small; dropdown moved to Phase 5)
 
@@ -230,10 +231,31 @@ Menu shortcuts (MisttyApp), pane navigation (PaneNavigationManager), and passthr
 - [x] Tests for PaneNavigationManager key matching logic (5 tests)
 - [x] Fix special key matching (arrow keys, escape) via keycode-to-name mapping
 
-#### 4a-3: Wire modal keybindings (next)
+#### Bug fix: Ctrl+hjkl navigation unreliable
+PaneNavigationManager uses `event.charactersIgnoringModifiers` to extract the key character. On macOS, this returns control characters when Ctrl is held (Ctrl+H = `\u{08}`, Ctrl+J = `\n`, Ctrl+K = `\u{0B}`, Ctrl+L = `\u{0C}`) instead of the letter. Ghostty's own code explicitly avoids this (see `NSEvent+Extension.swift` comment: "We have to use `byApplyingModifiers` instead of `charactersIgnoringModifiers` because the latter changes behavior with ctrl pressed"). Fix: use `event.characters(byApplyingModifiers: [])?.lowercased()` instead. Standalone fix, no spec needed.
+
+- Complexity: 1
+- [ ] Fix `PaneNavigationManager.handleKeyDown` to use `characters(byApplyingModifiers: [])` instead of `charactersIgnoringModifiers`
+
+#### 4a-2b: Native keybinding defaults
+Apply Principle of Least Astonishment to default keybindings. All changes are to `KeybindingStore.defaultBindings` only; existing user configs are unaffected.
+
+- Change `toggle-sidebar` default from `Cmd+S` to `Cmd+\` (Cmd+S is "Save" in every macOS app)
+- Change `window-mode` default from `Cmd+X` to `Ctrl+W` (Cmd+X is "Cut" universally; Ctrl+W is the tmux prefix convention. Conflicts with shell word-delete, but configurable.)
+- Change `next-tab` default from `Cmd+]` to `Cmd+Shift+]` (matches Safari, Chrome, Finder)
+- Change `previous-tab` default from `Cmd+[` to `Cmd+Shift+[` (matches Safari, Chrome, Finder)
+- Add `Cmd+W` behavior config option: "multiplexer" (Cmd+W closes pane, default) vs "macos" (Cmd+W closes tab)
+- Document Ctrl+Space conflict with macOS input source switcher in config spec
+
+Research: `/tmp/ai-research-macos-native-divergence-framework.md`
+
+- Complexity: 1
+- Depends on: 4a-2
+
+#### 4a-3: Wire modal keybindings
 Replace hardcoded keybindings in WindowModeManager and WhichKeyManager with store lookups. CopyModeState deferred: no terminal emulator (Ghostty, kitty, WezTerm) makes vim copy-mode keys configurable, and the 622-line state machine would need a full rewrite to become data-driven. Vim users expect vim keys.
 
-- Depends on: 4a-2
+- Depends on: 4a-2b
 - Research: `/tmp/ai-research-phase4a3-modal-keybindings.md`
 - WindowModeManager: convert keyCode dispatch to action-name lookup from store
 - WhichKeyManager: read `whichKeyGroups` from store, map action names to closures
@@ -305,6 +327,14 @@ Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. 
 
 ### Polish
 
+### Cleanup gate (before Phase 5 Polish)
+
+**VoiceOver Accessibility Audit**: audit all custom controls for VoiceOver coverage. SidebarView has a start (bell notification, command failed, pane count labels). Other custom views likely lack labels: tab bar, which-key overlay, copy mode overlay, session manager, window mode hints, auto-hide edge triggers.
+
+- Complexity: 2
+- Required for App Store submission
+- Research: `/tmp/ai-research-macos-native-divergence-framework.md`
+
 ### 5d. Ghostty Config Compatibility
 Read `~/.config/ghostty/config` for themes, fonts, colors. Zero-friction migration.
 
@@ -333,9 +363,16 @@ Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide inte
 - Complexity: 2
 - `/spec` required: preview pane content, icon mapping, frecency algorithm tuning.
 
+### 5h. System Notifications for Background Events
+Optional macOS Notification Center integration (via UserNotifications) for events when Mistty is not the frontmost app. Bell and command-failure glow dots remain the primary in-app signal. System notifications supplement them for the "I'm in another app" case.
+
+- Complexity: 2
+- `/spec` required: which events trigger notifications, grouping, action buttons, user preference toggle.
+- Depends on: 2b (notification infrastructure)
+
 **Essential done when:** dropdown terminal works via global hotkey, hints mode selects visible targets, floating panes work.
 
-**Polish done when:** Ghostty themes import, project layouts load from `.mistty.toml` with save-current-layout command, command palette searches all actions, session manager shows frecency-ranked results with icons.
+**Polish done when:** Ghostty themes import, project layouts load from `.mistty.toml` with save-current-layout command, command palette searches all actions, session manager shows frecency-ranked results with icons, system notifications fire for background events when Mistty is not frontmost.
 
 ---
 
@@ -399,15 +436,18 @@ Completed:
   Phase 4a-2 (wire global keybindings) ✓
 
 Current:
-  Phase 4a-3 (wire modal keybindings) — next
-    ──> 4a-4 (sidebar config)
-      ──> 4a-5 (auto-hide UX polish)
+  Bug fix: Ctrl+hjkl (charactersIgnoringModifiers) — immediate
+  Phase 4a-2b (native keybinding defaults) — next
+  Phase 4a-3 (wire modal keybindings) — after 4a-2b
+    ──> 4d (sidebar config)
+      ──> 4e (auto-hide UX polish)
         ──> 4b (live config reload)
 
 After Phase 4:
   ──> cleanup gate (integration tests, API stability, dead code)
     ──> Phase 5 Essential (dropdown, hints, floating panes)
-      ──> Phase 5 Polish (Ghostty compat, layouts, palette, session manager)
+      ──> VoiceOver audit gate
+        ──> Phase 5 Polish (Ghostty compat, layouts, palette, session manager, notifications)
         ──> Phase 6 (moonshots)
 
 Late dependencies:
@@ -484,3 +524,6 @@ Late dependencies:
 - /tmp/ai-research-command-state-indicators.md (command running/idle/done state patterns, 2026-04-14)
 - /tmp/ai-brainstorm-phase2b-sidebar.md (Phase 2b brainstorm, 2026-04-14)
 - /tmp/ai-debate-phase2b-sidebar.md (Phase 2b debate transcript, 2026-04-14)
+- /tmp/ai-research-macos-native-divergence-framework.md (native vs custom decision framework, 2026-04-15)
+- /tmp/ai-research-macos-native-ui-tradeoffs.md (terminal UI native patterns analysis, 2026-04-15)
+- /tmp/ai-research-macos-native-apis-terminals.md (macOS native APIs for terminals, 2026-04-15)
