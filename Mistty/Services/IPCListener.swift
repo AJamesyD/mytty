@@ -175,13 +175,8 @@ final class IPCListener {
         ]
         response = .success(id: request.id, result: result)
 
-      case "session.create", "session.list", "session.get", "session.close", "session.rename":
-        response = dispatchSessionMethod(request, service: service)
-
       default:
-        response = .error(
-          id: request.id, code: MisttyIPC.JSONRPCErrorCode.methodNotFound,
-          message: "Method not found: \(request.method)")
+        response = dispatchJSONRPCMethod(request, service: service)
       }
 
       guard let data = try? encoder.encode(response) else { return }
@@ -189,7 +184,7 @@ final class IPCListener {
     }
   }
 
-  private nonisolated static func dispatchSessionMethod(
+  private nonisolated static func dispatchJSONRPCMethod(
     _ request: JSONRPCMessage.Request, service: MisttyIPCService
   ) -> JSONRPCMessage.Response {
     let params = request.params ?? [:]
@@ -201,6 +196,15 @@ final class IPCListener {
     func int(_ key: String) -> Int {
       if case .int(let i) = params[key] { return i }
       return 0
+    }
+    func dbl(_ key: String) -> Double {
+      if case .double(let d) = params[key] { return d }
+      if case .int(let i) = params[key] { return Double(i) }
+      return 0
+    }
+    func boo(_ key: String) -> Bool {
+      if case .bool(let b) = params[key] { return b }
+      return false
     }
 
     let semaphore = DispatchSemaphore(value: 0)
@@ -214,6 +218,7 @@ final class IPCListener {
     }
 
     switch request.method {
+    // Sessions
     case "session.create":
       service.createSession(
         name: str("name") ?? "Default", directory: str("directory"), exec: str("exec"), reply: reply
@@ -226,6 +231,73 @@ final class IPCListener {
       service.closeSession(id: int("id"), reply: reply)
     case "session.rename":
       service.renameSession(id: int("id"), name: str("name") ?? "", reply: reply)
+
+    // Tabs
+    case "tab.create":
+      service.createTab(
+        sessionId: int("sessionId"), name: str("name"), exec: str("exec"), reply: reply)
+    case "tab.list":
+      service.listTabs(sessionId: int("sessionId"), reply: reply)
+    case "tab.get":
+      service.getTab(id: int("id"), reply: reply)
+    case "tab.close":
+      service.closeTab(id: int("id"), reply: reply)
+    case "tab.rename":
+      service.renameTab(id: int("id"), name: str("name") ?? "", reply: reply)
+    case "tab.move":
+      service.moveTab(id: int("id"), toIndex: int("toIndex"), reply: reply)
+
+    // Panes
+    case "pane.create":
+      service.createPane(tabId: int("tabId"), direction: str("direction"), reply: reply)
+    case "pane.list":
+      service.listPanes(tabId: int("tabId"), reply: reply)
+    case "pane.get":
+      service.getPane(id: int("id"), reply: reply)
+    case "pane.close":
+      service.closePane(id: int("id"), reply: reply)
+    case "pane.focus":
+      service.focusPane(id: int("id"), reply: reply)
+    case "pane.focusByDirection":
+      service.focusPaneByDirection(
+        direction: str("direction") ?? "", sessionId: int("sessionId"), reply: reply)
+    case "pane.resize":
+      service.resizePane(
+        id: int("id"), direction: str("direction") ?? "", amount: int("amount"), reply: reply)
+    case "pane.active":
+      service.activePane(reply: reply)
+    case "pane.sendKeys":
+      service.sendKeys(paneId: int("paneId"), keys: str("keys") ?? "", reply: reply)
+    case "pane.runCommand":
+      service.runCommand(paneId: int("paneId"), command: str("command") ?? "", reply: reply)
+    case "pane.getText":
+      service.getText(paneId: int("paneId"), reply: reply)
+
+    // Windows
+    case "window.create":
+      service.createWindow(reply: reply)
+    case "window.list":
+      service.listWindows(reply: reply)
+    case "window.get":
+      service.getWindow(id: int("id"), reply: reply)
+    case "window.close":
+      service.closeWindow(id: int("id"), reply: reply)
+    case "window.focus":
+      service.focusWindow(id: int("id"), reply: reply)
+
+    // Popups
+    case "popup.open":
+      service.openPopup(
+        sessionId: int("sessionId"), name: str("name") ?? "",
+        exec: str("exec") ?? "", width: dbl("width"), height: dbl("height"),
+        closeOnExit: boo("closeOnExit"), reply: reply)
+    case "popup.list":
+      service.listPopups(sessionId: int("sessionId"), reply: reply)
+    case "popup.close":
+      service.closePopup(popupId: int("popupId"), reply: reply)
+    case "popup.toggle":
+      service.togglePopup(sessionId: int("sessionId"), name: str("name") ?? "", reply: reply)
+
     default:
       return .error(
         id: request.id, code: MisttyIPC.JSONRPCErrorCode.methodNotFound,

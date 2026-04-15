@@ -49,6 +49,7 @@ struct PopupCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let sessionId = try resolveSessionId(session, client: client)
             let popupName = name ?? exec ?? "popup"
@@ -61,14 +62,15 @@ struct PopupCommand: ParsableCommand {
 
             let data: Data
             do {
-                data = try client.call("openPopup", [
-                    "sessionId": sessionId,
-                    "name": popupName,
-                    "exec": command,
-                    "width": width,
-                    "height": height,
-                    "closeOnExit": shouldCloseOnExit,
+                let result = try client.callJSONRPC("popup.open", params: [
+                    "sessionId": .int(sessionId),
+                    "name": .string(popupName),
+                    "exec": .string(command),
+                    "width": .double(width),
+                    "height": .double(height),
+                    "closeOnExit": .bool(shouldCloseOnExit),
                 ])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -108,9 +110,10 @@ struct PopupCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("closePopup", ["popupId": id])
+                _ = try client.callJSONRPC("popup.close", params: ["popupId": .int(id)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -140,12 +143,14 @@ struct PopupCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let sessionId = try resolveSessionId(session, client: client)
 
             let data: Data
             do {
-                data = try client.call("togglePopup", ["sessionId": sessionId, "name": name])
+                let result = try client.callJSONRPC("popup.toggle", params: ["sessionId": .int(sessionId), "name": .string(name)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -185,12 +190,14 @@ struct PopupCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let sessionId = try resolveSessionId(session, client: client)
 
             let data: Data
             do {
-                data = try client.call("listPopups", ["sessionId": sessionId])
+                let result = try client.callJSONRPC("popup.list", params: ["sessionId": .int(sessionId)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -214,10 +221,10 @@ struct PopupCommand: ParsableCommand {
     }
 }
 
-/// Resolve session ID: use provided value or look up the first (active) session.
 private func resolveSessionId(_ provided: Int?, client: IPCClient) throws -> Int {
     if let sid = provided { return sid }
-    let data = try client.call("listSessions")
+    let result = try client.callJSONRPC("session.list")
+    let data = try JSONEncoder().encode(result)
     guard let sessions = try? JSONDecoder().decode([SessionResponse].self, from: data),
           let first = sessions.first
     else {

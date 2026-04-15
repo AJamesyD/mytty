@@ -39,14 +39,16 @@ struct TabCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
-            var params: [String: Any] = ["sessionId": session]
-            if let name { params["name"] = name }
-            if let exec { params["exec"] = exec }
+            var params: [String: JSONValue] = ["sessionId": .int(session)]
+            if let name { params["name"] = .string(name) }
+            if let exec { params["exec"] = .string(exec) }
 
             let data: Data
             do {
-                data = try client.call("createTab", params)
+                let result = try client.callJSONRPC("tab.create", params: params)
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -84,10 +86,12 @@ struct TabCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("listTabs", ["sessionId": session])
+                let result = try client.callJSONRPC("tab.list", params: ["sessionId": .int(session)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -127,10 +131,12 @@ struct TabCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("getTab", ["id": id])
+                let result = try client.callJSONRPC("tab.get", params: ["id": .int(id)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -169,9 +175,10 @@ struct TabCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("closeTab", ["id": id])
+                _ = try client.callJSONRPC("tab.close", params: ["id": .int(id)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -201,10 +208,12 @@ struct TabCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("renameTab", ["id": id, "name": name])
+                let result = try client.callJSONRPC("tab.rename", params: ["id": .int(id), "name": .string(name)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -245,10 +254,12 @@ struct TabCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("moveTab", ["id": id, "toIndex": toIndex])
+                let result = try client.callJSONRPC("tab.move", params: ["id": .int(id), "toIndex": .int(toIndex)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)

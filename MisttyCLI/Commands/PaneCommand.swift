@@ -40,13 +40,15 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
-            var params: [String: Any] = ["tabId": tab]
-            if let direction { params["direction"] = direction }
+            var params: [String: JSONValue] = ["tabId": .int(tab)]
+            if let direction { params["direction"] = .string(direction) }
 
             let data: Data
             do {
-                data = try client.call("createPane", params)
+                let result = try client.callJSONRPC("pane.create", params: params)
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -83,10 +85,12 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("listPanes", ["tabId": tab])
+                let result = try client.callJSONRPC("pane.list", params: ["tabId": .int(tab)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -126,10 +130,12 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("getPane", ["id": id])
+                let result = try client.callJSONRPC("pane.get", params: ["id": .int(id)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -166,9 +172,10 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("closePane", ["id": id])
+                _ = try client.callJSONRPC("pane.close", params: ["id": .int(id)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -207,15 +214,17 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
                 if let direction {
-                    data = try client.call("focusPaneByDirection", ["direction": direction, "sessionId": session])
+                    let result = try client.callJSONRPC("pane.focusByDirection", params: ["direction": .string(direction), "sessionId": .int(session)])
+                    data = try JSONEncoder().encode(result)
                 } else if let id {
-                    data = try client.call("focusPane", ["id": id])
+                    let result = try client.callJSONRPC("pane.focus", params: ["id": .int(id)])
+                    data = try JSONEncoder().encode(result)
                 } else {
-                    // Should not reach here due to validate()
                     OutputFormatter.printError("Provide either a pane ID or --direction")
                     Foundation.exit(1)
                 }
@@ -263,9 +272,10 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("resizePane", ["id": id, "direction": direction, "amount": amount])
+                _ = try client.callJSONRPC("pane.resize", params: ["id": .int(id), "direction": .string(direction), "amount": .int(amount)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -289,10 +299,12 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("activePane")
+                let result = try client.callJSONRPC("pane.active")
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -335,9 +347,10 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("sendKeys", ["paneId": pane, "keys": keys])
+                _ = try client.callJSONRPC("pane.sendKeys", params: ["paneId": .int(pane), "keys": .string(keys)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -370,9 +383,10 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("runCommand", ["paneId": pane, "command": command])
+                _ = try client.callJSONRPC("pane.runCommand", params: ["paneId": .int(pane), "command": .string(command)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -402,10 +416,12 @@ struct PaneCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("getText", ["paneId": pane])
+                let result = try client.callJSONRPC("pane.getText", params: ["paneId": .int(pane)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -415,7 +431,6 @@ struct PaneCommand: ParsableCommand {
             case .json:
                 formatter.printJSON(data)
             case .human:
-                // In human mode, just print the text directly
                 if let text = String(data: data, encoding: .utf8) {
                     print(text)
                 }

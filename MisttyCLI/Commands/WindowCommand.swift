@@ -29,10 +29,12 @@ struct WindowCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("createWindow")
+                let result = try client.callJSONRPC("window.create")
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -66,10 +68,12 @@ struct WindowCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("listWindows")
+                let result = try client.callJSONRPC("window.list")
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -109,10 +113,12 @@ struct WindowCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             let data: Data
             do {
-                data = try client.call("getWindow", ["id": id])
+                let result = try client.callJSONRPC("window.get", params: ["id": .int(id)])
+                data = try JSONEncoder().encode(result)
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -149,9 +155,10 @@ struct WindowCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("closeWindow", ["id": id])
+                _ = try client.callJSONRPC("window.close", params: ["id": .int(id)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
@@ -178,9 +185,10 @@ struct WindowCommand: ParsableCommand {
             let formatter = OutputFormatter(format: format)
             let client = IPCClient()
             try client.connect()
+            try client.initialize()
 
             do {
-                _ = try client.call("focusWindow", ["id": id])
+                _ = try client.callJSONRPC("window.focus", params: ["id": .int(id)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)
