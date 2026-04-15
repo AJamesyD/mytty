@@ -390,36 +390,40 @@ extension ContentView {
 
   func installKeyMonitor(vm: SessionManagerViewModel) {
     eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-      switch event.keyCode {
-      case 53:  // Escape
-        showingSessionManager = false
-        return nil
-      case 36:  // Return
-        vm.confirmSelection(modifierFlags: event.modifierFlags)
-        showingSessionManager = false
-        return nil
-      case 126:  // Up arrow
-        vm.moveUp()
-        return nil
-      case 125:  // Down arrow
+      self.handleSessionManagerKeyDown(event, vm: vm)
+    }
+  }
+
+  func handleSessionManagerKeyDown(_ event: NSEvent, vm: SessionManagerViewModel) -> NSEvent? {
+    switch event.keyCode {
+    case 53:
+      showingSessionManager = false
+      return nil
+    case 36:
+      vm.confirmSelection(modifierFlags: event.modifierFlags)
+      showingSessionManager = false
+      return nil
+    case 126:
+      vm.moveUp()
+      return nil
+    case 125:
+      vm.moveDown()
+      return nil
+    default:
+      break
+    }
+
+    if event.modifierFlags.contains(.control) {
+      if event.charactersIgnoringModifiers == "j" {
         vm.moveDown()
         return nil
-      default:
-        break
+      } else if event.charactersIgnoringModifiers == "k" {
+        vm.moveUp()
+        return nil
       }
-
-      if event.modifierFlags.contains(.control) {
-        if event.charactersIgnoringModifiers == "j" {
-          vm.moveDown()
-          return nil
-        } else if event.charactersIgnoringModifiers == "k" {
-          vm.moveUp()
-          return nil
-        }
-      }
-
-      return event
     }
+
+    return event
   }
 
   func removeKeyMonitor() {

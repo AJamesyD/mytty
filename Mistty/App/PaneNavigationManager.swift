@@ -13,43 +13,43 @@ final class PaneNavigationManager {
     self.store = store
     isActive = true
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      guard let self else { return event }
-      guard event.modifierFlags.contains(.control),
-        let chars = event.charactersIgnoringModifiers?.lowercased()
-      else { return event }
-
-      let direction: NavigationDirection
-      switch chars {
-      case "h": direction = .left
-      case "j": direction = .down
-      case "k": direction = .up
-      case "l": direction = .right
-      default: return event
-      }
-
-      // Don't intercept if session manager, window mode, or copy mode is active
-      guard !isSessionManagerShowing(),
-        store.activeSession?.activeTab?.isWindowModeActive != true,
-        store.activeSession?.activeTab?.isCopyModeActive != true
-      else { return event }
-
-      guard let tab = store.activeSession?.activeTab,
-        let pane = tab.activePane
-      else { return event }
-
-      // If running neovim, let the keypress through for smart-splits
-      if pane.isRunningVimLike { return event }
-
-      // Navigate between MistTY panes, only consume if navigation succeeds
-      if let target = tab.layout.adjacentPane(from: pane, direction: direction) {
-        tab.activePane = target
-        DispatchQueue.main.async {
-          target.surfaceView.window?.makeFirstResponder(target.surfaceView)
-        }
-        return nil  // Consume the event
-      }
-      return event  // No adjacent pane, pass through to terminal
+      self?.handleKeyDown(event) ?? event
     }
+  }
+
+  func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+    guard event.modifierFlags.contains(.control),
+      let chars = event.charactersIgnoringModifiers?.lowercased()
+    else { return event }
+
+    let direction: NavigationDirection
+    switch chars {
+    case "h": direction = .left
+    case "j": direction = .down
+    case "k": direction = .up
+    case "l": direction = .right
+    default: return event
+    }
+
+    guard !isSessionManagerShowing(),
+      store?.activeSession?.activeTab?.isWindowModeActive != true,
+      store?.activeSession?.activeTab?.isCopyModeActive != true
+    else { return event }
+
+    guard let tab = store?.activeSession?.activeTab,
+      let pane = tab.activePane
+    else { return event }
+
+    if pane.isRunningVimLike { return event }
+
+    if let target = tab.layout.adjacentPane(from: pane, direction: direction) {
+      tab.activePane = target
+      DispatchQueue.main.async {
+        target.surfaceView.window?.makeFirstResponder(target.surfaceView)
+      }
+      return nil
+    }
+    return event
   }
 
   func deactivate() {

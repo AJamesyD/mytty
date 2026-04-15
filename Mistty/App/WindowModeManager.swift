@@ -18,89 +18,7 @@ final class WindowModeManager {
     }
 
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      guard let self else { return event }
-
-      // Join-pick mode: number keys select target tab
-      if store.activeSession?.activeTab?.windowModeState == .joinPick {
-        if event.keyCode == 53 {  // Escape, back to normal window mode
-          store.activeSession?.activeTab?.windowModeState = .normal
-          return nil
-        }
-        if let chars = event.characters, let num = Int(chars), num >= 1, num <= 9 {
-          self.joinPaneToTab(targetIndex: num - 1, store: store)
-          return nil
-        }
-        return nil  // Consume all other keys in join-pick mode
-      }
-
-      // Cmd+Arrow to resize
-      if event.modifierFlags.contains(.command) {
-        switch event.keyCode {
-        case 123:  // Cmd+Left, shrink horizontal
-          self.resizeActivePane(delta: -0.05, along: .horizontal, store: store)
-          return nil
-        case 124:  // Cmd+Right, grow horizontal
-          self.resizeActivePane(delta: 0.05, along: .horizontal, store: store)
-          return nil
-        case 126:  // Cmd+Up, shrink vertical
-          self.resizeActivePane(delta: -0.05, along: .vertical, store: store)
-          return nil
-        case 125:  // Cmd+Down, grow vertical
-          self.resizeActivePane(delta: 0.05, along: .vertical, store: store)
-          return nil
-        default: break
-        }
-      }
-
-      switch event.keyCode {
-      case 53:  // Escape, exit window mode
-        store.activeSession?.activeTab?.windowModeState = .inactive
-        self.deactivate()
-        return nil
-      case 123:  // Left arrow
-        self.swapActivePane(.left, store: store)
-        return nil
-      case 124:  // Right arrow
-        self.swapActivePane(.right, store: store)
-        return nil
-      case 126:  // Up arrow
-        self.swapActivePane(.up, store: store)
-        return nil
-      case 125:  // Down arrow
-        self.swapActivePane(.down, store: store)
-        return nil
-      case 6:  // z, zoom toggle
-        self.toggleZoom(store: store)
-        return nil
-      case 11:  // b, break pane to new tab
-        self.breakPaneToTab(store: store)
-        return nil
-      case 15:  // r, rotate split direction
-        self.rotateActivePane(store: store)
-        return nil
-      case 46:  // m, join pane to tab
-        guard let tab = store.activeSession?.activeTab else { return nil }
-        tab.windowModeState = .joinPick
-        return nil
-      case 18, 19, 20, 21, 23:  // 1-5: standard layouts
-        if let tab = store.activeSession?.activeTab, tab.panes.count >= 2 {
-          let standardLayout: StandardLayout =
-            switch event.keyCode {
-            case 18: .evenHorizontal
-            case 19: .evenVertical
-            case 20: .mainHorizontal
-            case 21: .mainVertical
-            case 23: .tiled
-            default: .evenHorizontal
-            }
-          tab.applyStandardLayout(standardLayout)
-          tab.windowModeState = .inactive
-          self.deactivate()
-        }
-        return nil
-      default:
-        return event
-      }
+      self?.handleKeyDown(event) ?? event
     }
   }
 
@@ -112,6 +30,90 @@ final class WindowModeManager {
     monitor = nil
     store = nil
     isActive = false
+  }
+
+  func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+    guard let store else { return event }
+
+    if store.activeSession?.activeTab?.windowModeState == .joinPick {
+      if event.keyCode == 53 {
+        store.activeSession?.activeTab?.windowModeState = .normal
+        return nil
+      }
+      if let chars = event.characters, let num = Int(chars), num >= 1, num <= 9 {
+        joinPaneToTab(targetIndex: num - 1, store: store)
+        return nil
+      }
+      return nil
+    }
+
+    if event.modifierFlags.contains(.command) {
+      switch event.keyCode {
+      case 123:
+        resizeActivePane(delta: -0.05, along: .horizontal, store: store)
+        return nil
+      case 124:
+        resizeActivePane(delta: 0.05, along: .horizontal, store: store)
+        return nil
+      case 126:
+        resizeActivePane(delta: -0.05, along: .vertical, store: store)
+        return nil
+      case 125:
+        resizeActivePane(delta: 0.05, along: .vertical, store: store)
+        return nil
+      default: break
+      }
+    }
+
+    switch event.keyCode {
+    case 53:
+      store.activeSession?.activeTab?.windowModeState = .inactive
+      deactivate()
+      return nil
+    case 123:
+      swapActivePane(.left, store: store)
+      return nil
+    case 124:
+      swapActivePane(.right, store: store)
+      return nil
+    case 126:
+      swapActivePane(.up, store: store)
+      return nil
+    case 125:
+      swapActivePane(.down, store: store)
+      return nil
+    case 6:
+      toggleZoom(store: store)
+      return nil
+    case 11:
+      breakPaneToTab(store: store)
+      return nil
+    case 15:
+      rotateActivePane(store: store)
+      return nil
+    case 46:
+      guard let tab = store.activeSession?.activeTab else { return nil }
+      tab.windowModeState = .joinPick
+      return nil
+    case 18, 19, 20, 21, 23:
+      if let tab = store.activeSession?.activeTab, tab.panes.count >= 2 {
+        let standardLayout: StandardLayout =
+          switch event.keyCode {
+          case 18: .evenHorizontal
+          case 19: .evenVertical
+          case 20: .mainHorizontal
+          case 21: .mainVertical
+          case 23: .tiled
+          default: .evenHorizontal
+          }
+        tab.applyStandardLayout(standardLayout)
+        tab.windowModeState = .inactive
+        deactivate()
+      }
+      return nil
+    default:
+      return event
+    }
   }
 
   func joinPaneToTab(targetIndex: Int, store: SessionStore) {

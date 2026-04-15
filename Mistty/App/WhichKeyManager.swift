@@ -33,15 +33,7 @@ final class WhichKeyManager {
     resetTimeout()
 
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      guard let self else { return event }
-      // Pass through events with command/option modifiers (Cmd+Q, Cmd+W, etc.)
-      if event.modifierFlags.intersection([.command, .option]).isEmpty == false {
-        return event
-      }
-      guard let chars = event.charactersIgnoringModifiers,
-        let key = chars.first
-      else { return event }
-      return self.handleKey(key) ? nil : event
+      self?.handleKeyDown(event) ?? event
     }
   }
 
@@ -57,6 +49,16 @@ final class WhichKeyManager {
     breadcrumb = []
     dismissTask?.cancel()
     dismissTask = nil
+  }
+
+  func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+    if event.modifierFlags.intersection([.command, .option]).isEmpty == false {
+      return event
+    }
+    guard let chars = event.charactersIgnoringModifiers,
+      let key = chars.first
+    else { return event }
+    return handleKey(key) ? nil : event
   }
 
   /// Returns true if the key was consumed by which-key.

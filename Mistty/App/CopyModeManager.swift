@@ -61,94 +61,93 @@ final class CopyModeManager {
 
   private func installMonitor() {
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      guard let self,
-        var state = self.store?.activeSession?.activeTab?.copyModeState
-      else { return event }
+      self?.handleKeyDown(event) ?? event
+    }
+  }
 
-      // Pass through system shortcuts (Cmd+*) when not searching
-      if event.modifierFlags.contains(.command) && !state.isSearching {
-        return event
-      }
+  func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+    guard var state = store?.activeSession?.activeTab?.copyModeState
+    else { return event }
 
-      // Extract key from charactersIgnoringModifiers for correct Ctrl-v handling
-      guard let keyStr = event.charactersIgnoringModifiers, let key = keyStr.first else {
-        return event
-      }
+    if event.modifierFlags.contains(.command) && !state.isSearching {
+      return event
+    }
 
-      let lineReader: (Int) -> String? = { row in
-        self.readTerminalLine(row: row)
-      }
+    guard let keyStr = event.charactersIgnoringModifiers, let key = keyStr.first else {
+      return event
+    }
 
-      let actions = state.handleKey(
-        key: key,
-        keyCode: event.keyCode,
-        modifiers: event.modifierFlags,
-        lineReader: lineReader
-      )
+    let lineReader: (Int) -> String? = { row in
+      self.readTerminalLine(row: row)
+    }
 
-      // Apply actions
-      for action in actions {
-        switch action {
-        case .cursorMoved:
-          break
-        case .updateSelection:
-          break
-        case .yank:
-          break
-        case .exitCopyMode:
-          // Yank if there's a selection before exiting
-          if state.isSelecting {
-            self.store?.activeSession?.activeTab?.copyModeState = state
-            self.yankSelection()
-          }
-          self.exit()
-          return nil
-        case .enterSubMode:
-          break
-        case .showHelp, .hideHelp:
-          break
-        case .startSearch:
-          break
-        case .updateSearch:
-          break
-        case .confirmSearch:
-          self.performSearch(&state, direction: state.searchDirection)
-          self.countSearchMatches(&state)
-        case .cancelSearch:
-          break
-        case .searchNext:
-          self.performSearch(&state, direction: state.searchDirection)
-          self.countSearchMatches(&state)
-        case .searchPrev:
-          let reversed: SearchDirection = state.searchDirection == .forward ? .reverse : .forward
-          self.performSearch(&state, direction: reversed)
-          self.countSearchMatches(&state)
-        case .scroll(let deltaRows):
-          self.scrollViewport(&state, delta: deltaRows)
-        case .needsContinuation:
-          var pending = true
-          var iterations = 0
-          while pending && iterations < 100 {
-            iterations += 1
-            pending = false
-            let continuationActions = state.continuePendingMotion(lineReader: lineReader)
-            for contAction in continuationActions {
-              switch contAction {
-              case .scroll(let delta):
-                self.scrollViewport(&state, delta: delta)
-              case .needsContinuation:
-                pending = true
-              default:
-                break
-              }
+    let actions = state.handleKey(
+      key: key,
+      keyCode: event.keyCode,
+      modifiers: event.modifierFlags,
+      lineReader: lineReader
+    )
+
+    for action in actions {
+      switch action {
+      case .cursorMoved:
+        break
+      case .updateSelection:
+        break
+      case .yank:
+        break
+      case .exitCopyMode:
+        if state.isSelecting {
+          store?.activeSession?.activeTab?.copyModeState = state
+          yankSelection()
+        }
+        exit()
+        return nil
+      case .enterSubMode:
+        break
+      case .showHelp, .hideHelp:
+        break
+      case .startSearch:
+        break
+      case .updateSearch:
+        break
+      case .confirmSearch:
+        performSearch(&state, direction: state.searchDirection)
+        countSearchMatches(&state)
+      case .cancelSearch:
+        break
+      case .searchNext:
+        performSearch(&state, direction: state.searchDirection)
+        countSearchMatches(&state)
+      case .searchPrev:
+        let reversed: SearchDirection = state.searchDirection == .forward ? .reverse : .forward
+        performSearch(&state, direction: reversed)
+        countSearchMatches(&state)
+      case .scroll(let deltaRows):
+        scrollViewport(&state, delta: deltaRows)
+      case .needsContinuation:
+        var pending = true
+        var iterations = 0
+        while pending && iterations < 100 {
+          iterations += 1
+          pending = false
+          let continuationActions = state.continuePendingMotion(lineReader: lineReader)
+          for contAction in continuationActions {
+            switch contAction {
+            case .scroll(let delta):
+              scrollViewport(&state, delta: delta)
+            case .needsContinuation:
+              pending = true
+            default:
+              break
             }
           }
         }
       }
-
-      self.store?.activeSession?.activeTab?.copyModeState = state
-      return nil
     }
+
+    store?.activeSession?.activeTab?.copyModeState = state
+    return nil
   }
 
   private func removeMonitor() {
