@@ -18,11 +18,7 @@ final class ConfigWatcher {
     source.setEventHandler { [weak self] in
       self?.handleChange()
     }
-    source.setCancelHandler { [weak self] in
-      guard let self, self.fileDescriptor >= 0 else { return }
-      close(self.fileDescriptor)
-      self.fileDescriptor = -1
-    }
+    source.setCancelHandler {}
     source.resume()
     self.source = source
   }
@@ -30,24 +26,31 @@ final class ConfigWatcher {
   func stop() {
     source?.cancel()
     source = nil
+    if fileDescriptor >= 0 {
+      close(fileDescriptor)
+      fileDescriptor = -1
+    }
   }
 
   private func handleChange() {
     let flags = source?.data ?? []
     if flags.contains(.rename) || flags.contains(.delete) {
-      // Re-open after editor save-and-swap
       stop()
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
         self?.start()
+        NotificationCenter.default.post(name: .configDidChange, object: nil)
       }
+      return
     }
     NotificationCenter.default.post(name: .configDidChange, object: nil)
   }
 
   deinit {
     source?.cancel()
+    source = nil
     if fileDescriptor >= 0 {
       close(fileDescriptor)
+      fileDescriptor = -1
     }
   }
 }

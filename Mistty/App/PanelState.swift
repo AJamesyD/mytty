@@ -23,7 +23,7 @@ extension PanelMode {
   }
 }
 
-@Observable
+@MainActor @Observable
 final class PanelState {
   var sidebarMode: PanelMode = .pinned
   var sidebarPosition: SidebarPosition = .left

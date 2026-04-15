@@ -85,7 +85,7 @@ final class WindowModeManager {
         joinPaneToTab(targetIndex: num - 1, store: store)
         return nil
       }
-      return nil
+      return event
     }
 
     guard let action = actionName(for: event) else { return event }

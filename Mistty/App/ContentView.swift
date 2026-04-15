@@ -57,7 +57,8 @@ struct ContentView: View {
         get: { CGFloat(sidebarWidth) },
         set: { sidebarWidth = Double($0) }
       ),
-      showTree: panelState.sidebarShowTree)
+      showTree: panelState.sidebarShowTree,
+      position: panelState.sidebarPosition)
   }
 
   var terminalArea: some View {
@@ -318,6 +319,7 @@ struct ContentView: View {
   }
 
   func applyConfig(_ config: MisttyConfig) {
+    let positionChanged = panelState.sidebarPosition != config.sidebarPosition
     panelState.sidebarMode = config.sidebarMode
     panelState.sidebarPosition = config.sidebarPosition
     panelState.sidebarShowTree = config.sidebarShowTree
@@ -326,5 +328,9 @@ struct ContentView: View {
     panelState.dwellDuration = Double(config.autoHideDwellMs) / 1000.0
     panelState.dismissDelay = Double(config.autoHideDismissDelayMs) / 1000.0
     panelState.showHints = config.autoHideShowHints
+    if positionChanged {
+      panelState.isSidebarRevealed = false
+      panelState.isSidebarTempPinned = false
+    }
   }
 }

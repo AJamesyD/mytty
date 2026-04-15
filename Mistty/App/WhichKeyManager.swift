@@ -55,7 +55,7 @@ final class WhichKeyManager {
     if event.modifierFlags.intersection([.command, .option]).isEmpty == false {
       return event
     }
-    guard let chars = event.charactersIgnoringModifiers,
+    guard let chars = event.characters(byApplyingModifiers: []),
       let key = chars.first
     else { return event }
     return handleKey(key) ? nil : event

@@ -4,6 +4,7 @@ struct SidebarView: View {
   @Bindable var store: SessionStore
   @Binding var width: CGFloat
   var showTree: Bool = true
+  var position: SidebarPosition = .left
 
   var body: some View {
     List {
@@ -13,23 +14,32 @@ struct SidebarView: View {
     }
     .listStyle(.sidebar)
     .frame(width: width)
-    .overlay(alignment: .trailing) {
-      SidebarDragHandle(width: $width)
+    .overlay(alignment: position == .left ? .trailing : .leading) {
+      SidebarDragHandle(width: $width, position: position)
     }
   }
 }
 
 struct SidebarDragHandle: View {
   @Binding var width: CGFloat
+  var position: SidebarPosition = .left
+  @GestureState private var dragStartWidth: CGFloat?
 
   var body: some View {
     Color.clear
       .frame(width: 6)
       .contentShape(Rectangle())
       .gesture(
-        DragGesture(coordinateSpace: .global)
+        DragGesture()
+          .updating($dragStartWidth) { _, state, _ in
+            if state == nil { state = width }
+          }
           .onChanged { value in
-            width = max(140, min(400, value.location.x))
+            guard let startWidth = dragStartWidth else { return }
+            let delta = position == .left
+              ? value.translation.width
+              : -value.translation.width
+            width = max(140, min(400, startWidth + delta))
           }
       )
       .onHover { hovering in
