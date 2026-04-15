@@ -260,12 +260,13 @@ Replace hardcoded keybindings in WindowModeManager and WhichKeyManager with stor
 - WindowModeManager: convert keyCode dispatch to action-name lookup from store
 - WhichKeyManager: read `whichKeyGroups` from store, map action names to closures
 
-### 4b. Live Config Reload
+### 4b. Live Config Reload ✅
 Watch config file with `DispatchSource.makeFileSystemObjectSource`. Reload on change. Panel modes, fonts, colors, and keybindings apply immediately. Terminal-affecting options (scrollback size) apply to new panes only.
 
 - Complexity: 1
 - `/spec` not needed (straightforward file watcher + partial apply).
 - Depends on: 4a
+- `6670121` feat(config): live config reload via file watcher
 
 ### 4c. Advanced Session Persistence
 Extends 2c with scrollback persistence, running command restoration, and optional shpool/zmx integration for shell survival across app restarts.
@@ -436,11 +437,11 @@ Completed:
   Phase 4a-2 (wire global keybindings) ✓
   Phase 4a-2b (native keybinding defaults) ✓
   Phase 4a-3 (wire modal keybindings) ✓
+  Phase 4b (live config reload) ✓
 
 Current:
   Phase 4d (sidebar config) — next
     ──> 4e (auto-hide UX polish)
-      ──> 4b (live config reload)
 
 After Phase 4:
   ──> cleanup gate (integration tests, API stability, dead code)
