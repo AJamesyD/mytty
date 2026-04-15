@@ -121,6 +121,9 @@ Design decisions (8 total, each with presupposition and revisit condition) docum
 - D5: No "unread output" for v1 (revisit when socket API provides output events)
 - D6: Success is quiet, failure is loud (revisit if users want long-command success notifications)
 - D7: jump_to_prompt confirmed feasible via ghostty_surface_binding_action
+- D9 (from review): 200ms debounce on git detection triggers (coalesces rapid COMMAND_FINISHED)
+
+Port detection (lsof integration) removed from Phase 2b scope. Standalone item, no dependency on 2b. Candidate for Phase 5 polish.
 
 - Complexity: 2
 - Gap analysis: cmux has notification rings. No one else combines notifications + git + ports + working directory in a sidebar.
@@ -156,6 +159,8 @@ Save session/tab/pane tree to disk on quit. Restore layout on launch (shells res
 ## Phase 3: Platform
 
 **Why this phase:** the socket API is the foundation for neovim navigation (personal pain point), CLI scripting, Raycast/Hammerspoon integration, and future automation. Recommend completing Phase 2 first (daily-driver value, unblocks 6b).
+
+**Contingency:** Ghostty is actively designing a text protocol for runtime control (Discussion #2353). If Ghostty ships IPC before Mistty reaches Phase 3, evaluate adopting Ghostty's protocol as transport instead of building a custom socket API. This could reduce 3a scope and accelerate 3b (neovim nav).
 
 ### 3a. Socket API + CLI
 Unix domain socket (`/tmp/mistty-$UID.sock`). JSON-RPC protocol. Extends the existing `MisttyCLI` binary (currently uses direct IPC) to use the socket as transport. Access control via file permissions.
@@ -408,7 +413,7 @@ Late dependencies:
 - Cursor trail: likely ships upstream in Ghostty. Track, don't build.
 - Smooth/pixel scrolling: depends on libghostty upstream. Track, don't build.
 - RTL/BiDi text: renderer-level, lives in libghostty. Track, don't build.
-- AI integration: interesting but premature. Revisit when the terminal is solid.
+- AI-assisted command generation: premature. Phase 6d (terminal automation API) provides the infrastructure if revisited.
 - Input broadcasting: scriptable via socket API (3b), doesn't need to be built-in.
 - Multi-client shared sessions: niche for a personal-first terminal.
 - Workspace snapshots: novel but no one's asking for it.
