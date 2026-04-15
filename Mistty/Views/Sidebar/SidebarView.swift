@@ -52,6 +52,31 @@ struct SessionRowView: View {
 
   var isActive: Bool { store.activeSession?.id == session.id }
 
+  var metadataText: String? {
+    guard let pane = session.activeTab?.activePane else { return nil }
+    var parts: [String] = []
+    if let branch = pane.gitBranch {
+      parts.append(branch + (pane.gitDirty ? "*" : ""))
+    }
+    if let dir = pane.workingDirectory {
+      parts.append(shortenPath(dir))
+    }
+    return parts.isEmpty ? nil : parts.joined(separator: " · ")
+  }
+
+  func shortenPath(_ url: URL) -> String {
+    let home = FileManager.default.homeDirectoryForCurrentUser.path
+    var path = url.path
+    if path.hasPrefix(home) {
+      path = "~" + path.dropFirst(home.count)
+    }
+    let components = path.split(separator: "/", omittingEmptySubsequences: true)
+    if components.count > 4 {
+      return "~/…/" + components.suffix(2).joined(separator: "/")
+    }
+    return path
+  }
+
   var body: some View {
     DisclosureGroup(isExpanded: $isExpanded) {
       ForEach(session.tabs) { tab in
@@ -134,33 +159,41 @@ struct SessionRowView: View {
       }
     } label: {
       HStack(spacing: 6) {
-        if isEditingSession {
-          TextField(
-            "Session name", text: $editText,
-            onCommit: {
-              session.name = editText.isEmpty ? session.directory.lastPathComponent : editText
-              isEditingSession = false
-            }
-          )
-          .textFieldStyle(.plain)
-          .font(.system(size: 13))
-          .focused($editFocused)
-          .onExitCommand { isEditingSession = false }
-          .onAppear { editFocused = true }
-          .onChange(of: editFocused) {
-            if !editFocused { isEditingSession = false }
-          }
-        } else {
-          Text(session.name)
+        VStack(alignment: .leading, spacing: 2) {
+          if isEditingSession {
+            TextField(
+              "Session name", text: $editText,
+              onCommit: {
+                session.name = editText.isEmpty ? session.directory.lastPathComponent : editText
+                isEditingSession = false
+              }
+            )
+            .textFieldStyle(.plain)
             .font(.system(size: 13))
-            .fontWeight(isActive ? .semibold : .regular)
-            .foregroundStyle(isActive ? .primary : .secondary)
-            .lineLimit(1)
-            .help(session.name)
-            .onTapGesture(count: 2) {
-              editText = session.name
-              isEditingSession = true
+            .focused($editFocused)
+            .onExitCommand { isEditingSession = false }
+            .onAppear { editFocused = true }
+            .onChange(of: editFocused) {
+              if !editFocused { isEditingSession = false }
             }
+          } else {
+            Text(session.name)
+              .font(.system(size: 13))
+              .fontWeight(isActive ? .semibold : .regular)
+              .foregroundStyle(isActive ? .primary : .secondary)
+              .lineLimit(1)
+              .help(session.name)
+              .onTapGesture(count: 2) {
+                editText = session.name
+                isEditingSession = true
+              }
+          }
+          if let metadata = metadataText {
+            Text(metadata)
+              .font(.system(size: 11, design: .monospaced))
+              .foregroundStyle(.secondary)
+              .lineLimit(1)
+          }
         }
         if !isExpanded || session.tabs.count >= 2 {
           Text("\(session.tabs.count)")
