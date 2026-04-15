@@ -107,17 +107,19 @@ Key finding: libghostty already parses all OSC sequences internally. Phase 2a ha
 The consumer features that build on Phase 2a's action callbacks. Spec: `/tmp/ai-design-phase2b-contextual-sidebar.md`.
 
 ### Notification Badges
-macOS-native SF Symbol indicators on tab rows (bell.fill red, xmark.circle.fill orange). Session-level rollup as count pill (Mail-style) on collapsed sessions. Command-boundary notifications only (COMMAND_FINISHED), not output-based. Bell stays immediate.
+Leading glow dots on tab rows (6px Circle with color-matched shadow: red for bell, orange for command failure). Session-level rollup as count pill (Mail-style) on collapsed sessions. Command-boundary notifications only (COMMAND_FINISHED), not output-based. Bell stays immediate. Identity (accent bar) and status (dots) are independent visual channels.
 
-### Rich Sidebar Metadata
-Session-level only for v1: git branch + dirty indicator and working directory on the session row (for the active tab). Event-driven git detection: `git rev-parse` on OSC 7 and COMMAND_FINISHED events, not polling. Port detection deferred to 2b-5.
+### ~~Rich Sidebar Metadata~~ (reverted)
+~~Session-level only for v1: git branch + dirty indicator and working directory on the session row.~~
+Reverted: git branch and working directory are per-pane data. Sessions are units of work that can span multiple repos. Even tabs can have split panes in different directories. The sidebar is an awareness channel for background activity, not a metadata display for the active pane. The shell prompt already shows branch and directory. Git detection infrastructure will return when a real consumer exists (status bar, project layouts).
 
 ### Shell Integration (OSC 133)
 Tab row shows process title (left, running indicator) + last command result (right-aligned: checkmark/X + duration). Process title from SET_TITLE serves as the running-state indicator ("cargo" = running, "zsh" = idle). Prompt navigation via `jump_to_prompt` binding action (confirmed in Ghostty source). Cmd+Shift+Up/Down to jump between prompts.
 
 Design decisions (8 total, each with presupposition and revisit condition) documented in spec. Key decisions:
 - D1: Process title as running indicator (revisit when libghostty exposes OSC 133 C)
-- D2: macOS-native SF Symbols, not colored dots (revisit on user testing)
+- D2: ~~macOS-native SF Symbols, not colored dots~~ Reversed: glow dots (pre-attentive) over SF Symbols (cognitive). Identity and status are independent channels.
+- D3: ~~Session-level metadata only~~ Reverted: per-pane data doesn't belong at session level. Sessions span repos.
 - D5: No "unread output" for v1 (revisit when socket API provides output events)
 - D6: Success is quiet, failure is loud (revisit if users want long-command success notifications)
 - D7: jump_to_prompt confirmed feasible via ghostty_surface_binding_action
@@ -136,7 +138,7 @@ Port detection (lsof integration) removed from Phase 2b scope. Standalone item, 
 - Complexity: 1
 - Standalone fix, no spec needed.
 
-**Done when:** background tab failures show orange SF Symbol badge, collapsed sessions show count pill, session row shows git branch and working directory, tab row shows process title + last command result, Cmd+Shift+Up/Down jumps between prompts, Cmd+V pastes clipboard content into terminal.
+**Done when:** background tab failures show orange glow dot, collapsed sessions show count pill, tab row shows process title + last command result, Cmd+Shift+Up/Down jumps between prompts, Cmd+V pastes clipboard content into terminal.
 
 ## Phase 2c: Basic Session Persistence
 
