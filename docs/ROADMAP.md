@@ -1,7 +1,7 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 14
+Iteration: 15
 
 ## Principles
 
@@ -86,53 +86,71 @@ Sidebar and tab bar support Pinned / Auto-hide / Hidden modes. Auto-hide: overla
 
 ## Phase 2a: OSC Foundation
 
-**Why this phase:** the sidebar is Mistty's most visible differentiator from Ghostty. Right now it's a list of names. This phase and 2b make it the "you never leave your flow" feature. The OSC parser is shared infrastructure that Phase 2b, Phase 4c, and Phase 6b depend on.
+**Why this phase:** the sidebar is Mistty's most visible differentiator from Ghostty. Right now it's a list of names. This phase and 2b make it the "you never leave your flow" feature. The action callback handlers are shared infrastructure that Phase 2b, Phase 4c, and Phase 6b depend on.
 
-- OSC parser (OSC 7, OSC 9/99/777, OSC 133)
-- Working directory tracking in sidebar (from OSC 7)
-- OSC 0/1/2 title sequences for dynamic tab/session naming
+- Handle libghostty OSC action callbacks (PWD, SET_TAB_TITLE, DESKTOP_NOTIFICATION, COMMAND_FINISHED, PROGRESS_REPORT)
+- Working directory tracking per pane (from OSC 7 via PWD action)
+- Title priority chain: customTitle > tabTitle > processTitle > "Shell"
+- 75ms title debounce, 15s progress auto-expiry
+- Desktop notifications via UNUserNotificationCenter (suppressed when pane is focused)
+
+Key finding: libghostty already parses all OSC sequences internally. Phase 2a handles the typed action callbacks, not raw escape sequences.
 
 - Complexity: 2
-- `/spec` required: OSC parser architecture, title sequence handling. Prior art: `/tmp/ai-research-sidebar-patterns.md`, `/tmp/ai-research-terminal-ui-ux-patterns.md`.
+- [x] `/spec`: `/tmp/ai-design-phase2a-osc-foundation.md`
+- [x] `48c15ac` feat(terminal): handle libghostty OSC action callbacks
 
-**Done when:** OSC parser handles all listed sequences, sidebar shows working directory per session, OSC title sequences update tab names.
+**Done when:** ~~OSC parser handles all listed sequences, sidebar shows working directory per session, OSC title sequences update tab names.~~ Done 2026-04-14. All six acceptance criteria met.
 
 ## Phase 2b: Contextual Sidebar
 
-The consumer features that build on the OSC parser.
+The consumer features that build on Phase 2a's action callbacks. Spec: `/tmp/ai-design-phase2b-contextual-sidebar.md`.
 
-### Notification Rings
-Per-pane output badges (colored ring on the pane border), sidebar session badges (dot indicator). Attention coordinator debounces flash spam. Cmd+Shift+U jump-to-unread.
+### Notification Badges
+macOS-native SF Symbol indicators on tab rows (bell.fill red, xmark.circle.fill orange). Session-level rollup as count pill (Mail-style) on collapsed sessions. Command-boundary notifications only (COMMAND_FINISHED), not output-based. Bell stays immediate.
 
 ### Rich Sidebar Metadata
-Git branch + dirty indicator, working directory (from OSC 7), listening ports per session row.
+Session-level only for v1: git branch + dirty indicator and working directory on the session row (for the active tab). Event-driven git detection: `git rev-parse` on OSC 7 and COMMAND_FINISHED events, not polling. Port detection deferred to 2b-5.
 
 ### Shell Integration (OSC 133)
-Command boundary detection from the OSC parser. Cmd+Up/Down to jump between prompts, per-command exit code and duration display. Line-level navigation; 6b upgrades this to visual block selection. Enables 6b (block-based output).
+Tab row shows process title (left, running indicator) + last command result (right-aligned: checkmark/X + duration). Process title from SET_TITLE serves as the running-state indicator ("cargo" = running, "zsh" = idle). Prompt navigation via `jump_to_prompt` binding action (confirmed in Ghostty source). Cmd+Shift+Up/Down to jump between prompts.
+
+Design decisions (8 total, each with presupposition and revisit condition) documented in spec. Key decisions:
+- D1: Process title as running indicator (revisit when libghostty exposes OSC 133 C)
+- D2: macOS-native SF Symbols, not colored dots (revisit on user testing)
+- D5: No "unread output" for v1 (revisit when socket API provides output events)
+- D6: Success is quiet, failure is loud (revisit if users want long-command success notifications)
+- D7: jump_to_prompt confirmed feasible via ghostty_surface_binding_action
 
 - Complexity: 2
 - Gap analysis: cmux has notification rings. No one else combines notifications + git + ports + working directory in a sidebar.
-- `/spec` required: notification ring visual design, sidebar metadata layout, attention coordinator debounce logic. Prior art: `/tmp/ai-research-sidebar-patterns.md`, `/tmp/ai-research-terminal-ui-ux-patterns.md`.
-- Depends on: 2a
+- [x] `/spec`: `/tmp/ai-design-phase2b-contextual-sidebar.md` (with decision log D1-D8)
+- Depends on: 2a (done)
 
-**Done when:** unfocused panes with output show notification badges, sidebar shows git branch and port info per session, Cmd+Up/Down jumps between prompts.
+**Done when:** background tab failures show orange SF Symbol badge, collapsed sessions show count pill, session row shows git branch and working directory, tab row shows process title + last command result, Cmd+Shift+Up/Down jumps between prompts.
 
 ## Phase 2c: Basic Session Persistence
 
-Save session/tab/pane tree to disk on quit. Restore layout on launch (shells restart fresh). Uses `Codable` serialization + `NSApplicationDelegate.applicationShouldTerminate`.
+Save session/tab/pane tree to disk on quit. Restore layout on launch (shells restart fresh). Codable JSON to `~/.config/mistty/sessions.json`.
+
+- Saves on willTerminate (immediate) and didResignActive (2s debounce)
+- Restores with fresh IDs, missing directories fall back to home
+- Prefers workingDirectory (OSC 7, Phase 2a) over initial directory
+- Graceful fallback on corrupt, missing, or version-mismatched JSON
 
 - Complexity: 2
-- `/spec` required: what state is saved (session names, tab names, pane layout, working directories), serialization format, restore behavior when shells can't restart.
-- Does not depend on 2a or 2b. Can be built in parallel or between them.
+- [x] `/spec`: `/tmp/ai-design-phase2c-session-persistence.md`
+- [x] `9f2fbf8` feat(persistence): save and restore session tree across app restarts
+- Does not depend on 2a or 2b. Built in parallel.
 
-**Done when:** quit+relaunch restores session layout with correct names and working directories.
+**Done when:** ~~quit+relaunch restores session layout with correct names and working directories.~~ Done 2026-04-14. All five acceptance criteria met.
 
 ---
 
 ### Cleanup gate (before Phase 3)
 - [ ] `/refactor` **Event handler extraction**: extract NSEvent monitor closure bodies into testable `handleKeyDown(_ event: NSEvent) -> NSEvent?` methods on each manager (WindowMode, CopyMode, WhichKey, PaneNavigation, and Phase 2's attention coordinator). Monitor becomes a one-liner that delegates. Tests call the method directly with `NSEvent.keyEvent(with:...)`. Research: `/tmp/ai-research-nsevent-testing.md`.
 - [ ] `/refactor` **IPC audit**: review existing IPCService.swift and IPCListener.swift. Use `/refactor` to evaluate: understand current IPC mechanism before designing socket API replacement. Document what works, what's fragile, what the socket API replaces vs extends.
-- [ ] `/cleanup` **OSC parser test coverage**: ensure OSC parser from Phase 2a has tests covering all supported sequences before building socket API on top.
+- [ ] `/cleanup` **OSC action handler test coverage**: ensure Phase 2a action handlers and Phase 2b notification/git logic have tests covering all supported actions before building socket API on top.
 - [ ] `/cleanup` **IPC parity check**: verify all stable noun+verb operations from Phases 1b, 2a, and 2b have IPC methods per Principle 10. Backfill any gaps (session rename, tab move, etc.).
 
 ## Phase 3: Platform
@@ -338,17 +356,17 @@ Completed:
 
 Sequential path (solo developer):
   1b remaining (rename, tab-bar-visibility, drag-drop) ✓
-    ──> /refactor + /cleanup: FocusedValue migration, ContentView extraction, sidebar audit
-      ──> /spec review: auto-hide panel spec update
-        ──> 1c (auto-hide)
-          ──> /cleanup + /refactor: lint, tests, manager review, theme audit
-            ──> /spec: Phase 2a (OSC parser)
-              ──> Phase 2a (OSC foundation)
-                ──> /spec: Phase 2b (contextual sidebar)
+    ──> /refactor + /cleanup: FocusedValue migration, ContentView extraction, sidebar audit ✓
+      ──> /spec review: auto-hide panel spec update ✓
+        ──> 1c (auto-hide) ✓
+          ──> /cleanup + /refactor: lint, tests, manager review, theme audit ✓
+            ──> /spec: Phase 2a ✓
+              ──> Phase 2a (OSC action callbacks) ✓
+                ──> /spec: Phase 2b (contextual sidebar) ✓
                   ──> Phase 2b (contextual sidebar)
 
-Parallel track (no Phase 2a/2b dependency):
-  Phase 2c (basic session persistence)
+Parallel track (completed):
+  Phase 2c (basic session persistence) ✓
 
 After Phase 2b:
   ──> /refactor + /cleanup: event handler extraction, IPC audit, OSC tests, IPC parity
@@ -403,6 +421,15 @@ Late dependencies:
 - RTL/BiDi text support
 - Ghostty scripting API (planned, no timeline; 109+ comments on Discussion #2353)
 - Ghostty tmux control mode (in progress; DCS parser landed, Issue #1935)
+- OSC 133 C (command output start) as apprt action: would enable explicit running-state detection in sidebar (Phase 2b D1 revisit condition)
+- Native git branch OSC sequence: would replace event-driven git rev-parse (Phase 2b D4 revisit condition)
+
+## Findings (iteration 15)
+
+- `jump_to_prompt` exists as a Ghostty binding action (found in `vendor/ghostty/src/input/Binding.zig`). Takes signed integer: negative = previous, positive = next. Callable via `ghostty_surface_binding_action`. Confirmed for Phase 2b prompt navigation.
+- libghostty parses all OSC sequences internally and delivers typed actions via the apprt callback. Mistty does not need its own OSC parser. Phase 2a was action callback handling, not parser construction.
+- Ghostty uses 75ms title debounce and 15s progress auto-expiry. Mistty adopted both patterns.
+- No terminal shows a persistent "running" indicator in sidebar/tab chrome. Process title (SET_TITLE) is the universal running-state signal. Phase 2b uses this pattern.
 
 ## Sources
 
@@ -425,3 +452,12 @@ Late dependencies:
 - /tmp/ai-design-tab-drag-drop.md (tab drag-and-drop spec, 2026-04-14)
 - /tmp/ai-research-nsevent-testing.md (NSEvent monitor testing strategies, 2026-04-14)
 - /tmp/ai-research-terminal-tab-bar-config.md (tab bar visibility config comparison, 2026-04-14)
+- /tmp/ai-research-ghostty-osc-handling.md (Ghostty OSC action handling patterns, 2026-04-14)
+- /tmp/ai-design-phase2a-osc-foundation.md (Phase 2a spec, 2026-04-14)
+- /tmp/ai-design-phase2c-session-persistence.md (Phase 2c spec, 2026-04-14)
+- /tmp/ai-design-phase2b-contextual-sidebar.md (Phase 2b spec with decision log D1-D8, 2026-04-14)
+- /tmp/ai-research-phase2b-inputs.md (consolidated Phase 2b prior research, 2026-04-14)
+- /tmp/ai-research-phase2b-notification-patterns.md (notification patterns across terminals/IDEs, 2026-04-14)
+- /tmp/ai-research-command-state-indicators.md (command running/idle/done state patterns, 2026-04-14)
+- /tmp/ai-brainstorm-phase2b-sidebar.md (Phase 2b brainstorm, 2026-04-14)
+- /tmp/ai-debate-phase2b-sidebar.md (Phase 2b debate transcript, 2026-04-14)
