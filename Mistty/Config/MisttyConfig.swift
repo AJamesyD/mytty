@@ -40,6 +40,7 @@ struct MisttyConfig: Sendable, Equatable {
   var autoHideShowHints: Bool = true
   var popups: [PopupDefinition] = []
   var ssh = SSHConfig()
+  var keybindingStore: KeybindingStore = .init()
 
   static let `default` = MisttyConfig()
 
@@ -105,7 +106,94 @@ struct MisttyConfig: Sendable, Equatable {
         }
       }
     }
+    config.keybindingStore = Self.parseKeybindings(from: table)
     return config
+  }
+
+
+  private static func parseKeybindings(from table: TOMLTable) -> KeybindingStore {
+    guard let kbTable = table["keybindings"]?.table else {
+      return KeybindingStore.build(
+        defaults: KeybindingStore.defaultBindings,
+        defaultWhichKey: KeybindingStore.defaultWhichKeyGroups,
+        userOverrides: [:],
+        userWhichKey: nil,
+        resets: [],
+        globalReset: false,
+        vimLikeProcesses: nil
+      )
+    }
+
+    var globalReset = false
+    var resets: Set<BindingMode> = []
+    var overrides: [BindingMode: [String: KeyboardTrigger]] = [:]
+    var userWhichKey: [WhichKeyGroup]?
+    var vimLikeProcesses: [String]?
+
+    if let reset = kbTable["_reset"]?.bool, reset {
+      globalReset = true
+    }
+
+    overrides[.global] = parseModeBindings(from: kbTable)
+
+    for (modeKey, mode) in [("window-mode", BindingMode.windowMode), ("copy-mode", .copyMode)] {
+      if let modeTable = kbTable[modeKey]?.table {
+        if let reset = modeTable["_reset"]?.bool, reset {
+          resets.insert(mode)
+        }
+        overrides[mode] = parseModeBindings(from: modeTable)
+      }
+    }
+
+    if let whichKeyTable = kbTable["which-key"]?.table {
+      var groups: [WhichKeyGroup] = []
+      for key in whichKeyTable.keys {
+        guard let groupTable = whichKeyTable[key]?.table else { continue }
+        var nodes: [WhichKeyNode] = []
+        for nodeKey in groupTable.keys {
+          guard let value = groupTable[nodeKey]?.string else { continue }
+          nodes.append(WhichKeyNode(action: nodeKey, key: value))
+        }
+        groups.append(WhichKeyGroup(name: key, bindings: nodes))
+      }
+      userWhichKey = groups
+    }
+
+    if let procs = kbTable["vim-like-processes"]?.array {
+      vimLikeProcesses = procs.compactMap { $0.string }
+    }
+
+    return KeybindingStore.build(
+      defaults: KeybindingStore.defaultBindings,
+      defaultWhichKey: KeybindingStore.defaultWhichKeyGroups,
+      userOverrides: overrides,
+      userWhichKey: userWhichKey,
+      resets: resets,
+      globalReset: globalReset,
+      vimLikeProcesses: vimLikeProcesses
+    )
+  }
+
+  private static func parseModeBindings(from table: TOMLTable) -> [String: KeyboardTrigger] {
+    var result: [String: KeyboardTrigger] = [:]
+    for key in table.keys {
+      if key.hasPrefix("_") { continue }
+      if table[key]?.table != nil { continue }
+      if key == "vim-like-processes" { continue }
+
+      if let str = table[key]?.string {
+        if str == "unbind" {
+          result[key] = KeyboardTrigger(prefix: nil, modifiers: [], key: "__unbind__")
+        } else if let trigger = try? TriggerParser.parse(str) {
+          result[key] = trigger
+        }
+      } else if let arr = table[key]?.array, let first = arr.first?.string {
+        if let trigger = try? TriggerParser.parse(first) {
+          result[key] = trigger
+        }
+      }
+    }
+    return result
   }
 
   static func load() -> MisttyConfig {

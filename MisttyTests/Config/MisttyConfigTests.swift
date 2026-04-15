@@ -203,4 +203,34 @@ final class MisttyConfigTests: XCTestCase {
     let config = try MisttyConfig.parse(toml)
     XCTAssertEqual(config.sidebarMode, .pinned)
   }
+
+  func test_parsesKeybindingsSection() throws {
+    let toml = """
+      [keybindings]
+      split-horizontal = "cmd+shift+d"
+      new-tab = "unbind"
+      vim-like-processes = ["nvim", "kakoune"]
+
+      [keybindings.window-mode]
+      zoom = "x"
+
+      [keybindings.which-key.window]
+      zoom = "z"
+      swap-left = "h"
+      """
+    let config = try MisttyConfig.parse(toml)
+    XCTAssertEqual(
+      config.keybindingStore.trigger(for: "split-horizontal", in: .global),
+      KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "d")
+    )
+    XCTAssertNil(config.keybindingStore.trigger(for: "new-tab", in: .global))
+    XCTAssertEqual(
+      config.keybindingStore.trigger(for: "zoom", in: .windowMode),
+      KeyboardTrigger(prefix: nil, modifiers: [], key: "x")
+    )
+    XCTAssertEqual(config.keybindingStore.whichKeyGroups.count, 1)
+    XCTAssertEqual(config.keybindingStore.whichKeyGroups[0].name, "window")
+    XCTAssertEqual(config.keybindingStore.vimLikeProcesses, ["nvim", "kakoune"])
+  }
 }
+
