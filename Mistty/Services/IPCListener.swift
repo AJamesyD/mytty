@@ -308,6 +308,19 @@ final class IPCListener {
       return await callService(request) {
         try await service.getText(paneId: int("paneId"))
       }
+    case "pane.atEdge":
+      return await callService(request) {
+        try await service.paneAtEdge(direction: str("direction") ?? "", sessionId: int("sessionId"))
+      }
+    case "pane.setVar":
+      return await callService(request) {
+        try await service.paneSetVar(
+          paneId: int("paneId"), key: str("key") ?? "", value: str("value"))
+      }
+    case "pane.getVar":
+      return await callService(request) {
+        try await service.paneGetVar(paneId: int("paneId"), key: str("key") ?? "")
+      }
 
     // Windows
     case "window.create":

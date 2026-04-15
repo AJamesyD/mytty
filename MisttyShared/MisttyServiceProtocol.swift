@@ -35,6 +35,9 @@ public protocol MisttyServiceProtocol {
   @MainActor func runCommand(paneId: Int, command: String) async throws -> Data
   /// Use paneId 0 as sentinel for "active pane".
   @MainActor func getText(paneId: Int) async throws -> Data
+  @MainActor func paneAtEdge(direction: String, sessionId: Int) async throws -> Data
+  @MainActor func paneSetVar(paneId: Int, key: String, value: String?) async throws -> Data
+  @MainActor func paneGetVar(paneId: Int, key: String) async throws -> Data
 
   // MARK: - Windows
 

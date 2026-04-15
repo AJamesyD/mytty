@@ -15,6 +15,7 @@ final class MisttyPane: Identifiable {
   var workingDirectory: URL?
   var lastCommandResult: CommandResult?
   var progressState: ProgressState?
+  var vars: [String: String] = [:]
 
   @ObservationIgnored
   var progressExpiryTask: DispatchWorkItem?

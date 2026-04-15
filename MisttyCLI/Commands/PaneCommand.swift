@@ -17,6 +17,9 @@ struct PaneCommand: ParsableCommand {
             SendKeys.self,
             RunCommand.self,
             GetText.self,
+            AtEdge.self,
+            SetVar.self,
+            GetVar.self,
         ]
     )
 
@@ -433,6 +436,119 @@ struct PaneCommand: ParsableCommand {
             case .human:
                 if let text = String(data: data, encoding: .utf8) {
                     print(text)
+                }
+            }
+        }
+    }
+
+    struct AtEdge: ParsableCommand {
+        static let configuration = CommandConfiguration(
+            commandName: "at-edge",
+            abstract: "Check if active pane is at layout edge"
+        )
+
+        @Option(name: .long) var direction: String
+        @Option(name: .long) var session: Int = 0
+        @Flag(name: .long) var json = false
+        @Flag(name: .long) var human = false
+
+        func run() throws {
+            let format = OutputFormat.detect(forceJSON: json, forceHuman: human)
+            let formatter = OutputFormatter(format: format)
+            let client = IPCClient()
+            try client.connect()
+            try client.initialize()
+
+            let data: Data
+            do {
+                let result = try client.callJSONRPC(
+                    "pane.atEdge",
+                    params: ["direction": .string(direction), "sessionId": .int(session)])
+                data = try JSONEncoder().encode(result)
+            } catch {
+                OutputFormatter.printError(error.localizedDescription)
+                Foundation.exit(1)
+            }
+
+            switch format {
+            case .json:
+                formatter.printJSON(data)
+            case .human:
+                if case .object(let obj) = try? JSONDecoder().decode(JSONValue.self, from: data),
+                   case .bool(let atEdge) = obj["atEdge"]
+                {
+                    print(atEdge ? "At edge" : "Not at edge")
+                }
+            }
+        }
+    }
+
+    struct SetVar: ParsableCommand {
+        static let configuration = CommandConfiguration(
+            commandName: "set-var",
+            abstract: "Set a pane variable"
+        )
+
+        @Option(name: .long) var pane: Int = 0
+        @Option(name: .long) var key: String
+        @Option(name: .long) var value: String?
+
+        func run() throws {
+            let client = IPCClient()
+            try client.connect()
+            try client.initialize()
+
+            var params: [String: JSONValue] = ["paneId": .int(pane), "key": .string(key)]
+            if let value { params["value"] = .string(value) }
+
+            do {
+                _ = try client.callJSONRPC("pane.setVar", params: params)
+            } catch {
+                OutputFormatter.printError(error.localizedDescription)
+                Foundation.exit(1)
+            }
+        }
+    }
+
+    struct GetVar: ParsableCommand {
+        static let configuration = CommandConfiguration(
+            commandName: "get-var",
+            abstract: "Get a pane variable"
+        )
+
+        @Option(name: .long) var pane: Int = 0
+        @Option(name: .long) var key: String
+        @Flag(name: .long) var json = false
+        @Flag(name: .long) var human = false
+
+        func run() throws {
+            let format = OutputFormat.detect(forceJSON: json, forceHuman: human)
+            let formatter = OutputFormatter(format: format)
+            let client = IPCClient()
+            try client.connect()
+            try client.initialize()
+
+            let data: Data
+            do {
+                let result = try client.callJSONRPC(
+                    "pane.getVar",
+                    params: ["paneId": .int(pane), "key": .string(key)])
+                data = try JSONEncoder().encode(result)
+            } catch {
+                OutputFormatter.printError(error.localizedDescription)
+                Foundation.exit(1)
+            }
+
+            switch format {
+            case .json:
+                formatter.printJSON(data)
+            case .human:
+                if case .object(let obj) = try? JSONDecoder().decode(JSONValue.self, from: data) {
+                    if case .string(let val) = obj["value"] {
+                        print(val)
+                    } else {
+                        print("(not set)")
+                    }
                 }
             }
         }

@@ -40,10 +40,11 @@ import MisttyShared
     )
   }
 
-  @MainActor private func paneResponse(_ pane: MisttyPane) -> PaneResponse {
+  @MainActor private func paneResponse(_ pane: MisttyPane, tab: MisttyTab? = nil) -> PaneResponse {
     PaneResponse(
       id: pane.id,
-      directory: pane.directory?.path
+      directory: pane.directory?.path,
+      zoomed: tab?.zoomedPane?.id == pane.id
     )
   }
 
@@ -188,22 +189,22 @@ import MisttyShared
       await broker.publish(
         event: "pane.created", params: ["paneId": .int(newPane.id), "tabId": .int(tabId)])
     }
-    return try encodeOrThrow(paneResponse(newPane))
+    return try encodeOrThrow(paneResponse(newPane, tab: tab))
   }
 
   func listPanes(tabId: Int) async throws -> Data {
     guard let (_, tab) = store.tab(byId: tabId) else {
       throw MisttyIPC.error(.entityNotFound, "Tab \(tabId) not found")
     }
-    let responses = tab.panes.map { paneResponse($0) }
+    let responses = tab.panes.map { paneResponse($0, tab: tab) }
     return try encodeOrThrow(responses)
   }
 
   func getPane(id: Int) async throws -> Data {
-    guard let (_, _, pane) = store.pane(byId: id) else {
+    guard let (_, tab, pane) = store.pane(byId: id) else {
       throw MisttyIPC.error(.entityNotFound, "Pane \(id) not found")
     }
-    return try encodeOrThrow(paneResponse(pane))
+    return try encodeOrThrow(paneResponse(pane, tab: tab))
   }
 
   func closePane(id: Int) async throws -> Data {
@@ -223,7 +224,7 @@ import MisttyShared
     session.activeTab = tab
     tab.activePane = pane
     Task { await broker.publish(event: "pane.focused", params: ["paneId": .int(id)]) }
-    return try encodeOrThrow(paneResponse(pane))
+    return try encodeOrThrow(paneResponse(pane, tab: tab))
   }
 
   func focusPaneByDirection(direction: String, sessionId: Int) async throws -> Data {
@@ -259,7 +260,7 @@ import MisttyShared
 
     tab.activePane = target
     Task { await broker.publish(event: "pane.focused", params: ["paneId": .int(target.id)]) }
-    return try encodeOrThrow(paneResponse(target))
+    return try encodeOrThrow(paneResponse(target, tab: tab))
   }
 
   func resizePane(id: Int, direction: String, amount: Int) async throws -> Data {
@@ -291,10 +292,10 @@ import MisttyShared
   }
 
   func activePane() async throws -> Data {
-    guard let (_, _, pane) = store.activePaneInfo() else {
+    guard let (_, tab, pane) = store.activePaneInfo() else {
       throw MisttyIPC.error(.entityNotFound, "No active pane")
     }
-    return try encodeOrThrow(paneResponse(pane))
+    return try encodeOrThrow(paneResponse(pane, tab: tab))
   }
 
   func sendKeys(paneId: Int, keys: String) async throws -> Data {
@@ -364,6 +365,73 @@ import MisttyShared
     }
 
     return try encodeOrThrow(["text": content])
+  }
+
+  func paneAtEdge(direction: String, sessionId: Int) async throws -> Data {
+    let session: MisttySession?
+    if sessionId == 0 {
+      session = store.activeSession
+    } else {
+      session = store.session(byId: sessionId)
+    }
+    guard let session else {
+      throw MisttyIPC.error(.entityNotFound, "Session not found")
+    }
+    guard let tab = session.activeTab, let pane = tab.activePane else {
+      throw MisttyIPC.error(.entityNotFound, "No active pane")
+    }
+    let navDirection: NavigationDirection
+    switch direction {
+    case "left": navDirection = .left
+    case "right": navDirection = .right
+    case "up": navDirection = .up
+    case "down": navDirection = .down
+    default:
+      throw MisttyIPC.error(
+        .invalidArgument, "Invalid direction: \(direction). Use left, right, up, or down")
+    }
+    let atEdge = tab.layout.adjacentPane(from: pane, direction: navDirection) == nil
+    return try encodeOrThrow(["atEdge": atEdge])
+  }
+
+  func paneSetVar(paneId: Int, key: String, value: String?) async throws -> Data {
+    let pane: MisttyPane
+    if paneId == 0 {
+      guard let active = store.activePaneInfo()?.pane else {
+        throw MisttyIPC.error(.entityNotFound, "No active pane")
+      }
+      pane = active
+    } else {
+      guard let (_, _, found) = store.pane(byId: paneId) else {
+        throw MisttyIPC.error(.entityNotFound, "Pane \(paneId) not found")
+      }
+      pane = found
+    }
+    if let value {
+      pane.vars[key] = value
+    } else {
+      pane.vars.removeValue(forKey: key)
+    }
+    return try encodeOrThrow([String: String]())
+  }
+
+  func paneGetVar(paneId: Int, key: String) async throws -> Data {
+    let pane: MisttyPane
+    if paneId == 0 {
+      guard let active = store.activePaneInfo()?.pane else {
+        throw MisttyIPC.error(.entityNotFound, "No active pane")
+      }
+      pane = active
+    } else {
+      guard let (_, _, found) = store.pane(byId: paneId) else {
+        throw MisttyIPC.error(.entityNotFound, "Pane \(paneId) not found")
+      }
+      pane = found
+    }
+    if let value = pane.vars[key] {
+      return try encodeOrThrow(["value": value])
+    }
+    return try encodeOrThrow(["value": nil as String?])
   }
 
   // MARK: - Windows
