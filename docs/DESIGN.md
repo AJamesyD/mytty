@@ -1,0 +1,106 @@
+# Mistty Design
+
+## Identity
+
+Mistty is a macOS terminal emulator that eliminates the need for a separate
+multiplexer. The thesis: you never leave your flow to check what's happening.
+
+What Mistty is:
+- A native macOS app that embeds a best-in-class terminal renderer (libghostty)
+- A session manager that replaces tmux for local workflows
+- A platform for terminal automation via its socket API and CLI
+
+What Mistty is not:
+- A cross-platform terminal (macOS only, by design; see ROADMAP.md for scope)
+- A Ghostty fork or skin (we use their renderer, we own the chrome)
+- A tmux replacement for remote workflows (no daemon, no attach/detach)
+- A plugin platform (the socket API covers automation)
+
+## Design Tenets
+
+Beliefs about how a terminal should work. They guide decisions we haven't
+made yet.
+
+1. **Keyboard-first, mouse-optional.**
+   Every function reachable by keyboard. Mouse enhances, never required.
+   The keyboard path is the primary design target, not an accessibility
+   afterthought.
+
+2. **Background awareness over information density.**
+   The sidebar is a peripheral awareness channel, not a dashboard.
+   Show signals (glow dots, counts), not data (git branches, file paths).
+   The shell prompt already shows what the active pane needs. The sidebar
+   shows what background panes need your attention for.
+   Lesson: we built session-level git metadata and working directory
+   display, then reverted both (D3). Per-pane data doesn't belong at
+   session level. Sessions span multiple repos.
+
+3. **Pre-attentive signals over cognitive ones.**
+   Color and motion process before conscious attention. Icons and text
+   require reading. For status indicators, prefer visual properties that
+   register peripherally (color, size, position) over symbolic ones that
+   require identification (icons, labels).
+   Lesson: SF Symbols required scanning each icon to decode meaning.
+   Glow dots registered in peripheral vision without focused attention (D2).
+
+4. **The terminal's value multiplies when scriptable.**
+   Every stable operation is available via CLI and socket API. The GUI and
+   CLI are peers, not primary and secondary. Features that can't be scripted
+   are features that can't be composed with other tools.
+
+## Architecture Constraints
+
+Technical boundaries. Do not change without discussion.
+
+- **Three layers: UI (SwiftUI), Session (@Observable models), Terminal
+  (libghostty).** Do not add business logic to the UI layer. Do not access
+  libghostty types outside TerminalSurfaceView and GhosttyApp.swift.
+
+- **libghostty parses all escape sequences internally.** Mistty handles
+  typed action callbacks (8 notification names route actions from C callbacks
+  to SwiftUI). Do not parse raw escape sequences. Do not duplicate Ghostty's
+  terminal logic.
+
+- **State flows one direction:** libghostty -> C callbacks ->
+  NotificationCenter -> handlers -> model updates -> SwiftUI reactivity.
+  Do not reverse this flow.
+
+- **Session/Tab/Pane are protocol-based.** 5 Observable model classes
+  (SessionStore, MisttySession, MisttyTab, MisttyPane, PopupState) back the
+  protocol today. The backing store can be replaced with a daemon without
+  touching the UI layer. Do not leak storage assumptions into views.
+
+- **IPC contract is the protocol.** MisttyServiceProtocol (31 methods)
+  defines the boundary between transport and logic. Protocol, Service,
+  Listener, and CLI must stay in sync.
+
+- **Do not modify vendor/ghostty/.** Track upstream, don't fork. One
+  ghostty_app_t per process, one ghostty_surface_t per pane.
+
+## Process Commitments
+
+How we work. These govern the roadmap and development workflow.
+
+- Spec before code: every feature gets a written spec before implementation.
+- Cleanup gates before major phases: tech debt addressed before it compounds.
+- Visual quality ships with features: if it looks unfinished, it is unfinished.
+- IPC parity: stable noun+verb operations get IPC in the same commit as GUI.
+- Do not add Apple framework dependencies beyond AppKit, SwiftUI, and
+  UserNotifications without discussion.
+
+## Key Interfaces
+
+```
+SessionStore -> [MisttySession] -> [MisttyTab] -> [MisttyPane]
+```
+
+Each layer is @Observable, @MainActor. Pane owns the ghostty_surface_t.
+
+**MisttyServiceProtocol**: the IPC contract. Sessions, Tabs, Panes, Windows,
+and Popups as nouns; CRUD + focus/resize/sendKeys as verbs.
+
+**MisttyTheme**: single source for all color tokens. Views reference tokens,
+not raw colors.
+
+**GhosttyApp**: singleton managing the ghostty_app_t lifecycle. C callbacks
+(no captures) post notifications that handlers route to model updates.

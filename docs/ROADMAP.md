@@ -1,21 +1,20 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 18
+Iteration: 19
 
-## Principles
+## Working Agreements
 
-0. **macOS-only**: no Windows, ever. Linux is a distant stretch goal. This means: lean fully into SwiftUI and AppKit, use macOS system APIs directly (NSPanel, NSUserActivity, CGEvent taps), no cross-platform abstraction layers.
+Design tenets and architecture constraints: see [docs/DESIGN.md](DESIGN.md).
+
+These are process and scope rules that govern the roadmap:
+
+0. **macOS-only**: no Windows, ever. Linux is a distant stretch goal. Lean fully into SwiftUI and AppKit, use macOS system APIs directly (NSPanel, NSUserActivity, CGEvent taps), no cross-platform abstraction layers.
 1. **Time to daily driver**: optimize for the shortest path to replacing your current terminal setup.
 2. **Personal-first, generalizable**: solve your own workflow pain, design interfaces that generalize.
-3. **Contextual awareness**: Mistty's identity is "you never leave your flow to check what's happening."
-4. **Infrastructure ships with features**: build plumbing when a feature needs it, not before.
-5. **Dependency-ordered**: phases are sequenced by what unblocks what. No fake timelines.
-6. **Visual quality is not optional**: polish ships with features, not after them.
-7. **Spec before code**: every feature gets a written spec (prior art, what's opinionated vs configurable, interaction patterns, edge cases) before implementation begins. Spec can be brief (20 lines for small features) or a full design doc. Approved before coding starts.
-8. **Opinionated defaults, constrained configuration**: ship one good design. When configuration is needed, prefer presets over arbitrary values. Don't push design decisions to the user. Code must be written with the assumption that hardcoded values will become configurable later: access through abstractions (e.g., `theme.surface` not `Color.white.opacity(0.03)`), even when the backing store is a static singleton.
-9. **Cleanup gates before major phases**: every major phase has a cleanup/refactor prerequisite that addresses tech debt which would make the phase harder or messier. Cleanup gates are not optional. They prevent debt from compounding across phases.
-10. **IPC parity for stable operations**: operations that map to a noun+verb CLI command (session rename, tab move, pane split) get their IPC method in the same commit as the GUI. Exploratory features (UI modes, visual behaviors) get IPC when the interface stabilizes. This builds a consistent API surface incrementally rather than bolting it on in Phase 3. Adopted in iteration 13; pre-existing gaps (session rename IPC, tab move IPC) are tracked in Phase 3a.
+3. **Infrastructure ships with features**: build plumbing when a feature needs it, not before.
+4. **Dependency-ordered**: phases are sequenced by what unblocks what. No fake timelines.
+5. **Opinionated defaults, constrained configuration**: ship one good design. When configuration is needed, prefer presets over arbitrary values. Don't push design decisions to the user. Code must be written with the assumption that hardcoded values will become configurable later: access through abstractions (e.g., `theme.surface` not `Color.white.opacity(0.03)`), even when the backing store is a static singleton.
 
 ---
 
@@ -162,7 +161,7 @@ Save session/tab/pane tree to disk on quit. Restore layout on launch (shells res
 - [x] `/refactor` **Event handler extraction**: extract NSEvent monitor closure bodies into testable `handleKeyDown(_ event: NSEvent) -> NSEvent?` methods on each manager (WindowMode, CopyMode, WhichKey, PaneNavigation, and Phase 2's attention coordinator). Monitor becomes a one-liner that delegates. Tests call the method directly with `NSEvent.keyEvent(with:...)`. Research: `/tmp/ai-research-nsevent-testing.md`. Done: `d8e7336`.
 - [x] `/refactor` **IPC audit**: review existing IPCService.swift and IPCListener.swift. Use `/refactor` to evaluate: understand current IPC mechanism before designing socket API replacement. Document what works, what's fragile, what the socket API replaces vs extends. Done: `/tmp/ai-research-ipc-audit.md`.
 - [x] `/cleanup` **OSC action handler test coverage**: ensure Phase 2a action handlers and Phase 2b notification/git logic have tests covering all supported actions before building socket API on top. Done: `5a51875`.
-- [x] `/cleanup` **IPC parity check**: verify all stable noun+verb operations from Phases 1b, 2a, and 2b have IPC methods per Principle 10. Backfill any gaps (session rename, tab move, etc.). Done: `c071d82` (added `renameSession`, `moveTab`).
+- [x] `/cleanup` **IPC parity check**: verify all stable noun+verb operations from Phases 1b, 2a, and 2b have IPC methods per the IPC parity commitment (see DESIGN.md). Backfill any gaps (session rename, tab move, etc.). Done: `c071d82` (added `renameSession`, `moveTab`).
 
 ## Phase 3: Platform
 

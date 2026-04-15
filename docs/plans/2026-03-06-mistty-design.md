@@ -1,3 +1,6 @@
+> **Superseded by [docs/DESIGN.md](../DESIGN.md).** This document is the original
+> MVP design from 2026-03-06, kept for historical reference.
+
 # Mistty Design
 
 ## Overview
