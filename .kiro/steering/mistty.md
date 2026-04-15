@@ -27,12 +27,14 @@ Do not use .opacity() on theme tokens. Create a new token instead.
 ## Adding IPC Methods
 
 Three files must stay in sync:
-1. MisttyShared/MisttyServiceProtocol.swift (protocol declaration)
+1. MisttyShared/MisttyServiceProtocol.swift (protocol declaration, async throws)
 2. Mistty/Services/IPCService.swift (implementation)
-3. Mistty/Services/IPCListener.swift (dispatch case)
+3. Mistty/Services/IPCListener.swift (dispatch case in dispatchJSONRPCMethod)
 
+JSON-RPC method names use noun.verb format: session.create, tab.list, pane.focus.
 Add the CLI command in MisttyCLI/Commands/.
 Stable noun+verb operations get IPC in the same commit as the GUI feature.
+For mutations, add a broker.publish call in IPCService for the corresponding event.
 
 ## Adding Action Callbacks
 
