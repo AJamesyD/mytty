@@ -51,10 +51,14 @@ struct TabBarItem: View {
 
   var body: some View {
     HStack(spacing: 4) {
-      if tab.hasBell {
-        Circle()
-          .fill(MisttyTheme.bellIndicator)
-          .frame(width: 6, height: 6)
+      if tab.hasFailedCommand {
+        Image(systemName: "xmark.circle.fill")
+          .font(.system(size: 10))
+          .foregroundStyle(MisttyTheme.commandFailedIndicator)
+      } else if tab.hasBell {
+        Image(systemName: "bell.fill")
+          .font(.system(size: 10))
+          .foregroundStyle(.red)
       }
 
       if isEditing {

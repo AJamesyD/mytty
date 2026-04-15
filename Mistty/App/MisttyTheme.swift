@@ -22,6 +22,7 @@ enum MisttyTheme {
   // Mode indicators
   static let modeIndicatorBackground = Color.orange.opacity(0.8)
   static let bellIndicator = Color.orange
+  static let commandFailedIndicator = Color.orange
 
   // Search
   static let searchCurrentMatch = Color.orange.opacity(0.6)

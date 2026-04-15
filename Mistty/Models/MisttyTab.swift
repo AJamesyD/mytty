@@ -18,6 +18,7 @@ final class MisttyTab: Identifiable {
   private(set) var panes: [MisttyPane] = []
   var activePane: MisttyPane?
   var hasBell = false
+  var hasFailedCommand = false
 
   enum WindowModeState {
     case inactive, normal, joinPick

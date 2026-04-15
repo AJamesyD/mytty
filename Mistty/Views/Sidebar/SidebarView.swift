@@ -57,10 +57,15 @@ struct SessionRowView: View {
       ForEach(session.tabs) { tab in
         let isActiveTab = isActive && session.activeTab?.id == tab.id
         HStack(spacing: 4) {
-          if tab.hasBell {
-            Circle()
-              .fill(MisttyTheme.bellIndicator)
-              .frame(width: 6, height: 6)
+          if tab.hasFailedCommand {
+            Image(systemName: "xmark.circle.fill")
+              .font(.system(size: 10))
+              .foregroundStyle(MisttyTheme.commandFailedIndicator)
+              .accessibilityLabel("Command failed")
+          } else if tab.hasBell {
+            Image(systemName: "bell.fill")
+              .font(.system(size: 10))
+              .foregroundStyle(.red)
               .accessibilityLabel("Bell notification")
           }
           if editingTabID == tab.id {
@@ -166,6 +171,16 @@ struct SessionRowView: View {
                 .fill(MisttyTheme.tabCountBadge.opacity(0.15))
             )
             .accessibilityLabel("\(session.tabs.count) tabs")
+        }
+        if session.notificationCount > 0, let severity = session.notificationSeverity {
+          let color: Color = severity == .commandFailed ? MisttyTheme.commandFailedIndicator : .red
+          Text("\(session.notificationCount)")
+            .font(.system(size: 10, design: .monospaced))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(color))
+            .accessibilityLabel("\(session.notificationCount) notifications")
         }
       }
       .contentShape(Rectangle())

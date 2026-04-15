@@ -1,5 +1,9 @@
 import Foundation
 
+enum NotificationSeverity {
+  case bell, commandFailed
+}
+
 @Observable
 @MainActor
 final class MisttySession: Identifiable {
@@ -9,6 +13,16 @@ final class MisttySession: Identifiable {
   var sshCommand: String?
   private(set) var tabs: [MisttyTab] = []
   var activeTab: MisttyTab?
+
+  var notificationCount: Int {
+    tabs.filter { $0.hasBell || $0.hasFailedCommand }.count
+  }
+
+  var notificationSeverity: NotificationSeverity? {
+    if tabs.contains(where: { $0.hasFailedCommand }) { return .commandFailed }
+    if tabs.contains(where: { $0.hasBell }) { return .bell }
+    return nil
+  }
 
   private(set) var popups: [PopupState] = []
   var activePopup: PopupState?

@@ -25,6 +25,7 @@ extension ContentView {
       }
       .onChange(of: store.activeSession?.activeTab?.id) { _, _ in
         store.activeSession?.activeTab?.hasBell = false
+        store.activeSession?.activeTab?.hasFailedCommand = false
       }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyCloseSurface)) { notification in
         handleCloseSurface(notification)
@@ -338,6 +339,11 @@ extension ContentView {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
           pane.lastCommandResult = MisttyPane.CommandResult(
             exitCode: exitCode, duration: duration)
+          if exitCode != 0,
+            !(store.activeSession?.id == session.id && session.activeTab?.id == tab.id)
+          {
+            tab.hasFailedCommand = true
+          }
           return
         }
       }
