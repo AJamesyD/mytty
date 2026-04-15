@@ -18,7 +18,7 @@ final class PaneNavigationManager {
   private var isActive = false
   private var store: SessionStore?
   private var navigationBindings: [NavigationKey: NavigationBinding] = [:]
-  private var vimLikeProcesses: [String] = KeybindingStore.defaultVimLikeProcesses
+  private var passthroughProcesses: [String] = KeybindingStore.defaultPassthroughProcesses
   var isSessionManagerShowing: () -> Bool = { false }
 
   func activate(store: SessionStore) {
@@ -27,7 +27,7 @@ final class PaneNavigationManager {
     isActive = true
 
     let keybindingStore = MisttyConfig.load().keybindingStore
-    vimLikeProcesses = keybindingStore.vimLikeProcesses
+    passthroughProcesses = keybindingStore.passthroughProcesses
     let actionToDirection: [String: NavigationDirection] = [
       "navigate-left": .left,
       "navigate-down": .down,
@@ -92,7 +92,7 @@ final class PaneNavigationManager {
     else { return event }
 
     if pane.vars["is-vim"] != nil { return event }
-    if pane.isRunningVimLike(processes: vimLikeProcesses) { return event }
+    if pane.isPassthroughProcess(processes: passthroughProcesses) { return event }
 
     if let target = tab.layout.adjacentPane(from: pane, direction: direction) {
       tab.activePane = target
@@ -112,7 +112,7 @@ final class PaneNavigationManager {
     monitor = nil
     store = nil
     navigationBindings = [:]
-    vimLikeProcesses = KeybindingStore.defaultVimLikeProcesses
+    passthroughProcesses = KeybindingStore.defaultPassthroughProcesses
     isActive = false
   }
 

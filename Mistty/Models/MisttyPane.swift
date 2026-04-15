@@ -46,11 +46,11 @@ final class MisttyPane: Identifiable {
     case pause
   }
 
-  var isRunningVimLike: Bool {
-    isRunningVimLike(processes: KeybindingStore.defaultVimLikeProcesses)
+  var isPassthroughProcess: Bool {
+    isPassthroughProcess(processes: KeybindingStore.defaultPassthroughProcesses)
   }
 
-  func isRunningVimLike(processes: [String]) -> Bool {
+  func isPassthroughProcess(processes: [String]) -> Bool {
     guard let title = processTitle?.lowercased() else { return false }
     return processes.contains(where: { title == $0 || title.hasPrefix($0 + " ") })
   }

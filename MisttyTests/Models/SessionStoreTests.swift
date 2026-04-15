@@ -247,27 +247,27 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(pane.processTitle, "nvim")
   }
 
-  func test_isRunningVimLike() {
+  func test_isPassthroughProcess() {
     let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
     let pane = session.tabs[0].panes[0]
 
     pane.processTitle = "zsh"
-    XCTAssertFalse(pane.isRunningVimLike)
+    XCTAssertFalse(pane.isPassthroughProcess)
 
     pane.processTitle = "nvim"
-    XCTAssertTrue(pane.isRunningVimLike)
+    XCTAssertTrue(pane.isPassthroughProcess)
 
     pane.processTitle = "nvim ."
-    XCTAssertTrue(pane.isRunningVimLike)
+    XCTAssertTrue(pane.isPassthroughProcess)
 
     pane.processTitle = "vim"
-    XCTAssertTrue(pane.isRunningVimLike)
+    XCTAssertTrue(pane.isPassthroughProcess)
 
     pane.processTitle = "vimtutor"
-    XCTAssertFalse(pane.isRunningVimLike)
+    XCTAssertFalse(pane.isPassthroughProcess)
 
     pane.processTitle = nil
-    XCTAssertFalse(pane.isRunningVimLike)
+    XCTAssertFalse(pane.isPassthroughProcess)
   }
 
   func test_idsAreSequential() {

@@ -11,7 +11,7 @@ final class KeybindingStoreTests: XCTestCase {
       userWhichKey: nil,
       resets: [],
       globalReset: false,
-      vimLikeProcesses: nil
+      passthroughProcesses: nil
     )
     XCTAssertEqual(
       store.trigger(for: "new-tab", in: .global),
@@ -40,7 +40,7 @@ final class KeybindingStoreTests: XCTestCase {
       userWhichKey: nil,
       resets: [],
       globalReset: false,
-      vimLikeProcesses: nil
+      passthroughProcesses: nil
     )
     XCTAssertEqual(
       store.trigger(for: "split-horizontal", in: .global),
@@ -65,7 +65,7 @@ final class KeybindingStoreTests: XCTestCase {
       userWhichKey: nil,
       resets: [],
       globalReset: false,
-      vimLikeProcesses: nil
+      passthroughProcesses: nil
     )
     XCTAssertNil(store.trigger(for: "new-tab", in: .global))
   }
@@ -83,7 +83,7 @@ final class KeybindingStoreTests: XCTestCase {
       userWhichKey: nil,
       resets: [.windowMode],
       globalReset: false,
-      vimLikeProcesses: nil
+      passthroughProcesses: nil
     )
     XCTAssertEqual(
       store.trigger(for: "zoom", in: .windowMode),
@@ -106,7 +106,7 @@ final class KeybindingStoreTests: XCTestCase {
       userWhichKey: nil,
       resets: [],
       globalReset: true,
-      vimLikeProcesses: nil
+      passthroughProcesses: nil
     )
     XCTAssertEqual(
       store.trigger(for: "new-tab", in: .global),
@@ -154,13 +154,13 @@ final class KeybindingStoreTests: XCTestCase {
       userWhichKey: userGroups,
       resets: [],
       globalReset: false,
-      vimLikeProcesses: nil
+      passthroughProcesses: nil
     )
     XCTAssertEqual(store.whichKeyGroups.count, 1)
     XCTAssertEqual(store.whichKeyGroups[0].name, "custom")
   }
 
-  func test_vimLikeProcesses() {
+  func test_passthroughProcesses() {
     let store = KeybindingStore.build(
       defaults: KeybindingStore.defaultBindings,
       defaultWhichKey: KeybindingStore.defaultWhichKeyGroups,
@@ -168,12 +168,12 @@ final class KeybindingStoreTests: XCTestCase {
       userWhichKey: nil,
       resets: [],
       globalReset: false,
-      vimLikeProcesses: ["nvim", "kakoune"]
+      passthroughProcesses: ["nvim", "kakoune"]
     )
-    XCTAssertEqual(store.vimLikeProcesses, ["nvim", "kakoune"])
+    XCTAssertEqual(store.passthroughProcesses, ["nvim", "kakoune"])
   }
 
-  func test_vimLikeProcessesDefault() {
+  func test_passthroughProcessesDefault() {
     let store = KeybindingStore.build(
       defaults: KeybindingStore.defaultBindings,
       defaultWhichKey: KeybindingStore.defaultWhichKeyGroups,
@@ -181,9 +181,9 @@ final class KeybindingStoreTests: XCTestCase {
       userWhichKey: nil,
       resets: [],
       globalReset: false,
-      vimLikeProcesses: nil
+      passthroughProcesses: nil
     )
-    XCTAssertEqual(store.vimLikeProcesses, ["nvim", "neovim", "vim", "helix", "lazygit"])
+    XCTAssertEqual(store.passthroughProcesses, ["nvim", "neovim", "vim", "helix", "lazygit"])
   }
 
   func test_multiBindArray() throws {

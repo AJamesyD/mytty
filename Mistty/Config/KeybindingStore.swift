@@ -19,10 +19,10 @@ struct WhichKeyGroup: Sendable, Equatable {
 struct KeybindingStore: Sendable, Equatable {
   private(set) var bindings: [BindingMode: [String: KeyboardTrigger]] = [:]
   private(set) var whichKeyGroups: [WhichKeyGroup] = []
-  private(set) var vimLikeProcesses: [String]
+  private(set) var passthroughProcesses: [String]
   private(set) var warnings: [String] = []
 
-  static let defaultVimLikeProcesses = ["nvim", "neovim", "vim", "helix", "lazygit"]
+  static let defaultPassthroughProcesses = ["nvim", "neovim", "vim", "helix", "lazygit"]
 
   static let defaultBindings: [BindingMode: [String: KeyboardTrigger]] = [
     .global: [
@@ -90,12 +90,12 @@ struct KeybindingStore: Sendable, Equatable {
   init(
     bindings: [BindingMode: [String: KeyboardTrigger]] = [:],
     whichKeyGroups: [WhichKeyGroup] = [],
-    vimLikeProcesses: [String] = defaultVimLikeProcesses,
+    passthroughProcesses: [String] = defaultPassthroughProcesses,
     warnings: [String] = []
   ) {
     self.bindings = bindings
     self.whichKeyGroups = whichKeyGroups
-    self.vimLikeProcesses = vimLikeProcesses
+    self.passthroughProcesses = passthroughProcesses
     self.warnings = warnings
   }
 
@@ -166,7 +166,7 @@ struct KeybindingStore: Sendable, Equatable {
     userWhichKey: [WhichKeyGroup]?,
     resets: Set<BindingMode>,
     globalReset: Bool,
-    vimLikeProcesses: [String]?
+    passthroughProcesses: [String]?
   ) -> KeybindingStore {
     let merged = merge(
       defaults: defaults,
@@ -178,7 +178,7 @@ struct KeybindingStore: Sendable, Equatable {
     return KeybindingStore(
       bindings: merged,
       whichKeyGroups: userWhichKey ?? defaultWhichKey,
-      vimLikeProcesses: vimLikeProcesses ?? defaultVimLikeProcesses,
+      passthroughProcesses: passthroughProcesses ?? defaultPassthroughProcesses,
       warnings: warnings
     )
   }

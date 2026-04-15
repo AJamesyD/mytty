@@ -209,7 +209,7 @@ final class MisttyConfigTests: XCTestCase {
       [keybindings]
       split-horizontal = "cmd+shift+d"
       new-tab = "unbind"
-      vim-like-processes = ["nvim", "kakoune"]
+      passthrough-processes = ["nvim", "kakoune"]
 
       [keybindings.window-mode]
       zoom = "x"
@@ -230,6 +230,6 @@ final class MisttyConfigTests: XCTestCase {
     )
     XCTAssertEqual(config.keybindingStore.whichKeyGroups.count, 1)
     XCTAssertEqual(config.keybindingStore.whichKeyGroups[0].name, "window")
-    XCTAssertEqual(config.keybindingStore.vimLikeProcesses, ["nvim", "kakoune"])
+    XCTAssertEqual(config.keybindingStore.passthroughProcesses, ["nvim", "kakoune"])
   }
 }

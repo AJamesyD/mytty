@@ -119,7 +119,7 @@ struct MisttyConfig: Sendable, Equatable {
         userWhichKey: nil,
         resets: [],
         globalReset: false,
-        vimLikeProcesses: nil
+        passthroughProcesses: nil
       )
     }
 
@@ -127,7 +127,7 @@ struct MisttyConfig: Sendable, Equatable {
     var resets: Set<BindingMode> = []
     var overrides: [BindingMode: [String: KeyboardTrigger]] = [:]
     var userWhichKey: [WhichKeyGroup]?
-    var vimLikeProcesses: [String]?
+    var passthroughProcesses: [String]?
 
     if let reset = kbTable["_reset"]?.bool, reset {
       globalReset = true
@@ -158,8 +158,8 @@ struct MisttyConfig: Sendable, Equatable {
       userWhichKey = groups
     }
 
-    if let procs = kbTable["vim-like-processes"]?.array {
-      vimLikeProcesses = procs.compactMap { $0.string }
+    if let procs = kbTable["passthrough-processes"]?.array {
+      passthroughProcesses = procs.compactMap { $0.string }
     }
 
     return KeybindingStore.build(
@@ -169,7 +169,7 @@ struct MisttyConfig: Sendable, Equatable {
       userWhichKey: userWhichKey,
       resets: resets,
       globalReset: globalReset,
-      vimLikeProcesses: vimLikeProcesses
+      passthroughProcesses: passthroughProcesses
     )
   }
 
@@ -178,7 +178,7 @@ struct MisttyConfig: Sendable, Equatable {
     for key in table.keys {
       if key.hasPrefix("_") { continue }
       if table[key]?.table != nil { continue }
-      if key == "vim-like-processes" { continue }
+      if key == "passthrough-processes" { continue }
 
       if let str = table[key]?.string {
         if str == "unbind" {

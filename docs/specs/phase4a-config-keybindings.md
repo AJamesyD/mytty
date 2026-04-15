@@ -273,7 +273,7 @@ A new config key for TUI app detection:
 
 ```toml
 [keybindings]
-vim-like-processes = ["nvim", "vim", "helix", "lazygit"]
+passthrough-processes = ["nvim", "vim", "helix", "lazygit"]
 ```
 
 When the foreground process matches an entry, Mistty passes navigation keys (Ctrl+HJKL) through to the terminal instead of handling pane navigation. This is the existing behavior with a hardcoded list; this section makes it configurable.
