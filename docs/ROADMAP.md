@@ -1,7 +1,8 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Iteration: 19
+Last updated: 2026-04-15
+Iteration: 20
 
 ## Working Agreements
 
@@ -101,7 +102,7 @@ Key finding: libghostty already parses all OSC sequences internally. Phase 2a ha
 
 **Done when:** ~~OSC parser handles all listed sequences, sidebar shows working directory per session, OSC title sequences update tab names.~~ Done 2026-04-14. All six acceptance criteria met.
 
-## Phase 2b: Contextual Sidebar
+## Phase 2b: Contextual Sidebar ✅
 
 The consumer features that build on Phase 2a's action callbacks. Spec: `/tmp/ai-design-phase2b-contextual-sidebar.md`.
 
@@ -137,7 +138,7 @@ Port detection (lsof integration) removed from Phase 2b scope. Standalone item, 
 - Complexity: 1
 - Standalone fix, no spec needed.
 
-**Done when:** background tab failures show orange glow dot, collapsed sessions show count pill, tab row shows process title + last command result, Cmd+Shift+Up/Down jumps between prompts, Cmd+V pastes clipboard content into terminal.
+**Done when:** ~~background tab failures show orange glow dot, collapsed sessions show count pill, tab row shows process title + last command result, Cmd+Shift+Up/Down jumps between prompts, Cmd+V pastes clipboard content into terminal.~~ Done 2026-04-14.
 
 ## Phase 2c: Basic Session Persistence
 
@@ -237,19 +238,6 @@ Replace hardcoded keybindings in WindowModeManager and WhichKeyManager with stor
 - WindowModeManager: convert keyCode dispatch to action-name lookup from store
 - WhichKeyManager: read `whichKeyGroups` from store, map action names to closures
 
-#### 4a-4: Sidebar configuration
-- Sidebar position: configurable left or right (`sidebar.position = "left" | "right"`)
-- Sidebar tree depth: configurable whether tabs/panes show under sessions or sessions only (`sidebar.show-tree = true | false`)
-- `/spec` before implementation: layout implications of right-side sidebar, animation direction, divider placement
-
-#### 4a-5: Auto-hide UX polish
-Revisit auto-hide panel behavior with better animations and tuning. Study Zen Browser's sidebar auto-hide for inspiration: debounce timing, hover distance thresholds, entry/exit animation curves, edge activation feel.
-
-- Current: 150ms dwell, 300ms dismiss delay, 20px trigger zone, linear slide
-- Investigate: eased animations, velocity-aware dismissal, larger/smarter trigger zones, visual hint on hover approach
-- Depends on: 4a (config system, so tuning values are configurable)
-- Complexity: 1
-
 ### 4b. Live Config Reload
 Watch config file with `DispatchSource.makeFileSystemObjectSource`. Reload on change. Panel modes, fonts, colors, and keybindings apply immediately. Terminal-affecting options (scrollback size) apply to new panes only.
 
@@ -264,7 +252,22 @@ Extends 2c with scrollback persistence, running command restoration, and optiona
 - Complexity: 3 (built-in) or 2 (shpool/zmx integration)
 - Depends on: 2c
 
-**Done when:** config file controls keybindings (global + window mode + which-key), sidebar position and tree depth are configurable, auto-hide panels feel polished, config changes apply without restart, advanced persistence restores scrollback and running commands.
+### 4d. Sidebar Configuration
+- Sidebar position: configurable left or right (`sidebar.position = "left" | "right"`)
+- Sidebar tree depth: configurable whether tabs/panes show under sessions or sessions only (`sidebar.show-tree = true | false`)
+- `/spec` before implementation: layout implications of right-side sidebar, animation direction, divider placement
+- Complexity: 2
+- Depends on: 4a (config system)
+
+### 4e. Auto-Hide UX Polish
+Revisit auto-hide panel behavior with better animations and tuning. Study Zen Browser's sidebar auto-hide for inspiration: debounce timing, hover distance thresholds, entry/exit animation curves, edge activation feel.
+
+- Current: 150ms dwell, 300ms dismiss delay, 20px trigger zone, linear slide
+- Acceptance criteria: side-by-side comparison with Zen Browser feels comparable or better
+- Complexity: 1
+- Depends on: 4a (config system for tuning values), 1c (auto-hide panels)
+
+**Done when:** config file controls keybindings (global + window mode + which-key), sidebar position and tree depth are configurable, auto-hide panels feel polished, config changes apply without restart.
 
 ---
 
@@ -330,23 +333,9 @@ Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide inte
 - Complexity: 2
 - `/spec` required: preview pane content, icon mapping, frecency algorithm tuning.
 
-### 5h. Sidebar Position
-Sidebar configurable to appear on left or right side of the window.
-
-- Complexity: 1
-- `/spec` not needed (straightforward layout flip).
-- Depends on: 4a (config system for persistence)
-
-### 5i. Panel Animation Polish
-Refine sidebar and tab bar reveal/dismiss animations to feel more satisfying. Current implementation uses basic easeOut/easeIn curves. Investigate spring animations, velocity-matched transitions, and subtle scale/opacity effects. Reference: Zen Browser's sidebar animations.
-
-- Complexity: 1
-- `/spec` not needed (iterative visual tuning).
-- Depends on: 1c (auto-hide panels, done)
-
 **Essential done when:** dropdown terminal works via global hotkey, hints mode selects visible targets, floating panes work.
 
-**Polish done when:** Ghostty themes import, project layouts load from `.mistty.toml` with save-current-layout command, command palette searches all actions, session manager shows frecency-ranked results with icons, sidebar position configurable, panel animations feel polished.
+**Polish done when:** Ghostty themes import, project layouts load from `.mistty.toml` with save-current-layout command, command palette searches all actions, session manager shows frecency-ranked results with icons.
 
 ---
 
@@ -375,7 +364,7 @@ Hover file paths in terminal output for Quick Look preview. Click to open in spl
 - Complexity: 4
 - `/spec` required: path detection, Quick Look integration, split-pane creation flow.
 - No terminal does this. Novel.
-- Pairs with 5d (hints mode provides keyboard-driven target selection).
+- Pairs with 5b (hints mode provides keyboard-driven target selection).
 
 ### 6d. Terminal Automation API
 Expose surface state (cells, colors, cursor position) via the socket API for scripting and testing. The "Playwright for terminals" gap: AI agents can write TUI code but can't see the rendered result.
@@ -399,52 +388,35 @@ Expose surface state (cells, colors, cursor position) via the socket API for scr
 Completed:
   Phase 0 (cleanup) ✓
   Phase 1a (which-key) ✓
-  Phase 1b partial (beep fix, divider, tab contrast, typography, pane dim, sidebar mute) ✓
-  Phase 1b cleanup gate: theme extraction ✓
-  Phase 1b: sidebar visual rework ✓
-  Phase 1b: tab-completion beep fix (doCommand override) ✓
-
-Sequential path (solo developer):
-  1b remaining (rename, tab-bar-visibility, drag-drop) ✓
-    ──> /refactor + /cleanup: FocusedValue migration, ContentView extraction, sidebar audit ✓
-      ──> /spec review: auto-hide panel spec update ✓
-        ──> 1c (auto-hide) ✓
-          ──> /cleanup + /refactor: lint, tests, manager review, theme audit ✓
-            ──> /spec: Phase 2a ✓
-              ──> Phase 2a (OSC action callbacks) ✓
-                ──> /spec: Phase 2b (contextual sidebar) ✓
-                  ──> Phase 2b (contextual sidebar)
-
-Parallel track (completed):
+  Phase 1b (daily driver polish) ✓
+  Phase 1c (auto-hide panels) ✓
+  Phase 2a (OSC foundation) ✓
+  Phase 2b (contextual sidebar) ✓
   Phase 2c (basic session persistence) ✓
+  Phase 3a (socket API + CLI) ✓
+  Phase 3b (neovim navigation) ✓
+  Phase 4a-1 (config parsing) ✓
+  Phase 4a-2 (wire global keybindings) ✓
 
-After Phase 2b:
-  ──> /refactor + /cleanup: event handler extraction, IPC audit, OSC tests, IPC parity ✓
-    ──> /spec: Phase 3a (socket API)
-      ──> Phase 3a (socket API + CLI)
-        ──> Phase 3b (neovim nav)
-
-After Phase 3:
-  ──> /cleanup + /refactor: config audit, theme review
-    ──> /spec: Phase 4a (config system)
-      ──> Phase 4a (config system)
-        ──> Phase 4b (live config reload)
-          ──> Phase 4c (advanced persistence)
+Current:
+  Phase 4a-3 (wire modal keybindings) — next
+    ──> 4a-4 (sidebar config)
+      ──> 4a-5 (auto-hide UX polish)
+        ──> 4b (live config reload)
 
 After Phase 4:
-  ──> /cleanup: integration tests, API stability, dead code
+  ──> cleanup gate (integration tests, API stability, dead code)
     ──> Phase 5 Essential (dropdown, hints, floating panes)
-      ──> Phase 5 Polish
+      ──> Phase 5 Polish (Ghostty compat, layouts, palette, session manager)
         ──> Phase 6 (moonshots)
 
 Late dependencies:
   2a ──> 6b (block-based output)
   3a ──> 6d (automation API)
-  4a ──> 5d (Ghostty compat), 5e (layouts), 5h (sidebar position)
-  2c ──> 5e (layouts)
-  5b (hints) ──> 6c (inline previews)
-  2c ──> 4c (advanced persistence)
+  4a ──> 5d (Ghostty compat), 5e (layouts)
+  2c ──> 5e (layouts), 4c (advanced persistence)
   4a ──> 4b (live reload)
+  5b (hints) ──> 6c (inline previews)
 ```
 
 ## What's NOT on this roadmap
