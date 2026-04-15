@@ -173,23 +173,30 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
   }
 }
 
-/// Clipboard read callback (stub).
+/// Clipboard read callback.
 private let readClipboardCallback: ghostty_runtime_read_clipboard_cb = {
   userdata, clipboard, state in
-  guard let state else { return false }
-  let pasteboard = NSPasteboard.general
-  if let str = pasteboard.string(forType: .string) {
-    str.withCString { ptr in
-      // TODO: complete clipboard read
-    }
+  guard let userdata, let state else { return false }
+  let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+  guard let surface = view.surface else { return false }
+  let pasteboard =
+    clipboard == GHOSTTY_CLIPBOARD_SELECTION
+    ? NSPasteboard(name: .init("com.mitchellh.ghostty.selection"))
+    : NSPasteboard.general
+  guard let str = pasteboard.string(forType: .string) else { return false }
+  str.withCString { ptr in
+    ghostty_surface_complete_clipboard_request(surface, ptr, state, false)
   }
-  return false
+  return true
 }
 
-/// Clipboard confirm read callback (stub).
+/// Clipboard confirm read callback (auto-confirms).
 private let confirmReadClipboardCallback: ghostty_runtime_confirm_read_clipboard_cb = {
   userdata, str, state, request in
-  guard let state else { return }
+  guard let userdata, let state, let str else { return }
+  let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+  guard let surface = view.surface else { return }
+  ghostty_surface_complete_clipboard_request(surface, str, state, true)
 }
 
 /// Clipboard write callback.
