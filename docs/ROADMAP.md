@@ -284,12 +284,22 @@ Extends 2c with scrollback persistence, running command restoration, and optiona
 - `b928716` feat(sidebar): add position and show-tree config
 
 ### 4e. Auto-Hide UX Polish
-Revisit auto-hide panel behavior with better animations and tuning. Study Zen Browser's sidebar auto-hide for inspiration: debounce timing, hover distance thresholds, entry/exit animation curves, edge activation feel.
+Revisit auto-hide panel behavior with better animations and tuning. Studied Zen Browser, macOS Dock, Arc Browser, and Apple HIG for prior art.
 
-- Current: 150ms dwell, 300ms dismiss delay, 20px trigger zone, linear slide
-- Acceptance criteria: side-by-side comparison with Zen Browser feels comparable or better
+- [x] Spring animation (critically damped, interruptible) replacing bezier curves
+- [x] Reduce Motion: opacity fade instead of slide (accessibility correctness)
+- [x] Hint bar: 3x28px at 0.2 opacity (was 2x24px at 0.15)
 - Complexity: 1
 - Depends on: 4a (config system for tuning values), 1c (auto-hide panels)
+
+Deferred (tracked for future work):
+- [ ] Dismiss-while-browsing fix: add hover tracking to revealed panel body. Currently EdgeTriggerView only tracks the 20px trigger strip; cursor in the panel body starts the dismiss timer. The 300ms dismiss delay masks this.
+- [ ] Popup/context menu suppression: keep panel open while context menus are active (SidebarView has context menus at 2 sites, TabBarView at 1). Pattern from Zen Browser.
+- [ ] Asymmetric show/hide animation: faster show (response: 0.2), slower hide (response: 0.3)
+- [ ] Flash sidebar on background session events (bell, exit): briefly reveal for ~800ms. Pattern from Zen Browser.
+- [ ] Escape-to-dismiss auto-hide panel (conflicts with terminal Escape key; needs design)
+
+Research: /tmp/ai-research-autohide-ux-prior-art.md
 
 **Done when:** config file controls keybindings (global + window mode + which-key), sidebar position and tree depth are configurable, auto-hide panels feel polished, config changes apply without restart.
 

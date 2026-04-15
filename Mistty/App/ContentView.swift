@@ -124,7 +124,7 @@ struct ContentView: View {
                 .shadow(color: MisttyTheme.panelOverlayShadow, radius: 0, x: 0, y: 1)
               Spacer()
             }
-            .transition(.move(edge: .top))
+            .transition(reduceMotion ? .opacity : .move(edge: .top))
           }
 
           if panelState.tabBarMode == .autoHide
@@ -156,7 +156,7 @@ struct ContentView: View {
             VStack {
               RoundedRectangle(cornerRadius: 1)
                 .fill(MisttyTheme.autoHideHint)
-                .frame(width: 24, height: 2)
+                .frame(width: 28, height: 3)
                 .frame(maxWidth: .infinity)
                 .allowsHitTesting(false)
               Spacer()
@@ -164,7 +164,7 @@ struct ContentView: View {
           }
         }
         .animation(
-          reduceMotion ? .easeInOut(duration: 0.15) : .easeOut(duration: 0.2),
+          reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.25, dampingFraction: 1.0),
           value: panelState.isTabBarRevealed
         )
       } else {
@@ -205,7 +205,7 @@ struct ContentView: View {
           sidebarPanel
             .background(.ultraThinMaterial)
             .shadow(color: MisttyTheme.panelOverlayShadow, radius: 2, x: isRight ? -1 : 1, y: 0)
-            .transition(.move(edge: isRight ? .trailing : .leading))
+            .transition(reduceMotion ? .opacity : .move(edge: isRight ? .trailing : .leading))
         }
 
         if panelState.sidebarMode == .autoHide {
@@ -236,7 +236,7 @@ struct ContentView: View {
             if isRight { Spacer() }
             RoundedRectangle(cornerRadius: 1)
               .fill(MisttyTheme.autoHideHint)
-              .frame(width: 2, height: 24)
+              .frame(width: 3, height: 28)
               .allowsHitTesting(false)
             if !isRight { Spacer() }
           }
@@ -245,7 +245,7 @@ struct ContentView: View {
       }
     }
     .animation(
-      reduceMotion ? .easeInOut(duration: 0.15) : .easeOut(duration: 0.2),
+      reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.25, dampingFraction: 1.0),
       value: panelState.isSidebarRevealed
     )
     .onAppear {
