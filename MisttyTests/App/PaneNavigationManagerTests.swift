@@ -117,6 +117,8 @@ final class PaneNavigationManagerTests: XCTestCase {
     else { return XCTFail("Could not create NSEvent") }
 
     let result = manager.handleKeyDown(event)
-    XCTAssertNil(result, "Ctrl+H should navigate even when charactersIgnoringModifiers returns control character")
+    XCTAssertNil(
+      result,
+      "Ctrl+H should navigate even when charactersIgnoringModifiers returns control character")
   }
 }

@@ -108,56 +108,86 @@ final class WhichKeyManager {
     groups: [WhichKeyGroup]
   ) -> [WhichKeyBinding] {
     var registry: [String: (label: String, action: @MainActor () -> Void)] = [
-      "swap-left": ("Swap Left", {
-        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-        tab.layout.swapPane(pane, direction: .left)
-      }),
-      "swap-down": ("Swap Down", {
-        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-        tab.layout.swapPane(pane, direction: .down)
-      }),
-      "swap-up": ("Swap Up", {
-        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-        tab.layout.swapPane(pane, direction: .up)
-      }),
-      "swap-right": ("Swap Right", {
-        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-        tab.layout.swapPane(pane, direction: .right)
-      }),
-      "zoom": ("Zoom", {
-        guard let tab = store.activeSession?.activeTab else { return }
-        tab.zoomedPane = tab.zoomedPane != nil ? nil : tab.activePane
-      }),
-      "break-to-tab": ("Break to Tab", {
-        guard let session = store.activeSession,
-          let tab = session.activeTab,
-          let pane = tab.activePane,
-          tab.panes.count > 1
-        else { return }
-        tab.closePane(pane)
-        if tab.panes.isEmpty { session.closeTab(tab) }
-        session.addTabWithPane(pane)
-      }),
-      "rotate": ("Rotate", {
-        guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-        tab.layout.rotateDirection(containing: pane)
-      }),
-      "even-layout": ("Even Layout", {
-        guard let tab = store.activeSession?.activeTab, tab.panes.count >= 2 else { return }
-        tab.applyStandardLayout(.evenHorizontal)
-      }),
+      "swap-left": (
+        "Swap Left",
+        {
+          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+          tab.layout.swapPane(pane, direction: .left)
+        }
+      ),
+      "swap-down": (
+        "Swap Down",
+        {
+          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+          tab.layout.swapPane(pane, direction: .down)
+        }
+      ),
+      "swap-up": (
+        "Swap Up",
+        {
+          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+          tab.layout.swapPane(pane, direction: .up)
+        }
+      ),
+      "swap-right": (
+        "Swap Right",
+        {
+          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+          tab.layout.swapPane(pane, direction: .right)
+        }
+      ),
+      "zoom": (
+        "Zoom",
+        {
+          guard let tab = store.activeSession?.activeTab else { return }
+          tab.zoomedPane = tab.zoomedPane != nil ? nil : tab.activePane
+        }
+      ),
+      "break-to-tab": (
+        "Break to Tab",
+        {
+          guard let session = store.activeSession,
+            let tab = session.activeTab,
+            let pane = tab.activePane,
+            tab.panes.count > 1
+          else { return }
+          tab.closePane(pane)
+          if tab.panes.isEmpty { session.closeTab(tab) }
+          session.addTabWithPane(pane)
+        }
+      ),
+      "rotate": (
+        "Rotate",
+        {
+          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
+          tab.layout.rotateDirection(containing: pane)
+        }
+      ),
+      "even-layout": (
+        "Even Layout",
+        {
+          guard let tab = store.activeSession?.activeTab, tab.panes.count >= 2 else { return }
+          tab.applyStandardLayout(.evenHorizontal)
+        }
+      ),
       "split-vertical": ("Vertical Split", { commands.splitVertical() }),
       "split-horizontal": ("Horizontal Split", { commands.splitHorizontal() }),
       "close-pane": ("Close Pane", { commands.closePane() }),
-      "new-session": ("New Session", {
-        store.createSession(
-          name: "New Session", directory: FileManager.default.homeDirectoryForCurrentUser)
-      }),
+      "new-session": (
+        "New Session",
+        {
+          store.createSession(
+            name: "New Session", directory: FileManager.default.homeDirectoryForCurrentUser)
+        }
+      ),
       "session-manager": ("Session Manager", { commands.sessionManager() }),
-      "close-session": ("Close Session", {
-        guard let session = store.activeSession else { return }
-        store.closeSession(session)
-      }),
+      "close-session": (
+        "Close Session",
+        {
+          guard let session = store.activeSession else { return }
+          store.closeSession(session)
+        }
+      ),
       "new-tab": ("New Tab", { commands.newTab() }),
       "close-tab": ("Close Tab", { commands.closeTab() }),
     ]

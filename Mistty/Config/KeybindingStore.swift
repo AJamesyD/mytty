@@ -126,7 +126,7 @@ struct KeybindingStore: Sendable, Equatable {
         WhichKeyNode(action: "new-tab", key: "n"),
         WhichKeyNode(action: "close-tab", key: "x"),
       ]
-      + (1...9).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") }),
+        + (1...9).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") }),
   ]
 
   init(

@@ -36,7 +36,8 @@ struct SidebarDragHandle: View {
           }
           .onChanged { value in
             guard let startWidth = dragStartWidth else { return }
-            let delta = position == .left
+            let delta =
+              position == .left
               ? value.translation.width
               : -value.translation.width
             width = max(140, min(400, startWidth + delta))

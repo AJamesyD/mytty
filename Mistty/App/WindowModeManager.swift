@@ -122,14 +122,15 @@ final class WindowModeManager {
     default:
       if action.hasPrefix("layout-") {
         if let tab = store.activeSession?.activeTab, tab.panes.count >= 2 {
-          let layout: StandardLayout? = switch action {
-          case "layout-even-horizontal": .evenHorizontal
-          case "layout-even-vertical": .evenVertical
-          case "layout-main-horizontal": .mainHorizontal
-          case "layout-main-vertical": .mainVertical
-          case "layout-tiled": .tiled
-          default: nil
-          }
+          let layout: StandardLayout? =
+            switch action {
+            case "layout-even-horizontal": .evenHorizontal
+            case "layout-even-vertical": .evenVertical
+            case "layout-main-horizontal": .mainHorizontal
+            case "layout-main-vertical": .mainVertical
+            case "layout-tiled": .tiled
+            default: nil
+            }
           if let layout {
             tab.applyStandardLayout(layout)
             tab.windowModeState = .inactive
