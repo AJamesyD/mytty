@@ -13,6 +13,7 @@ final class IPCListener {
   private let service: MisttyIPCService
   private let state = OSAllocatedUnfairLock(initialState: ListenerState())
   private let queue = DispatchQueue(label: "com.mistty.ipc-listener", qos: .userInitiated)
+  let broker = EventBroker()
 
   init(service: MisttyIPCService) {
     self.service = service
@@ -72,8 +73,9 @@ final class IPCListener {
     }
 
     let service = self.service
+    let broker = self.broker
     queue.async { [state] in
-      IPCListener.acceptLoop(state: state, service: service)
+      IPCListener.acceptLoop(state: state, service: service, broker: broker)
     }
   }
 
@@ -91,7 +93,7 @@ final class IPCListener {
   // MARK: - Accept Loop
 
   private nonisolated static func acceptLoop(
-    state: OSAllocatedUnfairLock<ListenerState>, service: MisttyIPCService
+    state: OSAllocatedUnfairLock<ListenerState>, service: MisttyIPCService, broker: EventBroker
   ) {
     while true {
       let fd = state.withLock { $0.running ? $0.serverFD : -1 }
@@ -112,14 +114,16 @@ final class IPCListener {
       setsockopt(clientFD, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
 
       Task {
-        await handleConnection(clientFD, service: service)
+        await handleConnection(clientFD, service: service, broker: broker)
       }
     }
   }
 
   // MARK: - Connection Handling
 
-  private nonisolated static func handleConnection(_ fd: Int32, service: MisttyIPCService) async {
+  private nonisolated static func handleConnection(
+    _ fd: Int32, service: MisttyIPCService, broker: EventBroker
+  ) async {
     defer { Darwin.close(fd) }
 
     var byte: UInt8 = 0
@@ -127,7 +131,7 @@ final class IPCListener {
     guard peeked == 1 else { return }
 
     if byte == 0x43 {
-      await handleJSONRPCConnection(fd, service: service)
+      await handleJSONRPCConnection(fd, service: service, broker: broker)
     } else {
       await handleLegacyConnection(fd, service: service)
     }
@@ -136,8 +140,9 @@ final class IPCListener {
   // MARK: - JSON-RPC Connection Handling
 
   private nonisolated static func handleJSONRPCConnection(
-    _ fd: Int32, service: MisttyIPCService
+    _ fd: Int32, service: MisttyIPCService, broker: EventBroker
   ) async {
+    defer { Task { await broker.removeSubscriptions(forFD: fd) } }
     let encoder = JSONEncoder()
 
     while true {
@@ -159,9 +164,25 @@ final class IPCListener {
       case "initialize":
         let result: JSONValue = [
           "serverVersion": .string(MisttyIPC.protocolVersion),
-          "capabilities": ["events": false],
+          "capabilities": ["events": true],
         ]
         response = .success(id: request.id, result: result)
+
+      case "subscribe":
+        let events: [String]
+        if case .array(let arr) = request.params?["events"] {
+          events = arr.compactMap { if case .string(let s) = $0 { return s } else { return nil } }
+        } else {
+          events = []
+        }
+        let subId = await broker.subscribe(fd: fd, events: events)
+        response = .success(id: request.id, result: ["subscriptionId": .string(subId)])
+
+      case "unsubscribe":
+        if case .string(let subId) = request.params?["subscriptionId"] {
+          await broker.unsubscribe(id: subId)
+        }
+        response = .success(id: request.id, result: .null)
 
       default:
         response = await dispatchJSONRPCMethod(request, service: service)
