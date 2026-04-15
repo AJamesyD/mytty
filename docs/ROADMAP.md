@@ -231,28 +231,28 @@ Menu shortcuts (MisttyApp), pane navigation (PaneNavigationManager), and passthr
 - [x] Tests for PaneNavigationManager key matching logic (5 tests)
 - [x] Fix special key matching (arrow keys, escape) via keycode-to-name mapping
 
-#### Bug fix: Ctrl+hjkl navigation unreliable
+#### Bug fix: Ctrl+hjkl navigation unreliable ✅
 PaneNavigationManager uses `event.charactersIgnoringModifiers` to extract the key character. On macOS, this returns control characters when Ctrl is held (Ctrl+H = `\u{08}`, Ctrl+J = `\n`, Ctrl+K = `\u{0B}`, Ctrl+L = `\u{0C}`) instead of the letter. Ghostty's own code explicitly avoids this (see `NSEvent+Extension.swift` comment: "We have to use `byApplyingModifiers` instead of `charactersIgnoringModifiers` because the latter changes behavior with ctrl pressed"). Fix: use `event.characters(byApplyingModifiers: [])?.lowercased()` instead. Standalone fix, no spec needed.
 
 - Complexity: 1
-- [ ] Fix `PaneNavigationManager.handleKeyDown` to use `characters(byApplyingModifiers: [])` instead of `charactersIgnoringModifiers`
+- [x] Fix `PaneNavigationManager.handleKeyDown` to use `characters(byApplyingModifiers: [])` instead of `charactersIgnoringModifiers`
 
-#### 4a-2b: Native keybinding defaults
+#### 4a-2b: Native keybinding defaults ✅
 Apply Principle of Least Astonishment to default keybindings. All changes are to `KeybindingStore.defaultBindings` only; existing user configs are unaffected.
 
-- Change `toggle-sidebar` default from `Cmd+S` to `Cmd+\` (Cmd+S is "Save" in every macOS app)
-- Change `window-mode` default from `Cmd+X` to `Ctrl+W` (Cmd+X is "Cut" universally; Ctrl+W is the tmux prefix convention. Conflicts with shell word-delete, but configurable.)
-- Change `next-tab` default from `Cmd+]` to `Cmd+Shift+]` (matches Safari, Chrome, Finder)
-- Change `previous-tab` default from `Cmd+[` to `Cmd+Shift+[` (matches Safari, Chrome, Finder)
-- Add `Cmd+W` behavior config option: "multiplexer" (Cmd+W closes pane, default) vs "macos" (Cmd+W closes tab)
-- Document Ctrl+Space conflict with macOS input source switcher in config spec
+- [x] Change `toggle-sidebar` default from `Cmd+S` to `Cmd+\` (Cmd+S is "Save" in every macOS app)
+- [x] Change `window-mode` default from `Cmd+X` to `Ctrl+W` (Cmd+X is "Cut" universally; Ctrl+W is the tmux prefix convention. Conflicts with shell word-delete, but configurable.)
+- [x] Change `next-tab` default from `Cmd+]` to `Cmd+Shift+]` (matches Safari, Chrome, Finder)
+- [x] Change `previous-tab` default from `Cmd+[` to `Cmd+Shift+[` (matches Safari, Chrome, Finder)
+- [ ] Add `Cmd+W` behavior config option: "multiplexer" (Cmd+W closes pane, default) vs "macos" (Cmd+W closes tab). Deferred: current default is correct for multiplexer identity. Revisit if users request.
+- [ ] Document Ctrl+Space conflict with macOS input source switcher in config spec
 
 Research: `/tmp/ai-research-macos-native-divergence-framework.md`
 
 - Complexity: 1
 - Depends on: 4a-2
 
-#### 4a-3: Wire modal keybindings
+#### 4a-3: Wire modal keybindings ✅
 Replace hardcoded keybindings in WindowModeManager and WhichKeyManager with store lookups. CopyModeState deferred: no terminal emulator (Ghostty, kitty, WezTerm) makes vim copy-mode keys configurable, and the 622-line state machine would need a full rewrite to become data-driven. Vim users expect vim keys.
 
 - Depends on: 4a-2b
@@ -434,14 +434,13 @@ Completed:
   Phase 3b (neovim navigation) ✓
   Phase 4a-1 (config parsing) ✓
   Phase 4a-2 (wire global keybindings) ✓
+  Phase 4a-2b (native keybinding defaults) ✓
+  Phase 4a-3 (wire modal keybindings) ✓
 
 Current:
-  Bug fix: Ctrl+hjkl (charactersIgnoringModifiers) — immediate
-  Phase 4a-2b (native keybinding defaults) — next
-  Phase 4a-3 (wire modal keybindings) — after 4a-2b
-    ──> 4d (sidebar config)
-      ──> 4e (auto-hide UX polish)
-        ──> 4b (live config reload)
+  Phase 4d (sidebar config) — next
+    ──> 4e (auto-hide UX polish)
+      ──> 4b (live config reload)
 
 After Phase 4:
   ──> cleanup gate (integration tests, API stability, dead code)
