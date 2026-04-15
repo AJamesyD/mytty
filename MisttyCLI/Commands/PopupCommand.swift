@@ -113,7 +113,7 @@ struct PopupCommand: ParsableCommand {
             try client.initialize()
 
             do {
-                _ = try client.callJSONRPC("popup.close", params: ["popupId": .int(id)])
+                _ = try client.callJSONRPC("popup.close", params: ["id": .int(id)])
             } catch {
                 OutputFormatter.printError(error.localizedDescription)
                 Foundation.exit(1)

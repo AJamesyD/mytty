@@ -348,7 +348,7 @@ final class IPCListener {
       }
     case "popup.close":
       return await callService(request) {
-        try await service.closePopup(popupId: int("popupId"))
+        try await service.closePopup(id: int("id"))
       }
     case "popup.toggle":
       return await callService(request) {

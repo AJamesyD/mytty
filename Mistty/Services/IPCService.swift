@@ -44,7 +44,8 @@ import MisttyShared
     PaneResponse(
       id: pane.id,
       directory: pane.directory?.path,
-      zoomed: tab?.zoomedPane?.id == pane.id
+      zoomed: tab?.zoomedPane?.id == pane.id,
+      title: pane.processTitle
     )
   }
 
@@ -491,9 +492,9 @@ import MisttyShared
     return try encodeOrThrow(popupResponse(popup))
   }
 
-  func closePopup(popupId: Int) async throws -> Data {
-    guard let (session, popup) = store.popup(byId: popupId) else {
-      throw MisttyIPC.error(.entityNotFound, "Popup \(popupId) not found")
+  func closePopup(id: Int) async throws -> Data {
+    guard let (session, popup) = store.popup(byId: id) else {
+      throw MisttyIPC.error(.entityNotFound, "Popup \(id) not found")
     }
     session.closePopup(popup)
     return try encodeOrThrow([String: String]())

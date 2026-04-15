@@ -57,7 +57,7 @@ public protocol MisttyServiceProtocol {
     height: Double,
     closeOnExit: Bool
   ) async throws -> Data
-  @MainActor func closePopup(popupId: Int) async throws -> Data
+  @MainActor func closePopup(id: Int) async throws -> Data
   @MainActor func togglePopup(sessionId: Int, name: String) async throws -> Data
   @MainActor func listPopups(sessionId: Int) async throws -> Data
 }
