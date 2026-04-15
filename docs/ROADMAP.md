@@ -230,10 +230,25 @@ Menu shortcuts (MisttyApp), pane navigation (PaneNavigationManager), and passthr
 - [x] Fix special key matching (arrow keys, escape) via keycode-to-name mapping
 
 #### 4a-3: Wire modal keybindings (next)
-Replace hardcoded keybindings in WindowModeManager, CopyModeState, and WhichKeyManager with store lookups. Multi-character trigger dispatch (gg, ge) for copy mode.
+Replace hardcoded keybindings in WindowModeManager and WhichKeyManager with store lookups. CopyModeState deferred: no terminal emulator (Ghostty, kitty, WezTerm) makes vim copy-mode keys configurable, and the 622-line state machine would need a full rewrite to become data-driven. Vim users expect vim keys.
 
 - Depends on: 4a-2
-- Key challenge: CopyModeState has stateful dispatch (g-prefix, f/F char-find) interleaved with key matching
+- Research: `/tmp/ai-research-phase4a3-modal-keybindings.md`
+- WindowModeManager: convert keyCode dispatch to action-name lookup from store
+- WhichKeyManager: read `whichKeyGroups` from store, map action names to closures
+
+#### 4a-4: Sidebar configuration
+- Sidebar position: configurable left or right (`sidebar.position = "left" | "right"`)
+- Sidebar tree depth: configurable whether tabs/panes show under sessions or sessions only (`sidebar.show-tree = true | false`)
+- `/spec` before implementation: layout implications of right-side sidebar, animation direction, divider placement
+
+#### 4a-5: Auto-hide UX polish
+Revisit auto-hide panel behavior with better animations and tuning. Study Zen Browser's sidebar auto-hide for inspiration: debounce timing, hover distance thresholds, entry/exit animation curves, edge activation feel.
+
+- Current: 150ms dwell, 300ms dismiss delay, 20px trigger zone, linear slide
+- Investigate: eased animations, velocity-aware dismissal, larger/smarter trigger zones, visual hint on hover approach
+- Depends on: 4a (config system, so tuning values are configurable)
+- Complexity: 1
 
 ### 4b. Live Config Reload
 Watch config file with `DispatchSource.makeFileSystemObjectSource`. Reload on change. Panel modes, fonts, colors, and keybindings apply immediately. Terminal-affecting options (scrollback size) apply to new panes only.
@@ -249,7 +264,7 @@ Extends 2c with scrollback persistence, running command restoration, and optiona
 - Complexity: 3 (built-in) or 2 (shpool/zmx integration)
 - Depends on: 2c
 
-**Done when:** config file controls keybindings and appearance, config changes apply without restart, advanced persistence restores scrollback and running commands.
+**Done when:** config file controls keybindings (global + window mode + which-key), sidebar position and tree depth are configurable, auto-hide panels feel polished, config changes apply without restart, advanced persistence restores scrollback and running commands.
 
 ---
 
