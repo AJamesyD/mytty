@@ -17,10 +17,6 @@ import MisttyShared
     try? JSONEncoder().encode(value)
   }
 
-  private func notImplemented() throws -> Data {
-    throw MisttyIPC.error(.operationFailed, "Not implemented")
-  }
-
   @MainActor private func sessionResponse(_ session: MisttySession) -> SessionResponse {
     SessionResponse(
       id: session.id,

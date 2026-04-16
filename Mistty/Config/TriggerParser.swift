@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 
 enum TriggerPrefix: String, Sendable, Equatable {
