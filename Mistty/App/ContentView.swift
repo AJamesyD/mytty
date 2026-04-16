@@ -13,6 +13,7 @@ struct ContentView: View {
   @State var windowModeManager = WindowModeManager()
   @State var copyModeManager = CopyModeManager()
   @State var whichKeyManager = WhichKeyManager()
+  @State var keySequenceManager = KeySequenceManager()
   @State var panelState = PanelState()
   @State var configWatcher = ConfigWatcher()
   @State var terminalCommands: TerminalCommands?

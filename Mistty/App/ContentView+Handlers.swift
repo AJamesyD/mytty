@@ -54,6 +54,9 @@ extension ContentView {
           windowModeManager.reloadConfig()
         }
       }
+      .onAppear {
+        activateKeySequenceManager()
+      }
   }
 
   var contentWithOverlays: some View {
@@ -77,7 +80,7 @@ extension ContentView {
           sessionManagerVM = nil
         }
       }
-      .paneNavigation(store: store, showingSessionManager: $showingSessionManager)
+      .paneNavigation(store: store, showingSessionManager: $showingSessionManager, sequenceManager: keySequenceManager)
   }
 
   func splitPane(direction: SplitDirection) {
@@ -393,6 +396,72 @@ extension ContentView {
           return
         }
       }
+    }
+  }
+
+  // MARK: - Key Sequence
+
+  func activateKeySequenceManager() {
+    let config = MisttyConfig.load().keybindingStore
+    keySequenceManager.activate(
+      trie: config.sequenceTrie,
+      timeout: config.sequenceTimeout,
+      dispatch: { [self] action in
+        dispatchSequenceAction(action)
+      },
+      isWindowModeActive: { [self] in
+        store.activeSession?.activeTab?.isWindowModeActive == true
+      },
+      isCopyModeActive: { [self] in
+        store.activeSession?.activeTab?.isCopyModeActive == true
+      },
+      surfaceForUnconsumed: { [self] in
+        store.activeSession?.activeTab?.activePane?.surfaceView.surface
+      }
+    )
+  }
+
+  func dispatchSequenceAction(_ action: String) {
+    guard let commands = terminalCommands else { return }
+    switch action {
+    case "new-tab": commands.newTab()
+    case "close-tab": commands.closeTab()
+    case "next-tab": commands.nextTab()
+    case "previous-tab": commands.prevTab()
+    case "next-session": commands.nextSession()
+    case "previous-session": commands.prevSession()
+    case "split-horizontal": commands.splitHorizontal()
+    case "split-vertical": commands.splitVertical()
+    case "close-pane": commands.closePane()
+    case "window-mode": commands.windowMode()
+    case "copy-mode": commands.copyMode()
+    case "which-key": commands.whichKey()
+    case "session-manager": commands.sessionManager()
+    case "toggle-sidebar": commands.toggleSidebar()
+    case "toggle-tab-bar": commands.toggleTabBar()
+    case "previous-prompt": commands.jumpToPreviousPrompt()
+    case "next-prompt": commands.jumpToNextPrompt()
+    case "navigate-left": handleNavigate(.left)
+    case "navigate-down": handleNavigate(.down)
+    case "navigate-up": handleNavigate(.up)
+    case "navigate-right": handleNavigate(.right)
+    default:
+      if action.hasPrefix("focus-tab-"),
+        let n = Int(action.dropFirst("focus-tab-".count))
+      {
+        commands.focusTab(n - 1)
+      }
+    }
+  }
+
+  func handleNavigate(_ direction: NavigationDirection) {
+    guard let tab = store.activeSession?.activeTab,
+      let pane = tab.activePane,
+      let target = tab.layout.adjacentPane(from: pane, direction: direction)
+    else { return }
+    tab.activePane = target
+    DispatchQueue.main.async {
+      target.surfaceView.window?.makeFirstResponder(target.surfaceView)
     }
   }
 

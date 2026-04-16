@@ -19,6 +19,7 @@ final class PaneNavigationManager {
   private var store: SessionStore?
   private var navigationBindings: [NavigationKey: NavigationBinding] = [:]
   private var passthroughProcesses: [String] = KeybindingStore.defaultPassthroughProcesses
+  var sequenceManager: KeySequenceManager?
   var isSessionManagerShowing: () -> Bool = { false }
 
   func activate(store: SessionStore) {
@@ -34,6 +35,10 @@ final class PaneNavigationManager {
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+    if let sequenceManager, sequenceManager.handleKeyDown(event) == nil {
+      return nil
+    }
+
     let key: String
     if let name = Self.keycodeNames[event.keyCode] {
       key = name
@@ -97,6 +102,8 @@ final class PaneNavigationManager {
   func reloadConfig() {
     guard isActive else { return }
     loadBindings()
+    let config = MisttyConfig.load().keybindingStore
+    sequenceManager?.reloadConfig(trie: config.sequenceTrie, timeout: config.sequenceTimeout)
   }
 
   func deactivate() {
@@ -177,12 +184,14 @@ final class PaneNavigationManager {
 struct PaneNavigationModifier: ViewModifier {
   let store: SessionStore
   @Binding var showingSessionManager: Bool
+  var sequenceManager: KeySequenceManager?
   @State private var manager = PaneNavigationManager()
 
   func body(content: Content) -> some View {
     content
       .onAppear {
         manager.isSessionManagerShowing = { showingSessionManager }
+        manager.sequenceManager = sequenceManager
         manager.activate(store: store)
       }
       .onDisappear {
@@ -195,7 +204,7 @@ struct PaneNavigationModifier: ViewModifier {
 }
 
 extension View {
-  func paneNavigation(store: SessionStore, showingSessionManager: Binding<Bool>) -> some View {
-    modifier(PaneNavigationModifier(store: store, showingSessionManager: showingSessionManager))
+  func paneNavigation(store: SessionStore, showingSessionManager: Binding<Bool>, sequenceManager: KeySequenceManager?) -> some View {
+    modifier(PaneNavigationModifier(store: store, showingSessionManager: showingSessionManager, sequenceManager: sequenceManager))
   }
 }
