@@ -276,7 +276,7 @@ final class TerminalSurfaceView: NSView {
     key.action = action
     key.keycode = UInt32(event.keyCode)
     key.mods = ghosttyMods(event.modifierFlags)
-    key.consumed_mods = ghostty_input_mods_e(rawValue: 0)
+    key.consumed_mods = ghosttyMods(event.modifierFlags.subtracting([.control, .command]))
     key.text = nil
     key.composing = false
 

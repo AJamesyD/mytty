@@ -65,7 +65,7 @@ final class PaneNavigationManager {
       keyEvent.action = GHOSTTY_ACTION_PRESS
       keyEvent.keycode = UInt32(event.keyCode)
       keyEvent.mods = ghosttyMods(event.modifierFlags)
-      keyEvent.consumed_mods = ghostty_input_mods_e(rawValue: 0)
+      keyEvent.consumed_mods = ghosttyMods(event.modifierFlags.subtracting([.control, .command]))
       keyEvent.text = nil
       keyEvent.composing = false
       keyEvent.unshifted_codepoint = 0
