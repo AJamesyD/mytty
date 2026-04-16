@@ -213,12 +213,20 @@ final class TerminalSurfaceView: NSView {
   override func keyDown(with event: NSEvent) {
     guard let surface else { return }
 
+    if KeyEventDebug.enabled {
+      KeyEventDebug.log("Surface.keyDown", event)
+    }
+
     let action: ghostty_input_action_e =
       event.isARepeat ? GHOSTTY_ACTION_REPEAT : GHOSTTY_ACTION_PRESS
 
     // Use interpretKeyEvents to get OS-resolved text (handles keyboard layouts, dead keys, IME)
     keyTextAccumulator = []
     interpretKeyEvents([event])
+
+    if KeyEventDebug.enabled {
+      KeyEventDebug.print("Surface.interpret: text=\(keyTextAccumulator)")
+    }
 
     if keyTextAccumulator.isEmpty {
       // No text produced (e.g. Escape, arrows, function keys) — send key event only

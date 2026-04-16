@@ -35,7 +35,11 @@ final class PaneNavigationManager {
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+    if KeyEventDebug.enabled {
+      KeyEventDebug.log("PaneNav.in", event)
+    }
     if let sequenceManager, sequenceManager.handleKeyDown(event) == nil {
+      if KeyEventDebug.enabled { KeyEventDebug.print("PaneNav: consumed by sequenceManager") }
       return nil
     }
 
