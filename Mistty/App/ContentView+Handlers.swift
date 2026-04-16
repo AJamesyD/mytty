@@ -185,6 +185,7 @@ extension ContentView {
         }
       }
       let keybindingStore = MisttyConfig.load().keybindingStore
+      guard let terminalCommands else { return }
       whichKeyManager.activate(
         bindings: WhichKeyManager.buildBindings(
           store: store, commands: terminalCommands,

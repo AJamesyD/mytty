@@ -15,13 +15,14 @@ struct ContentView: View {
   @State var whichKeyManager = WhichKeyManager()
   @State var panelState = PanelState()
   @State var configWatcher = ConfigWatcher()
+  @State var terminalCommands: TerminalCommands?
 
   var body: some View {
     contentWithNotifications
       .focusedSceneValue(\.terminalCommands, terminalCommands)
   }
 
-  var terminalCommands: TerminalCommands {
+  private func makeTerminalCommands() -> TerminalCommands {
     TerminalCommands(
       newTab: { store.activeSession?.addTab() },
       closeTab: { handleCloseTab() },
@@ -249,6 +250,7 @@ struct ContentView: View {
       value: panelState.isSidebarRevealed
     )
     .onAppear {
+      terminalCommands = makeTerminalCommands()
       applyConfig(MisttyConfig.load())
       configWatcher.start()
       windowModeManager.onNeedExitCopyMode = { copyModeManager.exit() }
