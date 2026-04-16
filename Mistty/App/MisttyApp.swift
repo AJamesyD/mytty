@@ -3,10 +3,13 @@ import SwiftUI
 
 @main
 struct MisttyApp: App {
+  @NSApplicationDelegateAdaptor(MisttyAppDelegate.self) var appDelegate
   @State private var store = SessionStore()
   @State private var ipcListener: IPCListener?
   @State private var persistenceService: PersistenceService?
   @State private var config = MisttyConfig.load()
+  @State private var dropdownController: DropdownController?
+  @State private var hotkeyMonitor: GlobalHotkeyMonitor?
   @FocusedValue(\.terminalCommands) var commands
 
   init() {
@@ -31,6 +34,12 @@ struct MisttyApp: App {
             let listener = IPCListener(service: service)
             listener.start()
             ipcListener = listener
+          }
+          if dropdownController == nil {
+            dropdownController = DropdownController(store: store)
+            let monitor = GlobalHotkeyMonitor()
+            monitor.enable()
+            hotkeyMonitor = monitor
           }
         }
     }
@@ -161,6 +170,11 @@ struct MisttyApp: App {
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "next-prompt", in: .global))
 
         Divider()
+
+        Button("Toggle Dropdown Terminal") {
+          dropdownController?.toggle()
+        }
+        .keyboardShortcut("`", modifiers: .control)
 
         ForEach(Array(config.popups.enumerated()), id: \.offset) { _, popup in
           if let key = parseShortcutKey(popup.shortcut),

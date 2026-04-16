@@ -81,17 +81,14 @@ A `GlobalHotkeyMonitor` class:
 - Attaches to `CFRunLoopGetMain()` on `.commonModes`
 - Checks incoming events against the hardcoded trigger
 - Returns `nil` to consume matched events
-- Only processes events when `!NSApp.isActive` (local events handled by the existing keybinding system)
+- Handles both active and inactive cases (Ctrl+\` is not a useful terminal input, safe to consume globally)
 - Retries tap creation on a timer if Accessibility permissions are not yet granted
 
 Owned by `MisttyApp` (or an `AppDelegate` if needed for lifecycle reasons).
 
-### 3.4 Local toggle path
+### 3.4 Menu item
 
-When Mistty is active, the CGEvent tap passes the event through (`!NSApp.isActive` guard). The menu item's keyboard shortcut (section 8.3) handles the active case. This gives two toggle paths:
-
-- **App inactive**: CGEvent tap catches Ctrl+\`, calls `controller.toggle()`
-- **App active**: menu item shortcut triggers the toggle action
+The menu item (section 8.3) displays the Ctrl+\` shortcut for discoverability. The CGEvent tap handles the actual key event in all cases. SwiftUI menu shortcuts with Ctrl-only modifiers are unreliable on macOS, so the menu item is display-only.
 
 ## 4. Controller
 

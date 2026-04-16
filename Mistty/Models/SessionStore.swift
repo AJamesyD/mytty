@@ -71,6 +71,35 @@ final class SessionStore {
     return session
   }
 
+  func createDetachedSession(name: String, directory: URL) -> MisttySession {
+    MisttySession(
+      id: generateSessionID(),
+      name: name,
+      directory: directory,
+      tabIDGenerator: { [weak self] in
+        guard let self else {
+          assertionFailure("SessionStore was deallocated while sessions still exist")
+          return 0
+        }
+        return self.generateTabID()
+      },
+      paneIDGenerator: { [weak self] in
+        guard let self else {
+          assertionFailure("SessionStore was deallocated while sessions still exist")
+          return 0
+        }
+        return self.generatePaneID()
+      },
+      popupIDGenerator: { [weak self] in
+        guard let self else {
+          assertionFailure("SessionStore was deallocated while sessions still exist")
+          return 0
+        }
+        return self.generatePopupID()
+      }
+    )
+  }
+
   func closeSession(_ session: MisttySession) {
     sessions.removeAll { $0.id == session.id }
     if activeSession?.id == session.id { activeSession = sessions.last }
