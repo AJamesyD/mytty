@@ -32,7 +32,9 @@ final class PersistenceService {
   func scheduleSave(delay: TimeInterval) {
     debounceTask?.cancel()
     let task = DispatchWorkItem { [weak self] in
-      self?.save()
+      MainActor.assumeIsolated {
+        self?.save()
+      }
     }
     debounceTask = task
     DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: task)
@@ -61,14 +63,18 @@ final class PersistenceService {
       forName: NSApplication.willTerminateNotification,
       object: nil, queue: .main
     ) { [weak self] _ in
-      self?.debounceTask?.cancel()
-      self?.save()
+      MainActor.assumeIsolated {
+        self?.debounceTask?.cancel()
+        self?.save()
+      }
     }
     NotificationCenter.default.addObserver(
       forName: NSApplication.didResignActiveNotification,
       object: nil, queue: .main
     ) { [weak self] _ in
-      self?.scheduleSave(delay: 2)
+      MainActor.assumeIsolated {
+        self?.scheduleSave(delay: 2)
+      }
     }
   }
 }
