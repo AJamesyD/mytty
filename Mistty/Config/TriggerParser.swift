@@ -18,11 +18,17 @@ struct KeyboardTrigger: Sendable, Equatable, Hashable {
   }
 }
 
+struct KeySequence: Sendable, Equatable, Hashable {
+  var prefix: TriggerPrefix?
+  var triggers: [KeyboardTrigger]
+}
+
 enum TriggerParseError: Error, Equatable {
   case empty
   case unknownModifier(String)
   case unknownPrefix(String)
   case reservedKeyword(String)
+  case sequenceTooDeep(Int)
 }
 
 struct TriggerParser {
@@ -86,6 +92,43 @@ struct TriggerParser {
     let keyParts = sortedMods + [trigger.key]
     let body = keyParts.joined(separator: "+")
     if let prefix = trigger.prefix {
+      return prefix.rawValue + ":" + body
+    }
+    return body
+  }
+
+  static func parseSequence(_ input: String) throws -> KeySequence {
+    let trimmed = input.trimmingCharacters(in: .whitespaces).lowercased()
+    guard !trimmed.isEmpty else { throw TriggerParseError.empty }
+    guard trimmed != "unbind" else { throw TriggerParseError.reservedKeyword("unbind") }
+
+    var remaining = trimmed
+    var prefix: TriggerPrefix?
+
+    if let colonIndex = remaining.firstIndex(of: ":") {
+      let prefixStr = String(remaining[remaining.startIndex..<colonIndex])
+      if let p = TriggerPrefix(rawValue: prefixStr) {
+        prefix = p
+        remaining = String(remaining[remaining.index(after: colonIndex)...])
+      }
+    }
+
+    let segments = remaining.split(separator: ">", omittingEmptySubsequences: false).map(String.init)
+    guard segments.count <= 5 else { throw TriggerParseError.sequenceTooDeep(segments.count) }
+
+    var triggers: [KeyboardTrigger] = []
+    for segment in segments {
+      let trimmedSegment = segment.trimmingCharacters(in: .whitespaces)
+      guard !trimmedSegment.isEmpty else { throw TriggerParseError.empty }
+      triggers.append(try parse(trimmedSegment))
+    }
+
+    return KeySequence(prefix: prefix, triggers: triggers)
+  }
+
+  static func normalizeSequence(_ seq: KeySequence) -> String {
+    let body = seq.triggers.map { normalize($0) }.joined(separator: ">")
+    if let prefix = seq.prefix {
       return prefix.rawValue + ":" + body
     }
     return body

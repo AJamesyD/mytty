@@ -140,12 +140,20 @@ struct MisttyConfig: Sendable, Equatable {
     var overrides: [BindingMode: [String: KeyboardTrigger]] = [:]
     var userWhichKey: [WhichKeyGroup]?
     var passthroughProcesses: [String]?
+    var sequenceOverrides: [String: KeySequence] = [:]
+    var sequenceTimeout: TimeInterval = 1.0
 
     if let reset = kbTable["_reset"]?.bool, reset {
       globalReset = true
     }
 
-    overrides[.global] = parseModeBindings(from: kbTable)
+    if let timeout = kbTable["sequence-timeout"]?.double {
+      sequenceTimeout = max(0.0, min(10.0, timeout))
+    }
+
+    let (globalSingle, globalSequences) = parseGlobalBindings(from: kbTable)
+    overrides[.global] = globalSingle
+    sequenceOverrides = globalSequences
 
     for (modeKey, mode) in [("window-mode", BindingMode.windowMode), ("copy-mode", .copyMode)] {
       if let modeTable = kbTable[modeKey]?.table {
@@ -181,7 +189,9 @@ struct MisttyConfig: Sendable, Equatable {
       userWhichKey: userWhichKey,
       resets: resets,
       globalReset: globalReset,
-      passthroughProcesses: passthroughProcesses
+      passthroughProcesses: passthroughProcesses,
+      sequenceOverrides: sequenceOverrides,
+      sequenceTimeout: sequenceTimeout
     )
   }
 
@@ -205,6 +215,43 @@ struct MisttyConfig: Sendable, Equatable {
       }
     }
     return result
+  }
+
+  private static func parseGlobalBindings(
+    from table: TOMLTable
+  ) -> ([String: KeyboardTrigger], [String: KeySequence]) {
+    var singles: [String: KeyboardTrigger] = [:]
+    var sequences: [String: KeySequence] = [:]
+    for key in table.keys {
+      if key.hasPrefix("_") { continue }
+      if table[key]?.table != nil { continue }
+      if key == "passthrough-processes" || key == "sequence-timeout" { continue }
+
+      let str: String
+      if let s = table[key]?.string {
+        str = s
+      } else if let arr = table[key]?.array, let first = arr.first?.string {
+        str = first
+      } else {
+        continue
+      }
+
+      if str == "unbind" {
+        singles[key] = KeyboardTrigger(prefix: nil, modifiers: [], key: "__unbind__")
+        continue
+      }
+      guard let seq = try? TriggerParser.parseSequence(str) else { continue }
+      if seq.triggers.count == 1 {
+        var trigger = seq.triggers[0]
+        if let prefix = seq.prefix {
+          trigger.prefix = prefix
+        }
+        singles[key] = trigger
+      } else {
+        sequences[key] = seq
+      }
+    }
+    return (singles, sequences)
   }
 
   static let configFileURL = FileManager.default

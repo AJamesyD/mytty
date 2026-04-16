@@ -197,4 +197,128 @@ final class KeybindingStoreTests: XCTestCase {
       KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "s")
     )
   }
+
+  func test_sequenceTrieConstruction() {
+    let sequences: [String: KeySequence] = [
+      "navigate-left": KeySequence(prefix: nil, triggers: [
+        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+        KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
+      ]),
+      "navigate-right": KeySequence(prefix: nil, triggers: [
+        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+        KeyboardTrigger(prefix: nil, modifiers: [], key: "l"),
+      ]),
+    ]
+    let store = KeybindingStore.build(
+      defaults: [:],
+      defaultWhichKey: [],
+      userOverrides: [:],
+      userWhichKey: nil,
+      resets: [],
+      globalReset: false,
+      passthroughProcesses: nil,
+      sequenceOverrides: sequences
+    )
+    let leader = KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a")
+    XCTAssertEqual(store.sequenceTrie.children.count, 1)
+    let leaderNode = store.sequenceTrie.children[leader]
+    XCTAssertNotNil(leaderNode)
+    XCTAssertEqual(leaderNode!.children.count, 2)
+    let hKey = KeyboardTrigger(prefix: nil, modifiers: [], key: "h")
+    let lKey = KeyboardTrigger(prefix: nil, modifiers: [], key: "l")
+    XCTAssertEqual(leaderNode!.children[hKey]?.action, "navigate-left")
+    XCTAssertEqual(leaderNode!.children[lKey]?.action, "navigate-right")
+  }
+
+  func test_leaderShadowsStandalone() {
+    let overrides: [BindingMode: [String: KeyboardTrigger]] = [
+      .global: [
+        "some-action": KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a")
+      ],
+    ]
+    let sequences: [String: KeySequence] = [
+      "navigate-left": KeySequence(prefix: nil, triggers: [
+        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+        KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
+      ]),
+    ]
+    let store = KeybindingStore.build(
+      defaults: [:],
+      defaultWhichKey: [],
+      userOverrides: overrides,
+      userWhichKey: nil,
+      resets: [],
+      globalReset: false,
+      passthroughProcesses: nil,
+      sequenceOverrides: sequences
+    )
+    XCTAssertNil(store.trigger(for: "some-action", in: .global))
+    XCTAssertTrue(store.warnings.contains { $0.contains("sequence leader") && $0.contains("some-action") })
+    let leader = KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a")
+    let hKey = KeyboardTrigger(prefix: nil, modifiers: [], key: "h")
+    XCTAssertNotNil(store.sequenceTrie.children[leader]?.children[hKey])
+  }
+
+  func test_sequenceTimeoutDefault() {
+    let store = KeybindingStore.build(
+      defaults: [:],
+      defaultWhichKey: [],
+      userOverrides: [:],
+      userWhichKey: nil,
+      resets: [],
+      globalReset: false,
+      passthroughProcesses: nil
+    )
+    XCTAssertEqual(store.sequenceTimeout, 1.0)
+  }
+
+  func test_sequenceTimeoutCustom() {
+    let store = KeybindingStore.build(
+      defaults: [:],
+      defaultWhichKey: [],
+      userOverrides: [:],
+      userWhichKey: nil,
+      resets: [],
+      globalReset: false,
+      passthroughProcesses: nil,
+      sequenceTimeout: 2.5
+    )
+    XCTAssertEqual(store.sequenceTimeout, 2.5)
+  }
+
+  func test_unconsumedSequence() {
+    let sequences: [String: KeySequence] = [
+      "navigate-left": KeySequence(prefix: .unconsumed, triggers: [
+        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+        KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
+      ]),
+    ]
+    let store = KeybindingStore.build(
+      defaults: [:],
+      defaultWhichKey: [],
+      userOverrides: [:],
+      userWhichKey: nil,
+      resets: [],
+      globalReset: false,
+      passthroughProcesses: nil,
+      sequenceOverrides: sequences
+    )
+    let leader = KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a")
+    let hKey = KeyboardTrigger(prefix: nil, modifiers: [], key: "h")
+    XCTAssertEqual(store.sequenceTrie.children[leader]?.children[hKey]?.isUnconsumed, true)
+  }
+
+  func test_emptySequenceOverrides() {
+    let store = KeybindingStore.build(
+      defaults: [:],
+      defaultWhichKey: [],
+      userOverrides: [:],
+      userWhichKey: nil,
+      resets: [],
+      globalReset: false,
+      passthroughProcesses: nil,
+      sequenceOverrides: [:]
+    )
+    XCTAssertTrue(store.sequenceTrie.children.isEmpty)
+  }
 }

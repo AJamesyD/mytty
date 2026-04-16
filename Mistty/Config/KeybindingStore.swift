@@ -17,11 +17,19 @@ struct WhichKeyGroup: Sendable, Equatable {
   var bindings: [WhichKeyNode]
 }
 
+struct SequenceTrieNode: Sendable, Equatable {
+  var children: [KeyboardTrigger: SequenceTrieNode] = [:]
+  var action: String?
+  var isUnconsumed: Bool = false
+}
+
 struct KeybindingStore: Sendable, Equatable {
   private(set) var bindings: [BindingMode: [String: KeyboardTrigger]] = [:]
   private(set) var whichKeyGroups: [WhichKeyGroup] = []
   private(set) var passthroughProcesses: [String]
   private(set) var warnings: [String] = []
+  private(set) var sequenceTrie: SequenceTrieNode = SequenceTrieNode()
+  private(set) var sequenceTimeout: TimeInterval = 1.0
 
   static let defaultPassthroughProcesses = ["nvim", "neovim", "vim", "helix", "lazygit"]
 
@@ -133,12 +141,16 @@ struct KeybindingStore: Sendable, Equatable {
     bindings: [BindingMode: [String: KeyboardTrigger]] = [:],
     whichKeyGroups: [WhichKeyGroup] = [],
     passthroughProcesses: [String] = defaultPassthroughProcesses,
-    warnings: [String] = []
+    warnings: [String] = [],
+    sequenceTrie: SequenceTrieNode = SequenceTrieNode(),
+    sequenceTimeout: TimeInterval = 1.0
   ) {
     self.bindings = bindings
     self.whichKeyGroups = whichKeyGroups
     self.passthroughProcesses = passthroughProcesses
     self.warnings = warnings
+    self.sequenceTrie = sequenceTrie
+    self.sequenceTimeout = sequenceTimeout
   }
 
   func trigger(for action: String, in mode: BindingMode) -> KeyboardTrigger? {
@@ -208,7 +220,9 @@ struct KeybindingStore: Sendable, Equatable {
     userWhichKey: [WhichKeyGroup]?,
     resets: Set<BindingMode>,
     globalReset: Bool,
-    passthroughProcesses: [String]?
+    passthroughProcesses: [String]?,
+    sequenceOverrides: [String: KeySequence] = [:],
+    sequenceTimeout: TimeInterval = 1.0
   ) -> KeybindingStore {
     let merged = merge(
       defaults: defaults,
@@ -216,12 +230,66 @@ struct KeybindingStore: Sendable, Equatable {
       resets: resets,
       globalReset: globalReset
     )
-    let warnings = detectConflicts(bindings: merged)
+    var warnings = detectConflicts(bindings: merged)
+    var globalBindings = merged[.global] ?? [:]
+    let trie = buildSequenceTrie(
+      sequences: sequenceOverrides,
+      flatBindings: &globalBindings,
+      warnings: &warnings
+    )
+    var finalMerged = merged
+    finalMerged[.global] = globalBindings
     return KeybindingStore(
-      bindings: merged,
+      bindings: finalMerged,
       whichKeyGroups: userWhichKey ?? defaultWhichKey,
       passthroughProcesses: passthroughProcesses ?? defaultPassthroughProcesses,
-      warnings: warnings
+      warnings: warnings,
+      sequenceTrie: trie,
+      sequenceTimeout: sequenceTimeout
     )
+  }
+
+  private static func buildSequenceTrie(
+    sequences: [String: KeySequence],
+    flatBindings: inout [String: KeyboardTrigger],
+    warnings: inout [String]
+  ) -> SequenceTrieNode {
+    var root = SequenceTrieNode()
+    for (action, seq) in sequences.sorted(by: { $0.key < $1.key }) {
+      guard seq.triggers.count > 1 else { continue }
+      guard seq.triggers.count <= 5 else {
+        warnings.append("Sequence for '\(action)' exceeds max depth of 5, skipping")
+        continue
+      }
+      insertIntoTrie(&root, triggers: seq.triggers, action: action, isUnconsumed: seq.prefix == .unconsumed)
+    }
+    for leaderTrigger in root.children.keys {
+      for (action, trigger) in flatBindings where trigger == leaderTrigger {
+        let triggerStr = TriggerParser.normalize(trigger)
+        warnings.append(
+          "'\(triggerStr)' is a sequence leader and also bound to '\(action)'; the standalone binding is unreachable"
+        )
+        flatBindings.removeValue(forKey: action)
+      }
+    }
+    return root
+  }
+
+  private static func insertIntoTrie(
+    _ node: inout SequenceTrieNode,
+    triggers: [KeyboardTrigger],
+    action: String,
+    isUnconsumed: Bool
+  ) {
+    guard let first = triggers.first else { return }
+    if node.children[first] == nil {
+      node.children[first] = SequenceTrieNode()
+    }
+    if triggers.count == 1 {
+      node.children[first]!.action = action
+      node.children[first]!.isUnconsumed = isUnconsumed
+    } else {
+      insertIntoTrie(&node.children[first]!, triggers: Array(triggers.dropFirst()), action: action, isUnconsumed: isUnconsumed)
+    }
   }
 }
