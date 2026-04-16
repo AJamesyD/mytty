@@ -311,6 +311,31 @@ Research: /tmp/ai-research-autohide-ux-prior-art.md
 - [ ] `/refactor` **API stability review**: review socket API method signatures and config file format for breaking changes before building features on top of them. Socket API reviewed 2026-04-15: `/tmp/ai-review-api-stability.md`. Config format review deferred to Phase 4a.
 - [x] `/cleanup` **Dead code sweep**: codebase is clean. Removed 1 dead function (`notImplemented` in IPCService) and 2 redundant imports. Systematic scan found no other dead code.
 
+### 4f. Keybinding System Upgrade
+Bring keybinding configurability to Ghostty parity, then exceed it. Current system only supports single key combos with `unconsumed:` prefix.
+
+**4f-1. Key sequences** (priority: high, blocks daily use)
+Parse `ctrl+a>h` syntax in TriggerParser. Add sequence state machine to PaneNavigationManager and WhichKeyManager. Timeout after 1s (configurable). This alone unblocks tmux-style `ctrl+a>h/j/k/l` navigation.
+- Complexity: 2
+
+**4f-2. Global hotkeys** (priority: high, needed for 5a)
+System-wide hotkey registration via `CGEvent` tap or `NSEvent.addGlobalMonitorForEvents`. Requires accessibility permissions. Needed for dropdown terminal (5a), though 5a can ship with a hardcoded hotkey first.
+- Complexity: 2
+
+**4f-3. Key tables and modal bindings** (priority: medium)
+Named binding sets activated/deactivated at runtime. Generalizes which-key into a single mechanism; copy mode adopts key tables for top-level dispatch but retains its internal state machine. `performable:` prefix (only consume if action can execute). `all:` prefix (broadcast to all surfaces). Chained actions.
+- Complexity: 3
+- Ghostty features: `activate_key_table:<name>`, one-shot mode, `performable:`, `all:`, chained actions, `keybind=clear`
+
+**4f-4. Beyond Ghostty** (stretch, no timeline)
+Ideas for future consideration, not planned work:
+- Conditional bindings (bind differently based on running process, pane count, or mode)
+- tmux-style `bind-key -r` (repeatable prefix within a timeout)
+- Zellij-style named modes with visual indicators
+- User-defined key tables loadable from separate files
+
+Current gap: `ctrl+a>h/j/k/l` navigation (Ghostty default) doesn't work in Mistty.
+
 ## Phase 5: Differentiators
 
 ### Essential
@@ -456,16 +481,22 @@ Current:
   Phase 4e (auto-hide UX polish) — next
 
 After Phase 4:
-  ──> cleanup gate (integration tests, API stability, dead code)
-    ──> Phase 5 Essential (dropdown, hints, floating panes)
-      ──> VoiceOver audit gate
-        ──> Phase 5 Polish (Ghostty compat, layouts, palette, session manager, notifications)
-        ──> Phase 6 (moonshots)
+  ──> cleanup gate (integration tests, API stability) [non-blocking for Phase 5]
+  ──> 4f-1 (key sequences) ──> 4f-3 (key tables)
+  ──> Phase 5 Essential:
+      5a (dropdown, hardcoded hotkey first) ──> 4f-2 adds configurable global hotkey
+      5b (hints mode) pairs with 4f-3 for one-shot key table
+      5c (floating panes) no keybinding dependency
+    ──> VoiceOver audit gate
+      ──> Phase 5 Polish (Ghostty compat, layouts, palette, session manager, notifications)
+      ──> Phase 6 (moonshots)
 
 Late dependencies:
   2a ──> 6b (block-based output)
   3a ──> 6d (automation API)
   4a ──> 5d (Ghostty compat), 5e (layouts)
+  4f-3 ──> 5b (hints mode uses one-shot key table for label selection)
+  4f-2 ──> 5a configurable global hotkey (5a can ship with hardcoded hotkey first)
   2c ──> 5e (layouts), 4c (advanced persistence)
   4a ──> 4b (live reload)
   5b (hints) ──> 6c (inline previews)
