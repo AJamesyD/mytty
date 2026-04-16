@@ -167,6 +167,7 @@ final class KeySequenceManager {
     return ghostty_input_mods_e(rawValue: raw)
   }
 
+  // macOS virtual keycodes for modifier-only keys (Cmd, Shift, Caps, Alt, Ctrl, Fn)
   private static let modifierKeycodes: Set<UInt16> = [54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
 
   private static let keycodeNames: [UInt16: String] = [

@@ -1,8 +1,8 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Last updated: 2026-04-15
-Iteration: 21
+Last updated: 2026-04-16
+Iteration: 22
 
 ## Working Agreements
 
@@ -317,6 +317,33 @@ Bring keybinding configurability to Ghostty parity, then exceed it. Current syst
 **4f-1. Key sequences** (priority: high, blocks daily use)
 Parse `ctrl+a>h` syntax in TriggerParser. Add sequence state machine to PaneNavigationManager and WhichKeyManager. Timeout after 1s (configurable). This alone unblocks tmux-style `ctrl+a>h/j/k/l` navigation.
 - Complexity: 2
+- Spec: `docs/specs/phase4f1-key-sequences.md`
+- Research: `/tmp/ai-research-key-sequences.md`
+
+#### 4f-1a: Parsing and storage ✅
+`KeySequence` type, `TriggerParser.parseSequence()`, `SequenceTrieNode` trie in `KeybindingStore.build()`, leader-shadows-standalone detection, `sequence-timeout` config key.
+- `8015118` feat(config): add key sequence parsing and trie storage
+
+#### 4f-1b: State machine and dispatch ✅
+`KeySequenceManager` with idle/pending state machine, timeout, escape cancel, modifier-only ignore, unconsumed check on final key. Wired into `PaneNavigationManager.handleKeyDown` (called first, before navigation). Action dispatch via `dispatchSequenceAction` in `ContentView+Handlers`.
+- `a01f2d7` feat(keys): add key sequence state machine and dispatch
+
+#### 4f-1c: Visual feedback
+`SequenceIndicatorView` overlay showing pending leader keys. Which-key integration (`showContinuations` after 500ms during sequences).
+- Not started.
+
+#### Bug: key interception architecture (discovered during 4f-1)
+Investigation of a `:` key not reaching neovim revealed a structural problem: Mistty uses five independent NSEvent keyDown monitors between AppKit and the terminal surface. No other terminal emulator does this. Ghostty, Kitty, Alacritty, and WezTerm all check bindings at a single point after the key reaches the terminal layer, not before.
+
+Research: `/tmp/ai-research-terminal-key-handling.md`
+
+The right fix is to stop intercepting keyDown events with NSEvent monitors and instead let every key reach `TerminalSurfaceView.keyDown`, then use `ghostty_surface_key_is_binding()` (already available) to decide whether to execute a Mistty action. This eliminates the entire class of "monitor eats a key it shouldn't" bugs.
+
+This is a significant architecture rework that should happen before 4f-1c (visual feedback) and before 4f-3 (key tables). Adding more monitors makes the problem worse. Options:
+1. **Incremental**: consolidate the five monitors into one, with an explicit dispatch chain. Lower risk, partial fix.
+2. **Full rework**: move binding dispatch into the surface keyDown path (Ghostty model). Eliminates the bug class entirely but touches every manager.
+
+Decision needed before continuing 4f-1c.
 
 **4f-2. Global hotkeys** (priority: high, needed for 5a)
 System-wide hotkey registration via `CGEvent` tap or `NSEvent.addGlobalMonitorForEvents`. Requires accessibility permissions. Needed for dropdown terminal (5a), though 5a can ship with a hardcoded hotkey first.
@@ -334,7 +361,7 @@ Ideas for future consideration, not planned work:
 - Zellij-style named modes with visual indicators
 - User-defined key tables loadable from separate files
 
-Current gap: `ctrl+a>h/j/k/l` navigation (Ghostty default) doesn't work in Mistty.
+Current gap: key interception architecture (see bug above). `ctrl+a>h/j/k/l` parsing and dispatch work (4f-1a/1b) but the monitor-based architecture may cause key delivery issues.
 
 ## Phase 5: Differentiators
 
@@ -344,9 +371,17 @@ Current gap: `ctrl+a>h/j/k/l` navigation (Ghostty default) doesn't work in Mistt
 Global hotkey summons a dropdown terminal (NSPanel). Also support floating terminal windows that overlay other apps.
 
 - Complexity: 3
-- `/spec` before implementation: NSPanel, global hotkey, animation, multi-monitor behavior, interaction with auto-hide panels. Also design float variant (persistent overlay window, not just dropdown).
+- Spec: `docs/specs/phase5a-dropdown-terminal.md`
 - Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty QuickTerminal (study for edge cases: screen switching, activation policy, window level, animation timing).
 - Does not depend on other Phase 5 items. Hardcoded hotkey works without config, like Phase 1a keybindings.
+
+#### 5a-1: Core dropdown ✅
+NSPanel-based dropdown terminal with Ctrl+` hotkey, slide animation, auto-hide on focus loss, persistent session across toggles.
+- `e9d31cf` feat(dropdown): add quake-style dropdown terminal
+
+#### 5a-2: Dropdown polish
+Configurable position (top/bottom/left/right), size (percentage of screen), per-monitor behavior.
+- Not started.
 
 ### 5b. Hints Mode
 Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type the label to act (open, copy, insert). Keyboard-driven alternative to clicking links.
@@ -476,9 +511,16 @@ Completed:
   Phase 4a-3 (wire modal keybindings) ✓
   Phase 4b (live config reload) ✓
   Phase 4d (sidebar config) ✓
+  Phase 4e (auto-hide UX polish) ✓
+  Phase 5a-1 (dropdown terminal) ✓
 
 Current:
-  Phase 4e (auto-hide UX polish) — next
+  Phase 4e (auto-hide UX polish) — done
+  Phase 4f-1a (key sequence parsing) ✓
+  Phase 4f-1b (key sequence state machine) ✓
+  Phase 5a-1 (dropdown terminal) ✓
+  Phase 4f-1c (visual feedback) — blocked on architecture decision
+  Key interception architecture rework — decision needed
 
 After Phase 4:
   ──> cleanup gate (integration tests, API stability) [non-blocking for Phase 5]
@@ -529,6 +571,12 @@ Late dependencies:
 - OSC 133 C (command output start) as apprt action: would enable explicit running-state detection in sidebar (Phase 2b D1 revisit condition)
 - Native git branch OSC sequence: would replace event-driven git rev-parse (Phase 2b D4 revisit condition)
 
+## Findings (iteration 22)
+
+- Mistty's five independent NSEvent keyDown monitors are architecturally unique among terminal emulators. Ghostty, Kitty, Alacritty, and WezTerm all check bindings at a single point after the key reaches the terminal layer. Ghostty specifically does NOT use NSEvent keyDown monitors; it lets every key reach the surface view and uses `ghostty_surface_key_is_binding()` in the Zig core. Research: `/tmp/ai-research-terminal-key-handling.md`.
+- `KeyEventDebug` utility added (enabled via `MISTTY_KEY_DEBUG=1` env var) to trace key events through the monitor pipeline and surface keyDown. Temporary, for diagnosing the `:` key bug.
+- Tests using synthetic NSEvents mask real keyboard behavior. The `8aa64ef` fix (ctrl+h) documented this gap but the lesson wasn't generalized. Shifted printable characters (`:`, `A`, `!`) are an untested category.
+
 ## Findings (iteration 16)
 
 - `readClipboardCallback` in `GhosttyApp.swift` is a stub that never completes the clipboard request. Cmd+V (paste) does not work. Cmd+C (copy) works because `writeClipboardCallback` is complete. Fix pattern exists in `vendor/ghostty/macos/Sources/Ghostty/Ghostty.App.swift`.
@@ -570,3 +618,8 @@ Late dependencies:
 - /tmp/ai-research-macos-native-divergence-framework.md (native vs custom decision framework, 2026-04-15)
 - /tmp/ai-research-macos-native-ui-tradeoffs.md (terminal UI native patterns analysis, 2026-04-15)
 - /tmp/ai-research-macos-native-apis-terminals.md (macOS native APIs for terminals, 2026-04-15)
+- /tmp/ai-research-terminal-key-handling.md (key interception architecture prior art, 2026-04-16)
+- /tmp/ai-research-key-sequences.md (key sequence design research, 2026-04-16)
+- /tmp/ai-research-kitty-keybindings.md (Kitty keybinding architecture, 2026-04-16)
+- /tmp/ai-research-alacritty-wezterm-keybindings.md (Alacritty/WezTerm keybinding architecture, 2026-04-16)
+- /tmp/ai-research-ghostty-keybinding-interception.md (Ghostty key interception architecture, 2026-04-16)

@@ -257,8 +257,8 @@ struct KeybindingStore: Sendable, Equatable {
     var root = SequenceTrieNode()
     for (action, seq) in sequences.sorted(by: { $0.key < $1.key }) {
       guard seq.triggers.count > 1 else { continue }
-      guard seq.triggers.count <= 5 else {
-        warnings.append("Sequence for '\(action)' exceeds max depth of 5, skipping")
+      guard seq.triggers.count <= KeySequence.maxDepth else {
+        warnings.append("Sequence for '\(action)' exceeds max depth of \(KeySequence.maxDepth), skipping")
         continue
       }
       insertIntoTrie(&root, triggers: seq.triggers, action: action, isUnconsumed: seq.prefix == .unconsumed)
