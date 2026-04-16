@@ -306,6 +306,7 @@ Research: /tmp/ai-research-autohide-ux-prior-art.md
 ---
 
 ### Cleanup gate (before Phase 5)
+- [ ] **Scene body perf fix**: cache MisttyConfig in MisttyApp @State (eliminates 26x disk reads per focus change) and stabilize TerminalCommands identity (reduces unnecessary scene re-evaluations). Plan: /tmp/ai-plan-config-perf-fix.md. Research: /tmp/ai-research-mistty-perf-audit.md.
 - [ ] `/cleanup` **Integration test coverage**: ensure socket API (3a) and config system (4a) have tests covering the interfaces that Phase 5 features build on. 5d and 5e depend directly on these.
 - [ ] `/refactor` **API stability review**: review socket API method signatures and config file format for breaking changes before building features on top of them. Socket API reviewed 2026-04-15: `/tmp/ai-review-api-stability.md`. Config format review deferred to Phase 4a.
 - [ ] `/cleanup` **Dead code sweep**: remove any unused code, stale feature flags, or temporary workarounds accumulated during Phases 2-4.
