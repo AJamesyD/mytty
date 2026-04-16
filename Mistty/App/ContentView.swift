@@ -123,6 +123,12 @@ struct ContentView: View {
               TabBarView(session: session)
                 .background(.ultraThinMaterial)
                 .shadow(color: MisttyTheme.panelOverlayShadow, radius: 0, x: 0, y: 1)
+                .onHover { hovering in
+                  panelState.isTabBarHovered = hovering
+                  if !hovering && !panelState.isTabBarTempPinned {
+                    panelState.isTabBarRevealed = false
+                  }
+                }
               Spacer()
             }
             .transition(reduceMotion ? .opacity : .move(edge: .top))
@@ -141,6 +147,7 @@ struct ContentView: View {
                 },
                 onDismiss: {
                   guard !panelState.isTabBarTempPinned else { return }
+                  guard !panelState.isTabBarHovered else { return }
                   panelState.isTabBarRevealed = false
                 }
               )
@@ -206,6 +213,12 @@ struct ContentView: View {
           sidebarPanel
             .background(.ultraThinMaterial)
             .shadow(color: MisttyTheme.panelOverlayShadow, radius: 2, x: isRight ? -1 : 1, y: 0)
+            .onHover { hovering in
+              panelState.isSidebarHovered = hovering
+              if !hovering && !panelState.isSidebarTempPinned {
+                panelState.isSidebarRevealed = false
+              }
+            }
             .transition(reduceMotion ? .opacity : .move(edge: isRight ? .trailing : .leading))
         }
 
@@ -221,6 +234,7 @@ struct ContentView: View {
               },
               onDismiss: {
                 guard !panelState.isSidebarTempPinned else { return }
+                guard !panelState.isSidebarHovered else { return }
                 panelState.isSidebarRevealed = false
               }
             )

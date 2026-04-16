@@ -38,6 +38,8 @@ final class PanelState {
   var isTabBarRevealed: Bool = false
   var isSidebarTempPinned: Bool = false
   var isTabBarTempPinned: Bool = false
+  var isSidebarHovered: Bool = false
+  var isTabBarHovered: Bool = false
 
   var shouldShowSidebar: Bool {
     switch sidebarMode {
