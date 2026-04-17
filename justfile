@@ -184,6 +184,14 @@ check: fmt-check lint test
 ci: fmt-check lint-strict build test
     typos
 
+# Generate changelog for a release
+changelog TAG:
+    git-cliff --latest --tag {{TAG}}
+
+# Create DMG from the release .app bundle
+dmg TAG: bundle-release
+    create-dmg --volname "Mistty" --window-size 600 400 --icon "Mistty.app" 200 200 --app-drop-link 400 200 "build/Mistty-{{TAG}}-arm64.dmg" build/Mistty.app
+
 # Show project info
 info:
     @echo "Mistty - macOS terminal emulator"

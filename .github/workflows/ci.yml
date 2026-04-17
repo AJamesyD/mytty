@@ -12,6 +12,7 @@ on:
       - "docs/**"
       - "**.md"
       - "LICENSE"
+  workflow_call:
 
 permissions:
   contents: read

@@ -34,6 +34,8 @@
           pkgs.zls
           pkgs.swiftlint
           pkgs.typos
+          pkgs.git-cliff
+          pkgs.create-dmg
         ];
 
         shellHook = ''

@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  release:
+    needs: ci
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Ghostty submodule revision
+        id: ghostty
+        run: echo "rev=$(git -C vendor/ghostty rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: DeterminateSystems/nix-installer-action@v22
+
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
+
+      - name: Cache Zig build
+        uses: actions/cache@v4
+        with:
+          path: |
+            vendor/ghostty/zig-out
+            vendor/ghostty/.zig-cache
+            ~/.cache/zig
+          key: zig-${{ runner.os }}-${{ steps.ghostty.outputs.rev }}
+          restore-keys: |
+            zig-${{ runner.os }}-
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-
+
+      - name: Build and bundle
+        run: nix develop --command just bundle-release
+
+      - name: Create DMG
+        run: nix develop --command just dmg ${{ github.ref_name }}
+
+      - name: Generate changelog
+        run: nix develop --command just changelog ${{ github.ref_name }} > RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          body_path: RELEASE_NOTES.md
+          files: build/Mistty-${{ github.ref_name }}-arm64.dmg
