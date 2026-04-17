@@ -1,9 +1,9 @@
-# Mistty
+# Mytty
 
 macOS terminal emulator built on libghostty with native session management.
 
 Design tenets and architecture: `docs/DESIGN.md`
-Rules and conventions: `.kiro/steering/mistty.md`, `.kiro/steering/swift.md`
+Rules and conventions: `.kiro/steering/mytty.md`, `.kiro/steering/swift.md`
 
 ## Build & Test
 
@@ -23,19 +23,19 @@ just setup              # First-time: init git submodules
 
 ## Repo Structure
 
-Three targets: Mistty (app), MisttyCLI (CLI tool), MisttyShared (shared IPC types).
+Three targets: Mytty (app), MyttyCLI (CLI tool), MyttyShared (shared IPC types).
 
 ```
-Mistty/
+Mytty/
   App/              Entry point, content view, handlers, managers
   Models/           Session/Tab/Pane model classes, layout engine
   Views/            SwiftUI views by category
   Services/         IPC, persistence, fuzzy matching, zoxide
   Config/           TOML config parser
   Resources/        Info.plist, assets
-MisttyShared/       IPC protocol, response models, constants
-MisttyCLI/          CLI commands and IPC client
-MisttyTests/        Unit tests (App/, Models/, Services/, Config/, Views/)
+MyttyShared/       IPC protocol, response models, constants
+MyttyCLI/          CLI commands and IPC client
+MyttyTests/        Unit tests (App/, Models/, Services/, Config/, Views/)
 vendor/ghostty/     Ghostty git submodule
 docs/               DESIGN.md, ROADMAP.md, plans/, research/, specs/
 ```
@@ -44,14 +44,14 @@ docs/               DESIGN.md, ROADMAP.md, plans/, research/, specs/
 
 | File | Role |
 |------|------|
-| `Mistty/App/GhosttyApp.swift` | C callbacks bridging libghostty to Swift |
-| `Mistty/App/ContentView+Handlers.swift` | Notification handlers for terminal events |
-| `MisttyShared/MisttyServiceProtocol.swift` | IPC contract between app and CLI |
-| `Mistty/App/MisttyTheme.swift` | Single source for all color tokens |
+| `Mytty/App/GhosttyApp.swift` | C callbacks bridging libghostty to Swift |
+| `Mytty/App/ContentView+Handlers.swift` | Notification handlers for terminal events |
+| `MyttyShared/MyttyServiceProtocol.swift` | IPC contract between app and CLI |
+| `Mytty/App/MyttyTheme.swift` | Single source for all color tokens |
 
 ## Gotchas
 
 - `vendor/ghostty/` is a git submodule. Do not modify it.
 - libghostty requires Zig from the nix devshell (`just dev`). System Zig will not work.
-- `MisttyCLI/XPCClient.swift` is misnamed. It is a Unix socket client, not XPC.
+- `MyttyCLI/XPCClient.swift` is misnamed. It is a Unix socket client, not XPC.
 - Release builds depend on `just build-libghostty`, which needs `nix develop`.

@@ -1,4 +1,4 @@
-# SwiftUI UI Primitives for a macOS Terminal Emulator (Mistty)
+# SwiftUI UI Primitives for a macOS Terminal Emulator (Mytty)
 
 Target: macOS 14+ (Sonoma), built on libghostty.
 
@@ -21,7 +21,7 @@ and detail.
 - On macOS, columns are always shown side-by-side (no push navigation).
 
 **Terminal relevance:** A session list sidebar + terminal detail pane is a natural fit.
-For Mistty, the sidebar could list sessions/workspaces while the detail hosts the
+For Mytty, the sidebar could list sessions/workspaces while the detail hosts the
 terminal split tree.
 
 ### TabView
@@ -339,7 +339,7 @@ serialize to Data.
 
 ```swift
 @main
-struct MisttyApp: App {
+struct MyttyApp: App {
     @State private var appState = AppState()
 
     var body: some Scene {
@@ -369,7 +369,7 @@ NavigationSplitView or TabView inside for multi-pane settings.
 ### MenuBarExtra
 
 ```swift
-MenuBarExtra("Mistty", systemImage: "terminal") {
+MenuBarExtra("Mytty", systemImage: "terminal") {
     // Menu items or window content
 }
 .menuBarExtraStyle(.window)  // or .menu (default)
@@ -402,7 +402,7 @@ Deprecated as of 2024. No new Macs ship with Touch Bar. Not worth investing in.
 ### Ghostty (terminal emulator, libghostty)
 
 Ghostty's macOS frontend (github.com/ghostty-org/ghostty) is the closest reference for
-Mistty. Its source structure under `macos/Sources/`:
+Mytty. Its source structure under `macos/Sources/`:
 
 - `Ghostty/`: Core types (Ghostty.App, Ghostty.Surface, Ghostty.Inspector,
   Ghostty.Action, GhosttyDelegate, NSEvent+Extension)
@@ -468,7 +468,7 @@ NSView inside SwiftUI with proper focus and keyboard handling.
 
 ---
 
-## Summary: Recommended Architecture for Mistty
+## Summary: Recommended Architecture for Mytty
 
 The terminal surface (libghostty's Metal renderer) must be an NSView, wrapped in
 `NSViewRepresentable` for embedding in SwiftUI. This is non-negotiable for performance

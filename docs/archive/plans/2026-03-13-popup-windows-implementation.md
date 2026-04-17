@@ -4,7 +4,7 @@
 
 **Goal:** Add session-scoped popup terminal overlays that can be configured via config file, toggled via keyboard shortcuts, controlled via CLI, and managed in preferences.
 
-**Architecture:** Popups are `MisttyPane` instances owned by `MisttySession`, rendered as centered ZStack overlays in `ContentView`. Each popup has a `PopupDefinition` (from config) and a `PopupState` (live instance). Shortcuts are registered dynamically from config. XPC protocol is extended with popup methods.
+**Architecture:** Popups are `MyttyPane` instances owned by `MyttySession`, rendered as centered ZStack overlays in `ContentView`. Each popup has a `PopupDefinition` (from config) and a `PopupState` (live instance). Shortcuts are registered dynamically from config. XPC protocol is extended with popup methods.
 
 **Tech Stack:** Swift 6, SwiftUI, libghostty (GhosttyKit), TOMLKit, Swift Argument Parser, NSXPCConnection
 
@@ -13,13 +13,13 @@
 ### Task 1: PopupDefinition Model + Config Parsing
 
 **Files:**
-- Create: `Mistty/Models/PopupDefinition.swift`
-- Modify: `Mistty/Config/MisttyConfig.swift`
-- Modify: `MisttyTests/Config/MisttyConfigTests.swift`
+- Create: `Mytty/Models/PopupDefinition.swift`
+- Modify: `Mytty/Config/MyttyConfig.swift`
+- Modify: `MyttyTests/Config/MyttyConfigTests.swift`
 
 **Step 1: Write failing tests for popup config parsing**
 
-Add to `MisttyTests/Config/MisttyConfigTests.swift`:
+Add to `MyttyTests/Config/MyttyConfigTests.swift`:
 
 ```swift
 func test_parsesPopupDefinitions() throws {
@@ -39,7 +39,7 @@ func test_parsesPopupDefinitions() throws {
         height = 0.9
         close_on_exit = false
         """
-    let config = try MisttyConfig.parse(toml)
+    let config = try MyttyConfig.parse(toml)
     XCTAssertEqual(config.popups.count, 2)
     XCTAssertEqual(config.popups[0].name, "lazygit")
     XCTAssertEqual(config.popups[0].command, "lazygit")
@@ -53,7 +53,7 @@ func test_parsesPopupDefinitions() throws {
 }
 
 func test_noPopupsReturnsEmptyArray() throws {
-    let config = try MisttyConfig.parse("")
+    let config = try MyttyConfig.parse("")
     XCTAssertEqual(config.popups.count, 0)
 }
 
@@ -63,7 +63,7 @@ func test_popupDefaultValues() throws {
         name = "test"
         command = "test"
         """
-    let config = try MisttyConfig.parse(toml)
+    let config = try MyttyConfig.parse(toml)
     XCTAssertEqual(config.popups[0].width, 0.8)
     XCTAssertEqual(config.popups[0].height, 0.8)
     XCTAssertEqual(config.popups[0].closeOnExit, true)
@@ -73,12 +73,12 @@ func test_popupDefaultValues() throws {
 
 **Step 2: Run tests to verify they fail**
 
-Run: `swift test --filter MisttyConfigTests 2>&1 | tail -20`
-Expected: FAIL — `popups` property doesn't exist on MisttyConfig
+Run: `swift test --filter MyttyConfigTests 2>&1 | tail -20`
+Expected: FAIL — `popups` property doesn't exist on MyttyConfig
 
 **Step 3: Create PopupDefinition model**
 
-Create `Mistty/Models/PopupDefinition.swift`:
+Create `Mytty/Models/PopupDefinition.swift`:
 
 ```swift
 import Foundation
@@ -102,9 +102,9 @@ struct PopupDefinition: Sendable, Equatable {
 }
 ```
 
-**Step 4: Add popup parsing to MisttyConfig**
+**Step 4: Add popup parsing to MyttyConfig**
 
-In `Mistty/Config/MisttyConfig.swift`:
+In `Mytty/Config/MyttyConfig.swift`:
 
 Add `var popups: [PopupDefinition] = []` property to the struct (after line 9).
 
@@ -144,13 +144,13 @@ for popup in popups {
 
 **Step 5: Run tests to verify they pass**
 
-Run: `swift test --filter MisttyConfigTests 2>&1 | tail -20`
+Run: `swift test --filter MyttyConfigTests 2>&1 | tail -20`
 Expected: PASS
 
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Models/PopupDefinition.swift Mistty/Config/MisttyConfig.swift MisttyTests/Config/MisttyConfigTests.swift
+git add Mytty/Models/PopupDefinition.swift Mytty/Config/MyttyConfig.swift MyttyTests/Config/MyttyConfigTests.swift
 git commit -m "feat: add PopupDefinition model and config parsing for [[popup]] entries"
 ```
 
@@ -159,13 +159,13 @@ git commit -m "feat: add PopupDefinition model and config parsing for [[popup]] 
 ### Task 2: PopupState Model + Session Integration
 
 **Files:**
-- Create: `Mistty/Models/PopupState.swift`
-- Modify: `Mistty/Models/MisttySession.swift`
-- Modify: `Mistty/Models/SessionStore.swift`
+- Create: `Mytty/Models/PopupState.swift`
+- Modify: `Mytty/Models/MyttySession.swift`
+- Modify: `Mytty/Models/SessionStore.swift`
 
 **Step 1: Create PopupState model**
 
-Create `Mistty/Models/PopupState.swift`:
+Create `Mytty/Models/PopupState.swift`:
 
 ```swift
 import Foundation
@@ -175,10 +175,10 @@ import Foundation
 final class PopupState: Identifiable {
     let id: Int
     let definition: PopupDefinition
-    let pane: MisttyPane
+    let pane: MyttyPane
     var isVisible: Bool
 
-    init(id: Int, definition: PopupDefinition, pane: MisttyPane, isVisible: Bool = true) {
+    init(id: Int, definition: PopupDefinition, pane: MyttyPane, isVisible: Bool = true) {
         self.id = id
         self.definition = definition
         self.pane = pane
@@ -189,7 +189,7 @@ final class PopupState: Identifiable {
 
 **Step 2: Add popup ID generator to SessionStore**
 
-In `Mistty/Models/SessionStore.swift`, add after `private var nextWindowId = 1` (line 18):
+In `Mytty/Models/SessionStore.swift`, add after `private var nextWindowId = 1` (line 18):
 
 ```swift
 private var nextPopupId = 1
@@ -205,7 +205,7 @@ private func generatePopupID() -> Int {
 }
 ```
 
-Pass a popup ID generator closure to sessions. In `createSession(...)` (line 40-64), add a `popupIDGenerator` parameter to the `MisttySession` init call:
+Pass a popup ID generator closure to sessions. In `createSession(...)` (line 40-64), add a `popupIDGenerator` parameter to the `MyttySession` init call:
 
 ```swift
 popupIDGenerator: { [weak self] in
@@ -217,9 +217,9 @@ popupIDGenerator: { [weak self] in
 }
 ```
 
-**Step 3: Add popup support to MisttySession**
+**Step 3: Add popup support to MyttySession**
 
-In `Mistty/Models/MisttySession.swift`, add properties after `var activeTab: MisttyTab?` (line 10):
+In `Mytty/Models/MyttySession.swift`, add properties after `var activeTab: MyttyTab?` (line 10):
 
 ```swift
 private(set) var popups: [PopupState] = []
@@ -263,7 +263,7 @@ func togglePopup(definition: PopupDefinition) {
 
     // Create new popup
     activePopup?.isVisible = false
-    let pane = MisttyPane(id: paneIDGenerator())
+    let pane = MyttyPane(id: paneIDGenerator())
     pane.directory = directory
     pane.command = definition.command
     let popup = PopupState(id: popupIDGenerator(), definition: definition, pane: pane)
@@ -284,10 +284,10 @@ func hideActivePopup() {
 
 **Step 4: Add popup lookup to SessionStore**
 
-In `Mistty/Models/SessionStore.swift`, add after `activePaneInfo()` (after line 127):
+In `Mytty/Models/SessionStore.swift`, add after `activePaneInfo()` (after line 127):
 
 ```swift
-func popup(byId id: Int) -> (session: MisttySession, popup: PopupState)? {
+func popup(byId id: Int) -> (session: MyttySession, popup: PopupState)? {
     for session in sessions {
         if let popup = session.popups.first(where: { $0.id == id }) {
             return (session, popup)
@@ -305,7 +305,7 @@ Expected: BUILD SUCCEEDED
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Models/PopupState.swift Mistty/Models/MisttySession.swift Mistty/Models/SessionStore.swift
+git add Mytty/Models/PopupState.swift Mytty/Models/MyttySession.swift Mytty/Models/SessionStore.swift
 git commit -m "feat: add PopupState model and session integration for popups"
 ```
 
@@ -314,11 +314,11 @@ git commit -m "feat: add PopupState model and session integration for popups"
 ### Task 3: Popup Overlay View
 
 **Files:**
-- Create: `Mistty/Views/Popup/PopupOverlayView.swift`
+- Create: `Mytty/Views/Popup/PopupOverlayView.swift`
 
 **Step 1: Create PopupOverlayView**
 
-Create `Mistty/Views/Popup/PopupOverlayView.swift`:
+Create `Mytty/Views/Popup/PopupOverlayView.swift`:
 
 ```swift
 import SwiftUI
@@ -390,7 +390,7 @@ Expected: BUILD SUCCEEDED
 **Step 3: Commit**
 
 ```bash
-git add Mistty/Views/Popup/PopupOverlayView.swift
+git add Mytty/Views/Popup/PopupOverlayView.swift
 git commit -m "feat: add PopupOverlayView with backdrop, header, and terminal surface"
 ```
 
@@ -399,12 +399,12 @@ git commit -m "feat: add PopupOverlayView with backdrop, header, and terminal su
 ### Task 4: ContentView Integration + Keyboard Handling
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
-- Modify: `Mistty/App/MisttyApp.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
 
 **Step 1: Add popup overlay to ContentView**
 
-In `Mistty/App/ContentView.swift`, add a `@State` property after the existing state vars (after line 14):
+In `Mytty/App/ContentView.swift`, add a `@State` property after the existing state vars (after line 14):
 
 ```swift
 @State private var popupMonitor: Any?
@@ -442,20 +442,20 @@ After the existing `.overlay` block for session manager (after line 101), add an
 
 **Step 2: Add popup toggle notification handler**
 
-In `Mistty/App/MisttyApp.swift`, add a new notification name after the existing ones (after line 150):
+In `Mytty/App/MyttyApp.swift`, add a new notification name after the existing ones (after line 150):
 
 ```swift
-static let misttyPopupToggle = Notification.Name("misttyPopupToggle")
+static let myttyPopupToggle = Notification.Name("myttyPopupToggle")
 ```
 
-In `Mistty/App/ContentView.swift`, add an `.onReceive` handler after the existing ones (before the closing `}` of the body, around line 196):
+In `Mytty/App/ContentView.swift`, add an `.onReceive` handler after the existing ones (before the closing `}` of the body, around line 196):
 
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .misttyPopupToggle)) { notification in
+.onReceive(NotificationCenter.default.publisher(for: .myttyPopupToggle)) { notification in
     guard let session = store.activeSession,
           let name = notification.userInfo?["name"] as? String
     else { return }
-    let config = MisttyConfig.load()
+    let config = MyttyConfig.load()
     guard let definition = config.popups.first(where: { $0.name == name }) else { return }
     session.togglePopup(definition: definition)
     // Focus the popup surface if it became visible
@@ -491,7 +491,7 @@ for session in store.sessions {
 
 **Step 4: Add Cmd+W handling for popups**
 
-In the existing `.onReceive(NotificationCenter.default.publisher(for: .misttyClosePane))` handler (lines 124-129), add popup check at the top:
+In the existing `.onReceive(NotificationCenter.default.publisher(for: .myttyClosePane))` handler (lines 124-129), add popup check at the top:
 
 ```swift
 // Close active popup if one is showing
@@ -519,18 +519,18 @@ private func returnFocusToActivePane() {
 }
 ```
 
-**Step 6: Register popup shortcuts in MisttyApp**
+**Step 6: Register popup shortcuts in MyttyApp**
 
-In `Mistty/App/MisttyApp.swift`, in the `.commands` block (after the "Rename Tab" button, around line 131), add dynamic popup shortcut buttons:
+In `Mytty/App/MyttyApp.swift`, in the `.commands` block (after the "Rename Tab" button, around line 131), add dynamic popup shortcut buttons:
 
 ```swift
 Divider()
 
-ForEach(Array(MisttyConfig.load().popups.enumerated()), id: \.offset) { _, popup in
+ForEach(Array(MyttyConfig.load().popups.enumerated()), id: \.offset) { _, popup in
     if let shortcut = popup.shortcut, let key = parseShortcutKey(shortcut), let modifiers = parseShortcutModifiers(shortcut) {
         Button("Toggle \(popup.name)") {
             NotificationCenter.default.post(
-                name: .misttyPopupToggle,
+                name: .myttyPopupToggle,
                 object: nil,
                 userInfo: ["name": popup.name]
             )
@@ -540,7 +540,7 @@ ForEach(Array(MisttyConfig.load().popups.enumerated()), id: \.offset) { _, popup
 }
 ```
 
-Add shortcut parsing helpers as private functions on MisttyApp:
+Add shortcut parsing helpers as private functions on MyttyApp:
 
 ```swift
 private func parseShortcutKey(_ shortcut: String) -> KeyEquivalent? {
@@ -573,7 +573,7 @@ Expected: BUILD SUCCEEDED
 **Step 8: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift Mistty/App/MisttyApp.swift
+git add Mytty/App/ContentView.swift Mytty/App/MyttyApp.swift
 git commit -m "feat: integrate popup overlay in ContentView with keyboard shortcuts and lifecycle"
 ```
 
@@ -582,13 +582,13 @@ git commit -m "feat: integrate popup overlay in ContentView with keyboard shortc
 ### Task 5: XPC Protocol + Response + Service Implementation
 
 **Files:**
-- Modify: `MisttyShared/MisttyServiceProtocol.swift`
-- Create: `MisttyShared/Models/PopupResponse.swift`
-- Modify: `Mistty/Services/XPCService.swift`
+- Modify: `MyttyShared/MyttyServiceProtocol.swift`
+- Create: `MyttyShared/Models/PopupResponse.swift`
+- Modify: `Mytty/Services/XPCService.swift`
 
 **Step 1: Add PopupResponse model**
 
-Create `MisttyShared/Models/PopupResponse.swift`:
+Create `MyttyShared/Models/PopupResponse.swift`:
 
 ```swift
 import Foundation
@@ -612,7 +612,7 @@ public struct PopupResponse: Codable, Sendable {
 
 **Step 2: Add popup methods to XPC protocol**
 
-In `MisttyShared/MisttyServiceProtocol.swift`, add after the Windows section (before the closing `}`):
+In `MyttyShared/MyttyServiceProtocol.swift`, add after the Windows section (before the closing `}`):
 
 ```swift
 // MARK: - Popups
@@ -625,7 +625,7 @@ func listPopups(sessionId: Int, reply: @escaping (Data?, Error?) -> Void)
 
 **Step 3: Implement popup methods in XPCService**
 
-In `Mistty/Services/XPCService.swift`, add a `popupResponse` helper after `paneResponse` (after line 58):
+In `Mytty/Services/XPCService.swift`, add a `popupResponse` helper after `paneResponse` (after line 58):
 
 ```swift
 @MainActor private func popupResponse(_ popup: PopupState) -> PopupResponse {
@@ -648,13 +648,13 @@ func openPopup(sessionId: Int, name: String, exec: String, width: Double, height
     let reply = Reply(handler: reply)
     Task { @MainActor in
         guard let session = self.store.session(byId: sessionId) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
             return
         }
         let definition = PopupDefinition(name: name, command: exec, width: width, height: height, closeOnExit: closeOnExit)
         session.togglePopup(definition: definition)
         guard let popup = session.activePopup else {
-            reply(nil, MisttyXPC.error(.operationFailed, "Failed to create popup"))
+            reply(nil, MyttyXPC.error(.operationFailed, "Failed to create popup"))
             return
         }
         reply(self.encode(self.popupResponse(popup)), nil)
@@ -665,7 +665,7 @@ func closePopup(popupId: Int, reply: @escaping (Data?, Error?) -> Void) {
     let reply = Reply(handler: reply)
     Task { @MainActor in
         guard let (session, popup) = self.store.popup(byId: popupId) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Popup \(popupId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Popup \(popupId) not found"))
             return
         }
         session.closePopup(popup)
@@ -677,12 +677,12 @@ func togglePopup(sessionId: Int, name: String, reply: @escaping (Data?, Error?) 
     let reply = Reply(handler: reply)
     Task { @MainActor in
         guard let session = self.store.session(byId: sessionId) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
             return
         }
-        let config = MisttyConfig.load()
+        let config = MyttyConfig.load()
         guard let definition = config.popups.first(where: { $0.name == name }) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Popup definition '\(name)' not found in config"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Popup definition '\(name)' not found in config"))
             return
         }
         session.togglePopup(definition: definition)
@@ -698,7 +698,7 @@ func listPopups(sessionId: Int, reply: @escaping (Data?, Error?) -> Void) {
     let reply = Reply(handler: reply)
     Task { @MainActor in
         guard let session = self.store.session(byId: sessionId) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
             return
         }
         let responses = session.popups.map { self.popupResponse($0) }
@@ -715,7 +715,7 @@ Expected: BUILD SUCCEEDED
 **Step 5: Commit**
 
 ```bash
-git add MisttyShared/MisttyServiceProtocol.swift MisttyShared/Models/PopupResponse.swift Mistty/Services/XPCService.swift
+git add MyttyShared/MyttyServiceProtocol.swift MyttyShared/Models/PopupResponse.swift Mytty/Services/XPCService.swift
 git commit -m "feat: add popup XPC protocol methods, PopupResponse, and service implementation"
 ```
 
@@ -724,17 +724,17 @@ git commit -m "feat: add popup XPC protocol methods, PopupResponse, and service 
 ### Task 6: CLI Popup Command
 
 **Files:**
-- Create: `MisttyCLI/Commands/PopupCommand.swift`
-- Modify: `MisttyCLI/MisttyCLI.swift`
+- Create: `MyttyCLI/Commands/PopupCommand.swift`
+- Modify: `MyttyCLI/MyttyCLI.swift`
 
 **Step 1: Create PopupCommand**
 
-Create `MisttyCLI/Commands/PopupCommand.swift`:
+Create `MyttyCLI/Commands/PopupCommand.swift`:
 
 ```swift
 import ArgumentParser
 import Foundation
-import MisttyShared
+import MyttyShared
 
 struct PopupCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -833,7 +833,7 @@ struct PopupCommand: ParsableCommand {
             }
 
             guard let data = resultData else {
-                OutputFormatter.printError("No response from Mistty")
+                OutputFormatter.printError("No response from Mytty")
                 Foundation.exit(1)
             }
 
@@ -949,7 +949,7 @@ struct PopupCommand: ParsableCommand {
             }
 
             guard let data = resultData else {
-                OutputFormatter.printError("No response from Mistty")
+                OutputFormatter.printError("No response from Mytty")
                 Foundation.exit(1)
             }
 
@@ -1026,7 +1026,7 @@ struct PopupCommand: ParsableCommand {
             }
 
             guard let data = resultData else {
-                OutputFormatter.printError("No response from Mistty")
+                OutputFormatter.printError("No response from Mytty")
                 Foundation.exit(1)
             }
 
@@ -1049,9 +1049,9 @@ struct PopupCommand: ParsableCommand {
 }
 ```
 
-**Step 2: Register PopupCommand in MisttyCLI**
+**Step 2: Register PopupCommand in MyttyCLI**
 
-In `MisttyCLI/MisttyCLI.swift`, add `PopupCommand.self` to the subcommands array:
+In `MyttyCLI/MyttyCLI.swift`, add `PopupCommand.self` to the subcommands array:
 
 ```swift
 subcommands: [
@@ -1071,8 +1071,8 @@ Expected: BUILD SUCCEEDED
 **Step 4: Commit**
 
 ```bash
-git add MisttyCLI/Commands/PopupCommand.swift MisttyCLI/MisttyCLI.swift
-git commit -m "feat: add mistty-cli popup command with open/close/toggle/list subcommands"
+git add MyttyCLI/Commands/PopupCommand.swift MyttyCLI/MyttyCLI.swift
+git commit -m "feat: add mytty-cli popup command with open/close/toggle/list subcommands"
 ```
 
 ---
@@ -1080,16 +1080,16 @@ git commit -m "feat: add mistty-cli popup command with open/close/toggle/list su
 ### Task 7: Preferences Pane — Popup Management
 
 **Files:**
-- Modify: `Mistty/Views/Settings/SettingsView.swift`
-- Modify: `Mistty/Config/MisttyConfig.swift`
+- Modify: `Mytty/Views/Settings/SettingsView.swift`
+- Modify: `Mytty/Config/MyttyConfig.swift`
 
-**Step 1: Make MisttyConfig observable for Settings**
+**Step 1: Make MyttyConfig observable for Settings**
 
-The config is currently a plain struct. The `SettingsView` already uses `@State private var config = MisttyConfig.load()` and mutates it. No changes needed to the config struct — the existing pattern works since `popups` is an array value type.
+The config is currently a plain struct. The `SettingsView` already uses `@State private var config = MyttyConfig.load()` and mutates it. No changes needed to the config struct — the existing pattern works since `popups` is an array value type.
 
 **Step 2: Add Popups section to SettingsView**
 
-In `Mistty/Views/Settings/SettingsView.swift`, add a new Section after the "Appearance" section (after line 26):
+In `Mytty/Views/Settings/SettingsView.swift`, add a new Section after the "Appearance" section (after line 26):
 
 ```swift
 Section("Popups") {
@@ -1144,7 +1144,7 @@ Section("Popups") {
 
 **Step 3: Make PopupDefinition properties mutable**
 
-In `Mistty/Models/PopupDefinition.swift`, change all `let` to `var` so the settings pane can edit them:
+In `Mytty/Models/PopupDefinition.swift`, change all `let` to `var` so the settings pane can edit them:
 
 ```swift
 struct PopupDefinition: Sendable, Equatable {
@@ -1160,7 +1160,7 @@ struct PopupDefinition: Sendable, Equatable {
 
 **Step 4: Add onChange handlers for popup config fields**
 
-In `Mistty/Views/Settings/SettingsView.swift`, add after the existing `.onChange` handlers (after line 35):
+In `Mytty/Views/Settings/SettingsView.swift`, add after the existing `.onChange` handlers (after line 35):
 
 ```swift
 .onChange(of: config.popups) { _, _ in saveConfig() }
@@ -1176,6 +1176,6 @@ Expected: BUILD SUCCEEDED
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Views/Settings/SettingsView.swift Mistty/Models/PopupDefinition.swift
+git add Mytty/Views/Settings/SettingsView.swift Mytty/Models/PopupDefinition.swift
 git commit -m "feat: add Popups section to preferences pane with add/edit/remove support"
 ```

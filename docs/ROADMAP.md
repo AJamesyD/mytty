@@ -1,4 +1,4 @@
-# Mistty Roadmap
+# Mytty Roadmap
 
 Created: 2026-04-14
 Last updated: 2026-04-17
@@ -16,7 +16,7 @@ These are process and scope rules that govern the roadmap:
 3. **Infrastructure ships with features**: build plumbing when a feature needs it, not before.
 4. **Dependency-ordered**: phases are sequenced by what unblocks what. No fake timelines.
 5. **Opinionated defaults, constrained configuration**: ship one good design. When configuration is needed, prefer presets over arbitrary values. Don't push design decisions to the user. Code must be written with the assumption that hardcoded values will become configurable later: access through abstractions (e.g., `theme.surface` not `Color.white.opacity(0.03)`), even when the backing store is a static singleton.
-6. **Principle of Least Astonishment**: follow macOS conventions wherever possible. Standard shortcuts (Cmd+S, Cmd+X, Cmd+C/V, Cmd+Q, Cmd+H, Cmd+Shift+]/[) must not be overridden for non-standard purposes. When Mistty needs a shortcut, pick one that doesn't conflict with universal macOS muscle memory. Custom behaviors (modes, which-key, split panes) are fine where macOS has no convention, but defaults should never surprise a user coming from another macOS app.
+6. **Principle of Least Astonishment**: follow macOS conventions wherever possible. Standard shortcuts (Cmd+S, Cmd+X, Cmd+C/V, Cmd+Q, Cmd+H, Cmd+Shift+]/[) must not be overridden for non-standard purposes. When Mytty needs a shortcut, pick one that doesn't conflict with universal macOS muscle memory. Custom behaviors (modes, which-key, split panes) are fine where macOS has no convention, but defaults should never surprise a user coming from another macOS app.
 
 ---
 
@@ -26,16 +26,16 @@ These are process and scope rules that govern the roadmap:
 All tests passing, zero compiler warnings, zero swiftlint violations.
 
 ### Phase 1: UI Foundation (1a, 1b, 1c)
-Which-key overlay (Ctrl+Space) with categorized actions. Visual polish across all UI regions: theme system (`MisttyTheme.swift` with semantic tokens), sidebar rework (accent bars, badges, indicators), session/tab renaming, tab bar "if-multiple" visibility, tab drag-and-drop. Auto-hide panels (Pinned / Auto-hide / Hidden modes, overlay without reflow). Cleanup gates completed: @FocusedValue migration, ContentView extraction, sidebar accessibility audit.
+Which-key overlay (Ctrl+Space) with categorized actions. Visual polish across all UI regions: theme system (`MyttyTheme.swift` with semantic tokens), sidebar rework (accent bars, badges, indicators), session/tab renaming, tab bar "if-multiple" visibility, tab drag-and-drop. Auto-hide panels (Pinned / Auto-hide / Hidden modes, overlay without reflow). Cleanup gates completed: @FocusedValue migration, ContentView extraction, sidebar accessibility audit.
 
 ### Phase 2: Terminal Intelligence (2a, 2b, 2c)
 OSC action callback handling (PWD, titles, notifications, command finished, progress). Contextual sidebar: notification badges (glow dots for bell/failure, count pills), shell integration (OSC 133) with process title and command result in tab rows, prompt navigation (Cmd+Shift+Up/Down), clipboard paste fix. Rich sidebar metadata (git branch) was built and reverted: per-pane data doesn't belong at session level. Basic session persistence: tree saved to disk on quit, restored on launch. Cleanup gates completed: event handler extraction, IPC audit, OSC test coverage, IPC parity check.
 
 ### Phase 3: Platform (3a, 3b)
-JSON-RPC 2.0 socket API with `noun.verb` naming, structured error codes, and event subscription. Neovim split navigation (bidirectional Ctrl+h/j/k/l via smart-splits.nvim). Cleanup gates completed: config audit, MisttyTheme review.
+JSON-RPC 2.0 socket API with `noun.verb` naming, structured error codes, and event subscription. Neovim split navigation (bidirectional Ctrl+h/j/k/l via smart-splits.nvim). Cleanup gates completed: config audit, MyttyTheme review.
 
 ### Phase 4: Configuration (4a, 4b, 4d, 4e)
-Config file (`~/.config/mistty/config.toml`) as single source of truth (see ADR-006). TriggerParser, KeybindingStore, per-mode keybinding sections with `unconsumed:` prefix. Default keybindings aligned with macOS conventions. Modal keybindings wired for WindowModeManager and WhichKeyManager. Live config reload via `DispatchSource` file watcher. Sidebar position/tree-depth configurable. Auto-hide UX polish: spring animations, Reduce Motion support, improved hint bar. Deferred auto-hide items tracked: dismiss-while-browsing, popup suppression, asymmetric animation, flash-on-background-event, escape-to-dismiss.
+Config file (`~/.config/mytty/config.toml`) as single source of truth (see ADR-006). TriggerParser, KeybindingStore, per-mode keybinding sections with `unconsumed:` prefix. Default keybindings aligned with macOS conventions. Modal keybindings wired for WindowModeManager and WhichKeyManager. Live config reload via `DispatchSource` file watcher. Sidebar position/tree-depth configurable. Auto-hide UX polish: spring animations, Reduce Motion support, improved hint bar. Deferred auto-hide items tracked: dismiss-while-browsing, popup suppression, asymmetric animation, flash-on-background-event, escape-to-dismiss.
 
 ### Phase 5a-1: Core Dropdown Terminal
 NSPanel-based dropdown terminal with Ctrl+` hotkey, slide animation, auto-hide on focus loss, persistent session.
@@ -129,11 +129,11 @@ Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. 
 Read `~/.config/ghostty/config` for themes, fonts, colors. Zero-friction migration.
 
 - Complexity: 2
-- `/spec` required: which Ghostty config keys to support, conflict resolution with Mistty config.
+- `/spec` required: which Ghostty config keys to support, conflict resolution with Mytty config.
 - Depends on: 4a
 
 ### 5e. Declarative Project Layouts
-`.mistty.toml` in project root: pane arrangement, commands, working directories. Directory trust prompt for untrusted projects. `start_suspended` option. Includes Layout Manager UI: "Save current layout" generates `.mistty.toml` from the live workspace.
+`.mytty.toml` in project root: pane arrangement, commands, working directories. Directory trust prompt for untrusted projects. `start_suspended` option. Includes Layout Manager UI: "Save current layout" generates `.mytty.toml` from the live workspace.
 
 - Complexity: 2
 - `/spec` required: file format, trust model, layout manager UI design.
@@ -152,26 +152,26 @@ Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide inte
 - `/spec` required: preview pane content, icon mapping, frecency algorithm tuning.
 
 ### 5h. System Notifications for Background Events
-Optional macOS Notification Center integration for events when Mistty is not frontmost. Glow dots remain the primary in-app signal; system notifications supplement for the background case.
+Optional macOS Notification Center integration for events when Mytty is not frontmost. Glow dots remain the primary in-app signal; system notifications supplement for the background case.
 
 - Complexity: 2
 - `/spec` required: which events trigger notifications, grouping, action buttons, user preference toggle.
 - Depends on: 2b (notification infrastructure)
 
 **Essential done when:** dropdown terminal works via global hotkey, hints mode selects visible targets, floating panes work.
-**Polish done when:** Ghostty themes import, project layouts load from `.mistty.toml`, command palette searches all actions, session manager shows frecency-ranked results, system notifications fire for background events.
+**Polish done when:** Ghostty themes import, project layouts load from `.mytty.toml`, command palette searches all actions, session manager shows frecency-ranked results, system notifications fire for background events.
 
 ---
 
 ## Phase 6: Moonshots
 
 ### 6a. Native tmux Control Mode
-Render tmux panes as native Mistty splits via `tmux -CC`. Only iTerm2 has this.
+Render tmux panes as native Mytty splits via `tmux -CC`. Only iTerm2 has this.
 
 - Complexity: 5
 - `/spec` required: protocol analysis, sync model, edge case catalog.
 - Defensible moat: hard to copy.
-- Ghostty's tmux control mode is in progress (DCS parser landed). If it ships, Mistty could use libghostty's tmux support, reducing the effort here.
+- Ghostty's tmux control mode is in progress (DCS parser landed). If it ships, Mytty could use libghostty's tmux support, reducing the effort here.
 
 ### 6b. Block-Based Output
 Command+output as selectable blocks. Metadata: exit code, duration, cwd. Click to select entire block. Cmd+Up/Down to navigate. Only Warp has this.
@@ -195,7 +195,7 @@ Expose surface state (cells, colors, cursor position) via the socket API for scr
 - Depends on: 3a (socket API)
 
 ### 6e. SSH Workspace Creation
-`mistty ssh user@host` creates a dedicated workspace with port detection, sidebar metadata, and cleanup on disconnect. Optional Eternal Terminal (`et`) integration.
+`mytty ssh user@host` creates a dedicated workspace with port detection, sidebar metadata, and cleanup on disconnect. Optional Eternal Terminal (`et`) integration.
 
 - Complexity: 4
 - `/spec` required: workspace lifecycle, port detection, et integration model.
@@ -213,7 +213,7 @@ Pin to a commit after the `ghostty_surface_free_text` memory leak fix (or v1.3.2
 
 - Complexity: 1
 - Upgrade procedure: ADR-007
-- Trigger: v1.3.2 tag, or proactively before next Mistty release
+- Trigger: v1.3.2 tag, or proactively before next Mytty release
 
 ### 7b. `just ci` Target
 Single justfile recipe that CI and local dev both call. Runs: swift-format check, SwiftLint (strict), swift build, swift test, typos. Prerequisite for CI parity.
@@ -320,7 +320,7 @@ Infrastructure:
 - Ghostty tmux control mode (in progress; DCS parser landed, Issue #1935)
 - OSC 133 C as apprt action: would enable explicit running-state detection in sidebar
 - Native git branch OSC sequence: would replace event-driven git rev-parse
-- Ghostty v1.3.2: fixes `ghostty_surface_free_text` memory leak (5 Mistty call sites). ADR-007 tracks upgrade policy.
+- Ghostty v1.3.2: fixes `ghostty_surface_free_text` memory leak (5 Mytty call sites). ADR-007 tracks upgrade policy.
 
 ---
 
@@ -328,9 +328,9 @@ Infrastructure:
 
 ### Key interception architecture (affects Phase 4f-3)
 
-Mistty uses five independent NSEvent keyDown monitors between AppKit and the terminal surface. No other terminal emulator does this. Ghostty, Kitty, Alacritty, and WezTerm all check bindings at a single point after the key reaches the terminal layer. Ghostty lets every key reach the surface view and uses `ghostty_surface_key_is_binding()` in the Zig core.
+Mytty uses five independent NSEvent keyDown monitors between AppKit and the terminal surface. No other terminal emulator does this. Ghostty, Kitty, Alacritty, and WezTerm all check bindings at a single point after the key reaches the terminal layer. Ghostty lets every key reach the surface view and uses `ghostty_surface_key_is_binding()` in the Zig core.
 
-The fix: stop intercepting keyDown events with NSEvent monitors. Let every key reach `TerminalSurfaceView.keyDown`, then use `ghostty_surface_key_is_binding()` (already available) to decide whether to execute a Mistty action. This eliminates the entire class of "monitor eats a key it shouldn't" bugs.
+The fix: stop intercepting keyDown events with NSEvent monitors. Let every key reach `TerminalSurfaceView.keyDown`, then use `ghostty_surface_key_is_binding()` (already available) to decide whether to execute a Mytty action. This eliminates the entire class of "monitor eats a key it shouldn't" bugs.
 
 Options:
 1. **Incremental**: consolidate five monitors into one with an explicit dispatch chain. Lower risk, partial fix.

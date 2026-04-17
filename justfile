@@ -1,4 +1,4 @@
-# Mistty - macOS terminal emulator built on libghostty
+# Mytty - macOS terminal emulator built on libghostty
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
@@ -22,31 +22,31 @@ build-release: build-libghostty
 
 # Build the CLI tool
 build-cli:
-    swift build --target MisttyCLI
+    swift build --target MyttyCLI
 
 # Build CLI in release mode
 build-cli-release:
-    swift build --target MisttyCLI -c release
+    swift build --target MyttyCLI -c release
 
 # Install CLI to /usr/local/bin
 install-cli: build-cli-release
-    cp .build/release/MisttyCLI /usr/local/bin/mistty-cli
+    cp .build/release/MyttyCLI /usr/local/bin/mytty-cli
 
 # Uninstall CLI
 uninstall-cli:
-    rm -f /usr/local/bin/mistty-cli
+    rm -f /usr/local/bin/mytty-cli
 
 # Package as .app bundle (debug)
 bundle: build
     #!/usr/bin/env bash
     set -euo pipefail
-    APP="build/Mistty.app"
+    APP="build/Mytty.app"
     rm -rf "$APP"
     mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-    cp .build/debug/Mistty "$APP/Contents/MacOS/Mistty"
-    swift build --target MisttyCLI
-    cp .build/debug/MisttyCLI "$APP/Contents/MacOS/mistty-cli"
-    cp Mistty/Resources/Info.plist "$APP/Contents/"
+    cp .build/debug/Mytty "$APP/Contents/MacOS/Mytty"
+    swift build --target MyttyCLI
+    cp .build/debug/MyttyCLI "$APP/Contents/MacOS/mytty-cli"
+    cp Mytty/Resources/Info.plist "$APP/Contents/"
     codesign -s - -f "$APP"
     echo "Bundled: $APP"
 
@@ -54,13 +54,13 @@ bundle: build
 bundle-dev: build-dev
     #!/usr/bin/env bash
     set -euo pipefail
-    APP="build/Mistty.app"
+    APP="build/Mytty.app"
     rm -rf "$APP"
     mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-    cp .build/debug/Mistty "$APP/Contents/MacOS/Mistty"
-    swift build --target MisttyCLI -Xswiftc -O
-    cp .build/debug/MisttyCLI "$APP/Contents/MacOS/mistty-cli"
-    cp Mistty/Resources/Info.plist "$APP/Contents/"
+    cp .build/debug/Mytty "$APP/Contents/MacOS/Mytty"
+    swift build --target MyttyCLI -Xswiftc -O
+    cp .build/debug/MyttyCLI "$APP/Contents/MacOS/mytty-cli"
+    cp Mytty/Resources/Info.plist "$APP/Contents/"
     codesign -s - -f "$APP"
     echo "Bundled: $APP (optimized debug)"
 
@@ -68,13 +68,13 @@ bundle-dev: build-dev
 bundle-release: build-release
     #!/usr/bin/env bash
     set -euo pipefail
-    APP="build/Mistty.app"
+    APP="build/Mytty.app"
     rm -rf "$APP"
     mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-    cp .build/release/Mistty "$APP/Contents/MacOS/Mistty"
-    swift build --target MisttyCLI -c release
-    cp .build/release/MisttyCLI "$APP/Contents/MacOS/mistty-cli"
-    cp Mistty/Resources/Info.plist "$APP/Contents/"
+    cp .build/release/Mytty "$APP/Contents/MacOS/Mytty"
+    swift build --target MyttyCLI -c release
+    cp .build/release/MyttyCLI "$APP/Contents/MacOS/mytty-cli"
+    cp Mytty/Resources/Info.plist "$APP/Contents/"
     codesign -s - -f "$APP"
     echo "Bundled: $APP"
 
@@ -82,44 +82,44 @@ bundle-release: build-release
 install: bundle
     #!/usr/bin/env bash
     set -euo pipefail
-    osascript -e 'tell application "Mistty" to quit' 2>/dev/null || true
-    rm -rf /Applications/Mistty.app
-    cp -R build/Mistty.app /Applications/Mistty.app
-    echo "Installed: /Applications/Mistty.app"
+    osascript -e 'tell application "Mytty" to quit' 2>/dev/null || true
+    rm -rf /Applications/Mytty.app
+    cp -R build/Mytty.app /Applications/Mytty.app
+    echo "Installed: /Applications/Mytty.app"
 
 # Install to /Applications (debug, optimized)
 install-dev: bundle-dev
     #!/usr/bin/env bash
     set -euo pipefail
-    osascript -e 'tell application "Mistty" to quit' 2>/dev/null || true
-    rm -rf /Applications/Mistty.app
-    cp -R build/Mistty.app /Applications/Mistty.app
-    echo "Installed: /Applications/Mistty.app (optimized debug)"
+    osascript -e 'tell application "Mytty" to quit' 2>/dev/null || true
+    rm -rf /Applications/Mytty.app
+    cp -R build/Mytty.app /Applications/Mytty.app
+    echo "Installed: /Applications/Mytty.app (optimized debug)"
 
 # Install to /Applications (release)
 install-release: bundle-release
     #!/usr/bin/env bash
     set -euo pipefail
-    osascript -e 'tell application "Mistty" to quit' 2>/dev/null || true
-    rm -rf /Applications/Mistty.app
-    cp -R build/Mistty.app /Applications/Mistty.app
-    echo "Installed: /Applications/Mistty.app (release)"
+    osascript -e 'tell application "Mytty" to quit' 2>/dev/null || true
+    rm -rf /Applications/Mytty.app
+    cp -R build/Mytty.app /Applications/Mytty.app
+    echo "Installed: /Applications/Mytty.app (release)"
 
 # Run the app (debug)
 run: install
-    open /Applications/Mistty.app
+    open /Applications/Mytty.app
 
 # Run the app (debug, optimized: ~10s build, near-release perf, degraded LLDB)
 run-dev: install-dev
-    open /Applications/Mistty.app
+    open /Applications/Mytty.app
 
 # Run the app (release)
 run-release: install-release
-    open /Applications/Mistty.app
+    open /Applications/Mytty.app
 
 # Open the installed app (no rebuild)
 open:
-    open /Applications/Mistty.app
+    open /Applications/Mytty.app
 
 # Run tests
 test:
@@ -161,11 +161,11 @@ setup:
 
 # Format Swift code
 fmt-swift:
-    swift format --in-place --recursive Mistty/ MisttyTests/ MisttyCLI/ MisttyShared/
+    swift format --in-place --recursive Mytty/ MyttyTests/ MyttyCLI/ MyttyShared/
 
 # Check formatting without modifying
 fmt-check:
-    swift format --recursive Mistty/ MisttyTests/ MisttyCLI/ MisttyShared/
+    swift format --recursive Mytty/ MyttyTests/ MyttyCLI/ MyttyShared/
 
 # Lint Swift code
 lint:
@@ -202,11 +202,11 @@ changelog TAG:
 
 # Create DMG from the release .app bundle
 dmg TAG: bundle-release
-    create-dmg --volname "Mistty" --window-size 600 400 --icon "Mistty.app" 200 200 --app-drop-link 400 200 "build/Mistty-{{TAG}}-arm64.dmg" build/Mistty.app
+    create-dmg --volname "Mytty" --window-size 600 400 --icon "Mytty.app" 200 200 --app-drop-link 400 200 "build/Mytty-{{TAG}}-arm64.dmg" build/Mytty.app
 
 # Show project info
 info:
-    @echo "Mistty - macOS terminal emulator"
+    @echo "Mytty - macOS terminal emulator"
     @echo ""
     @echo "Swift package:"
     @swift package describe 2>/dev/null | head -20

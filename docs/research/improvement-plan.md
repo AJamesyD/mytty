@@ -1,11 +1,11 @@
-# Mistty Improvement Plan
+# Mytty Improvement Plan
 
 Created: 2026-04-13
 Updated: 2026-04-13 (iteration 5, post plan-review and cmux research)
 
 ## Context
 
-Mistty is a macOS terminal emulator built on libghostty (SwiftUI + Zig). The build
+Mytty is a macOS terminal emulator built on libghostty (SwiftUI + Zig). The build
 works (262 tests pass), but the codebase has structural issues typical of AI-generated
 code: a 1095-line god view, notification-based event routing instead of direct calls,
 and a build system that needed macOS 26 fixes.
@@ -101,25 +101,25 @@ Verification: All 262 tests pass + manual checklist above.
 
 ## Phase 3: Replace menu NotificationCenter with @FocusedValue
 
-Mistty uses WindowGroup (supports Cmd+N), so @FocusedValue is correct.
+Mytty uses WindowGroup (supports Cmd+N), so @FocusedValue is correct.
 
 ### Critical fix from review
 
 The original plan published `SessionStore` as the focused value. This is wrong:
-MisttyApp creates one SessionStore with a single `activeSession` property, shared
+MyttyApp creates one SessionStore with a single `activeSession` property, shared
 across all WindowGroup windows. Publishing the store doesn't distinguish which
 window's session is active.
 
-**Fix:** Publish the specific `MisttySession` as the focused value, not SessionStore.
+**Fix:** Publish the specific `MyttySession` as the focused value, not SessionStore.
 Each ContentView knows its own session (from the window's state). The focused value
 tracks which window is key, so the correct session is always available to menu commands.
 
 ### Steps
 
-1. Define `FocusedSessionKey` conforming to FocusedValueKey, type `MisttySession?`
+1. Define `FocusedSessionKey` conforming to FocusedValueKey, type `MyttySession?`
 2. ContentView publishes `.focusedValue(\.activeSession, session)` where `session`
    is the window's own session
-3. MisttyApp `.commands {}` reads `@FocusedValue(\.activeSession)` and calls methods
+3. MyttyApp `.commands {}` reads `@FocusedValue(\.activeSession)` and calls methods
    directly on the session/tab
 4. Delete the ~16 Notification.Name extensions for menu commands
 5. Keep notifications from non-SwiftUI contexts:
@@ -154,7 +154,7 @@ Research file: /tmp/ai-research-cmux-patterns.md
 
 Patterns worth considering for future phases:
 - **Panel protocol**: typed variants (TerminalPanel, BrowserPanel) with focus intent
-  enum. Good model if Mistty adds non-terminal pane types.
+  enum. Good model if Mytty adds non-terminal pane types.
 - **Unix socket API for CLI**: app as server, CLI as thin client. Better architecture
   than the current IPC approach for scriptability.
 - **Notification rings**: OSC 9/99/777 escape sequences + CLI notify command for
@@ -182,18 +182,18 @@ Antipatterns to avoid:
 ## Out of scope
 
 - Feature work from PLAN.md (copy mode phase 1, save layouts, etc.)
-- Refactoring models (SessionStore, MisttySession are reasonably clean)
+- Refactoring models (SessionStore, MyttySession are reasonably clean)
 - Changing the libghostty integration (GhosttyApp.swift callbacks)
 - IPC service refactoring
 - C callback notification replacement
 
 ## Sources
 
-- ContentView.swift (1095 lines), MisttyApp.swift (189 lines), GhosttyApp.swift (205 lines)
-- SessionStore.swift, MisttyTab.swift, MisttySession.swift
-- PLAN.md, docs/plans/2026-03-06-mistty-design.md
+- ContentView.swift (1095 lines), MyttyApp.swift (189 lines), GhosttyApp.swift (205 lines)
+- SessionStore.swift, MyttyTab.swift, MyttySession.swift
+- PLAN.md, docs/plans/2026-03-06-mytty-design.md
 - Ghostty CI (release-tip.yml), Ghostty nix/devShell.nix
 - nixpkgs: zls 0.15.1, swiftlint 0.62.1, sourcekit-lsp 5.10.1 (incompatible)
 - Xcode 26.4 bundled sourcekit-lsp (Swift 6.3 compatible)
-- /tmp/ai-review-mistty-plan.md (plan review, 2026-04-13)
+- /tmp/ai-review-mytty-plan.md (plan review, 2026-04-13)
 - /tmp/ai-research-cmux-patterns.md (cmux architecture research, 2026-04-13)

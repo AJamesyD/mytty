@@ -18,15 +18,15 @@
 
 | File | Responsibility | Action |
 |------|---------------|--------|
-| `Mistty/Models/CopyModeState.swift` | State machine: sub-modes, pending input, `handleKey()` returning actions | Major rewrite |
-| `Mistty/Models/CopyModeAction.swift` | Action enum and supporting types (CopySubMode, FindCharKind) | Create |
-| `Mistty/Models/WordMotion.swift` | Word/WORD boundary detection and motion logic | Create |
-| `Mistty/Views/Terminal/CopyModeOverlay.swift` | Overlay rendering: character/line/block selection, help overlay | Modify |
-| `Mistty/Views/Terminal/CopyModeHelpOverlay.swift` | Help overlay view (g?) | Create |
-| `Mistty/App/ContentView.swift` | Thin key dispatcher, lineReader closure, action application | Modify (`installCopyModeMonitor`, `yankSelection`, `performSearch`) |
-| `MisttyTests/Models/CopyModeStateTests.swift` | Tests for state machine, sub-modes, escape behavior | Major rewrite |
-| `MisttyTests/Models/WordMotionTests.swift` | Tests for word/WORD boundary detection | Create |
-| `MisttyTests/Models/CopyModeIntegrationTests.swift` | Tests for compound inputs (counts + motions, g-prefixed, f/t + repeat) | Create |
+| `Mytty/Models/CopyModeState.swift` | State machine: sub-modes, pending input, `handleKey()` returning actions | Major rewrite |
+| `Mytty/Models/CopyModeAction.swift` | Action enum and supporting types (CopySubMode, FindCharKind) | Create |
+| `Mytty/Models/WordMotion.swift` | Word/WORD boundary detection and motion logic | Create |
+| `Mytty/Views/Terminal/CopyModeOverlay.swift` | Overlay rendering: character/line/block selection, help overlay | Modify |
+| `Mytty/Views/Terminal/CopyModeHelpOverlay.swift` | Help overlay view (g?) | Create |
+| `Mytty/App/ContentView.swift` | Thin key dispatcher, lineReader closure, action application | Modify (`installCopyModeMonitor`, `yankSelection`, `performSearch`) |
+| `MyttyTests/Models/CopyModeStateTests.swift` | Tests for state machine, sub-modes, escape behavior | Major rewrite |
+| `MyttyTests/Models/WordMotionTests.swift` | Tests for word/WORD boundary detection | Create |
+| `MyttyTests/Models/CopyModeIntegrationTests.swift` | Tests for compound inputs (counts + motions, g-prefixed, f/t + repeat) | Create |
 
 ---
 
@@ -35,12 +35,12 @@
 ### Task 1: Create CopyModeAction types
 
 **Files:**
-- Create: `Mistty/Models/CopyModeAction.swift`
+- Create: `Mytty/Models/CopyModeAction.swift`
 
 - [ ] **Step 1: Create the action enum and supporting types**
 
 ```swift
-// Mistty/Models/CopyModeAction.swift
+// Mytty/Models/CopyModeAction.swift
 import Foundation
 
 enum CopySubMode: Equatable {
@@ -94,15 +94,15 @@ Expected: Build succeeds
 - [ ] **Step 3: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeAction.swift
+git add Mytty/Models/CopyModeAction.swift
 git commit -m "feat(copy-mode): add CopyModeAction enum and supporting types"
 ```
 
 ### Task 2: Refactor CopyModeState to action-based state machine skeleton
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeState.swift`
-- Modify: `MisttyTests/Models/CopyModeStateTests.swift`
+- Modify: `Mytty/Models/CopyModeState.swift`
+- Modify: `MyttyTests/Models/CopyModeStateTests.swift`
 
 This task replaces the existing mutating methods with a `handleKey()` method that returns actions. We start with the existing key bindings (h/j/k/l, 0/$, g/G, v, /, n, y) and the new escape behavior, without yet adding new features.
 
@@ -111,9 +111,9 @@ This task replaces the existing mutating methods with a `handleKey()` method tha
 Replace the test file with tests that exercise handleKey instead of calling individual mutating methods:
 
 ```swift
-// MisttyTests/Models/CopyModeStateTests.swift
+// MyttyTests/Models/CopyModeStateTests.swift
 import XCTest
-@testable import Mistty
+@testable import Mytty
 
 final class CopyModeStateTests: XCTestCase {
 
@@ -256,7 +256,7 @@ Expected: Compilation errors (handleKey, subMode, anchor don't exist yet)
 - [ ] **Step 3: Rewrite CopyModeState with handleKey skeleton**
 
 ```swift
-// Mistty/Models/CopyModeState.swift
+// Mytty/Models/CopyModeState.swift
 import AppKit
 
 struct CopyModeState {
@@ -590,14 +590,14 @@ Expected: All tests pass
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeState.swift MisttyTests/Models/CopyModeStateTests.swift
+git add Mytty/Models/CopyModeState.swift MyttyTests/Models/CopyModeStateTests.swift
 git commit -m "feat(copy-mode): refactor CopyModeState to action-based state machine"
 ```
 
 ### Task 3: Update ContentView to use handleKey dispatcher
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift` (lines 634-700, 761-800, 802-830)
+- Modify: `Mytty/App/ContentView.swift` (lines 634-700, 761-800, 802-830)
 
 The ContentView monitor becomes a thin dispatcher. `performSearch` and `yankSelection` stay in ContentView since they need ghostty access. Note: yank deviates from the spec's `.yank(text:)` action because yank text extraction requires ghostty selection APIs that are only available in ContentView — so yank is signaled by `.exitCopyMode` and ContentView checks `isSelecting` before exiting.
 
@@ -706,14 +706,14 @@ Expected: Build succeeds
 - [ ] **Step 4: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "refactor(copy-mode): replace key dispatch in ContentView with handleKey"
 ```
 
 ### Task 4: Update CopyModeOverlay for sub-modes
 
 **Files:**
-- Modify: `Mistty/Views/Terminal/CopyModeOverlay.swift`
+- Modify: `Mytty/Views/Terminal/CopyModeOverlay.swift`
 
 Update the mode indicator text to show the correct sub-mode.
 
@@ -769,7 +769,7 @@ Expected: Build succeeds
 - [ ] **Step 3: Commit**
 
 ```bash
-git add Mistty/Views/Terminal/CopyModeOverlay.swift
+git add Mytty/Views/Terminal/CopyModeOverlay.swift
 git commit -m "feat(copy-mode): update mode indicator for visual line/block sub-modes"
 ```
 
@@ -780,15 +780,15 @@ git commit -m "feat(copy-mode): update mode indicator for visual line/block sub-
 ### Task 5: Create WordMotion module with boundary detection
 
 **Files:**
-- Create: `Mistty/Models/WordMotion.swift`
-- Create: `MisttyTests/Models/WordMotionTests.swift`
+- Create: `Mytty/Models/WordMotion.swift`
+- Create: `MyttyTests/Models/WordMotionTests.swift`
 
 - [ ] **Step 1: Write failing tests for word boundary detection**
 
 ```swift
-// MisttyTests/Models/WordMotionTests.swift
+// MyttyTests/Models/WordMotionTests.swift
 import XCTest
-@testable import Mistty
+@testable import Mytty
 
 final class WordMotionTests: XCTestCase {
 
@@ -948,7 +948,7 @@ Expected: Compilation errors (WordMotion doesn't exist yet)
 - [ ] **Step 3: Implement WordMotion**
 
 ```swift
-// Mistty/Models/WordMotion.swift
+// Mytty/Models/WordMotion.swift
 import Foundation
 
 enum WordMotion {
@@ -1078,15 +1078,15 @@ Expected: All tests pass
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/WordMotion.swift MisttyTests/Models/WordMotionTests.swift
+git add Mytty/Models/WordMotion.swift MyttyTests/Models/WordMotionTests.swift
 git commit -m "feat(copy-mode): add WordMotion with vim-exact word/WORD boundary detection"
 ```
 
 ### Task 6: Wire word motions into CopyModeState
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeState.swift`
-- Modify: `MisttyTests/Models/CopyModeStateTests.swift`
+- Modify: `Mytty/Models/CopyModeState.swift`
+- Modify: `MyttyTests/Models/CopyModeStateTests.swift`
 
 Replace the 5-char jump placeholders with real word motions using `WordMotion` and the `lineReader`.
 
@@ -1257,7 +1257,7 @@ Expected: All tests pass
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeState.swift MisttyTests/Models/CopyModeStateTests.swift
+git add Mytty/Models/CopyModeState.swift MyttyTests/Models/CopyModeStateTests.swift
 git commit -m "feat(copy-mode): wire real word motions into state machine"
 ```
 
@@ -1268,14 +1268,14 @@ git commit -m "feat(copy-mode): wire real word motions into state machine"
 ### Task 7: Add integration tests for number prefixes and f/F/t/T
 
 **Files:**
-- Create: `MisttyTests/Models/CopyModeIntegrationTests.swift`
+- Create: `MyttyTests/Models/CopyModeIntegrationTests.swift`
 
 - [ ] **Step 1: Write tests for compound inputs**
 
 ```swift
-// MisttyTests/Models/CopyModeIntegrationTests.swift
+// MyttyTests/Models/CopyModeIntegrationTests.swift
 import XCTest
-@testable import Mistty
+@testable import Mytty
 
 final class CopyModeIntegrationTests: XCTestCase {
 
@@ -1456,7 +1456,7 @@ Expected: All tests pass
 - [ ] **Step 5: Commit**
 
 ```bash
-git add MisttyTests/Models/CopyModeIntegrationTests.swift Mistty/Models/CopyModeState.swift
+git add MyttyTests/Models/CopyModeIntegrationTests.swift Mytty/Models/CopyModeState.swift
 git commit -m "test(copy-mode): add integration tests for count prefixes, f/t motions, visual modes"
 ```
 
@@ -1467,7 +1467,7 @@ git commit -m "test(copy-mode): add integration tests for count prefixes, f/t mo
 ### Task 8: Update SelectionHighlightView for line and block modes
 
 **Files:**
-- Modify: `Mistty/Views/Terminal/CopyModeOverlay.swift`
+- Modify: `Mytty/Views/Terminal/CopyModeOverlay.swift`
 
 - [ ] **Step 1: Refactor SelectionHighlightView to accept selection mode**
 
@@ -1697,20 +1697,20 @@ Expected: Build succeeds
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/Terminal/CopyModeOverlay.swift Mistty/Views/Terminal/PaneView.swift
+git add Mytty/Views/Terminal/CopyModeOverlay.swift Mytty/Views/Terminal/PaneView.swift
 git commit -m "feat(copy-mode): add visual line and block selection rendering"
 ```
 
 ### Task 9: Create help overlay view
 
 **Files:**
-- Create: `Mistty/Views/Terminal/CopyModeHelpOverlay.swift`
-- Modify: `Mistty/Views/Terminal/CopyModeOverlay.swift`
+- Create: `Mytty/Views/Terminal/CopyModeHelpOverlay.swift`
+- Modify: `Mytty/Views/Terminal/CopyModeOverlay.swift`
 
 - [ ] **Step 1: Create CopyModeHelpOverlay**
 
 ```swift
-// Mistty/Views/Terminal/CopyModeHelpOverlay.swift
+// Mytty/Views/Terminal/CopyModeHelpOverlay.swift
 import SwiftUI
 
 struct CopyModeHelpOverlay: View {
@@ -1810,14 +1810,14 @@ Expected: Build succeeds
 - [ ] **Step 4: Commit**
 
 ```bash
-git add Mistty/Views/Terminal/CopyModeHelpOverlay.swift Mistty/Views/Terminal/CopyModeOverlay.swift
+git add Mytty/Views/Terminal/CopyModeHelpOverlay.swift Mytty/Views/Terminal/CopyModeOverlay.swift
 git commit -m "feat(copy-mode): add toggle-able help overlay (g?)"
 ```
 
 ### Task 10: Update yankSelection for visual line and block modes
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 The existing `yankSelection` reads text using a single ghostty selection. For line and block modes, we need to adjust the selection coordinates.
 
@@ -1923,7 +1923,7 @@ Expected: Build succeeds
 - [ ] **Step 3: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat(copy-mode): update yankSelection for visual line and block modes"
 ```
 

@@ -28,7 +28,7 @@ enum StandardLayout {
 
 ### New: `LayoutEngine` struct
 
-`@MainActor` struct with static methods. Each takes `[MisttyPane]` and returns `PaneLayoutNode`.
+`@MainActor` struct with static methods. Each takes `[MyttyPane]` and returns `PaneLayoutNode`.
 
 - `evenHorizontal(_:)` — left-leaning chain of horizontal splits. At each level, ratio = `1.0 / Double(panesInThisSubtree)`. For 3 panes: top ratio = 1/3 (33%), next level = 1/2 (50%).
 - `evenVertical(_:)` — same, vertical splits
@@ -36,7 +36,7 @@ enum StandardLayout {
 - `mainVertical(_:)` — `split(.vertical, main, evenHorizontal(rest), 0.66)`
 - `tiled(_:)` — builds row splits, each row is an even horizontal split; rows combined with even vertical splits. Last row padded with `.empty` to match column count.
 
-Public entry point: `static func apply(_ layout: StandardLayout, to panes: [MisttyPane]) -> PaneLayoutNode`
+Public entry point: `static func apply(_ layout: StandardLayout, to panes: [MyttyPane]) -> PaneLayoutNode`
 
 ### Modified: `PaneLayoutNode`
 
@@ -44,7 +44,7 @@ Add `case empty` to the enum:
 
 ```swift
 indirect enum PaneLayoutNode {
-    case leaf(MisttyPane)
+    case leaf(MyttyPane)
     case empty
     case split(SplitDirection, PaneLayoutNode, PaneLayoutNode, CGFloat)
 }
@@ -76,7 +76,7 @@ init(root: PaneLayoutNode) {
 
 Render `.empty` as a `Color(.windowBackgroundColor)` view (matches macOS window background).
 
-### Modified: `MisttyTab`
+### Modified: `MyttyTab`
 
 Add method:
 

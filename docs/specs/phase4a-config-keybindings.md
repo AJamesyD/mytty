@@ -1,8 +1,8 @@
 # Phase 4a: Configurable Keybindings
 
-Mistty macOS terminal emulator, libghostty backend.
+Mytty macOS terminal emulator, libghostty backend.
 
-**Goal:** Make all keybindings configurable via `~/.config/mistty/config.toml`. Users override only the bindings they want to change; unspecified bindings keep their defaults. The trigger string syntax is compatible with Ghostty's modifier format.
+**Goal:** Make all keybindings configurable via `~/.config/mytty/config.toml`. Users override only the bindings they want to change; unspecified bindings keep their defaults. The trigger string syntax is compatible with Ghostty's modifier format.
 
 **Date:** 2026-04-15
 
@@ -181,7 +181,7 @@ To clear ALL keybinding defaults across every section, add `_reset = true` direc
 
 ### Alternatives rejected
 
-- **Array replacement (Ghostty/Alacritty model):** User specifies the complete binding set. Simple to build but hostile to users: changing one binding requires copying all defaults. New defaults added in Mistty updates are silently lost.
+- **Array replacement (Ghostty/Alacritty model):** User specifies the complete binding set. Simple to build but hostile to users: changing one binding requires copying all defaults. New defaults added in Mytty updates are silently lost.
 - **Additive-only (no unbind):** Simpler but users can't remove bindings that conflict with their workflow.
 
 ---
@@ -225,19 +225,19 @@ Copy mode supports multi-character triggers: `gg` (go to top), `ge` (word-end ba
 
 This is the most important design decision in the spec.
 
-`unconsumed:` means "only fire this Mistty binding if libghostty did not consume the key." It does NOT mean "only fire if the running TUI app didn't consume the key."
+`unconsumed:` means "only fire this Mytty binding if libghostty did not consume the key." It does NOT mean "only fire if the running TUI app didn't consume the key."
 
 The implementation:
 
-1. Mistty's NSEvent monitor intercepts a key press (e.g., Ctrl+H).
-2. Check if the key matches a Mistty binding with the `unconsumed:` prefix.
+1. Mytty's NSEvent monitor intercepts a key press (e.g., Ctrl+H).
+2. Check if the key matches a Mytty binding with the `unconsumed:` prefix.
 3. Call `ghostty_surface_key_is_binding(surface, event, &flags)` to query libghostty.
-4. If libghostty returns `true` (any flags): libghostty has a binding for this key. Pass it through to libghostty, skip the Mistty action. This covers both consumed bindings (Ghostty swallows the key) and unconsumed bindings (Ghostty performs its action and passes the key to the terminal). In either case, Mistty should not intercept.
-5. If libghostty returns `false`: no Ghostty binding matches. Mistty handles the key (e.g., pane navigation).
+4. If libghostty returns `true` (any flags): libghostty has a binding for this key. Pass it through to libghostty, skip the Mytty action. This covers both consumed bindings (Ghostty swallows the key) and unconsumed bindings (Ghostty performs its action and passes the key to the terminal). In either case, Mytty should not intercept.
+5. If libghostty returns `false`: no Ghostty binding matches. Mytty handles the key (e.g., pane navigation).
 
-The rule is simple: `unconsumed:` means "Mistty handles this key only when Ghostty has no opinion about it."
+The rule is simple: `unconsumed:` means "Mytty handles this key only when Ghostty has no opinion about it."
 
-For bindings WITHOUT the `unconsumed:` prefix, Mistty intercepts the key unconditionally (current behavior).
+For bindings WITHOUT the `unconsumed:` prefix, Mytty intercepts the key unconditionally (current behavior).
 
 Default pane navigation bindings use `unconsumed:` so that Ghostty keybindings take precedence. Users who configure `keybind = ctrl+h=...` in their Ghostty config will have that binding respected.
 
@@ -254,16 +254,16 @@ Existing approaches across the ecosystem:
 | Editor-side edge detection | smart-splits.nvim | Only works for editors with plugins. Most correct approach. |
 | Kitty keyboard protocol | Ghostty, kitty, wezterm | Solves key disambiguation (Tab vs Ctrl+I), not key routing between layers. No "report unconsumed" extension exists. |
 
-Mistty's approach for TUI app passthrough (separate from `unconsumed:`):
+Mytty's approach for TUI app passthrough (separate from `unconsumed:`):
 
-1. **Primary:** smart-splits.nvim integration (Phase 3b). Neovim detects it's at an edge, calls `mistty-cli pane focusByDirection`. The key never reaches Mistty's interceptor.
+1. **Primary:** smart-splits.nvim integration (Phase 3b). Neovim detects it's at an edge, calls `mytty-cli pane focusByDirection`. The key never reaches Mytty's interceptor.
 2. **Fallback:** Configurable process name list for non-neovim TUI apps.
 
 ### Alternatives rejected
 
 - **`unconsumed:` relative to the TUI app:** Not possible. No terminal protocol supports this. Would require inventing a new protocol extension, getting adoption from terminal apps, and waiting years. Defining `unconsumed:` this way would be a promise we can't keep.
 - **Alternate screen heuristic:** Check if the terminal is in alternate screen mode and pass keys through if so. Too coarse: fzf, lazygit, and many tools use alternate screen but don't need Ctrl+HJKL. Would break pane navigation whenever a user runs `less` or `man`.
-- **No `unconsumed:` prefix at all:** Force users to choose between Mistty bindings and Ghostty bindings with no layering. Users who configure Ghostty keybindings would have silent conflicts.
+- **No `unconsumed:` prefix at all:** Force users to choose between Mytty bindings and Ghostty bindings with no layering. Users who configure Ghostty keybindings would have silent conflicts.
 
 ---
 
@@ -276,7 +276,7 @@ A new config key for TUI app detection:
 passthrough-processes = ["nvim", "vim", "helix", "lazygit"]
 ```
 
-When the foreground process matches an entry, Mistty passes navigation keys (Ctrl+HJKL) through to the terminal instead of handling pane navigation. This is the existing behavior with a hardcoded list; this section makes it configurable.
+When the foreground process matches an entry, Mytty passes navigation keys (Ctrl+HJKL) through to the terminal instead of handling pane navigation. This is the existing behavior with a hardcoded list; this section makes it configurable.
 
 Default list: `["nvim", "vim", "helix", "lazygit"]` (expanded from current `["nvim", "neovim", "vim"]`).
 
@@ -286,7 +286,7 @@ This is a stopgap. The process name list is inherently fragile. The long-term so
 
 ### Alternatives rejected
 
-- **No process detection at all:** Ctrl+HJKL would always be intercepted by Mistty, breaking vim/helix/lazygit navigation. Unacceptable until smart-splits.nvim covers all TUI apps (it doesn't, and won't).
+- **No process detection at all:** Ctrl+HJKL would always be intercepted by Mytty, breaking vim/helix/lazygit navigation. Unacceptable until smart-splits.nvim covers all TUI apps (it doesn't, and won't).
 - **Automatic detection via Kitty keyboard protocol flags:** If a TUI app enables the Kitty keyboard protocol, treat it as "wants all keys." Speculative; no terminal does this. Would break apps that enable the protocol but don't want modifier keys.
 
 ---
@@ -321,7 +321,7 @@ Constraint: macOS menu shortcuts only support single key + modifiers. No sequenc
 **Phase 4a-1: Config parsing and KeybindingStore**
 
 - Add `KeybindingStore` model class holding the merged binding map.
-- Extend `MisttyConfig.parse()` to read `[keybindings]` sections.
+- Extend `MyttyConfig.parse()` to read `[keybindings]` sections.
 - Add trigger string parser (modifiers, key, prefix).
 - Add merge logic (defaults + user overrides).
 - Add conflict detection and warning.
@@ -330,7 +330,7 @@ Constraint: macOS menu shortcuts only support single key + modifiers. No sequenc
 
 **Phase 4a-2: Wire global keybindings**
 
-- Replace hardcoded `.keyboardShortcut()` calls in MisttyApp.swift with `KeybindingStore` lookups.
+- Replace hardcoded `.keyboardShortcut()` calls in MyttyApp.swift with `KeybindingStore` lookups.
 - Replace hardcoded Ctrl+HJKL in PaneNavigationManager with store lookups.
 - Add `unconsumed:` check using `ghostty_surface_key_is_binding()`.
 - Update process name list to read from config.
@@ -349,22 +349,22 @@ New files:
 
 | File | Purpose |
 |------|---------|
-| `Mistty/Config/KeybindingStore.swift` | Binding store, trigger parser, merge logic |
-| `Mistty/Config/TriggerParser.swift` | Trigger string -> KeyboardTrigger |
-| `MisttyTests/Config/KeybindingStoreTests.swift` | Tests for store, merge, conflicts |
-| `MisttyTests/Config/TriggerParserTests.swift` | Tests for trigger parsing |
+| `Mytty/Config/KeybindingStore.swift` | Binding store, trigger parser, merge logic |
+| `Mytty/Config/TriggerParser.swift` | Trigger string -> KeyboardTrigger |
+| `MyttyTests/Config/KeybindingStoreTests.swift` | Tests for store, merge, conflicts |
+| `MyttyTests/Config/TriggerParserTests.swift` | Tests for trigger parsing |
 
 Modified files:
 
 | File | Changes |
 |------|---------|
-| `Mistty/Config/MisttyConfig.swift` | Parse `[keybindings]` sections |
-| `Mistty/App/MisttyApp.swift` | Dynamic menu shortcuts from KeybindingStore |
-| `Mistty/App/PaneNavigationManager.swift` | Configurable keys, `unconsumed:` check |
-| `Mistty/App/WindowModeManager.swift` | Configurable keys from store |
-| `Mistty/Models/CopyModeState.swift` | Configurable keys from store |
-| `Mistty/App/WhichKeyManager.swift` | Config-driven tree |
-| `Mistty/Models/MisttyPane.swift` | Configurable process name list |
+| `Mytty/Config/MyttyConfig.swift` | Parse `[keybindings]` sections |
+| `Mytty/App/MyttyApp.swift` | Dynamic menu shortcuts from KeybindingStore |
+| `Mytty/App/PaneNavigationManager.swift` | Configurable keys, `unconsumed:` check |
+| `Mytty/App/WindowModeManager.swift` | Configurable keys from store |
+| `Mytty/Models/CopyModeState.swift` | Configurable keys from store |
+| `Mytty/App/WhichKeyManager.swift` | Config-driven tree |
+| `Mytty/Models/MyttyPane.swift` | Configurable process name list |
 
 ---
 

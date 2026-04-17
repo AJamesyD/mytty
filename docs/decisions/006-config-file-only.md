@@ -5,7 +5,7 @@ Date: 2026-04-15
 
 ## Context
 
-Mistty had a Settings GUI (Cmd+,) that could edit config values. On save,
+Mytty had a Settings GUI (Cmd+,) that could edit config values. On save,
 it serialized the entire config from scratch using a hand-built TOML writer.
 Any config sections the writer didn't know about (like `[keybindings]`) were
 silently dropped. A user who changed font size in Settings would lose their
@@ -18,8 +18,8 @@ uses config-file-only. The GUI writer was both unusual and broken.
 
 The config file is the single source of truth. The Settings GUI is read-only:
 it shows current values and provides an "Open Config File" button. Removed
-`save()` and `tomlEscape()` from `MisttyConfig`. Added a
-`MisttyConfig.configFileURL` static property so the GUI can open the file.
+`save()` and `tomlEscape()` from `MyttyConfig`. Added a
+`MyttyConfig.configFileURL` static property so the GUI can open the file.
 
 ## Consequences
 

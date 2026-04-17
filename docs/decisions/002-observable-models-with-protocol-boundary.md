@@ -5,7 +5,7 @@ Date: 2026-03-06
 
 ## Context
 
-Mistty manages a hierarchy: SessionStore holds sessions, sessions hold tabs,
+Mytty manages a hierarchy: SessionStore holds sessions, sessions hold tabs,
 tabs hold panes. We needed a model layer for this hierarchy. Options:
 
 1. **CoreData / SwiftData.** Persistence built in, but heavy frameworks with
@@ -22,8 +22,8 @@ tabs hold panes. We needed a model layer for this hierarchy. Options:
 
 ## Decision
 
-Option 3. Five `@MainActor @Observable` classes (SessionStore, MisttySession,
-MisttyTab, MisttyPane, PopupState) back the protocols today. The UI layer
+Option 3. Five `@MainActor @Observable` classes (SessionStore, MyttySession,
+MyttyTab, MyttyPane, PopupState) back the protocols today. The UI layer
 depends on the protocol, not the concrete class.
 
 In-memory storage is sufficient for the current product (no daemon, no

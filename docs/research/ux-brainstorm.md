@@ -1,9 +1,9 @@
-# Mistty UX Feature Brainstorm
+# Mytty UX Feature Brainstorm
 
 Date: 2026-04-14
 Inputs: terminal UX patterns, SwiftUI primitives, cmux architecture, Ghostty/WezTerm/Kitty feature requests, current improvement plan
 
-Mistty's current state: macOS terminal on libghostty, SwiftUI, sessions/tabs/split panes, sidebar, session manager (Cmd+J), copy mode, window mode. ContentView recently decomposed into managers.
+Mytty's current state: macOS terminal on libghostty, SwiftUI, sessions/tabs/split panes, sidebar, session manager (Cmd+J), copy mode, window mode. ContentView recently decomposed into managers.
 
 ---
 
@@ -11,7 +11,7 @@ Mistty's current state: macOS terminal on libghostty, SwiftUI, sessions/tabs/spl
 
 Each idea is rated on three axes (1-5):
 
-- **Delight**: how much would this make users choose Mistty over alternatives?
+- **Delight**: how much would this make users choose Mytty over alternatives?
 - **Complexity**: how hard to build (1 = easy, 5 = very hard)
 - **Uniqueness**: how differentiated from what exists in Ghostty, Kitty, WezTerm, iTerm2
 
@@ -47,7 +47,7 @@ Cmd+K opens a fuzzy-searchable floating panel showing all available actions with
 
 ### 3. Declarative Project Layouts
 
-A `.mistty.toml` file in a project root defines the workspace layout: pane arrangement, commands per pane, working directories. Opening a project directory detects the file and offers to apply the layout.
+A `.mytty.toml` file in a project root defines the workspace layout: pane arrangement, commands per pane, working directories. Opening a project directory detects the file and offers to apply the layout.
 
 - **Prior art**: tmuxinator (YAML), tmuxp (YAML/JSON), zellij KDL layouts, sesh.toml wildcard configs, cmux's cmux.json with directory trust model
 - **SwiftUI approach**: Parse TOML at workspace creation. Build the split tree programmatically via the existing pane management API. Add a `CmuxDirectoryTrust`-style trust prompt (`.alert()` modifier) before executing project configs from untrusted directories.
@@ -71,7 +71,7 @@ Cmd+J (already exists as session manager) enhanced with frecency-ranked project 
 
 ## Tier 2: Differentiators
 
-These would make Mistty stand out from Ghostty, Kitty, and WezTerm. Each addresses a gap that users have been requesting for years without resolution.
+These would make Mytty stand out from Ghostty, Kitty, and WezTerm. Each addresses a gap that users have been requesting for years without resolution.
 
 ### 5. Which-Key Overlay
 
@@ -119,7 +119,7 @@ Each workspace row in the sidebar shows: git branch with dirty indicator, linked
 
 ### 9. Socket API for Scriptability
 
-Unix domain socket (`/tmp/mistty.sock`) exposing workspace, pane, and session operations. A `mistty` CLI binary acts as a thin client. Enables scripting, automation, and integration with external tools (Raycast, Hammerspoon, shell scripts).
+Unix domain socket (`/tmp/mytty.sock`) exposing workspace, pane, and session operations. A `mytty` CLI binary acts as a thin client. Enables scripting, automation, and integration with external tools (Raycast, Hammerspoon, shell scripts).
 
 - **Prior art**: cmux (Unix socket with access modes), Kitty (remote control protocol), Ghostty 1.3 (AppleScript preview), WezTerm (Lua event system)
 - **SwiftUI approach**: Not SwiftUI-specific. A `NWListener` on a Unix domain socket in the app process. JSON-RPC or line-delimited JSON protocol. The CLI is a separate Swift executable that connects and sends commands. Access control via file permissions (cmux's access mode enum is a good model).
@@ -132,14 +132,14 @@ Unix domain socket (`/tmp/mistty.sock`) exposing workspace, pane, and session op
 
 ## Tier 3: Moonshots
 
-Ambitious features that could define Mistty's identity. Higher risk, but the payoff is a terminal that feels like nothing else.
+Ambitious features that could define Mytty's identity. Higher risk, but the payoff is a terminal that feels like nothing else.
 
 ### 10. Native tmux Control Mode
 
-Render tmux panes as native Mistty splits/tabs. Connect to a remote tmux session and display its windows using Mistty's GPU-rendered terminal surfaces instead of nested terminal-in-terminal. Bidirectional: actions in Mistty (split, close, resize) map to tmux commands.
+Render tmux panes as native Mytty splits/tabs. Connect to a remote tmux session and display its windows using Mytty's GPU-rendered terminal surfaces instead of nested terminal-in-terminal. Bidirectional: actions in Mytty (split, close, resize) map to tmux commands.
 
 - **Prior art**: iTerm2 (the only terminal that ships this; a key reason users stay on iTerm2). Ghostty #1935 (top-voted open issue). WezTerm #336 (filed by the maintainer).
-- **SwiftUI approach**: The tmux control mode protocol (`tmux -CC`) sends structured output describing pane layout changes. Parse this stream and map it to Mistty's split tree model. Each tmux pane becomes a libghostty surface receiving the pane's output stream. Resize events in Mistty send `resize-pane` commands back to tmux. The split tree model already supports programmatic manipulation.
+- **SwiftUI approach**: The tmux control mode protocol (`tmux -CC`) sends structured output describing pane layout changes. Parse this stream and map it to Mytty's split tree model. Each tmux pane becomes a libghostty surface receiving the pane's output stream. Resize events in Mytty send `resize-pane` commands back to tmux. The split tree model already supports programmatic manipulation.
 - **Delight**: 5 — top-voted open issue in Ghostty; the feature that keeps users on iTerm2
 - **Complexity**: 5 — tmux control mode protocol is complex, edge cases with resize/reflow, bidirectional sync
 - **Uniqueness**: 5 — only iTerm2 has this; shipping it would be a headline feature
@@ -161,7 +161,7 @@ Treat each command + its output as a discrete, selectable block. Click to select
 Named snapshots of a workspace's full state (layout, scrollback, working directories) that can be restored later. "Bookmark this moment" before a risky operation. Browse snapshots in a timeline view.
 
 - **Prior art**: Git stash (conceptually), tmux-resurrect (save/restore, but not named snapshots), Time Machine (macOS backup with timeline)
-- **SwiftUI approach**: Extend the session persistence system to support multiple named snapshots per workspace. A `.sheet()` or sidebar section shows a timeline of snapshots with timestamps and user-provided names. Restoring a snapshot rebuilds the split tree and replays scrollback. Store snapshots in `~/Library/Application Support/Mistty/snapshots/`.
+- **SwiftUI approach**: Extend the session persistence system to support multiple named snapshots per workspace. A `.sheet()` or sidebar section shows a timeline of snapshots with timestamps and user-provided names. Restoring a snapshot rebuilds the split tree and replays scrollback. Store snapshots in `~/Library/Application Support/Mytty/snapshots/`.
 - **Delight**: 3 — niche but powerful for users who do risky operations (database migrations, deploy scripts)
 - **Complexity**: 3 — builds on session persistence; the incremental work is snapshot management UI and storage
 - **Uniqueness**: 5 — no terminal or multiplexer offers named workspace snapshots
@@ -172,7 +172,7 @@ Named snapshots of a workspace's full state (layout, scrollback, working directo
 Smooth animated trail following the cursor, with configurable color, length, and decay. A cosmetic feature that generates outsized enthusiasm.
 
 - **Prior art**: Kitty (shipped cursor_trail, customizable color in 0.43), Neovide (smooth cursor animation). Ghostty discussion #4199 (347 votes, top-voted discussion). WezTerm #6492 and #7387.
-- **SwiftUI approach**: This lives in the terminal renderer (libghostty/Metal layer), not in SwiftUI. Would require patching the Ghostty fork's Metal shader to add a trail effect. Configuration exposed via Mistty's settings.
+- **SwiftUI approach**: This lives in the terminal renderer (libghostty/Metal layer), not in SwiftUI. Would require patching the Ghostty fork's Metal shader to add a trail effect. Configuration exposed via Mytty's settings.
 - **Delight**: 3 — 347 votes on Ghostty, described as "the last thing keeping many users on Kitty" in WezTerm issues
 - **Complexity**: 4 — Metal shader work in the Ghostty fork; not a SwiftUI feature
 - **Uniqueness**: 2 — Kitty already ships this
@@ -241,5 +241,5 @@ If building in order of dependency and value:
 - /tmp/ai-research-swiftui-ui-primitives.md
 - /tmp/ai-research-cmux-patterns.md
 - /tmp/ai-research-terminal-feature-requests.md
-- /tmp/ai-plan-mistty-improvements.md
+- /tmp/ai-plan-mytty-improvements.md
 - Existing research notes on tmux, shpool/zmx, zellij, cmux from ~/Documents/research/terminal/

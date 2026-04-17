@@ -1,4 +1,4 @@
-# Mistty Sidebar Information Architecture
+# Mytty Sidebar Information Architecture
 
 Research date: 2026-04-15
 Context: Mapping all information channels to visual elements for sidebar and tab bar.
@@ -65,7 +65,7 @@ From the research, these are the visual encoding channels available on a single 
 Research finding: most apps successfully show 3 simultaneous channels per row.
 4+ channels require progressive disclosure (hover) or separate views.
 
-Mistty's sidebar tab row needs up to 5 channels simultaneously:
+Mytty's sidebar tab row needs up to 5 channels simultaneously:
 1. Active tab (focus)
 2. Tab name (identity)
 3. Notification state (attention)

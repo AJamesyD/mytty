@@ -68,4 +68,4 @@ jobs:
         with:
           draft: true
           body_path: RELEASE_NOTES.md
-          files: build/Mistty-${{ github.ref_name }}-arm64.dmg
+          files: build/Mytty-${{ github.ref_name }}-arm64.dmg

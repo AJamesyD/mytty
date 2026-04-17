@@ -1,6 +1,6 @@
 # Phase 2a: OSC Foundation
 
-Mistty macOS terminal emulator, libghostty backend.
+Mytty macOS terminal emulator, libghostty backend.
 
 **Goal:** Handle the remaining OSC action callbacks from libghostty, storing state on the model layer. Visual rendering of most new state is deferred to Phase 2b.
 
@@ -39,9 +39,9 @@ Direct model updates from the C callback, bypassing NotificationCenter. Rejected
 
 **Action:** `GHOSTTY_ACTION_PWD` with `{ pwd: const char* }`
 
-### Model changes (MisttyPane.swift)
+### Model changes (MyttyPane.swift)
 
-Add `workingDirectory: URL?` to MisttyPane. Keep the existing `directory: URL?` as-is (it represents the initial/configured directory from the session). `workingDirectory` tracks the live value reported by the shell.
+Add `workingDirectory: URL?` to MyttyPane. Keep the existing `directory: URL?` as-is (it represents the initial/configured directory from the session). `workingDirectory` tracks the live value reported by the shell.
 
 On first PWD action, `workingDirectory` is set. It updates on every subsequent PWD action.
 
@@ -71,9 +71,9 @@ Sidebar path display (shortened: `~` for home, last 2 components for deep paths)
 | 3 | SET_TITLE | `tab.processTitle` | OSC 0/1/2 |
 | 4 | Default | `"Shell"` | Fallback |
 
-### Model changes (MisttyTab.swift)
+### Model changes (MyttyTab.swift)
 
-Add `tabTitle: String?` to MisttyTab. Rename the existing `title` usage so `displayTitle` computes from the priority chain:
+Add `tabTitle: String?` to MyttyTab. Rename the existing `title` usage so `displayTitle` computes from the priority chain:
 
 ```swift
 var displayTitle: String {
@@ -81,7 +81,7 @@ var displayTitle: String {
 }
 ```
 
-`processTitle` moves from MisttyPane to MisttyTab (it is a display concern, not a process concern). If keeping it on MisttyPane is simpler given existing code, the handler copies it to the tab on update.
+`processTitle` moves from MyttyPane to MyttyTab (it is a display concern, not a process concern). If keeping it on MyttyPane is simpler given existing code, the handler copies it to the tab on update.
 
 ### SET_TITLE debounce
 
@@ -128,7 +128,7 @@ Permission request happens lazily: the first time a notification is about to be 
 
 **Action:** `GHOSTTY_ACTION_COMMAND_FINISHED` with `{ exit_code: int16, duration: uint64 }`
 
-### Model changes (MisttyPane.swift)
+### Model changes (MyttyPane.swift)
 
 ```swift
 struct CommandResult {
@@ -136,7 +136,7 @@ struct CommandResult {
     let duration: UInt64  // nanoseconds
 }
 
-// On MisttyPane:
+// On MyttyPane:
 var lastCommandResult: CommandResult?
 ```
 
@@ -152,7 +152,7 @@ Phase 2b uses this for sidebar badges (exit code indicators) and prompt navigati
 
 **Action:** `GHOSTTY_ACTION_PROGRESS_REPORT` with `{ state: enum, progress: int8 }`
 
-### Model changes (MisttyPane.swift)
+### Model changes (MyttyPane.swift)
 
 ```swift
 enum ProgressState {
@@ -163,7 +163,7 @@ enum ProgressState {
     case pause
 }
 
-// On MisttyPane:
+// On MyttyPane:
 var progressState: ProgressState?
 ```
 
@@ -204,8 +204,8 @@ No new files. All changes go in existing files:
 |---|---|
 | GhosttyApp.swift | New action cases in `actionCallback` switch. New `Notification.Name` constants for PWD, SET_TAB_TITLE, DESKTOP_NOTIFICATION, COMMAND_FINISHED, PROGRESS_REPORT. |
 | ContentView+Handlers.swift | New handler methods for each notification. Debounce timer for SET_TITLE. Expiry timer for progress. |
-| MisttyPane.swift | Add `workingDirectory: URL?`, `lastCommandResult: CommandResult?`, `progressState: ProgressState?`. Add `CommandResult` struct and `ProgressState` enum. |
-| MisttyTab.swift | Add `tabTitle: String?`. Update `displayTitle` to use the 4-level priority chain. Move or copy `processTitle` handling. |
+| MyttyPane.swift | Add `workingDirectory: URL?`, `lastCommandResult: CommandResult?`, `progressState: ProgressState?`. Add `CommandResult` struct and `ProgressState` enum. |
+| MyttyTab.swift | Add `tabTitle: String?`. Update `displayTitle` to use the 4-level priority chain. Move or copy `processTitle` handling. |
 
 ---
 

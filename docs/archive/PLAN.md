@@ -1,4 +1,4 @@
-# Mistty
+# Mytty
 
 ## Idea
 
@@ -14,7 +14,7 @@ My workflow with tmux looks like this:
 - I start typing and the list of sessions is filtered with fuzzy finding
 - Hitting enter opens that session with all tabs, panes, etc.
 
-Furthermore, it is fully keyboard driven (any function MUST be accessible via keyboard shortcut) and configurable via config file (XDG config compliant, e.g. ~/.config/mistty/config.toml)
+Furthermore, it is fully keyboard driven (any function MUST be accessible via keyboard shortcut) and configurable via config file (XDG config compliant, e.g. ~/.config/mytty/config.toml)
 
 ## TODO
 
@@ -59,7 +59,7 @@ Broken into three phases. Phase 1 has a full spec at `docs/superpowers/specs/202
 
 ### Ghostty config
 
-- Ghostty config needs to be configurable too. At least some of the options, not all - those that control the UI, for example, don't apply for mistty, but things like rendering (e.g. display colorspace) do apply
+- Ghostty config needs to be configurable too. At least some of the options, not all - those that control the UI, for example, don't apply for mytty, but things like rendering (e.g. display colorspace) do apply
 
 ### Keyboard shortcut configuration
 
@@ -74,7 +74,7 @@ Broken into three phases. Phase 1 has a full spec at `docs/superpowers/specs/202
 - Hiding/showing the sidebar should be animated (slide in/out)
 - Sidebar should show process icons for common processes (can use whatever nvim-mini/mini.icons does for filetype and common terminal icons)
 - Instead of showing process title + directory for the tab name in the sidebar, let's only show the CWD (of the currently active pane) for the session and the process title or renamed name for the tab
-- mistty-cli should be able to open a markdown file with full rendering support. This overlays a markdown view over the terminal (make sure to respect light/dark mode when rendering!) `mistty-cli open --{markdown,md} <file>`
+- mytty-cli should be able to open a markdown file with full rendering support. This overlays a markdown view over the terminal (make sure to respect light/dark mode when rendering!) `mytty-cli open --{markdown,md} <file>`
   - supports rendering mermaid diagrams & images
   - Obsidian markdown support
   - hitting "e" opens the file in $EDITOR for editing, closing the file goes back to the markdown view and shows the updated render
@@ -140,7 +140,7 @@ Broken into three phases. Phase 1 has a full spec at `docs/superpowers/specs/202
 - Yank selection to clipboard (y) via ghostty_surface_read_text
 - Basic word movement (w/b, simplified 5-char jumps)
 
-### CLI control (mistty-cli via XPC/Mach service)
+### CLI control (mytty-cli via XPC/Mach service)
 
 - Session CRUD: create, list, get, close (with --name, --directory, --exec)
 - Tab CRUD: create, list, get, close, rename
@@ -172,7 +172,7 @@ Broken into three phases. Phase 1 has a full spec at `docs/superpowers/specs/202
 
 ### Config & preferences
 
-- Config file parsing from ~/.config/mistty/config.toml
+- Config file parsing from ~/.config/mytty/config.toml
 - Preference pane (cmd+,) for font size, cursor style, scrollback, sidebar visibility
 - Popup definition configuration
 

@@ -15,9 +15,9 @@ Competitive landscape for each feature area:
 - **Kitty:** configurable tab_activity_symbol, red for bell.
 - **tmux:** single-char flags (#, !) in status bar.
 
-Command state indicators across terminals: most terminals show command results inline (Warp blocks, VS Code gutter). None show command results in a sidebar tab row. The closest pattern is IDE run configurations showing pass/fail icons. Mistty's approach (process title left, result icon right) is novel for terminal sidebars.
+Command state indicators across terminals: most terminals show command results inline (Warp blocks, VS Code gutter). None show command results in a sidebar tab row. The closest pattern is IDE run configurations showing pass/fail icons. Mytty's approach (process title left, result icon right) is novel for terminal sidebars.
 
-Mistty combines cmux's sidebar metadata with Warp's structured command metadata in a single view.
+Mytty combines cmux's sidebar metadata with Warp's structured command metadata in a single view.
 
 ## Decision log
 
@@ -105,8 +105,8 @@ When collapsed, session row shows a trailing pill badge (like Mail's unread coun
 
 ### Model changes
 
-- MisttyTab: add `var hasFailedCommand: Bool = false`
-- MisttySession: add computed `var notificationCount: Int` and `var notificationSeverity: NotificationSeverity?`
+- MyttyTab: add `var hasFailedCommand: Bool = false`
+- MyttySession: add computed `var notificationCount: Int` and `var notificationSeverity: NotificationSeverity?`
 
 ---
 
@@ -117,7 +117,7 @@ When collapsed, session row shows a trailing pill badge (like Mail's unread coun
 Below session name, 11px monospaced .secondary text:
 
 ```
-main* · ~/Code/mistty
+main* · ~/Code/mytty
 ```
 
 Shows metadata for the session's active tab's active pane:
@@ -187,7 +187,7 @@ Visual highlight on navigation: deferred (requires renderer-level changes). The 
 
 ### 2b-1: Notification badges
 
-- Add hasFailedCommand to MisttyTab
+- Add hasFailedCommand to MyttyTab
 - Update handleCommandFinished to set it (only when tab is not active)
 - Replace bell dot with SF Symbol indicators in SidebarView
 - Add session-level notification rollup (count pill)
@@ -196,7 +196,7 @@ Visual highlight on navigation: deferred (requires renderer-level changes). The 
 ### 2b-2: Git branch + working directory metadata
 
 - Add GitDetectionService (async Process for git commands)
-- Add gitBranch, gitDirty to MisttyPane
+- Add gitBranch, gitDirty to MyttyPane
 - Add metadata line to SessionRowView
 - Trigger on OSC 7 and COMMAND_FINISHED
 - Path shortening helper
@@ -224,19 +224,19 @@ Visual highlight on navigation: deferred (requires renderer-level changes). The 
 
 | File | Contents |
 |------|----------|
-| Mistty/Services/GitDetectionService.swift | Async git rev-parse + git diff --quiet |
+| Mytty/Services/GitDetectionService.swift | Async git rev-parse + git diff --quiet |
 
 ## Changed files
 
 | File | Changes |
 |------|---------|
-| MisttyPane.swift | Add gitBranch, gitDirty |
-| MisttyTab.swift | Add hasFailedCommand |
-| MisttySession.swift | Add computed notificationCount, notificationSeverity |
+| MyttyPane.swift | Add gitBranch, gitDirty |
+| MyttyTab.swift | Add hasFailedCommand |
+| MyttySession.swift | Add computed notificationCount, notificationSeverity |
 | ContentView+Handlers.swift | Update handleCommandFinished to set hasFailedCommand, trigger git detection on COMMAND_FINISHED and PWD |
 | SidebarView.swift | SF Symbol indicators, session rollup pill, metadata line, trailing command result |
 | TerminalCommands.swift | Add jumpToPreviousPrompt, jumpToNextPrompt |
-| MisttyApp.swift | Add Cmd+Shift+Up/Down menu items |
+| MyttyApp.swift | Add Cmd+Shift+Up/Down menu items |
 
 ## Testing
 

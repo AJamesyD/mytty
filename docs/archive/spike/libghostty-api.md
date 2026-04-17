@@ -29,17 +29,17 @@ zig build -Dapp-runtime=none -Demit-xcframework
 
 The Ghostty developers explicitly note: *"libghostty is not stable for general purpose use. It is used heavily by Ghostty on macOS but it isn't built to be reusable yet."*
 
-### Practical approach for Mistty (spike phase)
+### Practical approach for Mytty (spike phase)
 
 The simplest path for the spike:
 1. Clone the Ghostty repo: `git clone https://github.com/ghostty-org/ghostty`
 2. Install Zig (matching version used by Ghostty — check `build.zig.zon`)
 3. Run `zig build -Dapp-runtime=none` to build the xcframework
-4. Link the resulting xcframework into the Mistty Xcode project
+4. Link the resulting xcframework into the Mytty Xcode project
 
 Alternatively, since we just need symbols present for the spike, we can link directly against the installed `Ghostty` binary by treating it as a dylib (all the `ghostty_*` symbols are present in the executable). This is a hack and not suitable for distribution.
 
-The header file is at `include/ghostty.h` in the Ghostty source tree and must be copied into the Mistty project.
+The header file is at `include/ghostty.h` in the Ghostty source tree and must be copied into the Mytty project.
 
 ---
 
@@ -278,7 +278,7 @@ guard let app = ghostty_app_new(&runtime_cfg, config) else { fatalError() }
 
 ## 7. NSViewRepresentable Wrapper Design
 
-What Mistty's `SurfaceViewRepresentable` will need:
+What Mytty's `SurfaceViewRepresentable` will need:
 
 ```swift
 // AppKit side: an NSView subclass that owns the ghostty surface
@@ -328,7 +328,7 @@ struct SurfaceRepresentable: NSViewRepresentable {
 Key notes:
 - Wrap `SurfaceView` in a `SurfaceScrollView` (as Ghostty does) if scroll behavior is needed beyond what libghostty provides
 - Use `GeometryReader` in the SwiftUI layer to pass explicit sizes rather than relying on NSView layout callbacks
-- The `action_cb` from the runtime config fires `GHOSTTY_ACTION_SET_TITLE`, `GHOSTTY_ACTION_CLOSE_WINDOW`, `GHOSTTY_ACTION_NEW_WINDOW`, etc. — Mistty must handle the ones it cares about
+- The `action_cb` from the runtime config fires `GHOSTTY_ACTION_SET_TITLE`, `GHOSTTY_ACTION_CLOSE_WINDOW`, `GHOSTTY_ACTION_NEW_WINDOW`, etc. — Mytty must handle the ones it cares about
 
 ---
 
@@ -355,6 +355,6 @@ Key notes:
 ## 9. Recommended Next Steps
 
 1. Clone Ghostty repo, install correct Zig version, run `zig build -Dapp-runtime=none` to produce the xcframework
-2. Copy `include/ghostty.h` into Mistty project
+2. Copy `include/ghostty.h` into Mytty project
 3. Add xcframework to Xcode (or link the built static library)
 4. Write a minimal Swift bridging module that calls `ghostty_init` → `ghostty_config_*` → `ghostty_app_new` → `ghostty_surface_new` and verify a surface appears on screen (Task P0-T3 and P0-T4)

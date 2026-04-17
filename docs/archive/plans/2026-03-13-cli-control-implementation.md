@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Add CLI control to Mistty via XPC IPC, enabling `mistty-cli` to manage sessions, tabs, panes, and windows.
+**Goal:** Add CLI control to Mytty via XPC IPC, enabling `mytty-cli` to manage sessions, tabs, panes, and windows.
 
-**Architecture:** A shared Swift library (`MisttyShared`) defines the XPC protocol and Codable response types. The app starts an `NSXPCListener` on launch and implements the protocol by dispatching to `SessionStore`. A separate `mistty-cli` executable connects via XPC and exposes entity-based subcommands via Swift Argument Parser.
+**Architecture:** A shared Swift library (`MyttyShared`) defines the XPC protocol and Codable response types. The app starts an `NSXPCListener` on launch and implements the protocol by dispatching to `SessionStore`. A separate `mytty-cli` executable connects via XPC and exposes entity-based subcommands via Swift Argument Parser.
 
 **Tech Stack:** Swift 6, NSXPCConnection, Swift Argument Parser, XCTest
 
@@ -15,15 +15,15 @@
 Models currently use `let id = UUID()`. Change to atomic int IDs managed by SessionStore for CLI ergonomics.
 
 **Files:**
-- Modify: `Mistty/Models/SessionStore.swift`
-- Modify: `Mistty/Models/MisttySession.swift`
-- Modify: `Mistty/Models/MisttyTab.swift`
-- Modify: `Mistty/Models/MisttyPane.swift`
-- Modify: `MisttyTests/Models/SessionStoreTests.swift`
+- Modify: `Mytty/Models/SessionStore.swift`
+- Modify: `Mytty/Models/MyttySession.swift`
+- Modify: `Mytty/Models/MyttyTab.swift`
+- Modify: `Mytty/Models/MyttyPane.swift`
+- Modify: `MyttyTests/Models/SessionStoreTests.swift`
 
-**Step 1: Update MisttySession to accept Int id**
+**Step 1: Update MyttySession to accept Int id**
 
-In `Mistty/Models/MisttySession.swift`, change:
+In `Mytty/Models/MyttySession.swift`, change:
 ```swift
 let id = UUID()
 ```
@@ -42,9 +42,9 @@ init(id: Int, name: String, directory: URL) {
 }
 ```
 
-**Step 2: Update MisttyTab to accept Int id**
+**Step 2: Update MyttyTab to accept Int id**
 
-In `Mistty/Models/MisttyTab.swift`, change:
+In `Mytty/Models/MyttyTab.swift`, change:
 ```swift
 let id = UUID()
 ```
@@ -58,21 +58,21 @@ This model has two initializers. Both need an `id: Int` parameter:
 init(id: Int, directory: URL? = nil) {
     self.id = id
     self.directory = directory
-    let pane = MisttyPane(id: 0) // placeholder — will be wired properly
+    let pane = MyttyPane(id: 0) // placeholder — will be wired properly
     // ... rest unchanged
 }
 
-init(id: Int, existingPane pane: MisttyPane) {
+init(id: Int, existingPane pane: MyttyPane) {
     self.id = id
     // ... rest unchanged
 }
 ```
 
-Note: Tab creation is managed by MisttySession, so the id counter must flow from SessionStore through MisttySession. See step 4.
+Note: Tab creation is managed by MyttySession, so the id counter must flow from SessionStore through MyttySession. See step 4.
 
-**Step 3: Update MisttyPane to accept Int id**
+**Step 3: Update MyttyPane to accept Int id**
 
-In `Mistty/Models/MisttyPane.swift`, change:
+In `Mytty/Models/MyttyPane.swift`, change:
 ```swift
 let id = UUID()
 ```
@@ -89,17 +89,17 @@ init(id: Int, directory: URL? = nil) {
 }
 ```
 
-Note: Panes are created inside MisttyTab (via `splitActivePane` and init). The id counter must flow from SessionStore through MisttySession and MisttyTab.
+Note: Panes are created inside MyttyTab (via `splitActivePane` and init). The id counter must flow from SessionStore through MyttySession and MyttyTab.
 
 **Step 4: Add ID counters to SessionStore and thread them through**
 
-In `Mistty/Models/SessionStore.swift`, add counters and an ID generator:
+In `Mytty/Models/SessionStore.swift`, add counters and an ID generator:
 ```swift
 @Observable
 @MainActor
 final class SessionStore {
-    private(set) var sessions: [MisttySession] = []
-    var activeSession: MisttySession?
+    private(set) var sessions: [MyttySession] = []
+    var activeSession: MyttySession?
 
     private var nextSessionId = 1
     private var nextTabId = 1
@@ -124,14 +124,14 @@ final class SessionStore {
     }
 
     @discardableResult
-    func createSession(name: String, directory: URL) -> MisttySession {
-        let session = MisttySession(id: nextSessionID(), name: name, directory: directory, store: self)
+    func createSession(name: String, directory: URL) -> MyttySession {
+        let session = MyttySession(id: nextSessionID(), name: name, directory: directory, store: self)
         sessions.append(session)
         activeSession = session
         return session
     }
 
-    func closeSession(_ session: MisttySession) {
+    func closeSession(_ session: MyttySession) {
         sessions.removeAll { $0.id == session.id }
         if activeSession?.id == session.id {
             activeSession = sessions.last
@@ -140,18 +140,18 @@ final class SessionStore {
 }
 ```
 
-MisttySession needs a `store` reference to get IDs for new tabs/panes. Add a weak reference or pass an ID generator closure. The simplest approach: pass a reference to the store.
+MyttySession needs a `store` reference to get IDs for new tabs/panes. Add a weak reference or pass an ID generator closure. The simplest approach: pass a reference to the store.
 
-Update `MisttySession`:
+Update `MyttySession`:
 ```swift
 @Observable
 @MainActor
-final class MisttySession: Identifiable {
+final class MyttySession: Identifiable {
     let id: Int
     var name: String
     let directory: URL
-    private(set) var tabs: [MisttyTab] = []
-    var activeTab: MisttyTab?
+    private(set) var tabs: [MyttyTab] = []
+    var activeTab: MyttyTab?
     private weak var store: SessionStore?
 
     init(id: Int, name: String, directory: URL, store: SessionStore) {
@@ -166,20 +166,20 @@ final class MisttySession: Identifiable {
         guard let store else { return }
         let paneId = store.nextPaneID()
         let tabId = store.nextTabID()
-        let tab = MisttyTab(id: tabId, paneId: paneId, directory: directory)
+        let tab = MyttyTab(id: tabId, paneId: paneId, directory: directory)
         tabs.append(tab)
         activeTab = tab
     }
 
-    func addTabWithPane(_ pane: MisttyPane) {
+    func addTabWithPane(_ pane: MyttyPane) {
         guard let store else { return }
         let tabId = store.nextTabID()
-        let tab = MisttyTab(id: tabId, existingPane: pane)
+        let tab = MyttyTab(id: tabId, existingPane: pane)
         tabs.append(tab)
         activeTab = tab
     }
 
-    func closeTab(_ tab: MisttyTab) {
+    func closeTab(_ tab: MyttyTab) {
         tabs.removeAll { $0.id == tab.id }
         if activeTab?.id == tab.id {
             activeTab = tabs.last
@@ -188,19 +188,19 @@ final class MisttySession: Identifiable {
 }
 ```
 
-Update `MisttyTab` to accept paneId for initial pane creation:
+Update `MyttyTab` to accept paneId for initial pane creation:
 ```swift
 init(id: Int, paneId: Int, directory: URL? = nil) {
     self.id = id
     self.directory = directory
-    let pane = MisttyPane(id: paneId, directory: directory)
+    let pane = MyttyPane(id: paneId, directory: directory)
     self.layout = PaneLayout(root: .leaf(pane))
     self.panes = [pane]
     self.activePane = pane
 }
 ```
 
-For `splitActivePane`, the tab needs access to the store's ID generator. Thread it through MisttySession → MisttyTab, or have MisttyTab hold a pane ID generator closure:
+For `splitActivePane`, the tab needs access to the store's ID generator. Thread it through MyttySession → MyttyTab, or have MyttyTab hold a pane ID generator closure:
 
 ```swift
 var paneIDGenerator: (() -> Int)?
@@ -214,33 +214,33 @@ func splitActivePane(direction: SplitDirection) {
 }
 ```
 
-Wire in MisttySession's `addTab`:
+Wire in MyttySession's `addTab`:
 ```swift
 func addTab() {
     guard let store else { return }
     let paneId = store.nextPaneID()
     let tabId = store.nextTabID()
-    let tab = MisttyTab(id: tabId, paneId: paneId, directory: directory)
+    let tab = MyttyTab(id: tabId, paneId: paneId, directory: directory)
     tab.paneIDGenerator = { [weak store] in store?.nextPaneID() ?? 0 }
     tabs.append(tab)
     activeTab = tab
 }
 ```
 
-PaneLayout.split also needs updating — it currently creates a MisttyPane internally. Change it to accept a paneId parameter:
+PaneLayout.split also needs updating — it currently creates a MyttyPane internally. Change it to accept a paneId parameter:
 
-In `Mistty/Models/PaneLayout.swift`, update the split method signature:
+In `Mytty/Models/PaneLayout.swift`, update the split method signature:
 ```swift
-mutating func split(pane: MisttyPane, direction: SplitDirection, directory: URL?, paneId: Int) {
-    // Replace: let newPane = MisttyPane(directory: directory)
-    // With:    let newPane = MisttyPane(id: paneId, directory: directory)
+mutating func split(pane: MyttyPane, direction: SplitDirection, directory: URL?, paneId: Int) {
+    // Replace: let newPane = MyttyPane(directory: directory)
+    // With:    let newPane = MyttyPane(id: paneId, directory: directory)
     // rest unchanged
 }
 ```
 
 **Step 5: Update tests**
 
-Fix all test compilation errors. Tests that create MisttySession directly now need a SessionStore:
+Fix all test compilation errors. Tests that create MyttySession directly now need a SessionStore:
 ```swift
 func testCreateSession() async throws {
     let session = store.createSession(name: "test", directory: URL(filePath: "/tmp"))
@@ -249,9 +249,9 @@ func testCreateSession() async throws {
 }
 ```
 
-PaneLayoutTests that create MisttyPane directly need an id parameter:
+PaneLayoutTests that create MyttyPane directly need an id parameter:
 ```swift
-let pane = MisttyPane(id: 1)
+let pane = MyttyPane(id: 1)
 ```
 
 **Step 6: Run tests**
@@ -262,50 +262,50 @@ Expected: All tests pass with Int IDs.
 **Step 7: Commit**
 
 ```bash
-git add Mistty/Models/ MisttyTests/
+git add Mytty/Models/ MyttyTests/
 git commit -m "refactor: migrate model IDs from UUID to Int for CLI ergonomics"
 ```
 
 ---
 
-### Task 2: Create MisttyShared library with XPC protocol and response types
+### Task 2: Create MyttyShared library with XPC protocol and response types
 
 **Files:**
-- Create: `MisttyShared/MisttyServiceProtocol.swift`
-- Create: `MisttyShared/XPCConstants.swift`
-- Create: `MisttyShared/Models/SessionResponse.swift`
-- Create: `MisttyShared/Models/TabResponse.swift`
-- Create: `MisttyShared/Models/PaneResponse.swift`
-- Create: `MisttyShared/Models/WindowResponse.swift`
+- Create: `MyttyShared/MyttyServiceProtocol.swift`
+- Create: `MyttyShared/XPCConstants.swift`
+- Create: `MyttyShared/Models/SessionResponse.swift`
+- Create: `MyttyShared/Models/TabResponse.swift`
+- Create: `MyttyShared/Models/PaneResponse.swift`
+- Create: `MyttyShared/Models/WindowResponse.swift`
 - Modify: `Package.swift`
 
-**Step 1: Add MisttyShared target to Package.swift**
+**Step 1: Add MyttyShared target to Package.swift**
 
 Add a library target with no dependencies:
 ```swift
 .target(
-    name: "MisttyShared",
-    path: "MisttyShared"
+    name: "MyttyShared",
+    path: "MyttyShared"
 ),
 ```
 
-Add MisttyShared as a dependency of the Mistty target:
+Add MyttyShared as a dependency of the Mytty target:
 ```swift
 .executableTarget(
-    name: "Mistty",
-    dependencies: ["GhosttyKit", "TOMLKit", "MisttyShared"],
+    name: "Mytty",
+    dependencies: ["GhosttyKit", "TOMLKit", "MyttyShared"],
     // ... rest unchanged
 ),
 ```
 
 **Step 2: Create XPC constants**
 
-`MisttyShared/XPCConstants.swift`:
+`MyttyShared/XPCConstants.swift`:
 ```swift
 import Foundation
 
-public enum MisttyXPC {
-    public static let serviceName = "com.mistty.cli-service"
+public enum MyttyXPC {
+    public static let serviceName = "com.mytty.cli-service"
 
     public enum ErrorCode: Int {
         case entityNotFound = 1
@@ -313,7 +313,7 @@ public enum MisttyXPC {
         case operationFailed = 3
     }
 
-    public static let errorDomain = "com.mistty.error"
+    public static let errorDomain = "com.mytty.error"
 
     public static func error(_ code: ErrorCode, _ message: String) -> NSError {
         NSError(domain: errorDomain, code: code.rawValue, userInfo: [
@@ -325,11 +325,11 @@ public enum MisttyXPC {
 
 **Step 3: Create XPC protocol**
 
-`MisttyShared/MisttyServiceProtocol.swift`:
+`MyttyShared/MyttyServiceProtocol.swift`:
 ```swift
 import Foundation
 
-@objc public protocol MisttyServiceProtocol {
+@objc public protocol MyttyServiceProtocol {
     // Sessions
     func createSession(name: String, directory: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void)
     func listSessions(reply: @escaping (Data?, Error?) -> Void)
@@ -370,7 +370,7 @@ Also note: `sendKeys`, `runCommand`, `getText` use non-optional `paneId: Int` he
 
 **Step 4: Create response types**
 
-`MisttyShared/Models/SessionResponse.swift`:
+`MyttyShared/Models/SessionResponse.swift`:
 ```swift
 import Foundation
 
@@ -391,7 +391,7 @@ public struct SessionResponse: Codable, Sendable {
 }
 ```
 
-`MisttyShared/Models/TabResponse.swift`:
+`MyttyShared/Models/TabResponse.swift`:
 ```swift
 import Foundation
 
@@ -410,7 +410,7 @@ public struct TabResponse: Codable, Sendable {
 }
 ```
 
-`MisttyShared/Models/PaneResponse.swift`:
+`MyttyShared/Models/PaneResponse.swift`:
 ```swift
 import Foundation
 
@@ -425,7 +425,7 @@ public struct PaneResponse: Codable, Sendable {
 }
 ```
 
-`MisttyShared/Models/WindowResponse.swift`:
+`MyttyShared/Models/WindowResponse.swift`:
 ```swift
 import Foundation
 
@@ -448,8 +448,8 @@ Expected: Compiles with no errors.
 **Step 6: Commit**
 
 ```bash
-git add MisttyShared/ Package.swift
-git commit -m "feat: add MisttyShared library with XPC protocol and response types"
+git add MyttyShared/ Package.swift
+git commit -m "feat: add MyttyShared library with XPC protocol and response types"
 ```
 
 ---
@@ -457,28 +457,28 @@ git commit -m "feat: add MisttyShared library with XPC protocol and response typ
 ### Task 3: Implement XPC listener in the app
 
 **Files:**
-- Create: `Mistty/Services/XPCListener.swift`
-- Modify: `Mistty/App/MisttyApp.swift`
+- Create: `Mytty/Services/XPCListener.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
 
 **Step 1: Create XPCListener**
 
-`Mistty/Services/XPCListener.swift`:
+`Mytty/Services/XPCListener.swift`:
 ```swift
 import Foundation
-import MisttyShared
+import MyttyShared
 
 @MainActor
-final class MisttyXPCListener: NSObject {
+final class MyttyXPCListener: NSObject {
     private var listener: NSXPCListener?
-    private let service: MisttyServiceProtocol
+    private let service: MyttyServiceProtocol
 
-    init(service: MisttyServiceProtocol) {
+    init(service: MyttyServiceProtocol) {
         self.service = service
         super.init()
     }
 
     func start() {
-        let listener = NSXPCListener(machServiceName: MisttyXPC.serviceName)
+        let listener = NSXPCListener(machServiceName: MyttyXPC.serviceName)
         listener.delegate = self
         listener.resume()
         self.listener = listener
@@ -490,9 +490,9 @@ final class MisttyXPCListener: NSObject {
     }
 }
 
-extension MisttyXPCListener: NSXPCListenerDelegate {
+extension MyttyXPCListener: NSXPCListenerDelegate {
     nonisolated func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        newConnection.exportedInterface = NSXPCInterface(with: MisttyServiceProtocol.self)
+        newConnection.exportedInterface = NSXPCInterface(with: MyttyServiceProtocol.self)
         newConnection.exportedObject = service
         newConnection.resume()
         return true
@@ -502,13 +502,13 @@ extension MisttyXPCListener: NSXPCListenerDelegate {
 
 **Step 2: Create a stub XPC service for now**
 
-`Mistty/Services/XPCService.swift`:
+`Mytty/Services/XPCService.swift`:
 ```swift
 import Foundation
-import MisttyShared
+import MyttyShared
 
 @MainActor
-final class MisttyXPCService: NSObject, MisttyServiceProtocol {
+final class MyttyXPCService: NSObject, MyttyServiceProtocol {
     let store: SessionStore
 
     init(store: SessionStore) {
@@ -518,94 +518,94 @@ final class MisttyXPCService: NSObject, MisttyServiceProtocol {
 
     // Stub implementations — will be filled in Task 4
     nonisolated func createSession(name: String, directory: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func listSessions(reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func getSession(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func closeSession(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func createTab(sessionId: Int, name: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func listTabs(sessionId: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func getTab(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func closeTab(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func renameTab(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func createPane(tabId: Int, direction: String?, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func listPanes(tabId: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func getPane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func closePane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func focusPane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func resizePane(id: Int, direction: String, amount: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func activePane(reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func sendKeys(paneId: Int, keys: String, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func runCommand(paneId: Int, command: String, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func getText(paneId: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func createWindow(reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func listWindows(reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func getWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func closeWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
     nonisolated func focusWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) {
-        reply(nil, MisttyXPC.error(.operationFailed, "Not implemented"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Not implemented"))
     }
 }
 ```
 
-**Step 3: Wire listener into MisttyApp**
+**Step 3: Wire listener into MyttyApp**
 
-In `Mistty/App/MisttyApp.swift`, the ContentView already creates a SessionStore via `@State`. The XPC listener needs access to the same store. Move store ownership to the App level or pass it down.
+In `Mytty/App/MyttyApp.swift`, the ContentView already creates a SessionStore via `@State`. The XPC listener needs access to the same store. Move store ownership to the App level or pass it down.
 
 The cleanest approach: ContentView already has `@State var store = SessionStore()`. We need the listener to start with the same store. Add an `onAppear` in ContentView that starts the listener:
 
-In `Mistty/App/ContentView.swift`, add:
+In `Mytty/App/ContentView.swift`, add:
 ```swift
-@State private var xpcListener: MisttyXPCListener?
+@State private var xpcListener: MyttyXPCListener?
 
 // In body, add to the root view:
 .onAppear {
-    let service = MisttyXPCService(store: store)
-    let listener = MisttyXPCListener(service: service)
+    let service = MyttyXPCService(store: store)
+    let listener = MyttyXPCListener(service: service)
     listener.start()
     xpcListener = listener
 }
@@ -619,7 +619,7 @@ Expected: Compiles. The listener won't actually work without a launchd plist, bu
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Services/XPCListener.swift Mistty/Services/XPCService.swift Mistty/App/ContentView.swift
+git add Mytty/Services/XPCListener.swift Mytty/Services/XPCService.swift Mytty/App/ContentView.swift
 git commit -m "feat: add XPC listener and stub service for CLI control"
 ```
 
@@ -628,19 +628,19 @@ git commit -m "feat: add XPC listener and stub service for CLI control"
 ### Task 4: Implement XPC service — session operations
 
 **Files:**
-- Modify: `Mistty/Services/XPCService.swift`
-- Modify: `Mistty/Models/SessionStore.swift` (add lookup helpers)
-- Test: `MisttyTests/Services/XPCServiceTests.swift`
+- Modify: `Mytty/Services/XPCService.swift`
+- Modify: `Mytty/Models/SessionStore.swift` (add lookup helpers)
+- Test: `MyttyTests/Services/XPCServiceTests.swift`
 
 **Step 1: Add lookup helpers to SessionStore**
 
-In `Mistty/Models/SessionStore.swift`, add:
+In `Mytty/Models/SessionStore.swift`, add:
 ```swift
-func session(byId id: Int) -> MisttySession? {
+func session(byId id: Int) -> MyttySession? {
     sessions.first { $0.id == id }
 }
 
-func tab(byId id: Int) -> (session: MisttySession, tab: MisttyTab)? {
+func tab(byId id: Int) -> (session: MyttySession, tab: MyttyTab)? {
     for session in sessions {
         if let tab = session.tabs.first(where: { $0.id == id }) {
             return (session, tab)
@@ -649,7 +649,7 @@ func tab(byId id: Int) -> (session: MisttySession, tab: MisttyTab)? {
     return nil
 }
 
-func pane(byId id: Int) -> (session: MisttySession, tab: MisttyTab, pane: MisttyPane)? {
+func pane(byId id: Int) -> (session: MyttySession, tab: MyttyTab, pane: MyttyPane)? {
     for session in sessions {
         for tab in session.tabs {
             if let pane = tab.panes.first(where: { $0.id == id }) {
@@ -660,7 +660,7 @@ func pane(byId id: Int) -> (session: MisttySession, tab: MisttyTab, pane: Mistty
     return nil
 }
 
-func activePaneInfo() -> (session: MisttySession, tab: MisttyTab, pane: MisttyPane)? {
+func activePaneInfo() -> (session: MyttySession, tab: MyttyTab, pane: MyttyPane)? {
     guard let session = activeSession,
           let tab = session.activeTab,
           let pane = tab.activePane else { return nil }
@@ -670,20 +670,20 @@ func activePaneInfo() -> (session: MisttySession, tab: MisttyTab, pane: MisttyPa
 
 **Step 2: Write tests for session operations**
 
-`MisttyTests/Services/XPCServiceTests.swift`:
+`MyttyTests/Services/XPCServiceTests.swift`:
 ```swift
-@testable import Mistty
-import MisttyShared
+@testable import Mytty
+import MyttyShared
 import XCTest
 
 @MainActor
 final class XPCServiceTests: XCTestCase {
     var store: SessionStore!
-    var service: MisttyXPCService!
+    var service: MyttyXPCService!
 
     override func setUp() async throws {
         store = SessionStore()
-        service = MisttyXPCService(store: store)
+        service = MyttyXPCService(store: store)
     }
 
     // MARK: - Session tests
@@ -734,7 +734,7 @@ final class XPCServiceTests: XCTestCase {
         service.getSession(id: 999) { data, error in
             XCTAssertNil(data)
             XCTAssertNotNil(error)
-            XCTAssertEqual((error! as NSError).code, MisttyXPC.ErrorCode.entityNotFound.rawValue)
+            XCTAssertEqual((error! as NSError).code, MyttyXPC.ErrorCode.entityNotFound.rawValue)
             expectation.fulfill()
         }
         await fulfillment(of: [expectation], timeout: 2)
@@ -761,7 +761,7 @@ Expected: FAIL — stub implementations return "Not implemented" errors.
 
 **Step 4: Implement session operations in XPCService**
 
-Replace the session stubs in `Mistty/Services/XPCService.swift`:
+Replace the session stubs in `Mytty/Services/XPCService.swift`:
 
 ```swift
 nonisolated func createSession(name: String, directory: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void) {
@@ -797,7 +797,7 @@ nonisolated func listSessions(reply: @escaping (Data?, Error?) -> Void) {
 nonisolated func getSession(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let session = store.session(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Session \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Session \(id) not found"))
             return
         }
         let response = SessionResponse(
@@ -814,7 +814,7 @@ nonisolated func getSession(id: Int, reply: @escaping (Data?, Error?) -> Void) {
 nonisolated func closeSession(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let session = store.session(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Session \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Session \(id) not found"))
             return
         }
         store.closeSession(session)
@@ -831,7 +831,7 @@ Expected: Session tests pass.
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Services/XPCService.swift Mistty/Models/SessionStore.swift MisttyTests/Services/XPCServiceTests.swift
+git add Mytty/Services/XPCService.swift Mytty/Models/SessionStore.swift MyttyTests/Services/XPCServiceTests.swift
 git commit -m "feat: implement XPC service session operations with tests"
 ```
 
@@ -840,12 +840,12 @@ git commit -m "feat: implement XPC service session operations with tests"
 ### Task 5: Implement XPC service — tab operations
 
 **Files:**
-- Modify: `Mistty/Services/XPCService.swift`
-- Modify: `MisttyTests/Services/XPCServiceTests.swift`
+- Modify: `Mytty/Services/XPCService.swift`
+- Modify: `MyttyTests/Services/XPCServiceTests.swift`
 
 **Step 1: Write tab operation tests**
 
-Add to `MisttyTests/Services/XPCServiceTests.swift`:
+Add to `MyttyTests/Services/XPCServiceTests.swift`:
 ```swift
 // MARK: - Tab tests
 
@@ -913,18 +913,18 @@ Expected: FAIL — tab stubs return "Not implemented".
 
 **Step 3: Implement tab operations**
 
-Replace tab stubs in `Mistty/Services/XPCService.swift`:
+Replace tab stubs in `Mytty/Services/XPCService.swift`:
 
 ```swift
 nonisolated func createTab(sessionId: Int, name: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let session = store.session(byId: sessionId) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
             return
         }
         session.addTab()
         guard let tab = session.tabs.last else {
-            reply(nil, MisttyXPC.error(.operationFailed, "Failed to create tab"))
+            reply(nil, MyttyXPC.error(.operationFailed, "Failed to create tab"))
             return
         }
         if let name { tab.customTitle = name }
@@ -941,7 +941,7 @@ nonisolated func createTab(sessionId: Int, name: String?, exec: String?, reply: 
 nonisolated func listTabs(sessionId: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let session = store.session(byId: sessionId) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Session \(sessionId) not found"))
             return
         }
         let responses = session.tabs.map { tab in
@@ -954,7 +954,7 @@ nonisolated func listTabs(sessionId: Int, reply: @escaping (Data?, Error?) -> Vo
 nonisolated func getTab(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (_, tab) = store.tab(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Tab \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Tab \(id) not found"))
             return
         }
         let response = TabResponse(id: tab.id, title: tab.displayTitle, paneCount: tab.panes.count, paneIds: tab.panes.map(\.id))
@@ -965,7 +965,7 @@ nonisolated func getTab(id: Int, reply: @escaping (Data?, Error?) -> Void) {
 nonisolated func closeTab(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (session, tab) = store.tab(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Tab \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Tab \(id) not found"))
             return
         }
         session.closeTab(tab)
@@ -976,7 +976,7 @@ nonisolated func closeTab(id: Int, reply: @escaping (Data?, Error?) -> Void) {
 nonisolated func renameTab(id: Int, name: String, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (_, tab) = store.tab(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Tab \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Tab \(id) not found"))
             return
         }
         tab.customTitle = name
@@ -994,7 +994,7 @@ Expected: All tab tests pass.
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Services/XPCService.swift MisttyTests/Services/XPCServiceTests.swift
+git add Mytty/Services/XPCService.swift MyttyTests/Services/XPCServiceTests.swift
 git commit -m "feat: implement XPC service tab operations with tests"
 ```
 
@@ -1003,12 +1003,12 @@ git commit -m "feat: implement XPC service tab operations with tests"
 ### Task 6: Implement XPC service — pane operations
 
 **Files:**
-- Modify: `Mistty/Services/XPCService.swift`
-- Modify: `MisttyTests/Services/XPCServiceTests.swift`
+- Modify: `Mytty/Services/XPCService.swift`
+- Modify: `MyttyTests/Services/XPCServiceTests.swift`
 
 **Step 1: Write pane operation tests**
 
-Add to `MisttyTests/Services/XPCServiceTests.swift`:
+Add to `MyttyTests/Services/XPCServiceTests.swift`:
 ```swift
 // MARK: - Pane tests
 
@@ -1059,7 +1059,7 @@ func testGetPaneNotFound() async throws {
     let expectation = XCTestExpectation(description: "pane not found")
     service.getPane(id: 999) { data, error in
         XCTAssertNotNil(error)
-        XCTAssertEqual((error! as NSError).code, MisttyXPC.ErrorCode.entityNotFound.rawValue)
+        XCTAssertEqual((error! as NSError).code, MyttyXPC.ErrorCode.entityNotFound.rawValue)
         expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -1073,19 +1073,19 @@ Expected: FAIL.
 
 **Step 3: Implement pane operations**
 
-Replace pane stubs in `Mistty/Services/XPCService.swift`:
+Replace pane stubs in `Mytty/Services/XPCService.swift`:
 
 ```swift
 nonisolated func createPane(tabId: Int, direction: String?, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (_, tab) = store.tab(byId: tabId) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Tab \(tabId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Tab \(tabId) not found"))
             return
         }
         let splitDir: SplitDirection = direction == "vertical" ? .vertical : .horizontal
         tab.splitActivePane(direction: splitDir)
         guard let pane = tab.panes.last else {
-            reply(nil, MisttyXPC.error(.operationFailed, "Failed to create pane"))
+            reply(nil, MyttyXPC.error(.operationFailed, "Failed to create pane"))
             return
         }
         let response = PaneResponse(id: pane.id, directory: pane.directory?.path)
@@ -1096,7 +1096,7 @@ nonisolated func createPane(tabId: Int, direction: String?, reply: @escaping (Da
 nonisolated func listPanes(tabId: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (_, tab) = store.tab(byId: tabId) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Tab \(tabId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Tab \(tabId) not found"))
             return
         }
         let responses = tab.panes.map { PaneResponse(id: $0.id, directory: $0.directory?.path) }
@@ -1107,7 +1107,7 @@ nonisolated func listPanes(tabId: Int, reply: @escaping (Data?, Error?) -> Void)
 nonisolated func getPane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (_, _, pane) = store.pane(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Pane \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Pane \(id) not found"))
             return
         }
         let response = PaneResponse(id: pane.id, directory: pane.directory?.path)
@@ -1118,7 +1118,7 @@ nonisolated func getPane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
 nonisolated func closePane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (_, tab, pane) = store.pane(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Pane \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Pane \(id) not found"))
             return
         }
         tab.closePane(pane)
@@ -1129,7 +1129,7 @@ nonisolated func closePane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
 nonisolated func focusPane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (session, tab, pane) = store.pane(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Pane \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Pane \(id) not found"))
             return
         }
         store.activeSession = session
@@ -1143,7 +1143,7 @@ nonisolated func focusPane(id: Int, reply: @escaping (Data?, Error?) -> Void) {
 nonisolated func resizePane(id: Int, direction: String, amount: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (_, tab, pane) = store.pane(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Pane \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Pane \(id) not found"))
             return
         }
         let delta = CGFloat(amount) / 100.0 // normalize to ratio
@@ -1161,7 +1161,7 @@ nonisolated func resizePane(id: Int, direction: String, amount: Int, reply: @esc
 nonisolated func activePane(reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
         guard let (_, _, pane) = store.activePaneInfo() else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "No active pane"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "No active pane"))
             return
         }
         let response = PaneResponse(id: pane.id, directory: pane.directory?.path)
@@ -1171,20 +1171,20 @@ nonisolated func activePane(reply: @escaping (Data?, Error?) -> Void) {
 
 nonisolated func sendKeys(paneId: Int, keys: String, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
-        let targetPane: MisttyPane?
+        let targetPane: MyttyPane?
         if paneId <= 0 {
             targetPane = store.activePaneInfo()?.pane
         } else {
             targetPane = store.pane(byId: paneId)?.pane
         }
         guard let pane = targetPane else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Pane not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Pane not found"))
             return
         }
         // Send keys by simulating keyboard input to the ghostty surface
         let view = pane.surfaceView
         guard let surface = view.surface else {
-            reply(nil, MisttyXPC.error(.operationFailed, "Pane has no active surface"))
+            reply(nil, MyttyXPC.error(.operationFailed, "Pane has no active surface"))
             return
         }
         // Use ghostty_surface_text to send text input
@@ -1202,19 +1202,19 @@ nonisolated func runCommand(paneId: Int, command: String, reply: @escaping (Data
 
 nonisolated func getText(paneId: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor [store] in
-        let targetPane: MisttyPane?
+        let targetPane: MyttyPane?
         if paneId <= 0 {
             targetPane = store.activePaneInfo()?.pane
         } else {
             targetPane = store.pane(byId: paneId)?.pane
         }
         guard let pane = targetPane else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Pane not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Pane not found"))
             return
         }
         let view = pane.surfaceView
         guard let surface = view.surface else {
-            reply(nil, MisttyXPC.error(.operationFailed, "Pane has no active surface"))
+            reply(nil, MyttyXPC.error(.operationFailed, "Pane has no active surface"))
             return
         }
         // Read visible terminal text using ghostty API
@@ -1239,7 +1239,7 @@ Expected: Pane tests pass. `sendKeys`/`getText` tests may need mocking or integr
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Services/XPCService.swift MisttyTests/Services/XPCServiceTests.swift
+git add Mytty/Services/XPCService.swift MyttyTests/Services/XPCServiceTests.swift
 git commit -m "feat: implement XPC service pane operations with tests"
 ```
 
@@ -1248,14 +1248,14 @@ git commit -m "feat: implement XPC service pane operations with tests"
 ### Task 7: Implement XPC service — window operations
 
 **Files:**
-- Modify: `Mistty/Services/XPCService.swift`
-- Modify: `MisttyTests/Services/XPCServiceTests.swift`
+- Modify: `Mytty/Services/XPCService.swift`
+- Modify: `MyttyTests/Services/XPCServiceTests.swift`
 
-Window management in macOS SwiftUI uses `NSApplication.shared.windows`. Since Mistty uses a single `WindowGroup`, windows are tracked by the system. We need a lightweight model to expose them via XPC.
+Window management in macOS SwiftUI uses `NSApplication.shared.windows`. Since Mytty uses a single `WindowGroup`, windows are tracked by the system. We need a lightweight model to expose them via XPC.
 
 **Step 1: Write window tests**
 
-Add to `MisttyTests/Services/XPCServiceTests.swift`:
+Add to `MyttyTests/Services/XPCServiceTests.swift`:
 ```swift
 // MARK: - Window tests
 
@@ -1279,7 +1279,7 @@ nonisolated func createWindow(reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor in
         // Post notification or use NSApp to open new window
         // SwiftUI WindowGroup handles window creation via openWindow
-        reply(nil, MisttyXPC.error(.operationFailed, "Window creation requires SwiftUI environment — use session create instead"))
+        reply(nil, MyttyXPC.error(.operationFailed, "Window creation requires SwiftUI environment — use session create instead"))
     }
 }
 
@@ -1297,7 +1297,7 @@ nonisolated func getWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     Task { @MainActor in
         let windows = NSApplication.shared.windows.filter { $0.isVisible }
         guard id >= 1, id <= windows.count else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Window \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Window \(id) not found"))
             return
         }
         let response = WindowResponse(id: id, sessionCount: 0)
@@ -1309,7 +1309,7 @@ nonisolated func closeWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) 
     Task { @MainActor in
         let windows = NSApplication.shared.windows.filter { $0.isVisible }
         guard id >= 1, id <= windows.count else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Window \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Window \(id) not found"))
             return
         }
         windows[id - 1].close()
@@ -1321,7 +1321,7 @@ nonisolated func focusWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) 
     Task { @MainActor in
         let windows = NSApplication.shared.windows.filter { $0.isVisible }
         guard id >= 1, id <= windows.count else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Window \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Window \(id) not found"))
             return
         }
         windows[id - 1].makeKeyAndOrderFront(nil)
@@ -1340,19 +1340,19 @@ Expected: All tests pass.
 **Step 4: Commit**
 
 ```bash
-git add Mistty/Services/XPCService.swift MisttyTests/Services/XPCServiceTests.swift
+git add Mytty/Services/XPCService.swift MyttyTests/Services/XPCServiceTests.swift
 git commit -m "feat: implement XPC service window operations"
 ```
 
 ---
 
-### Task 8: Create MisttyCLI executable target
+### Task 8: Create MyttyCLI executable target
 
 **Files:**
 - Modify: `Package.swift`
-- Create: `MisttyCLI/MisttyCLI.swift`
-- Create: `MisttyCLI/XPCClient.swift`
-- Create: `MisttyCLI/OutputFormatter.swift`
+- Create: `MyttyCLI/MyttyCLI.swift`
+- Create: `MyttyCLI/XPCClient.swift`
+- Create: `MyttyCLI/OutputFormatter.swift`
 
 **Step 1: Add swift-argument-parser dependency and CLI target to Package.swift**
 
@@ -1364,34 +1364,34 @@ Add to dependencies array:
 Add new executable target:
 ```swift
 .executableTarget(
-    name: "MisttyCLI",
+    name: "MyttyCLI",
     dependencies: [
-        "MisttyShared",
+        "MyttyShared",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
     ],
-    path: "MisttyCLI"
+    path: "MyttyCLI"
 ),
 ```
 
 **Step 2: Create XPC client with auto-launch and retry**
 
-`MisttyCLI/XPCClient.swift`:
+`MyttyCLI/XPCClient.swift`:
 ```swift
 import Foundation
-import MisttyShared
+import MyttyShared
 
 final class XPCClient {
     private var connection: NSXPCConnection?
 
-    func connect() throws -> MisttyServiceProtocol {
-        if let connection, let proxy = connection.remoteObjectProxy as? MisttyServiceProtocol {
+    func connect() throws -> MyttyServiceProtocol {
+        if let connection, let proxy = connection.remoteObjectProxy as? MyttyServiceProtocol {
             return proxy
         }
 
         // Try to connect
         for attempt in 0..<5 {
-            let conn = NSXPCConnection(machServiceName: MisttyXPC.serviceName)
-            conn.remoteObjectInterface = NSXPCInterface(with: MisttyServiceProtocol.self)
+            let conn = NSXPCConnection(machServiceName: MyttyXPC.serviceName)
+            conn.remoteObjectInterface = NSXPCInterface(with: MyttyServiceProtocol.self)
             conn.resume()
 
             // Test connection with a simple call
@@ -1400,10 +1400,10 @@ final class XPCClient {
 
             let proxy = conn.remoteObjectProxyWithErrorHandler { _ in
                 semaphore.signal()
-            } as! MisttyServiceProtocol
+            } as! MyttyServiceProtocol
 
             proxy.listSessions { _, error in
-                connected = error == nil || (error as? NSError)?.domain == MisttyXPC.errorDomain
+                connected = error == nil || (error as? NSError)?.domain == MyttyXPC.errorDomain
                 semaphore.signal()
             }
 
@@ -1425,17 +1425,17 @@ final class XPCClient {
             usleep(delay)
         }
 
-        throw MisttyXPC.error(.operationFailed, "Could not connect to Mistty.app. Is it installed?")
+        throw MyttyXPC.error(.operationFailed, "Could not connect to Mytty.app. Is it installed?")
     }
 
     private func launchApp() {
         let process = Process()
         process.executableURL = URL(filePath: "/usr/bin/open")
-        process.arguments = ["-a", "Mistty"]
+        process.arguments = ["-a", "Mytty"]
         try? process.run()
     }
 
-    func proxy() throws -> MisttyServiceProtocol {
+    func proxy() throws -> MyttyServiceProtocol {
         try connect()
     }
 }
@@ -1443,7 +1443,7 @@ final class XPCClient {
 
 **Step 3: Create output formatter**
 
-`MisttyCLI/OutputFormatter.swift`:
+`MyttyCLI/OutputFormatter.swift`:
 ```swift
 import Foundation
 
@@ -1515,17 +1515,17 @@ struct OutputFormatter {
 
 **Step 4: Create CLI entry point**
 
-`MisttyCLI/MisttyCLI.swift`:
+`MyttyCLI/MyttyCLI.swift`:
 ```swift
 import ArgumentParser
 import Foundation
-import MisttyShared
+import MyttyShared
 
 @main
-struct MisttyCLI: ParsableCommand {
+struct MyttyCLI: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "mistty-cli",
-        abstract: "Control Mistty terminal emulator",
+        commandName: "mytty-cli",
+        abstract: "Control Mytty terminal emulator",
         subcommands: [
             SessionCommand.self,
             TabCommand.self,
@@ -1538,14 +1538,14 @@ struct MisttyCLI: ParsableCommand {
 
 **Step 5: Verify it builds**
 
-Run: `swift build --target MisttyCLI`
+Run: `swift build --target MyttyCLI`
 Expected: Compiles (commands are empty stubs for now).
 
 **Step 6: Commit**
 
 ```bash
-git add Package.swift MisttyCLI/
-git commit -m "feat: add MisttyCLI executable target with XPC client and output formatter"
+git add Package.swift MyttyCLI/
+git commit -m "feat: add MyttyCLI executable target with XPC client and output formatter"
 ```
 
 ---
@@ -1553,15 +1553,15 @@ git commit -m "feat: add MisttyCLI executable target with XPC client and output 
 ### Task 9: Implement CLI session commands
 
 **Files:**
-- Create: `MisttyCLI/Commands/SessionCommand.swift`
+- Create: `MyttyCLI/Commands/SessionCommand.swift`
 
 **Step 1: Implement session subcommands**
 
-`MisttyCLI/Commands/SessionCommand.swift`:
+`MyttyCLI/Commands/SessionCommand.swift`:
 ```swift
 import ArgumentParser
 import Foundation
-import MisttyShared
+import MyttyShared
 
 struct SessionCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -1717,13 +1717,13 @@ struct SessionCommand: ParsableCommand {
 
 **Step 2: Build**
 
-Run: `swift build --target MisttyCLI`
+Run: `swift build --target MyttyCLI`
 Expected: Compiles.
 
 **Step 3: Commit**
 
 ```bash
-git add MisttyCLI/Commands/SessionCommand.swift
+git add MyttyCLI/Commands/SessionCommand.swift
 git commit -m "feat: implement CLI session commands (create, list, get, close)"
 ```
 
@@ -1732,15 +1732,15 @@ git commit -m "feat: implement CLI session commands (create, list, get, close)"
 ### Task 10: Implement CLI tab commands
 
 **Files:**
-- Create: `MisttyCLI/Commands/TabCommand.swift`
+- Create: `MyttyCLI/Commands/TabCommand.swift`
 
 **Step 1: Implement tab subcommands**
 
-`MisttyCLI/Commands/TabCommand.swift`:
+`MyttyCLI/Commands/TabCommand.swift`:
 ```swift
 import ArgumentParser
 import Foundation
-import MisttyShared
+import MyttyShared
 
 struct TabCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -1933,13 +1933,13 @@ struct TabCommand: ParsableCommand {
 
 **Step 2: Build**
 
-Run: `swift build --target MisttyCLI`
+Run: `swift build --target MyttyCLI`
 Expected: Compiles.
 
 **Step 3: Commit**
 
 ```bash
-git add MisttyCLI/Commands/TabCommand.swift
+git add MyttyCLI/Commands/TabCommand.swift
 git commit -m "feat: implement CLI tab commands (create, list, get, close, rename)"
 ```
 
@@ -1948,15 +1948,15 @@ git commit -m "feat: implement CLI tab commands (create, list, get, close, renam
 ### Task 11: Implement CLI pane commands
 
 **Files:**
-- Create: `MisttyCLI/Commands/PaneCommand.swift`
+- Create: `MyttyCLI/Commands/PaneCommand.swift`
 
 **Step 1: Implement pane subcommands**
 
-`MisttyCLI/Commands/PaneCommand.swift`:
+`MyttyCLI/Commands/PaneCommand.swift`:
 ```swift
 import ArgumentParser
 import Foundation
-import MisttyShared
+import MyttyShared
 
 struct PaneCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -2289,13 +2289,13 @@ struct PaneCommand: ParsableCommand {
 
 **Step 2: Build**
 
-Run: `swift build --target MisttyCLI`
+Run: `swift build --target MyttyCLI`
 Expected: Compiles.
 
 **Step 3: Commit**
 
 ```bash
-git add MisttyCLI/Commands/PaneCommand.swift
+git add MyttyCLI/Commands/PaneCommand.swift
 git commit -m "feat: implement CLI pane commands (create, list, get, close, focus, resize, active, send-keys, run-command, get-text)"
 ```
 
@@ -2304,15 +2304,15 @@ git commit -m "feat: implement CLI pane commands (create, list, get, close, focu
 ### Task 12: Implement CLI window commands
 
 **Files:**
-- Create: `MisttyCLI/Commands/WindowCommand.swift`
+- Create: `MyttyCLI/Commands/WindowCommand.swift`
 
 **Step 1: Implement window subcommands**
 
-`MisttyCLI/Commands/WindowCommand.swift`:
+`MyttyCLI/Commands/WindowCommand.swift`:
 ```swift
 import ArgumentParser
 import Foundation
-import MisttyShared
+import MyttyShared
 
 struct WindowCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -2464,13 +2464,13 @@ struct WindowCommand: ParsableCommand {
 
 **Step 2: Build**
 
-Run: `swift build --target MisttyCLI`
+Run: `swift build --target MyttyCLI`
 Expected: Compiles.
 
 **Step 3: Commit**
 
 ```bash
-git add MisttyCLI/Commands/WindowCommand.swift
+git add MyttyCLI/Commands/WindowCommand.swift
 git commit -m "feat: implement CLI window commands (create, list, get, close, focus)"
 ```
 
@@ -2481,27 +2481,27 @@ git commit -m "feat: implement CLI window commands (create, list, get, close, fo
 The XPC Mach service requires a launchd plist to register the service name.
 
 **Files:**
-- Create: `Resources/com.mistty.cli-service.plist`
-- Modify: `Mistty/App/MisttyApp.swift` (auto-install on first launch)
+- Create: `Resources/com.mytty.cli-service.plist`
+- Modify: `Mytty/App/MyttyApp.swift` (auto-install on first launch)
 
 **Step 1: Create launchd plist**
 
-`Resources/com.mistty.cli-service.plist`:
+`Resources/com.mytty.cli-service.plist`:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.mistty.cli-service</string>
+    <string>com.mytty.cli-service</string>
     <key>MachServices</key>
     <dict>
-        <key>com.mistty.cli-service</key>
+        <key>com.mytty.cli-service</key>
         <true/>
     </dict>
     <key>ProgramArguments</key>
     <array>
-        <string>/Applications/Mistty.app/Contents/MacOS/Mistty</string>
+        <string>/Applications/Mytty.app/Contents/MacOS/Mytty</string>
     </array>
     <key>RunAtLoad</key>
     <false/>
@@ -2511,13 +2511,13 @@ The XPC Mach service requires a launchd plist to register the service name.
 
 **Step 2: Auto-install plist on app launch**
 
-In `Mistty/App/MisttyApp.swift`, add a helper that copies the plist to `~/Library/LaunchAgents/` on first run:
+In `Mytty/App/MyttyApp.swift`, add a helper that copies the plist to `~/Library/LaunchAgents/` on first run:
 
 ```swift
 private func installXPCServiceIfNeeded() {
     let launchAgentsDir = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/LaunchAgents")
-    let plistPath = launchAgentsDir.appendingPathComponent("com.mistty.cli-service.plist")
+    let plistPath = launchAgentsDir.appendingPathComponent("com.mytty.cli-service.plist")
 
     guard !FileManager.default.fileExists(atPath: plistPath.path) else { return }
 
@@ -2525,17 +2525,17 @@ private func installXPCServiceIfNeeded() {
     try? FileManager.default.createDirectory(at: launchAgentsDir, withIntermediateDirectories: true)
 
     // Write plist with current app path
-    let appPath = Bundle.main.executablePath ?? "/Applications/Mistty.app/Contents/MacOS/Mistty"
+    let appPath = Bundle.main.executablePath ?? "/Applications/Mytty.app/Contents/MacOS/Mytty"
     let plist = """
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
     <plist version="1.0">
     <dict>
         <key>Label</key>
-        <string>com.mistty.cli-service</string>
+        <string>com.mytty.cli-service</string>
         <key>MachServices</key>
         <dict>
-            <key>com.mistty.cli-service</key>
+            <key>com.mytty.cli-service</key>
             <true/>
         </dict>
         <key>ProgramArguments</key>
@@ -2558,7 +2558,7 @@ private func installXPCServiceIfNeeded() {
 }
 ```
 
-Call this in the `MisttyApp.init()`:
+Call this in the `MyttyApp.init()`:
 ```swift
 init() {
     _ = GhosttyAppManager.shared
@@ -2574,13 +2574,13 @@ Expected: Compiles.
 **Step 4: Commit**
 
 ```bash
-git add Resources/com.mistty.cli-service.plist Mistty/App/MisttyApp.swift
+git add Resources/com.mytty.cli-service.plist Mytty/App/MyttyApp.swift
 git commit -m "feat: add launchd plist for XPC service with auto-install on first launch"
 ```
 
 ---
 
-### Task 14: Add mistty-cli to justfile and bundle
+### Task 14: Add mytty-cli to justfile and bundle
 
 **Files:**
 - Modify: `justfile`
@@ -2591,27 +2591,27 @@ Add to `justfile`:
 ```makefile
 # Build the CLI tool
 build-cli:
-    swift build --target MisttyCLI
+    swift build --target MyttyCLI
 
 # Build CLI in release mode
 build-cli-release:
-    swift build --target MisttyCLI -c release
+    swift build --target MyttyCLI -c release
 
 # Install CLI to /usr/local/bin
 install-cli: build-cli-release
-    cp .build/release/MisttyCLI /usr/local/bin/mistty-cli
+    cp .build/release/MyttyCLI /usr/local/bin/mytty-cli
 
 # Uninstall CLI
 uninstall-cli:
-    rm -f /usr/local/bin/mistty-cli
+    rm -f /usr/local/bin/mytty-cli
 ```
 
 Update the existing `bundle` recipe to also build and include the CLI:
 
 In the bundle recipe, after copying the main binary, add:
 ```makefile
-    swift build --target MisttyCLI {{BUILD_FLAGS}}
-    cp .build/{{CONFIG}}/MisttyCLI $APP/Contents/MacOS/mistty-cli
+    swift build --target MyttyCLI {{BUILD_FLAGS}}
+    cp .build/{{CONFIG}}/MyttyCLI $APP/Contents/MacOS/mytty-cli
 ```
 
 **Step 2: Test build**
@@ -2649,36 +2649,36 @@ just run
 
 ```bash
 # Test session operations
-mistty-cli session list
-mistty-cli session create --name "test-project" --directory ~/Developer
-mistty-cli session list
-mistty-cli session get 1
+mytty-cli session list
+mytty-cli session create --name "test-project" --directory ~/Developer
+mytty-cli session list
+mytty-cli session get 1
 
 # Test tab operations
-mistty-cli tab list --session 1
-mistty-cli tab create --session 1 --name "editor"
-mistty-cli tab list --session 1
-mistty-cli tab rename 2 --name "tests"
+mytty-cli tab list --session 1
+mytty-cli tab create --session 1 --name "editor"
+mytty-cli tab list --session 1
+mytty-cli tab rename 2 --name "tests"
 
 # Test pane operations
-mistty-cli pane active
-mistty-cli pane list --tab 1
-mistty-cli pane create --tab 1 --direction horizontal
-mistty-cli pane list --tab 1
-mistty-cli pane send-keys "echo hello"
-mistty-cli pane run-command "ls -la"
-mistty-cli pane get-text
+mytty-cli pane active
+mytty-cli pane list --tab 1
+mytty-cli pane create --tab 1 --direction horizontal
+mytty-cli pane list --tab 1
+mytty-cli pane send-keys "echo hello"
+mytty-cli pane run-command "ls -la"
+mytty-cli pane get-text
 
 # Test JSON output
-mistty-cli session list --json
-mistty-cli session list | cat  # should auto-detect piped and output JSON
+mytty-cli session list --json
+mytty-cli session list | cat  # should auto-detect piped and output JSON
 
 # Test error cases
-mistty-cli session get 999
-mistty-cli pane close 999
+mytty-cli session get 999
+mytty-cli pane close 999
 
 # Test window operations
-mistty-cli window list
+mytty-cli window list
 ```
 
 **Step 4: Fix any issues found**
@@ -2707,29 +2707,29 @@ Add a "CLI Control" section to README.md after the features section:
 ```markdown
 ## CLI Control
 
-Mistty includes a CLI tool for controlling the terminal from scripts:
+Mytty includes a CLI tool for controlling the terminal from scripts:
 
 ```bash
 # Install the CLI
 just install-cli
 
 # Session management
-mistty-cli session list
-mistty-cli session create --name "project" --directory ~/code
+mytty-cli session list
+mytty-cli session create --name "project" --directory ~/code
 
 # Tab management
-mistty-cli tab create --session 1 --name "editor"
-mistty-cli tab list --session 1
+mytty-cli tab create --session 1 --name "editor"
+mytty-cli tab list --session 1
 
 # Pane operations
-mistty-cli pane active
-mistty-cli pane split --tab 1 --direction horizontal
-mistty-cli pane send-keys "echo hello"
-mistty-cli pane run-command "npm test"
+mytty-cli pane active
+mytty-cli pane split --tab 1 --direction horizontal
+mytty-cli pane send-keys "echo hello"
+mytty-cli pane run-command "npm test"
 
 # JSON output (auto-detected when piped)
-mistty-cli session list | jq .
-mistty-cli session list --json
+mytty-cli session list | jq .
+mytty-cli session list --json
 ```
 ```
 

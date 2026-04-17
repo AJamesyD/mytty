@@ -1,0 +1,64 @@
+import XCTest
+
+@testable import Mytty
+
+@MainActor
+final class FrecencyServiceTests: XCTestCase {
+  var service: FrecencyService!
+  var testURL: URL!
+
+  override func setUp() async throws {
+    testURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("frecency-test-\(UUID().uuidString).json")
+    service = FrecencyService(storageURL: testURL)
+  }
+
+  override func tearDown() async throws {
+    try? FileManager.default.removeItem(at: testURL)
+  }
+
+  func test_scoreIsZeroForUnknownKey() {
+    XCTAssertEqual(service.score(for: "session:unknown"), 0)
+  }
+
+  func test_recordAccessIncreasesScore() {
+    service.recordAccess(for: "session:project")
+    XCTAssertGreaterThan(service.score(for: "session:project"), 0)
+  }
+
+  func test_multipleAccessesIncreaseScore() {
+    service.recordAccess(for: "session:a")
+    let score1 = service.score(for: "session:a")
+    service.recordAccess(for: "session:a")
+    let score2 = service.score(for: "session:a")
+    XCTAssertGreaterThan(score2, score1)
+  }
+
+  func test_persistsToDisk() {
+    service.recordAccess(for: "dir:/tmp")
+    let score = service.score(for: "dir:/tmp")
+    let service2 = FrecencyService(storageURL: testURL)
+    XCTAssertEqual(service2.score(for: "dir:/tmp"), score)
+  }
+
+  func test_recentAccessScoresHigher() {
+    service.recordAccess(for: "ssh:old")
+    service.setLastAccessed(for: "ssh:old", date: Date().addingTimeInterval(-30 * 24 * 3600))
+    let oldScore = service.score(for: "ssh:old")
+    service.recordAccess(for: "ssh:new")
+    let newScore = service.score(for: "ssh:new")
+    XCTAssertGreaterThan(newScore, oldScore)
+  }
+
+  func test_corruptedJSON_recoversGracefully() throws {
+    let corruptURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("frecency-corrupt-\(UUID().uuidString).json")
+    try Data("not json".utf8).write(to: corruptURL)
+    defer { try? FileManager.default.removeItem(at: corruptURL) }
+
+    let corruptService = FrecencyService(storageURL: corruptURL)
+    XCTAssertEqual(corruptService.score(for: "anything"), 0)
+    corruptService.recordAccess(for: "key")
+    XCTAssertGreaterThan(corruptService.score(for: "key"), 0)
+  }
+}

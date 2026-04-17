@@ -4,7 +4,7 @@
 
 **Goal:** Add number key shortcuts (1-5) in window mode to apply standard pane layouts (even-horizontal, even-vertical, main-horizontal, main-vertical, tiled).
 
-**Architecture:** New `LayoutEngine` struct builds `PaneLayoutNode` trees from a list of panes. `PaneLayoutNode` gains a `.empty` case for tiled grid padding. `MisttyTab` gets `applyStandardLayout()` which extracts leaves, calls `LayoutEngine`, and replaces the layout tree.
+**Architecture:** New `LayoutEngine` struct builds `PaneLayoutNode` trees from a list of panes. `PaneLayoutNode` gains a `.empty` case for tiled grid padding. `MyttyTab` gets `applyStandardLayout()` which extracts leaves, calls `LayoutEngine`, and replaces the layout tree.
 
 **Tech Stack:** Swift 6, SwiftUI, XCTest
 
@@ -16,26 +16,26 @@
 
 | File | Action | Responsibility |
 |------|--------|----------------|
-| `Mistty/Models/PaneLayout.swift` | Modify | Add `.empty` case, `init(root:)`, update all switch statements |
-| `Mistty/Models/LayoutEngine.swift` | Create | `StandardLayout` enum + `LayoutEngine` struct with 5 layout builders |
-| `Mistty/Models/MisttyTab.swift` | Modify | Add `applyStandardLayout()` method |
-| `Mistty/Views/Terminal/PaneLayoutView.swift` | Modify | Render `.empty` case |
-| `Mistty/Views/Terminal/WindowModeHints.swift` | Modify | Add `1-5: layouts` hint |
-| `Mistty/App/ContentView.swift` | Modify | Handle keyCodes 18-21,23 in window mode |
-| `MisttyTests/Models/LayoutEngineTests.swift` | Create | Tests for all 5 layouts |
-| `MisttyTests/Models/PaneLayoutTests.swift` | Modify | Tests for `.empty` handling in existing operations |
+| `Mytty/Models/PaneLayout.swift` | Modify | Add `.empty` case, `init(root:)`, update all switch statements |
+| `Mytty/Models/LayoutEngine.swift` | Create | `StandardLayout` enum + `LayoutEngine` struct with 5 layout builders |
+| `Mytty/Models/MyttyTab.swift` | Modify | Add `applyStandardLayout()` method |
+| `Mytty/Views/Terminal/PaneLayoutView.swift` | Modify | Render `.empty` case |
+| `Mytty/Views/Terminal/WindowModeHints.swift` | Modify | Add `1-5: layouts` hint |
+| `Mytty/App/ContentView.swift` | Modify | Handle keyCodes 18-21,23 in window mode |
+| `MyttyTests/Models/LayoutEngineTests.swift` | Create | Tests for all 5 layouts |
+| `MyttyTests/Models/PaneLayoutTests.swift` | Modify | Tests for `.empty` handling in existing operations |
 
 ---
 
 ## Task 1: Add `.empty` case to `PaneLayoutNode` and update `PaneLayout`
 
 **Files:**
-- Modify: `Mistty/Models/PaneLayout.swift`
-- Modify: `MisttyTests/Models/PaneLayoutTests.swift`
+- Modify: `Mytty/Models/PaneLayout.swift`
+- Modify: `MyttyTests/Models/PaneLayoutTests.swift`
 
 - [ ] **Step 1: Write failing tests for `.empty` handling**
 
-Add to `MisttyTests/Models/PaneLayoutTests.swift`:
+Add to `MyttyTests/Models/PaneLayoutTests.swift`:
 
 ```swift
 func test_leavesSkipsEmpty() {
@@ -115,13 +115,13 @@ Expected: compilation errors (`.empty` does not exist, `PaneLayout(root:)` does 
 
 - [ ] **Step 3: Add `.empty` case and `init(root:)` to `PaneLayout.swift`**
 
-In `Mistty/Models/PaneLayout.swift`:
+In `Mytty/Models/PaneLayout.swift`:
 
 1. Add `case empty` to `PaneLayoutNode` (after line 8):
 
 ```swift
 indirect enum PaneLayoutNode {
-    case leaf(MisttyPane)
+    case leaf(MyttyPane)
     case empty
     case split(SplitDirection, PaneLayoutNode, PaneLayoutNode, CGFloat)
 }
@@ -138,7 +138,7 @@ init(root: PaneLayoutNode) {
 3. Update `collectLeaves` (line 25-31):
 
 ```swift
-private static func collectLeaves(_ node: PaneLayoutNode) -> [MisttyPane] {
+private static func collectLeaves(_ node: PaneLayoutNode) -> [MyttyPane] {
     switch node {
     case .leaf(let pane):
         return [pane]
@@ -216,7 +216,7 @@ case .empty:
 10. Update `firstLeaf` (line 246-249) — skip `.empty`:
 
 ```swift
-private static func firstLeaf(_ node: PaneLayoutNode) -> MisttyPane? {
+private static func firstLeaf(_ node: PaneLayoutNode) -> MyttyPane? {
     switch node {
     case .leaf(let p): return p
     case .empty: return nil
@@ -228,7 +228,7 @@ private static func firstLeaf(_ node: PaneLayoutNode) -> MisttyPane? {
 11. Update `lastLeaf` (line 253-256) — skip `.empty`, try `b` first then fall back to `a`:
 
 ```swift
-private static func lastLeaf(_ node: PaneLayoutNode) -> MisttyPane? {
+private static func lastLeaf(_ node: PaneLayoutNode) -> MyttyPane? {
     switch node {
     case .leaf(let p): return p
     case .empty: return nil
@@ -245,7 +245,7 @@ Expected: all tests PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/PaneLayout.swift MisttyTests/Models/PaneLayoutTests.swift
+git add Mytty/Models/PaneLayout.swift MyttyTests/Models/PaneLayoutTests.swift
 git commit -m "feat: add .empty case to PaneLayoutNode for standard layouts"
 ```
 
@@ -254,29 +254,29 @@ git commit -m "feat: add .empty case to PaneLayoutNode for standard layouts"
 ## Task 2: Create `LayoutEngine` with tests
 
 **Files:**
-- Create: `Mistty/Models/LayoutEngine.swift`
-- Create: `MisttyTests/Models/LayoutEngineTests.swift`
+- Create: `Mytty/Models/LayoutEngine.swift`
+- Create: `MyttyTests/Models/LayoutEngineTests.swift`
 
 - [ ] **Step 1: Write failing tests for `LayoutEngine`**
 
-Create `MisttyTests/Models/LayoutEngineTests.swift`:
+Create `MyttyTests/Models/LayoutEngineTests.swift`:
 
 ```swift
 import XCTest
 
-@testable import Mistty
+@testable import Mytty
 
 @MainActor
 final class LayoutEngineTests: XCTestCase {
     private var nextPaneId = 1
 
-    private func makePane() -> MisttyPane {
-        let pane = MisttyPane(id: nextPaneId)
+    private func makePane() -> MyttyPane {
+        let pane = MyttyPane(id: nextPaneId)
         nextPaneId += 1
         return pane
     }
 
-    private func makePanes(_ count: Int) -> [MisttyPane] {
+    private func makePanes(_ count: Int) -> [MyttyPane] {
         (0..<count).map { _ in makePane() }
     }
 
@@ -493,7 +493,7 @@ Expected: compilation error (`LayoutEngine` does not exist)
 
 - [ ] **Step 3: Create `LayoutEngine.swift`**
 
-Create `Mistty/Models/LayoutEngine.swift`:
+Create `Mytty/Models/LayoutEngine.swift`:
 
 ```swift
 import Foundation
@@ -504,7 +504,7 @@ enum StandardLayout: Sendable {
 
 @MainActor
 struct LayoutEngine {
-    static func apply(_ layout: StandardLayout, to panes: [MisttyPane]) -> PaneLayoutNode {
+    static func apply(_ layout: StandardLayout, to panes: [MyttyPane]) -> PaneLayoutNode {
         guard !panes.isEmpty else { return .empty }
         guard panes.count > 1 else { return .leaf(panes[0]) }
 
@@ -520,7 +520,7 @@ struct LayoutEngine {
     // MARK: - Even split
 
     /// Left-leaning chain of splits. Each level gives 1/N of the space to the left child.
-    private static func evenSplit(_ direction: SplitDirection, _ panes: [MisttyPane]) -> PaneLayoutNode {
+    private static func evenSplit(_ direction: SplitDirection, _ panes: [MyttyPane]) -> PaneLayoutNode {
         assert(panes.count >= 2)
         if panes.count == 2 {
             return .split(direction, .leaf(panes[0]), .leaf(panes[1]), 0.5)
@@ -533,7 +533,7 @@ struct LayoutEngine {
     // MARK: - Main split
 
     /// First pane gets 66% along the primary direction, rest are evenly split along the other.
-    private static func mainSplit(_ direction: SplitDirection, _ panes: [MisttyPane]) -> PaneLayoutNode {
+    private static func mainSplit(_ direction: SplitDirection, _ panes: [MyttyPane]) -> PaneLayoutNode {
         assert(panes.count >= 2)
         let main = panes[0]
         let rest = Array(panes.dropFirst())
@@ -552,7 +552,7 @@ struct LayoutEngine {
     /// Grid layout: cols = ceil(sqrt(N)), rows = ceil(N/cols).
     /// Each row is an even horizontal split. Rows are combined with even vertical splits.
     /// Last row is padded with .empty to match column count.
-    private static func tiled(_ panes: [MisttyPane]) -> PaneLayoutNode {
+    private static func tiled(_ panes: [MyttyPane]) -> PaneLayoutNode {
         assert(panes.count >= 2)
         let cols = Int(ceil(sqrt(Double(panes.count))))
         let rows = Int(ceil(Double(panes.count) / Double(cols)))
@@ -571,7 +571,7 @@ struct LayoutEngine {
     }
 
     /// Build a single row: even horizontal split of panes, padded with .empty nodes.
-    private static func buildRow(_ panes: [MisttyPane], emptyCount: Int) -> PaneLayoutNode {
+    private static func buildRow(_ panes: [MyttyPane], emptyCount: Int) -> PaneLayoutNode {
         var nodes: [PaneLayoutNode] = panes.map { .leaf($0) }
         nodes.append(contentsOf: Array(repeating: PaneLayoutNode.empty, count: emptyCount))
         return evenSplitNodes(.horizontal, nodes)
@@ -604,23 +604,23 @@ Expected: all tests PASS
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Mistty/Models/LayoutEngine.swift MisttyTests/Models/LayoutEngineTests.swift
+git add Mytty/Models/LayoutEngine.swift MyttyTests/Models/LayoutEngineTests.swift
 git commit -m "feat: add LayoutEngine with 5 standard layout builders"
 ```
 
 ---
 
-## Task 3: Add `applyStandardLayout` to `MisttyTab` and wire up UI
+## Task 3: Add `applyStandardLayout` to `MyttyTab` and wire up UI
 
 **Files:**
-- Modify: `Mistty/Models/MisttyTab.swift`
-- Modify: `Mistty/Views/Terminal/PaneLayoutView.swift`
-- Modify: `Mistty/Views/Terminal/WindowModeHints.swift`
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/Models/MyttyTab.swift`
+- Modify: `Mytty/Views/Terminal/PaneLayoutView.swift`
+- Modify: `Mytty/Views/Terminal/WindowModeHints.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
-- [ ] **Step 1: Add `applyStandardLayout()` to `MisttyTab`**
+- [ ] **Step 1: Add `applyStandardLayout()` to `MyttyTab`**
 
-In `Mistty/Models/MisttyTab.swift`, add after `closePane` (after line 74):
+In `Mytty/Models/MyttyTab.swift`, add after `closePane` (after line 74):
 
 ```swift
 func applyStandardLayout(_ standardLayout: StandardLayout) {
@@ -634,7 +634,7 @@ func applyStandardLayout(_ standardLayout: StandardLayout) {
 
 - [ ] **Step 2: Handle `.empty` in `PaneLayoutView`**
 
-In `Mistty/Views/Terminal/PaneLayoutView.swift`, add a case before `.leaf` (inside `switch node`, after line 15):
+In `Mytty/Views/Terminal/PaneLayoutView.swift`, add a case before `.leaf` (inside `switch node`, after line 15):
 
 ```swift
 case .empty:
@@ -643,7 +643,7 @@ case .empty:
 
 - [ ] **Step 3: Add layout hint to `WindowModeHints`**
 
-In `Mistty/Views/Terminal/WindowModeHints.swift`:
+In `Mytty/Views/Terminal/WindowModeHints.swift`:
 
 1. Add a `paneCount` property to the struct (after line 5):
 
@@ -675,7 +675,7 @@ private var normalHints: [(key: String, label: String)] {
 
 - [ ] **Step 4: Add keyCode handling in `ContentView`**
 
-In `Mistty/App/ContentView.swift`, in the `installWindowModeMonitor` function, add cases to the `switch event.keyCode` block (before the `default:` case at line 494). Only apply when 2+ panes:
+In `Mytty/App/ContentView.swift`, in the `installWindowModeMonitor` function, add cases to the `switch event.keyCode` block (before the `default:` case at line 494). Only apply when 2+ panes:
 
 ```swift
 case 18, 19, 20, 21, 23:  // 1-5: standard layouts
@@ -708,6 +708,6 @@ Expected: all tests PASS
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Mistty/Models/MisttyTab.swift Mistty/Views/Terminal/PaneLayoutView.swift Mistty/Views/Terminal/WindowModeHints.swift Mistty/App/ContentView.swift
+git add Mytty/Models/MyttyTab.swift Mytty/Views/Terminal/PaneLayoutView.swift Mytty/Views/Terminal/WindowModeHints.swift Mytty/App/ContentView.swift
 git commit -m "feat: wire up standard layouts in window mode (1-5 keys)"
 ```

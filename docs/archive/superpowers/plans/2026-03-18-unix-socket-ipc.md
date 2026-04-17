@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace CFMessagePort-based IPC between Mistty CLI and app with Unix domain sockets.
+**Goal:** Replace CFMessagePort-based IPC between Mytty CLI and app with Unix domain sockets.
 
-**Architecture:** Transport-layer swap. The service layer (`MisttyIPCService`), dispatch routing, wire format (status byte + JSON), and CLI command interface all remain the same. Only the underlying transport changes from CFMessagePort/Mach ports to Unix domain sockets with length-prefixed framing. All XPC naming is cleaned up to IPC.
+**Architecture:** Transport-layer swap. The service layer (`MyttyIPCService`), dispatch routing, wire format (status byte + JSON), and CLI command interface all remain the same. Only the underlying transport changes from CFMessagePort/Mach ports to Unix domain sockets with length-prefixed framing. All XPC naming is cleaned up to IPC.
 
 **Tech Stack:** Swift 6, Foundation (POSIX sockets via Darwin module), Swift Package Manager
 
@@ -17,27 +17,27 @@
 ### Task 1: Rename XPCConstants to IPCConstants
 
 **Files:**
-- Rename: `MisttyShared/XPCConstants.swift` → `MisttyShared/IPCConstants.swift`
+- Rename: `MyttyShared/XPCConstants.swift` → `MyttyShared/IPCConstants.swift`
 
 - [ ] **Step 1: Rename the file**
 
 ```bash
-git mv MisttyShared/XPCConstants.swift MisttyShared/IPCConstants.swift
+git mv MyttyShared/XPCConstants.swift MyttyShared/IPCConstants.swift
 ```
 
 - [ ] **Step 2: Rename the enum and update strings**
 
-In `MisttyShared/IPCConstants.swift`, replace:
-- `MisttyXPC` → `MisttyIPC`
-- `"com.mistty.cli-service"` → keep as-is (this is just a logical name now, not a Mach service)
-- `"com.mistty.error"` → keep as-is
+In `MyttyShared/IPCConstants.swift`, replace:
+- `MyttyXPC` → `MyttyIPC`
+- `"com.mytty.cli-service"` → keep as-is (this is just a logical name now, not a Mach service)
+- `"com.mytty.error"` → keep as-is
 
 ```swift
 import Foundation
 
-public enum MisttyIPC {
-    public static let serviceName = "com.mistty.cli-service"
-    public static let errorDomain = "com.mistty.error"
+public enum MyttyIPC {
+    public static let serviceName = "com.mytty.cli-service"
+    public static let errorDomain = "com.mytty.error"
 
     public enum ErrorCode: Int {
         case entityNotFound = 1
@@ -57,26 +57,26 @@ public enum MisttyIPC {
 
 - [ ] **Step 3: Add socket path constant**
 
-Add to the `MisttyIPC` enum:
+Add to the `MyttyIPC` enum:
 
 ```swift
 public static var socketPath: String {
     let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-    return appSupport.appendingPathComponent("Mistty/mistty.sock").path
+    return appSupport.appendingPathComponent("Mytty/mytty.sock").path
 }
 
 public static let maxMessageSize: UInt32 = 16 * 1024 * 1024  // 16 MB
 ```
 
-- [ ] **Step 4: Update all references from MisttyXPC to MisttyIPC**
+- [ ] **Step 4: Update all references from MyttyXPC to MyttyIPC**
 
-Files that reference `MisttyXPC`:
-- `Mistty/Services/IPCListener.swift` (lines 71, 183)
-- `Mistty/Services/XPCService.swift` (throughout — ~20 references)
-- `MisttyCLI/XPCClient.swift` (line 45)
-- `MisttyTests/Services/XPCServiceTests.swift` (lines 98, 99, 125, 254, 271, 281, 305, 377)
+Files that reference `MyttyXPC`:
+- `Mytty/Services/IPCListener.swift` (lines 71, 183)
+- `Mytty/Services/XPCService.swift` (throughout — ~20 references)
+- `MyttyCLI/XPCClient.swift` (line 45)
+- `MyttyTests/Services/XPCServiceTests.swift` (lines 98, 99, 125, 254, 271, 281, 305, 377)
 
-Use find-and-replace: `MisttyXPC` → `MisttyIPC` in all files.
+Use find-and-replace: `MyttyXPC` → `MyttyIPC` in all files.
 
 - [ ] **Step 5: Build to verify**
 
@@ -90,36 +90,36 @@ Expected: builds successfully.
 
 ```bash
 git add -A
-git commit -m "refactor: rename MisttyXPC to MisttyIPC, move to IPCConstants.swift"
+git commit -m "refactor: rename MyttyXPC to MyttyIPC, move to IPCConstants.swift"
 ```
 
 ---
 
-### Task 2: Remove @objc from MisttyServiceProtocol
+### Task 2: Remove @objc from MyttyServiceProtocol
 
 **Files:**
-- Modify: `MisttyShared/MisttyServiceProtocol.swift:3`
+- Modify: `MyttyShared/MyttyServiceProtocol.swift:3`
 
 - [ ] **Step 1: Remove @objc attribute**
 
 Change line 3 from:
 ```swift
-@objc public protocol MisttyServiceProtocol {
+@objc public protocol MyttyServiceProtocol {
 ```
 to:
 ```swift
-public protocol MisttyServiceProtocol {
+public protocol MyttyServiceProtocol {
 ```
 
 - [ ] **Step 2: Remove NSObject conformance from service class**
 
-In `Mistty/Services/XPCService.swift` (will be `IPCService.swift` after Task 3), change:
+In `Mytty/Services/XPCService.swift` (will be `IPCService.swift` after Task 3), change:
 ```swift
-final class MisttyXPCService: NSObject, MisttyServiceProtocol, @unchecked Sendable {
+final class MyttyXPCService: NSObject, MyttyServiceProtocol, @unchecked Sendable {
 ```
 to:
 ```swift
-final class MisttyXPCService: MisttyServiceProtocol, @unchecked Sendable {
+final class MyttyXPCService: MyttyServiceProtocol, @unchecked Sendable {
 ```
 
 And remove the `super.init()` call from `init(store:)`.
@@ -133,7 +133,7 @@ swift build 2>&1 | head -20
 - [ ] **Step 4: Commit**
 
 ```bash
-git add MisttyShared/MisttyServiceProtocol.swift Mistty/Services/XPCService.swift
+git add MyttyShared/MyttyServiceProtocol.swift Mytty/Services/XPCService.swift
 git commit -m "refactor: remove @objc and NSObject from service protocol"
 ```
 
@@ -142,43 +142,43 @@ git commit -m "refactor: remove @objc and NSObject from service protocol"
 ### Task 3: Rename XPCService to IPCService
 
 **Files:**
-- Rename: `Mistty/Services/XPCService.swift` → `Mistty/Services/IPCService.swift`
-- Rename: `MisttyTests/Services/XPCServiceTests.swift` → `MisttyTests/Services/IPCServiceTests.swift`
-- Modify: `Mistty/App/MisttyApp.swift:34`
+- Rename: `Mytty/Services/XPCService.swift` → `Mytty/Services/IPCService.swift`
+- Rename: `MyttyTests/Services/XPCServiceTests.swift` → `MyttyTests/Services/IPCServiceTests.swift`
+- Modify: `Mytty/App/MyttyApp.swift:34`
 
 - [ ] **Step 1: Rename files**
 
 ```bash
-git mv Mistty/Services/XPCService.swift Mistty/Services/IPCService.swift
-git mv MisttyTests/Services/XPCServiceTests.swift MisttyTests/Services/IPCServiceTests.swift
+git mv Mytty/Services/XPCService.swift Mytty/Services/IPCService.swift
+git mv MyttyTests/Services/XPCServiceTests.swift MyttyTests/Services/IPCServiceTests.swift
 ```
 
 - [ ] **Step 2: Rename class in IPCService.swift**
 
-Replace `MisttyXPCService` → `MisttyIPCService` throughout `Mistty/Services/IPCService.swift`.
+Replace `MyttyXPCService` → `MyttyIPCService` throughout `Mytty/Services/IPCService.swift`.
 
 Also update the `Reply` doc comment from "XPC reply closure" to "reply closure".
 
 - [ ] **Step 3: Update IPCListener.swift reference**
 
-In `Mistty/Services/IPCListener.swift`, replace all `MisttyXPCService` with `MisttyIPCService`. Note: this file will be fully rewritten in Task 5, so this step can be skipped if you prefer — the rewrite already uses `MisttyIPCService`.
+In `Mytty/Services/IPCListener.swift`, replace all `MyttyXPCService` with `MyttyIPCService`. Note: this file will be fully rewritten in Task 5, so this step can be skipped if you prefer — the rewrite already uses `MyttyIPCService`.
 
-- [ ] **Step 4: Update MisttyApp.swift reference**
+- [ ] **Step 4: Update MyttyApp.swift reference**
 
-In `Mistty/App/MisttyApp.swift:34`, change:
+In `Mytty/App/MyttyApp.swift:34`, change:
 ```swift
-let service = MisttyXPCService(store: store)
+let service = MyttyXPCService(store: store)
 ```
 to:
 ```swift
-let service = MisttyIPCService(store: store)
+let service = MyttyIPCService(store: store)
 ```
 
 - [ ] **Step 5: Update test file references**
 
-In `MisttyTests/Services/IPCServiceTests.swift`:
+In `MyttyTests/Services/IPCServiceTests.swift`:
 - Rename class: `XPCServiceTests` → `IPCServiceTests`
-- Replace `MisttyXPCService` → `MisttyIPCService` (lines 9, 14)
+- Replace `MyttyXPCService` → `MyttyIPCService` (lines 9, 14)
 
 - [ ] **Step 6: Build and run tests**
 
@@ -196,14 +196,14 @@ git commit -m "refactor: rename XPCService to IPCService throughout"
 
 ---
 
-### Task 4: Remove legacy launchd cleanup from MisttyApp
+### Task 4: Remove legacy launchd cleanup from MyttyApp
 
 **Files:**
-- Modify: `Mistty/App/MisttyApp.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
 
 - [ ] **Step 1: Remove cleanup call and method**
 
-In `MisttyApp.swift`:
+In `MyttyApp.swift`:
 - Remove the `cleanupLegacyLaunchdPlist()` call from `init()` (line 13)
 - Remove the entire `cleanupLegacyLaunchdPlist()` method (lines 17-27)
 
@@ -223,7 +223,7 @@ swift build 2>&1 | head -20
 - [ ] **Step 3: Commit**
 
 ```bash
-git add Mistty/App/MisttyApp.swift
+git add Mytty/App/MyttyApp.swift
 git commit -m "refactor: remove legacy launchd plist cleanup"
 ```
 
@@ -234,34 +234,34 @@ git commit -m "refactor: remove legacy launchd plist cleanup"
 ### Task 5: Rewrite IPCListener to use Unix domain sockets
 
 **Files:**
-- Rewrite: `Mistty/Services/IPCListener.swift`
+- Rewrite: `Mytty/Services/IPCListener.swift`
 
 This is the server side. The app listens on a Unix domain socket. Each client connection is one request/response.
 
 - [ ] **Step 1: Write the new IPCListener**
 
-Replace the entire contents of `Mistty/Services/IPCListener.swift` with:
+Replace the entire contents of `Mytty/Services/IPCListener.swift` with:
 
 ```swift
 import Darwin
 import Foundation
-import MisttyShared
+import MyttyShared
 
 /// Unix domain socket IPC listener. The app binds to a socket and accepts
 /// one-shot connections from the CLI: read request, dispatch, write response, close.
 @MainActor
 final class IPCListener {
-    nonisolated(unsafe) private let service: MisttyIPCService
+    nonisolated(unsafe) private let service: MyttyIPCService
     nonisolated(unsafe) private var serverFD: Int32 = -1
     private var acceptSource: DispatchSourceRead?
-    private let queue = DispatchQueue(label: "com.mistty.ipc-listener", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "com.mytty.ipc-listener", qos: .userInitiated)
 
-    init(service: MisttyIPCService) {
+    init(service: MyttyIPCService) {
         self.service = service
     }
 
     func start() {
-        let path = MisttyIPC.socketPath
+        let path = MyttyIPC.socketPath
 
         // Ensure parent directory exists with 0700 permissions
         let dir = (path as NSString).deletingLastPathComponent
@@ -328,7 +328,7 @@ final class IPCListener {
         acceptSource?.cancel()
         acceptSource = nil
         serverFD = -1
-        unlink(MisttyIPC.socketPath)
+        unlink(MyttyIPC.socketPath)
     }
 
     // MARK: - Connection Handling
@@ -358,7 +358,7 @@ final class IPCListener {
         guard let lengthBytes = readExact(fd: fd, count: 4) else { return }
         let length = lengthBytes.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
 
-        guard length > 0, length <= MisttyIPC.maxMessageSize else { return }
+        guard length > 0, length <= MyttyIPC.maxMessageSize else { return }
 
         // Read request payload
         guard let requestData = readExact(fd: fd, count: Int(length)) else { return }
@@ -442,7 +442,7 @@ final class IPCListener {
     // MARK: - Method Dispatch
 
     nonisolated static func dispatch(
-        service: MisttyIPCService,
+        service: MyttyIPCService,
         method: String,
         params: [String: Any],
         reply: @escaping (Data?, Error?) -> Void
@@ -525,7 +525,7 @@ final class IPCListener {
             service.listPopups(sessionId: int("sessionId"), reply: reply)
 
         default:
-            reply(nil, MisttyIPC.error(.operationFailed, "Unknown method: \(method)"))
+            reply(nil, MyttyIPC.error(.operationFailed, "Unknown method: \(method)"))
         }
     }
 }
@@ -540,7 +540,7 @@ swift build 2>&1 | head -20
 - [ ] **Step 3: Commit**
 
 ```bash
-git add Mistty/Services/IPCListener.swift
+git add Mytty/Services/IPCListener.swift
 git commit -m "feat: rewrite IPCListener from CFMessagePort to Unix domain socket"
 ```
 
@@ -549,16 +549,16 @@ git commit -m "feat: rewrite IPCListener from CFMessagePort to Unix domain socke
 ### Task 6: Rewrite IPCClient to use Unix domain sockets
 
 **Files:**
-- Rewrite: `MisttyCLI/XPCClient.swift`
+- Rewrite: `MyttyCLI/XPCClient.swift`
 
 - [ ] **Step 1: Write the new IPCClient**
 
-Replace the entire contents of `MisttyCLI/XPCClient.swift` with:
+Replace the entire contents of `MyttyCLI/XPCClient.swift` with:
 
 ```swift
 import Darwin
 import Foundation
-import MisttyShared
+import MyttyShared
 
 enum IPCClientError: Error, CustomStringConvertible {
     case connectionFailed(String)
@@ -572,18 +572,18 @@ enum IPCClientError: Error, CustomStringConvertible {
     }
 }
 
-/// CLI-side IPC client using Unix domain sockets to communicate with the Mistty app.
+/// CLI-side IPC client using Unix domain sockets to communicate with the Mytty app.
 final class IPCClient {
     private var socketFD: Int32 = -1
 
-    /// Connect to the running Mistty app, launching it if needed.
+    /// Connect to the running Mytty app, launching it if needed.
     func connect() throws {
         if tryConnect() { return }
 
         // Launch the app
         let launchProcess = Process()
         launchProcess.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        launchProcess.arguments = ["-a", "Mistty"]
+        launchProcess.arguments = ["-a", "Mytty"]
         try? launchProcess.run()
         launchProcess.waitUntilExit()
 
@@ -595,12 +595,12 @@ final class IPCClient {
         }
 
         throw IPCClientError.connectionFailed(
-            "Could not connect to Mistty.app. Is it running?"
+            "Could not connect to Mytty.app. Is it running?"
         )
     }
 
     private func tryConnect() -> Bool {
-        let path = MisttyIPC.socketPath
+        let path = MyttyIPC.socketPath
 
         let fd = socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else { return false }
@@ -656,7 +656,7 @@ final class IPCClient {
         let responseLengthData = try readExact(count: 4)
         let responseLength = responseLengthData.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
 
-        guard responseLength > 0, responseLength <= MisttyIPC.maxMessageSize else {
+        guard responseLength > 0, responseLength <= MyttyIPC.maxMessageSize else {
             throw IPCClientError.connectionFailed("Invalid response length")
         }
 
@@ -724,13 +724,13 @@ swift build 2>&1 | head -20
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MisttyCLI/XPCClient.swift
+git add MyttyCLI/XPCClient.swift
 git commit -m "feat: rewrite IPCClient from CFMessagePort to Unix domain socket"
 ```
 
 ---
 
-**Note:** The CLI command files (`MisttyCLI/Commands/*.swift`) already use the `IPCClient` class and `client.call()` pattern in the working tree. No changes needed for those files.
+**Note:** The CLI command files (`MyttyCLI/Commands/*.swift`) already use the `IPCClient` class and `client.call()` pattern in the working tree. No changes needed for those files.
 
 ## Chunk 3: Verify and Clean Up
 
@@ -750,7 +750,7 @@ swift test 2>&1 | tail -30
 
 - [ ] **Step 3: Fix any issues found**
 
-If tests fail due to remaining `MisttyXPC` references, update them to `MisttyIPC`.
+If tests fail due to remaining `MyttyXPC` references, update them to `MyttyIPC`.
 
 - [ ] **Step 4: Commit any fixes**
 
@@ -774,10 +774,10 @@ swift build -c release 2>&1 | tail -5
 Launch the app, then from a terminal:
 
 ```bash
-.build/release/MisttyCLI session list
-.build/release/MisttyCLI session create --name test
-.build/release/MisttyCLI session list
-.build/release/MisttyCLI tab list --session-id 1
+.build/release/MyttyCLI session list
+.build/release/MyttyCLI session create --name test
+.build/release/MyttyCLI session list
+.build/release/MyttyCLI tab list --session-id 1
 ```
 
 Verify: CLI connects, commands return JSON, no crashes.
@@ -785,7 +785,7 @@ Verify: CLI connects, commands return JSON, no crashes.
 - [ ] **Step 3: Verify socket file exists**
 
 ```bash
-ls -la ~/Library/Application\ Support/Mistty/mistty.sock
+ls -la ~/Library/Application\ Support/Mytty/mytty.sock
 ```
 
 - [ ] **Step 4: Verify auto-launch works**

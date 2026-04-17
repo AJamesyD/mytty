@@ -1,0 +1,1716 @@
+# Mytty Implementation Plan
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** Build a macOS terminal emulator with native session management (tabs, split panes, fuzzy session switcher) on top of libghostty.
+
+**Architecture:** Two-phase — Phase 0 spikes libghostty to discover API constraints, Phase 1 builds the MVP using protocol-based session/tab/pane abstractions designed for future daemon migration.
+
+**Tech Stack:** Swift 6, SwiftUI, libghostty (C API), XCTest, TOMLKit, Nix flakes (build env)
+
+---
+
+## Phase 0: Spike
+
+> Goal: Understand libghostty's surface lifecycle, event model, and rendering requirements before committing to Phase 1 architecture.
+
+### Task 1: Create Swift Package Manager project
+
+**Files:**
+- Create: `Package.swift`
+- Create: `Mytty/MyttyApp.swift`
+- Create: `Mytty/ContentView.swift`
+- Create: `MyttyTests/MyttyTests.swift`
+
+**Step 1: Initialize with SPM**
+
+```bash
+cd /Users/manu/Developer/mytty
+swift package init --name Mytty --type executable
+```
+
+**Step 2: Update Package.swift for macOS 14 SwiftUI app**
+
+Edit `Package.swift` to set the platform to `.macOS(.v14)` and add SwiftUI as a framework dependency.
+
+**Step 3: Create source files**
+
+Create `Mytty/MyttyApp.swift` with `@main` App entry point and `Mytty/ContentView.swift` with initial SwiftUI view. Create `MyttyTests/MyttyTests.swift` with a placeholder XCTest case.
+
+**Step 4: Initialize git**
+
+```bash
+cd /Users/manu/Developer/mytty
+git init
+cat > .gitignore << 'EOF'
+.DS_Store
+*.xcuserstate
+xcuserdata/
+.build/
+DerivedData/
+.claude/
+EOF
+git add .
+git commit -m "chore: initial SPM project"
+```
+
+Expected: Repository initialized with initial commit.
+
+---
+
+### Task 2: Research libghostty availability
+
+**Step 1: Check if Ghostty.app is installed**
+
+```bash
+ls /Applications/Ghostty.app/Contents/ 2>/dev/null || echo "Ghostty not installed"
+find /Applications/Ghostty.app -name "*.dylib" -o -name "libghostty*" 2>/dev/null | head -20
+```
+
+**Step 2: Check Ghostty source on GitHub**
+
+Browse https://github.com/ghostty-org/ghostty — look at:
+- `macos/Sources/` — Swift layer structure
+- `include/ghostty.h` — the C API surface
+- How `ghostty_surface_t` is created, sized, and destroyed
+- How input events are forwarded
+- How rendering is triggered (callback vs poll)
+- Whether Metal or another renderer is used
+
+**Step 3: Document findings**
+
+Create `docs/spike/libghostty-api.md` and write:
+- How to obtain the library (built from source via the git submodule at `vendor/ghostty`, added in Task 3)
+- The surface lifecycle: create → resize → input → render → destroy
+- Threading model (is rendering on main thread? background?)
+- How output/bell events are surfaced to the host app
+- Any Objective-C or Swift bridging requirements
+
+**Step 4: Commit**
+
+```bash
+git add docs/spike/
+git commit -m "docs: libghostty API research notes"
+```
+
+---
+
+### Task 3: Add Ghostty submodule and Nix build environment
+
+**Files:**
+- Create: `vendor/ghostty/` (git submodule)
+- Create: `flake.nix`
+- Create: `.envrc` (optional, for direnv integration)
+
+**Step 1: Add Ghostty as a git submodule**
+
+```bash
+cd /Users/manu/Developer/mytty
+git submodule add https://github.com/ghostty-org/ghostty vendor/ghostty
+git submodule update --init --recursive
+```
+
+Add `vendor/ghostty` to `.gitignore` entries? No — submodules are tracked by git, not ignored. But add to `.gitignore`:
+```
+result
+result-*
+.direnv/
+```
+
+Commit:
+```bash
+git add .gitmodules vendor/ghostty .gitignore
+git commit -m "chore: add ghostty as git submodule"
+```
+
+**Step 2: Create flake.nix**
+
+Check which Zig version Ghostty requires:
+```bash
+cat vendor/ghostty/build.zig.zon | grep -i zig
+# or
+cat vendor/ghostty/flake.nix | grep zig  # if it has one
+```
+
+Create `flake.nix` at the repo root:
+
+```nix
+{
+  description = "Mytty — macOS terminal emulator";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in {
+        devShells.default = pkgs.mkShell {
+          name = "mytty-dev";
+
+          # Swift is provided by Xcode — do not include here
+          buildInputs = with pkgs; [
+            zig        # for building libghostty from source
+            git        # for submodule operations
+          ];
+
+          shellHook = ''
+            echo "Mytty dev environment"
+            echo "Zig: $(zig version)"
+          '';
+        };
+      });
+}
+```
+
+Note: Check `vendor/ghostty/flake.nix` or `vendor/ghostty/build.zig.zon` to see if a specific Zig version is required. If so, pin it in nixpkgs or use a Zig-specific overlay. Document the required version in a comment in `flake.nix`.
+
+**Step 3: Create .envrc for direnv (optional)**
+
+```bash
+cat > .envrc << 'EOF'
+use flake
+EOF
+```
+
+Add to `.gitignore` if not already:
+```
+.direnv/
+```
+
+**Step 4: Verify the Nix environment**
+
+```bash
+nix develop --command zig version
+```
+
+Expected: prints the Zig version that Ghostty requires.
+
+**Step 5: Build libghostty**
+
+From within the Nix dev shell:
+
+```bash
+nix develop --command bash -c "cd vendor/ghostty && zig build -Dapp-runtime=none -Doptimize=ReleaseFast 2>&1 | tail -30"
+```
+
+This produces the static library and headers. The output location depends on the Ghostty build system — check `vendor/ghostty/zig-out/` or `vendor/ghostty/build/`.
+
+Document the exact output path in `docs/spike/libghostty-api.md`.
+
+**Step 6: Link in Package.swift**
+
+Once the library is built, update `Package.swift` to link against it:
+
+```swift
+.executableTarget(
+    name: "Mytty",
+    path: "Mytty",
+    linkerSettings: [
+        .linkedLibrary("ghostty", .when(platforms: [.macOS])),
+        .unsafeFlags(["-L", "vendor/ghostty/zig-out/lib"])
+    ]
+)
+```
+
+Create the bridging header `Mytty/Mytty-Bridging-Header.h`:
+```c
+#include "../vendor/ghostty/include/ghostty.h"
+```
+
+Update `Package.swift` to reference it via `swiftSettings`:
+```swift
+swiftSettings: [
+    .unsafeFlags(["-import-objc-header", "Mytty/Mytty-Bridging-Header.h"])
+]
+```
+
+**Step 7: Verify it links**
+
+```bash
+swift build 2>&1 | tail -20
+```
+
+Expected: `Build complete!`
+
+**Step 8: Commit**
+
+```bash
+git add flake.nix .envrc .gitignore Mytty/Mytty-Bridging-Header.h Package.swift
+git commit -m "chore: nix dev environment and link libghostty from submodule"
+```
+
+---
+
+### Task 4: Render a terminal surface
+
+> This is exploratory. The exact API calls depend on Task 2 findings. Fill in based on actual `ghostty.h`.
+
+**Step 1: Create a minimal NSView subclass**
+
+Create `Mytty/Spike/GhosttyTerminalView.swift`:
+
+```swift
+import AppKit
+
+// SPIKE ONLY — will be thrown away after spike conclusions are written
+final class GhosttyTerminalView: NSView {
+    // ghostty_surface_t handle — exact type from ghostty.h
+    // var surface: ghostty_surface_t?
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        // TODO: create ghostty app + surface using API from ghostty.h
+        // Refer to docs/spike/libghostty-api.md for exact calls
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func keyDown(with event: NSEvent) {
+        // TODO: forward to ghostty surface
+    }
+
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        // TODO: notify ghostty surface of resize
+    }
+}
+```
+
+**Step 2: Wrap in NSViewRepresentable**
+
+Create `Mytty/Spike/GhosttyTerminalViewRepresentable.swift`:
+
+```swift
+import SwiftUI
+
+struct GhosttyTerminalViewRepresentable: NSViewRepresentable {
+    func makeNSView(context: Context) -> GhosttyTerminalView {
+        GhosttyTerminalView(frame: .zero)
+    }
+
+    func updateNSView(_ nsView: GhosttyTerminalView, context: Context) {}
+}
+```
+
+**Step 3: Wire into ContentView**
+
+```swift
+struct ContentView: View {
+    var body: some View {
+        GhosttyTerminalViewRepresentable()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+```
+
+**Step 4: Build and run**
+
+```bash
+swift build 2>&1 | tail -10
+```
+
+Open the app. Verify:
+- A window appears with a terminal prompt
+- Typing characters appears in the terminal
+- Running `ls` shows output
+- Resizing the window causes the terminal to reflow
+
+**Step 5: Commit**
+
+```bash
+git add Mytty/Spike/
+git commit -m "spike: working libghostty surface in SwiftUI"
+```
+
+---
+
+### Task 5: Write spike conclusions
+
+Create `docs/spike/conclusions.md`:
+
+Document:
+- Exact function signatures needed for a working surface
+- How multiple independent surfaces (one per pane) are managed
+- Whether libghostty handles layout or the app does
+- Threading constraints (what must run on main thread)
+- Any constraints that change the Phase 1 design
+- Recommended adjustments to the MVP architecture from the design doc
+
+```bash
+git add docs/spike/conclusions.md
+git commit -m "docs: spike conclusions"
+```
+
+---
+
+> ⚠️ **STOP — review `docs/spike/conclusions.md` before continuing.**
+> Adjust Phase 1 tasks below as needed based on findings.
+
+---
+
+## Phase 1: MVP
+
+### Task 6: Project structure and dependencies
+
+**Files:**
+- Create: `Mytty/App/MyttyApp.swift`
+- Create: `Mytty/App/ContentView.swift`
+- Create: `Mytty/Config/` (directory)
+- Create: `Mytty/Models/` (directory)
+- Create: `Mytty/Views/Sidebar/` (directory)
+- Create: `Mytty/Views/SessionManager/` (directory)
+- Create: `Mytty/Views/Terminal/` (directory)
+- Create: `Mytty/Views/TabBar/` (directory)
+- Create: `Mytty/Services/` (directory)
+- Create: `MyttyTests/Config/` (directory)
+- Create: `MyttyTests/Models/` (directory)
+- Create: `MyttyTests/Services/` (directory)
+
+**Step 1: Add TOMLKit via SPM**
+
+In Xcode → File → Add Package Dependencies:
+- URL: `https://github.com/LebJe/TOMLKit`
+- Add to: Mytty target
+
+**Step 2: Add a fuzzy matching package**
+
+Evaluate and add one of:
+- `https://github.com/nicklockwood/FuzzySearch`
+- Or implement simple `localizedCaseInsensitiveContains` for MVP (good enough)
+
+**Step 3: Move spike files**
+
+```bash
+mkdir -p Mytty/Spike
+# Spike files are already in Mytty/Spike/ — leave them there for reference
+```
+
+**Step 4: Commit**
+
+```bash
+git add .
+git commit -m "chore: project structure and SPM dependencies"
+```
+
+---
+
+### Task 7: Config parser
+
+**Files:**
+- Create: `Mytty/Config/MyttyConfig.swift`
+- Create: `MyttyTests/Config/MyttyConfigTests.swift`
+
+**Step 1: Write failing tests**
+
+`MyttyTests/Config/MyttyConfigTests.swift`:
+
+```swift
+import XCTest
+@testable import Mytty
+
+final class MyttyConfigTests: XCTestCase {
+    func test_defaultConfig() {
+        let config = MyttyConfig.default
+        XCTAssertEqual(config.fontSize, 13)
+        XCTAssertEqual(config.fontFamily, "monospace")
+    }
+
+    func test_parsesValidTOML() throws {
+        let toml = """
+        font_size = 16
+        font_family = "JetBrains Mono"
+        """
+        let config = try MyttyConfig.parse(toml)
+        XCTAssertEqual(config.fontSize, 16)
+        XCTAssertEqual(config.fontFamily, "JetBrains Mono")
+    }
+
+    func test_missingKeysUseDefaults() throws {
+        let config = try MyttyConfig.parse("")
+        XCTAssertEqual(config.fontSize, 13)
+        XCTAssertEqual(config.fontFamily, "monospace")
+    }
+
+    func test_invalidTOMLThrows() {
+        XCTAssertThrowsError(try MyttyConfig.parse("font_size = !!!invalid"))
+    }
+}
+```
+
+**Step 2: Run to verify failure**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" \
+  -only-testing:MyttyTests/MyttyConfigTests 2>&1 | tail -20
+```
+
+Expected: FAIL — `MyttyConfig` not found.
+
+**Step 3: Implement**
+
+`Mytty/Config/MyttyConfig.swift`:
+
+```swift
+import TOMLKit
+import Foundation
+
+struct MyttyConfig {
+    var fontSize: Int = 13
+    var fontFamily: String = "monospace"
+
+    static let `default` = MyttyConfig()
+
+    static func parse(_ toml: String) throws -> MyttyConfig {
+        let table = try TOMLTable(string: toml)
+        var config = MyttyConfig()
+        if let size = table["font_size"]?.int { config.fontSize = size }
+        if let family = table["font_family"]?.string { config.fontFamily = family }
+        return config
+    }
+
+    static func load() -> MyttyConfig {
+        let configURL = FileManager.default
+            .homeDirectoryForCurrentUser
+            .appendingPathComponent(".config/mytty/config.toml")
+        guard let contents = try? String(contentsOf: configURL) else { return .default }
+        return (try? parse(contents)) ?? .default
+    }
+}
+```
+
+**Step 4: Run tests**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" \
+  -only-testing:MyttyTests/MyttyConfigTests 2>&1 | tail -20
+```
+
+Expected: All 4 tests PASS.
+
+**Step 5: Commit**
+
+```bash
+git add Mytty/Config/ MyttyTests/Config/
+git commit -m "feat: config parser with TOML support"
+```
+
+---
+
+### Task 8: Session / Tab / Pane model
+
+**Files:**
+- Create: `Mytty/Models/Protocols.swift`
+- Create: `Mytty/Models/MyttyPane.swift`
+- Create: `Mytty/Models/MyttyTab.swift`
+- Create: `Mytty/Models/MyttySession.swift`
+- Create: `Mytty/Models/SessionStore.swift`
+- Create: `MyttyTests/Models/SessionStoreTests.swift`
+
+**Step 1: Write failing tests**
+
+`MyttyTests/Models/SessionStoreTests.swift`:
+
+```swift
+import XCTest
+@testable import Mytty
+
+final class SessionStoreTests: XCTestCase {
+    var store: SessionStore!
+
+    override func setUp() {
+        store = SessionStore()
+    }
+
+    func test_startsEmpty() {
+        XCTAssertTrue(store.sessions.isEmpty)
+    }
+
+    func test_createSession() {
+        let session = store.createSession(name: "myproject", directory: URL(fileURLWithPath: "/tmp"))
+        XCTAssertEqual(store.sessions.count, 1)
+        XCTAssertEqual(session.name, "myproject")
+        XCTAssertEqual(session.tabs.count, 1)
+        XCTAssertEqual(session.tabs[0].panes.count, 1)
+    }
+
+    func test_createSessionBecomesActive() {
+        let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+        XCTAssertEqual(store.activeSession?.id, session.id)
+    }
+
+    func test_closeSession() {
+        let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+        store.closeSession(session)
+        XCTAssertTrue(store.sessions.isEmpty)
+        XCTAssertNil(store.activeSession)
+    }
+
+    func test_addTabToSession() {
+        let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+        session.addTab()
+        XCTAssertEqual(session.tabs.count, 2)
+    }
+
+    func test_closeTab() {
+        let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+        session.addTab()
+        let firstTab = session.tabs[0]
+        session.closeTab(firstTab)
+        XCTAssertEqual(session.tabs.count, 1)
+    }
+
+    func test_splitPaneHorizontal() {
+        let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+        let tab = session.tabs[0]
+        tab.splitActivePane(direction: .horizontal)
+        XCTAssertEqual(tab.panes.count, 2)
+    }
+
+    func test_splitPaneVertical() {
+        let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+        let tab = session.tabs[0]
+        tab.splitActivePane(direction: .vertical)
+        XCTAssertEqual(tab.panes.count, 2)
+    }
+}
+```
+
+**Step 2: Run to verify failure**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" \
+  -only-testing:MyttyTests/SessionStoreTests 2>&1 | tail -20
+```
+
+Expected: FAIL — types not found.
+
+**Step 3: Implement protocols**
+
+`Mytty/Models/Protocols.swift`:
+
+```swift
+import Foundation
+
+protocol TerminalSession: AnyObject {
+    var id: UUID { get }
+    var name: String { get set }
+    var tabs: [any TerminalTab] { get }
+    var activeTab: (any TerminalTab)? { get set }
+    func addTab()
+    func closeTab(_ tab: any TerminalTab)
+}
+
+protocol TerminalTab: AnyObject {
+    var id: UUID { get }
+    var title: String { get set }
+    var panes: [any TerminalPane] { get }
+    var activePane: (any TerminalPane)? { get set }
+    func splitActivePane(direction: SplitDirection)
+}
+
+protocol TerminalPane: AnyObject {
+    var id: UUID { get }
+    // Terminal surface binding added after spike informs the API
+}
+
+enum SplitDirection {
+    case horizontal, vertical
+}
+```
+
+**Step 4: Implement MyttyPane**
+
+`Mytty/Models/MyttyPane.swift`:
+
+```swift
+import Foundation
+
+@Observable
+final class MyttyPane: TerminalPane {
+    let id = UUID()
+    // ghostty_surface_t surface — added in Task 9 once spike concludes
+}
+```
+
+**Step 5: Implement MyttyTab**
+
+`Mytty/Models/MyttyTab.swift`:
+
+```swift
+import Foundation
+
+@Observable
+final class MyttyTab: TerminalTab {
+    let id = UUID()
+    var title: String = "Shell"
+    private(set) var panes: [any TerminalPane] = []
+    var activePane: (any TerminalPane)?
+
+    init() {
+        let pane = MyttyPane()
+        panes = [pane]
+        activePane = pane
+    }
+
+    func splitActivePane(direction: SplitDirection) {
+        let newPane = MyttyPane()
+        panes.append(newPane)
+        activePane = newPane
+    }
+}
+```
+
+**Step 6: Implement MyttySession**
+
+`Mytty/Models/MyttySession.swift`:
+
+```swift
+import Foundation
+
+@Observable
+final class MyttySession: TerminalSession {
+    let id = UUID()
+    var name: String
+    let directory: URL
+    private(set) var tabs: [any TerminalTab] = []
+    var activeTab: (any TerminalTab)?
+
+    init(name: String, directory: URL) {
+        self.name = name
+        self.directory = directory
+        addTab()
+    }
+
+    func addTab() {
+        let tab = MyttyTab()
+        tabs.append(tab)
+        activeTab = tab
+    }
+
+    func closeTab(_ tab: any TerminalTab) {
+        tabs.removeAll { $0.id == tab.id }
+        if activeTab?.id == tab.id { activeTab = tabs.last }
+    }
+}
+```
+
+**Step 7: Implement SessionStore**
+
+`Mytty/Models/SessionStore.swift`:
+
+```swift
+import Foundation
+
+@Observable
+final class SessionStore {
+    private(set) var sessions: [MyttySession] = []
+    var activeSession: MyttySession?
+
+    @discardableResult
+    func createSession(name: String, directory: URL) -> MyttySession {
+        let session = MyttySession(name: name, directory: directory)
+        sessions.append(session)
+        activeSession = session
+        return session
+    }
+
+    func closeSession(_ session: MyttySession) {
+        sessions.removeAll { $0.id == session.id }
+        if activeSession?.id == session.id { activeSession = sessions.last }
+    }
+}
+```
+
+**Step 8: Run tests**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" \
+  -only-testing:MyttyTests/SessionStoreTests 2>&1 | tail -20
+```
+
+Expected: All 8 tests PASS.
+
+**Step 9: Commit**
+
+```bash
+git add Mytty/Models/ MyttyTests/Models/
+git commit -m "feat: session/tab/pane model with protocol abstractions"
+```
+
+---
+
+### Task 9: Pane layout model
+
+**Files:**
+- Create: `Mytty/Models/PaneLayout.swift`
+- Create: `MyttyTests/Models/PaneLayoutTests.swift`
+
+**Step 1: Write failing tests**
+
+`MyttyTests/Models/PaneLayoutTests.swift`:
+
+```swift
+import XCTest
+@testable import Mytty
+
+final class PaneLayoutTests: XCTestCase {
+    func test_singlePaneHasOneLeaf() {
+        let tab = MyttyTab()
+        XCTAssertEqual(tab.layout.leaves.count, 1)
+    }
+
+    func test_splitHorizontalAddsSibling() {
+        let tab = MyttyTab()
+        let pane = tab.panes[0] as! MyttyPane
+        tab.layout.split(pane: pane, direction: .horizontal)
+        XCTAssertEqual(tab.layout.leaves.count, 2)
+    }
+
+    func test_splitVerticalAddsChild() {
+        let tab = MyttyTab()
+        let pane = tab.panes[0] as! MyttyPane
+        tab.layout.split(pane: pane, direction: .vertical)
+        XCTAssertEqual(tab.layout.leaves.count, 2)
+        if case .split(let dir, _, _) = tab.layout.root {
+            XCTAssertEqual(dir, .vertical)
+        } else {
+            XCTFail("Expected split at root")
+        }
+    }
+
+    func test_splitDirectionIsRecorded() {
+        let tab = MyttyTab()
+        let pane = tab.panes[0] as! MyttyPane
+        tab.layout.split(pane: pane, direction: .horizontal)
+        if case .split(let dir, _, _) = tab.layout.root {
+            XCTAssertEqual(dir, .horizontal)
+        } else {
+            XCTFail("Expected split at root")
+        }
+    }
+}
+```
+
+**Step 2: Run to verify failure**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" \
+  -only-testing:MyttyTests/PaneLayoutTests 2>&1 | tail -20
+```
+
+Expected: FAIL.
+
+**Step 3: Implement PaneLayout**
+
+`Mytty/Models/PaneLayout.swift`:
+
+```swift
+import Foundation
+
+indirect enum PaneLayoutNode {
+    case leaf(MyttyPane)
+    case split(SplitDirection, PaneLayoutNode, PaneLayoutNode)
+}
+
+struct PaneLayout {
+    var root: PaneLayoutNode
+
+    init(pane: MyttyPane) {
+        root = .leaf(pane)
+    }
+
+    var leaves: [MyttyPane] {
+        collectLeaves(root)
+    }
+
+    private func collectLeaves(_ node: PaneLayoutNode) -> [MyttyPane] {
+        switch node {
+        case .leaf(let pane): return [pane]
+        case .split(_, let a, let b): return collectLeaves(a) + collectLeaves(b)
+        }
+    }
+
+    mutating func split(pane: MyttyPane, direction: SplitDirection) {
+        let newPane = MyttyPane()
+        root = insertSplit(root, target: pane.id, direction: direction, newPane: newPane)
+    }
+
+    private func insertSplit(
+        _ node: PaneLayoutNode,
+        target: UUID,
+        direction: SplitDirection,
+        newPane: MyttyPane
+    ) -> PaneLayoutNode {
+        switch node {
+        case .leaf(let p) where p.id == target:
+            return .split(direction, .leaf(p), .leaf(newPane))
+        case .leaf:
+            return node
+        case .split(let dir, let a, let b):
+            return .split(dir,
+                insertSplit(a, target: target, direction: direction, newPane: newPane),
+                insertSplit(b, target: target, direction: direction, newPane: newPane))
+        }
+    }
+}
+```
+
+**Step 4: Add layout to MyttyTab**
+
+Modify `Mytty/Models/MyttyTab.swift` — add a `layout` property:
+
+```swift
+// Add this property to MyttyTab:
+var layout: PaneLayout
+
+// Update init():
+init() {
+    let pane = MyttyPane()
+    let layout = PaneLayout(pane: pane)
+    self.layout = layout
+    panes = [pane]
+    activePane = pane
+}
+
+// Update splitActivePane:
+func splitActivePane(direction: SplitDirection) {
+    guard let active = activePane as? MyttyPane else { return }
+    layout.split(pane: active, direction: direction)
+    panes = layout.leaves
+    activePane = layout.leaves.last
+}
+```
+
+**Step 5: Run tests**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" \
+  -only-testing:MyttyTests/PaneLayoutTests 2>&1 | tail -20
+```
+
+Expected: All 4 tests PASS.
+
+**Step 6: Run all tests so far**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" 2>&1 | grep -E "PASS|FAIL|error:"
+```
+
+Expected: All tests PASS.
+
+**Step 7: Commit**
+
+```bash
+git add Mytty/Models/PaneLayout.swift MyttyTests/Models/PaneLayoutTests.swift
+git commit -m "feat: recursive pane layout model"
+```
+
+---
+
+### Task 10: Terminal surface view
+
+> ⚠️ Adjust this task based on `docs/spike/conclusions.md`. The wrapper structure below is a starting point.
+
+**Files:**
+- Create: `Mytty/Views/Terminal/TerminalSurfaceView.swift`
+- Create: `Mytty/Views/Terminal/PaneView.swift`
+- Create: `Mytty/Views/Terminal/PaneLayoutView.swift`
+
+**Step 1: Implement NSViewRepresentable**
+
+`Mytty/Views/Terminal/TerminalSurfaceView.swift`:
+
+```swift
+import SwiftUI
+import AppKit
+
+struct TerminalSurfaceView: NSViewRepresentable {
+    let pane: MyttyPane
+
+    func makeNSView(context: Context) -> TerminalNSView {
+        TerminalNSView(pane: pane)
+    }
+
+    func updateNSView(_ nsView: TerminalNSView, context: Context) {
+        // Handle focus and resize — fill in based on spike conclusions
+    }
+}
+
+// TerminalNSView wraps a ghostty_surface_t — implement based on spike findings
+final class TerminalNSView: NSView {
+    let pane: MyttyPane
+
+    init(pane: MyttyPane) {
+        self.pane = pane
+        super.init(frame: .zero)
+        // TODO: initialize ghostty surface using findings from docs/spike/conclusions.md
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func keyDown(with event: NSEvent) {
+        // TODO: forward to ghostty surface
+    }
+
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        // TODO: notify ghostty surface of resize
+    }
+}
+```
+
+**Step 2: Implement PaneView**
+
+`Mytty/Views/Terminal/PaneView.swift`:
+
+```swift
+import SwiftUI
+
+struct PaneView: View {
+    let pane: MyttyPane
+    let isActive: Bool
+
+    var body: some View {
+        TerminalSurfaceView(pane: pane)
+            .overlay(alignment: .topLeading) {
+                if isActive {
+                    RoundedRectangle(cornerRadius: 2)
+                        .stroke(Color.accentColor, lineWidth: 1)
+                        .allowsHitTesting(false)
+                }
+            }
+    }
+}
+```
+
+**Step 3: Implement PaneLayoutView**
+
+`Mytty/Views/Terminal/PaneLayoutView.swift`:
+
+```swift
+import SwiftUI
+
+struct PaneLayoutView: View {
+    let node: PaneLayoutNode
+    let activePane: MyttyPane?
+
+    var body: some View {
+        switch node {
+        case .leaf(let pane):
+            PaneView(pane: pane, isActive: activePane?.id == pane.id)
+        case .split(.horizontal, let a, let b):
+            HSplitView {
+                PaneLayoutView(node: a, activePane: activePane)
+                PaneLayoutView(node: b, activePane: activePane)
+            }
+        case .split(.vertical, let a, let b):
+            VSplitView {
+                PaneLayoutView(node: a, activePane: activePane)
+                PaneLayoutView(node: b, activePane: activePane)
+            }
+        }
+    }
+}
+```
+
+**Step 4: Build**
+
+```bash
+swift build 2>&1 | tail -10
+```
+
+Expected: `BUILD SUCCEEDED`
+
+**Step 5: Manual test**
+
+Open the app. Verify a terminal renders and accepts keyboard input.
+
+**Step 6: Commit**
+
+```bash
+git add Mytty/Views/Terminal/
+git commit -m "feat: terminal surface view and split pane layout view"
+```
+
+---
+
+### Task 11: Tab bar
+
+**Files:**
+- Create: `Mytty/Views/TabBar/TabBarView.swift`
+
+**Step 1: Implement**
+
+`Mytty/Views/TabBar/TabBarView.swift`:
+
+```swift
+import SwiftUI
+
+struct TabBarView: View {
+    @Bindable var session: MyttySession
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 2) {
+                    ForEach(session.tabs as! [MyttyTab], id: \.id) { tab in
+                        TabBarItem(
+                            tab: tab,
+                            isActive: session.activeTab?.id == tab.id,
+                            onSelect: { session.activeTab = tab },
+                            onClose: { session.closeTab(tab) }
+                        )
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+
+            Button(action: { session.addTab() }) {
+                Image(systemName: "plus")
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 4)
+        }
+        .frame(height: 36)
+        .background(.bar)
+    }
+}
+
+struct TabBarItem: View {
+    @Bindable var tab: MyttyTab
+    let isActive: Bool
+    let onSelect: () -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(tab.title)
+                .font(.system(size: 12))
+                .lineLimit(1)
+
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9))
+            }
+            .buttonStyle(.plain)
+            .opacity(isActive ? 1 : 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
+        .cornerRadius(6)
+        .onTapGesture { onSelect() }
+    }
+}
+```
+
+**Step 2: Build**
+
+```bash
+swift build 2>&1 | tail -10
+```
+
+Expected: `BUILD SUCCEEDED`
+
+**Step 3: Commit**
+
+```bash
+git add Mytty/Views/TabBar/
+git commit -m "feat: tab bar"
+```
+
+---
+
+### Task 12: Sidebar
+
+**Files:**
+- Create: `Mytty/Views/Sidebar/SidebarView.swift`
+
+**Step 1: Implement**
+
+`Mytty/Views/Sidebar/SidebarView.swift`:
+
+```swift
+import SwiftUI
+
+struct SidebarView: View {
+    @Bindable var store: SessionStore
+
+    var body: some View {
+        List {
+            ForEach(store.sessions, id: \.id) { session in
+                SessionRowView(session: session, store: store)
+            }
+        }
+        .listStyle(.sidebar)
+        .frame(minWidth: 180, idealWidth: 220)
+    }
+}
+
+struct SessionRowView: View {
+    @Bindable var session: MyttySession
+    @Bindable var store: SessionStore
+    @State private var isExpanded = true
+
+    var isActive: Bool { store.activeSession?.id == session.id }
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            ForEach(session.tabs as! [MyttyTab], id: \.id) { tab in
+                HStack {
+                    Text(tab.title)
+                        .font(.system(size: 12))
+                    Spacer()
+                }
+                .padding(.leading, 8)
+                .padding(.vertical, 2)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    store.activeSession = session
+                    session.activeTab = tab
+                }
+            }
+        } label: {
+            Text(session.name)
+                .fontWeight(isActive ? .semibold : .regular)
+                .contentShape(Rectangle())
+                .onTapGesture { store.activeSession = session }
+        }
+    }
+}
+```
+
+**Step 2: Build**
+
+```bash
+swift build 2>&1 | tail -10
+```
+
+**Step 3: Commit**
+
+```bash
+git add Mytty/Views/Sidebar/
+git commit -m "feat: sidebar with collapsible session tree"
+```
+
+---
+
+### Task 13: Services — Zoxide and SSH config
+
+**Files:**
+- Create: `Mytty/Services/ZoxideService.swift`
+- Create: `Mytty/Services/SSHConfigService.swift`
+- Create: `MyttyTests/Services/SSHConfigServiceTests.swift`
+
+**Step 1: Write failing tests for SSH config parser**
+
+`MyttyTests/Services/SSHConfigServiceTests.swift`:
+
+```swift
+import XCTest
+@testable import Mytty
+
+final class SSHConfigServiceTests: XCTestCase {
+    func test_parsesHostEntries() {
+        let config = """
+        Host myserver
+            HostName 192.168.1.1
+            User admin
+
+        Host dev
+            HostName dev.example.com
+        """
+        let hosts = SSHConfigService.parse(config)
+        XCTAssertEqual(hosts.count, 2)
+        XCTAssertEqual(hosts[0].alias, "myserver")
+        XCTAssertEqual(hosts[1].alias, "dev")
+    }
+
+    func test_ignoresWildcardHosts() {
+        let config = "Host *\n    ServerAliveInterval 60\n"
+        let hosts = SSHConfigService.parse(config)
+        XCTAssertTrue(hosts.isEmpty)
+    }
+
+    func test_capturesHostName() {
+        let config = "Host mybox\n    HostName 10.0.0.1\n"
+        let hosts = SSHConfigService.parse(config)
+        XCTAssertEqual(hosts[0].hostname, "10.0.0.1")
+    }
+
+    func test_emptyConfigReturnsEmpty() {
+        XCTAssertTrue(SSHConfigService.parse("").isEmpty)
+    }
+}
+```
+
+**Step 2: Run to verify failure**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" \
+  -only-testing:MyttyTests/SSHConfigServiceTests 2>&1 | tail -20
+```
+
+Expected: FAIL.
+
+**Step 3: Implement SSH config service**
+
+`Mytty/Services/SSHConfigService.swift`:
+
+```swift
+import Foundation
+
+struct SSHHost {
+    let alias: String
+    let hostname: String?
+}
+
+struct SSHConfigService {
+    static func parse(_ content: String) -> [SSHHost] {
+        var hosts: [SSHHost] = []
+        var currentAlias: String?
+        var currentHostname: String?
+
+        for line in content.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let lower = trimmed.lowercased()
+
+            if lower.hasPrefix("host ") {
+                if let alias = currentAlias, !alias.contains("*") {
+                    hosts.append(SSHHost(alias: alias, hostname: currentHostname))
+                }
+                currentAlias = String(trimmed.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                currentHostname = nil
+            } else if lower.hasPrefix("hostname ") {
+                currentHostname = String(trimmed.dropFirst(9)).trimmingCharacters(in: .whitespaces)
+            }
+        }
+
+        if let alias = currentAlias, !alias.contains("*") {
+            hosts.append(SSHHost(alias: alias, hostname: currentHostname))
+        }
+
+        return hosts
+    }
+
+    static func loadHosts() -> [SSHHost] {
+        let url = FileManager.default
+            .homeDirectoryForCurrentUser
+            .appendingPathComponent(".ssh/config")
+        guard let content = try? String(contentsOf: url) else { return [] }
+        return parse(content)
+    }
+}
+```
+
+**Step 4: Implement Zoxide service**
+
+`Mytty/Services/ZoxideService.swift`:
+
+```swift
+import Foundation
+
+struct ZoxideService {
+    static func recentDirectories() async -> [URL] {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["zoxide", "query", "-l"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return output
+                .components(separatedBy: .newlines)
+                .filter { !$0.isEmpty }
+                .map { URL(fileURLWithPath: $0) }
+        } catch {
+            return [] // zoxide not installed — silently omit
+        }
+    }
+}
+```
+
+**Step 5: Run tests**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" \
+  -only-testing:MyttyTests/SSHConfigServiceTests 2>&1 | tail -20
+```
+
+Expected: All 4 tests PASS.
+
+**Step 6: Commit**
+
+```bash
+git add Mytty/Services/ MyttyTests/Services/
+git commit -m "feat: zoxide and SSH config services"
+```
+
+---
+
+### Task 14: Session manager overlay
+
+**Files:**
+- Create: `Mytty/Views/SessionManager/SessionManagerViewModel.swift`
+- Create: `Mytty/Views/SessionManager/SessionManagerView.swift`
+
+**Step 1: Implement view model**
+
+`Mytty/Views/SessionManager/SessionManagerViewModel.swift`:
+
+```swift
+import Foundation
+
+enum SessionManagerItem {
+    case runningSession(MyttySession)
+    case directory(URL)
+    case sshHost(SSHHost)
+
+    var displayName: String {
+        switch self {
+        case .runningSession(let s): return "▶ \(s.name)"
+        case .directory(let u): return u.path
+        case .sshHost(let h): return "⌁ \(h.alias)"
+        }
+    }
+}
+
+@Observable
+final class SessionManagerViewModel {
+    var query = ""
+    private var allItems: [SessionManagerItem] = []
+    var filteredItems: [SessionManagerItem] = []
+    var selectedIndex = 0
+
+    let store: SessionStore
+
+    init(store: SessionStore) {
+        self.store = store
+    }
+
+    func load() async {
+        let dirs = await ZoxideService.recentDirectories()
+        let sshHosts = SSHConfigService.loadHosts()
+
+        var items: [SessionManagerItem] = []
+        items += store.sessions.map { .runningSession($0) }
+        items += dirs.map { .directory($0) }
+        items += sshHosts.map { .sshHost($0) }
+
+        allItems = items
+        applyFilter()
+    }
+
+    func updateQuery(_ newQuery: String) {
+        query = newQuery
+        applyFilter()
+    }
+
+    private func applyFilter() {
+        if query.isEmpty {
+            filteredItems = allItems
+        } else {
+            filteredItems = allItems.filter {
+                $0.displayName.localizedCaseInsensitiveContains(query)
+            }
+        }
+        selectedIndex = 0
+    }
+
+    func moveUp() { selectedIndex = max(0, selectedIndex - 1) }
+    func moveDown() { selectedIndex = min(filteredItems.count - 1, selectedIndex + 1) }
+
+    func confirmSelection() {
+        guard selectedIndex < filteredItems.count else { return }
+        switch filteredItems[selectedIndex] {
+        case .runningSession(let session):
+            store.activeSession = session
+        case .directory(let url):
+            store.createSession(name: url.lastPathComponent, directory: url)
+        case .sshHost:
+            break // post-MVP
+        }
+    }
+}
+```
+
+**Step 2: Implement overlay view**
+
+`Mytty/Views/SessionManager/SessionManagerView.swift`:
+
+```swift
+import SwiftUI
+
+struct SessionManagerView: View {
+    @Bindable var vm: SessionManagerViewModel
+    @Binding var isPresented: Bool
+    @State private var queryText = ""
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TextField("Search sessions, directories, hosts...", text: $queryText)
+                .textFieldStyle(.plain)
+                .font(.title3)
+                .padding(14)
+                .onChange(of: queryText) { vm.updateQuery(queryText) }
+
+            Divider()
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(vm.filteredItems.enumerated()), id: \.offset) { index, item in
+                            HStack {
+                                Text(item.displayName)
+                                    .font(.system(size: 13))
+                                    .lineLimit(1)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(index == vm.selectedIndex ? Color.accentColor.opacity(0.2) : Color.clear)
+                            .id(index)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                vm.selectedIndex = index
+                                vm.confirmSelection()
+                                isPresented = false
+                            }
+                        }
+                    }
+                }
+                .frame(maxHeight: 360)
+                .onChange(of: vm.selectedIndex) { proxy.scrollTo(vm.selectedIndex, anchor: .center) }
+            }
+        }
+        .frame(width: 560)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.3), radius: 20)
+        .onKeyPress(.upArrow) { vm.moveUp(); return .handled }
+        .onKeyPress(.downArrow) { vm.moveDown(); return .handled }
+        .onKeyPress(.return) { vm.confirmSelection(); isPresented = false; return .handled }
+        .onKeyPress(.escape) { isPresented = false; return .handled }
+        .task { await vm.load() }
+    }
+}
+```
+
+**Step 3: Build**
+
+```bash
+swift build 2>&1 | tail -10
+```
+
+Expected: `BUILD SUCCEEDED`
+
+**Step 4: Commit**
+
+```bash
+git add Mytty/Views/SessionManager/
+git commit -m "feat: session manager overlay"
+```
+
+---
+
+### Task 15: Root view — wire everything together
+
+**Files:**
+- Modify: `Mytty/App/ContentView.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
+
+**Step 1: Implement ContentView**
+
+`Mytty/App/ContentView.swift`:
+
+```swift
+import SwiftUI
+
+struct ContentView: View {
+    @State var store = SessionStore()
+    @AppStorage("sidebarVisible") var sidebarVisible = true
+    @State var showingSessionManager = false
+
+    var body: some View {
+        HStack(spacing: 0) {
+            if sidebarVisible {
+                SidebarView(store: store)
+                Divider()
+            }
+
+            Group {
+                if let session = store.activeSession,
+                   let tab = session.activeTab as? MyttyTab {
+                    VStack(spacing: 0) {
+                        TabBarView(session: session)
+                        Divider()
+                        PaneLayoutView(
+                            node: tab.layout.root,
+                            activePane: tab.activePane as? MyttyPane
+                        )
+                    }
+                } else {
+                    VStack(spacing: 12) {
+                        Text("No active session")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                        Text("Press ⌘J to open or create a session")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+        .overlay {
+            if showingSessionManager {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture { showingSessionManager = false }
+
+                SessionManagerView(
+                    vm: SessionManagerViewModel(store: store),
+                    isPresented: $showingSessionManager
+                )
+            }
+        }
+    }
+}
+```
+
+**Step 2: Implement MyttyApp with commands**
+
+`Mytty/App/MyttyApp.swift`:
+
+```swift
+import SwiftUI
+
+@main
+struct MyttyApp: App {
+    @AppStorage("sidebarVisible") var sidebarVisible = true
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        .commands {
+            CommandGroup(after: .toolbar) {
+                Divider()
+
+                Button("Toggle Sidebar") {
+                    sidebarVisible.toggle()
+                }
+                .keyboardShortcut("s", modifiers: .command)
+
+                Button("New Tab") {
+                    // Posted via NotificationCenter — ContentView observes
+                    NotificationCenter.default.post(name: .myttyNewTab, object: nil)
+                }
+                .keyboardShortcut("t", modifiers: .command)
+
+                Button("Split Pane Horizontally") {
+                    NotificationCenter.default.post(name: .mistrySplitHorizontal, object: nil)
+                }
+                .keyboardShortcut("d", modifiers: .command)
+
+                Button("Split Pane Vertically") {
+                    NotificationCenter.default.post(name: .mistrySplitVertical, object: nil)
+                }
+                .keyboardShortcut("d", modifiers: [.command, .shift])
+
+                Button("Session Manager") {
+                    NotificationCenter.default.post(name: .mistrySessionManager, object: nil)
+                }
+                .keyboardShortcut("j", modifiers: .command)
+            }
+        }
+    }
+}
+
+extension Notification.Name {
+    static let myttyNewTab = Notification.Name("myttyNewTab")
+    static let mistrySplitHorizontal = Notification.Name("mistrySplitHorizontal")
+    static let mistrySplitVertical = Notification.Name("mistrySplitVertical")
+    static let mistrySessionManager = Notification.Name("mistrySessionManager")
+}
+```
+
+**Step 3: Observe notifications in ContentView**
+
+Add to `ContentView.body` after `.overlay`:
+
+```swift
+.onReceive(NotificationCenter.default.publisher(for: .myttyNewTab)) { _ in
+    store.activeSession?.addTab()
+}
+.onReceive(NotificationCenter.default.publisher(for: .mistrySplitHorizontal)) { _ in
+    (store.activeSession?.activeTab as? MyttyTab)?.splitActivePane(direction: .horizontal)
+}
+.onReceive(NotificationCenter.default.publisher(for: .mistrySplitVertical)) { _ in
+    (store.activeSession?.activeTab as? MyttyTab)?.splitActivePane(direction: .vertical)
+}
+.onReceive(NotificationCenter.default.publisher(for: .mistrySessionManager)) { _ in
+    showingSessionManager = true
+}
+```
+
+**Step 4: Build**
+
+```bash
+swift build 2>&1 | tail -10
+```
+
+Expected: `BUILD SUCCEEDED`
+
+**Step 5: Run all tests**
+
+```bash
+xcodebuild test -scheme Mytty -destination "platform=macOS" 2>&1 | grep -E "Test.*passed|Test.*failed|error:"
+```
+
+Expected: All tests PASS.
+
+**Step 6: Manual smoke test checklist**
+
+- [ ] App launches without crash
+- [ ] `cmd+j` opens session manager overlay
+- [ ] Typing in session manager filters the list
+- [ ] Arrow keys navigate the list
+- [ ] Enter on a directory opens a new session with a working terminal
+- [ ] Session appears in sidebar
+- [ ] `cmd+t` adds a new tab; appears in tab bar and sidebar
+- [ ] `cmd+d` splits pane horizontally; both panes show independent terminals
+- [ ] `cmd+shift+d` splits pane vertically
+- [ ] `cmd+s` hides the sidebar; `cmd+s` again shows it
+
+**Step 7: Final commit**
+
+```bash
+git add Mytty/App/
+git commit -m "feat: wire root view — MVP complete"
+```
+
+---
+
+## Post-MVP
+
+Deferred features (from design doc):
+- Session persistence via background daemon
+- Save/restore layouts
+- Window mode (`cmd+x`) — pane resize, swap, break, merge, rotate
+- Copy mode — vim-style scrollback navigation
+- Bell activity indicators in sidebar
+- Tab rename
+- Preferences pane
+- Live config reload
+- SSH session creation from session manager

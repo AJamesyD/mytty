@@ -1,6 +1,6 @@
 # Post-MVP Phase 1 Design
 
-**Goal:** Make Mistty a viable daily-driver terminal by adding polish (bell, tab rename, preferences), power-user pane management (window mode), and copy mode for scrollback navigation.
+**Goal:** Make Mytty a viable daily-driver terminal by adding polish (bell, tab rename, preferences), power-user pane management (window mode), and copy mode for scrollback navigation.
 
 **Scope:** Three feature groups, ordered by complexity.
 
@@ -21,7 +21,7 @@ Implementation: handle `GHOSTTY_ACTION_BELL` in the action callback, post a noti
 
 Double-click a tab name in the tab bar to enter inline editing mode. Cmd+Shift+R as a keyboard shortcut to rename the active tab.
 
-`MisttyTab.title` already exists and is set by ghostty's SET_TITLE action. A `customTitle` property takes precedence over the auto-detected title when set.
+`MyttyTab.title` already exists and is set by ghostty's SET_TITLE action. A `customTitle` property takes precedence over the auto-detected title when set.
 
 ### Preference Pane
 
@@ -31,7 +31,7 @@ A SwiftUI `Settings` scene accessible via Cmd+,. Controls:
 - Scrollback lines
 - Sidebar default visibility
 
-Reads/writes `~/.config/mistty/config.toml` via existing `MisttyConfig`. Changes require surface recreation or ghostty config reload to take effect.
+Reads/writes `~/.config/mytty/config.toml` via existing `MyttyConfig`. Changes require surface recreation or ghostty config reload to take effect.
 
 ---
 
@@ -58,7 +58,7 @@ Cmd+X enters "window mode" — a modal state where keyboard input controls pane 
 - `SplitDirection` rotation: swap `.horizontal` / `.vertical`
 - `PaneLayoutNode.split` gains a `ratio: CGFloat` (default 0.5) for resize
 - `PaneLayout` gains tree navigation (find parent, find sibling, find adjacent by direction)
-- `MisttyTab` gains `isWindowModeActive: Bool` and `zoomedPane: MisttyPane?`
+- `MyttyTab` gains `isWindowModeActive: Bool` and `zoomedPane: MyttyPane?`
 
 ### View Changes
 

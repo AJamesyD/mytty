@@ -178,7 +178,7 @@ If the user presses Escape before ContentView calls `continuePendingMotion`, the
 
 ## Search with Full Scrollback
 
-Search is rebuilt to scan `GHOSTTY_POINT_SCREEN` coordinates. Mistty owns the search implementation entirely (ghostty's built-in search overlay is not used).
+Search is rebuilt to scan `GHOSTTY_POINT_SCREEN` coordinates. Mytty owns the search implementation entirely (ghostty's built-in search overlay is not used).
 
 ### Sub-Mode Changes
 

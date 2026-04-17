@@ -1,6 +1,6 @@
 # Phase 3a: JSON-RPC Socket API
 
-Mistty macOS terminal emulator, libghostty backend.
+Mytty macOS terminal emulator, libghostty backend.
 
 **Goal:** Replace the IPC transport layer with JSON-RPC 2.0 over persistent Unix domain socket connections. The service protocol methods and business logic are preserved. The new transport adds protocol-level versioning, structured errors, and event streaming.
 
@@ -48,7 +48,7 @@ Persistent connections. The client connects once, sends multiple requests, and r
 
 Request:
 ```json
-{"jsonrpc":"2.0","method":"initialize","params":{"clientVersion":"1.0","clientName":"mistty-cli"},"id":0}
+{"jsonrpc":"2.0","method":"initialize","params":{"clientVersion":"1.0","clientName":"mytty-cli"},"id":0}
 ```
 
 Response:
@@ -64,7 +64,7 @@ Response:
 
 ## 3. Method mapping
 
-All 31 existing methods from `MisttyServiceProtocol` map to JSON-RPC method names using `noun.verb` convention.
+All 31 existing methods from `MyttyServiceProtocol` map to JSON-RPC method names using `noun.verb` convention.
 
 **Sessions (5):** `session.create`, `session.list`, `session.get`, `session.close`, `session.rename`
 
@@ -85,7 +85,7 @@ All 31 existing methods from `MisttyServiceProtocol` map to JSON-RPC method name
 <- Content-Length: 84\r\n\r\n{"jsonrpc":"2.0","result":{"id":1,"name":"Dev","directory":"/tmp","tabs":[]},"id":1}
 ```
 
-The `params` object uses the same parameter names as the current protocol. The `result` object uses the same response models from `MisttyShared/Models/`.
+The `params` object uses the same parameter names as the current protocol. The `result` object uses the same response models from `MyttyShared/Models/`.
 
 `pane.sendKeys` and `pane.runCommand` use `paneId: 0` as sentinel for "active pane", preserving current behavior.
 
@@ -95,7 +95,7 @@ The `params` object uses the same parameter names as the current protocol. The `
 
 ### Current
 
-Status byte 0x01 followed by a raw UTF-8 error string. Structured error codes (`entityNotFound`, `invalidArgument`, `operationFailed`) from `MisttyIPC.ErrorCode` are lost in transit.
+Status byte 0x01 followed by a raw UTF-8 error string. Structured error codes (`entityNotFound`, `invalidArgument`, `operationFailed`) from `MyttyIPC.ErrorCode` are lost in transit.
 
 ### Proposed
 
@@ -108,7 +108,7 @@ JSON-RPC error objects with application-defined codes:
 | 1003 | operationFailed | ErrorCode.operationFailed (3) |
 | 1004 | notSupported | (new, for createWindow) |
 
-Codes 1001-1999 are reserved for Mistty application errors. The JSON-RPC reserved range (-32768 to -32000) is used for protocol-level errors (parse error, invalid request, method not found).
+Codes 1001-1999 are reserved for Mytty application errors. The JSON-RPC reserved range (-32768 to -32000) is used for protocol-level errors (parse error, invalid request, method not found).
 
 Example error response:
 
@@ -170,11 +170,11 @@ Socket read loop (background Task)
 
 Each connection gets its own `Task`. Cancellation propagates on disconnect. The listener uses raw `FileDescriptor` with async read/write (Swift 6 structured concurrency). SwiftNIO is an alternative but would add a third-party dependency that the project does not currently have. The spec requires that the semaphore bridge is eliminated and that connection handling uses structured concurrency.
 
-`MisttyServiceProtocol` changes from callback-based (`reply: @escaping (Data?, Error?) -> Void`) to async/await (`async throws -> Codable`). This is the largest change in the migration.
+`MyttyServiceProtocol` changes from callback-based (`reply: @escaping (Data?, Error?) -> Void`) to async/await (`async throws -> Codable`). This is the largest change in the migration.
 
 ### Alternative
 
-Keep the callback-based protocol and wrap it in `withCheckedContinuation` at the dispatch layer. This minimizes changes to `MisttyIPCService` but leaves the callback pattern in place. The full async migration is recommended since the callback pattern exists only because of the semaphore bridge.
+Keep the callback-based protocol and wrap it in `withCheckedContinuation` at the dispatch layer. This minimizes changes to `MyttyIPCService` but leaves the callback pattern in place. The full async migration is recommended since the callback pattern exists only because of the semaphore bridge.
 
 ---
 
@@ -182,14 +182,14 @@ Keep the callback-based protocol and wrap it in `withCheckedContinuation` at the
 
 ### Current
 
-`IPCClient` in `MisttyCLI/XPCClient.swift` (misnamed). Creates a new connection per `call()`. Launches Mistty.app via `open -a` if the socket is unavailable.
+`IPCClient` in `MyttyCLI/XPCClient.swift` (misnamed). Creates a new connection per `call()`. Launches Mytty.app via `open -a` if the socket is unavailable.
 
 ### Proposed
 
 - Rename file to `IPCClient.swift` (fix historical misnaming).
 - Persistent connection: connect once, reuse for all commands in a CLI invocation.
-- For simple CLI commands (e.g., `mistty-cli session list`), the connection lifecycle is: connect, initialize, call method, disconnect. The persistent connection matters more for future scripting and watch modes.
-- Add `--watch` flag pattern: connect, subscribe to events, print notifications as they arrive. Example: `mistty-cli session list --watch` prints the initial list then streams create/close events.
+- For simple CLI commands (e.g., `mytty-cli session list`), the connection lifecycle is: connect, initialize, call method, disconnect. The persistent connection matters more for future scripting and watch modes.
+- Add `--watch` flag pattern: connect, subscribe to events, print notifications as they arrive. Example: `mytty-cli session list --watch` prints the initial list then streams create/close events.
 - Keep the auto-launch behavior (connect, fail, launch app, retry with backoff).
 
 ---
@@ -199,7 +199,7 @@ Keep the callback-based protocol and wrap it in `withCheckedContinuation` at the
 Phased approach to avoid breaking the CLI while the app is updated:
 
 1. **Phase 3a-1:** Add JSON-RPC listener alongside the existing listener on the same socket. Detect protocol by first bytes. Add `initialize` handshake. Migrate `session.*` methods as proof of concept.
-2. **Phase 3a-2:** Migrate remaining methods. Add event subscription. Migrate `MisttyServiceProtocol` to async/await.
+2. **Phase 3a-2:** Migrate remaining methods. Add event subscription. Migrate `MyttyServiceProtocol` to async/await.
 3. **Phase 3a-3:** Remove old protocol support. Rename `XPCClient.swift`. Clean up.
 
 Each sub-phase is a separate commit that passes all tests.
@@ -212,20 +212,20 @@ Modified files:
 
 | File | Changes |
 |------|---------|
-| `Mistty/Services/IPCListener.swift` | Replace transport: Content-Length framing, persistent connections, JSON-RPC dispatch, Swift Concurrency |
-| `MisttyShared/MisttyServiceProtocol.swift` | Migrate from callback-based to async/await |
-| `MisttyShared/IPCConstants.swift` | Add JSON-RPC error codes (1001-1004), protocol version constant |
-| `Mistty/Services/IPCService.swift` | Update method signatures to async/await |
-| `MisttyCLI/XPCClient.swift` (rename to `IPCClient.swift`) | Rename, persistent connection, Content-Length framing, JSON-RPC client |
-| `MisttyCLI/Commands/*.swift` | Update call sites for new client API |
-| `MisttyShared/Models/` | No changes (response models preserved) |
+| `Mytty/Services/IPCListener.swift` | Replace transport: Content-Length framing, persistent connections, JSON-RPC dispatch, Swift Concurrency |
+| `MyttyShared/MyttyServiceProtocol.swift` | Migrate from callback-based to async/await |
+| `MyttyShared/IPCConstants.swift` | Add JSON-RPC error codes (1001-1004), protocol version constant |
+| `Mytty/Services/IPCService.swift` | Update method signatures to async/await |
+| `MyttyCLI/XPCClient.swift` (rename to `IPCClient.swift`) | Rename, persistent connection, Content-Length framing, JSON-RPC client |
+| `MyttyCLI/Commands/*.swift` | Update call sites for new client API |
+| `MyttyShared/Models/` | No changes (response models preserved) |
 
 New files:
 
 | File | Purpose |
 |------|---------|
-| `MisttyShared/JSONRPCModels.swift` | Request, Response, Notification, Error Codable types |
-| `Mistty/Services/EventBroker.swift` | Manages subscriptions and dispatches notifications to connected clients |
+| `MyttyShared/JSONRPCModels.swift` | Request, Response, Notification, Error Codable types |
+| `Mytty/Services/EventBroker.swift` | Manages subscriptions and dispatches notifications to connected clients |
 
 ---
 
@@ -241,7 +241,7 @@ Unit tests for:
 - Protocol detection (old vs new format during migration)
 
 Integration test:
-- CLI end-to-end: `mistty-cli session list` works with the new protocol
+- CLI end-to-end: `mytty-cli session list` works with the new protocol
 
 ---
 
@@ -259,10 +259,10 @@ Integration test:
 
 ## 12. Acceptance criteria
 
-- `mistty-cli session list` returns results using JSON-RPC 2.0 over the new protocol.
-- `mistty-cli session create --name Test` creates a session and returns a JSON-RPC result.
+- `mytty-cli session list` returns results using JSON-RPC 2.0 over the new protocol.
+- `mytty-cli session create --name Test` creates a session and returns a JSON-RPC result.
 - Error responses include structured error codes (e.g., `{"code": 1001}` for entity not found).
-- `mistty-cli --version` and `initialize` handshake report matching protocol versions.
+- `mytty-cli --version` and `initialize` handshake report matching protocol versions.
 - Event subscription: a test client can subscribe to `session.created`, create a session via a second connection, and receive the notification.
 - No `DispatchSemaphore` usage remains in `IPCListener.swift`.
 - Old protocol detection works during migration phase (Phase 3a-1 and 3a-2).

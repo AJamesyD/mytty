@@ -31,7 +31,7 @@
 
 ## 2. Serialization Format
 
-JSON via `Codable`. Written to `~/.config/mistty/sessions.json`.
+JSON via `Codable`. Written to `~/.config/mytty/sessions.json`.
 
 Why JSON over plist or NSCoder: human-readable, debuggable, no AppKit dependency, works with `Codable` directly.
 
@@ -88,7 +88,7 @@ The debounce timer resets on each new trigger. Only one write happens per deboun
 
 On app launch:
 
-1. Check for `~/.config/mistty/sessions.json`.
+1. Check for `~/.config/mytty/sessions.json`.
 2. If found and version matches: decode and restore the full tree.
 3. Assign fresh sequential IDs to all sessions, tabs, and panes (old IDs are not restored).
 4. For each pane: create a new `TerminalSurfaceView` with the saved directory and command.
@@ -114,8 +114,8 @@ On app launch:
 
 | File | Contents |
 |------|----------|
-| `Mistty/Services/PersistenceService.swift` | Save/restore logic, debounce timer, JSON encoding/decoding, file I/O |
-| `Mistty/Models/PersistentState.swift` | All `Codable` structs: `PersistentState`, `PersistentSession`, `PersistentTab`, `PersistentPane`, `PersistentLayoutNode` |
+| `Mytty/Services/PersistenceService.swift` | Save/restore logic, debounce timer, JSON encoding/decoding, file I/O |
+| `Mytty/Models/PersistentState.swift` | All `Codable` structs: `PersistentState`, `PersistentSession`, `PersistentTab`, `PersistentPane`, `PersistentLayoutNode` |
 
 ---
 
@@ -123,7 +123,7 @@ On app launch:
 
 | File | Change |
 |------|--------|
-| `MisttyApp.swift` | Call `PersistenceService.restore()` on launch. Register for `willTerminateNotification`. |
+| `MyttyApp.swift` | Call `PersistenceService.restore()` on launch. Register for `willTerminateNotification`. |
 | `SessionStore.swift` | Add `toPersistentState() -> PersistentState`. Add `restore(from: PersistentState)`. |
 | `SplitDirection.swift` | Add `Codable` conformance. |
 
@@ -154,4 +154,4 @@ On app launch:
 ## 10. What This Enables
 
 - **Phase 4c (Advanced Persistence)** extends this with scrollback and running command restoration.
-- **Phase 5e (Project Layouts)** reuses the serialization format for `.mistty.toml` layout definitions.
+- **Phase 5e (Project Layouts)** reuses the serialization format for `.mytty.toml` layout definitions.

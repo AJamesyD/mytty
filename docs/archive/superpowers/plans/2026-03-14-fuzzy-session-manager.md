@@ -17,17 +17,17 @@
 ### Task 1: FuzzyMatcher — Strict Ordered Match
 
 **Files:**
-- Create: `Mistty/Services/FuzzyMatcher.swift`
-- Create: `MisttyTests/Services/FuzzyMatcherTests.swift`
+- Create: `Mytty/Services/FuzzyMatcher.swift`
+- Create: `MyttyTests/Services/FuzzyMatcherTests.swift`
 
 - [ ] **Step 1: Write failing tests for strict ordered matching**
 
-In `MisttyTests/Services/FuzzyMatcherTests.swift`:
+In `MyttyTests/Services/FuzzyMatcherTests.swift`:
 
 ```swift
 import XCTest
 
-@testable import Mistty
+@testable import Mytty
 
 final class FuzzyMatcherTests: XCTestCase {
   // MARK: - Strict ordered match
@@ -76,12 +76,12 @@ final class FuzzyMatcherTests: XCTestCase {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/FuzzyMatcherTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/FuzzyMatcherTests 2>&1 | tail -20`
 Expected: Compilation failure (FuzzyMatcher not defined)
 
 - [ ] **Step 3: Implement FuzzyMatch model and strict ordered match**
 
-In `Mistty/Services/FuzzyMatcher.swift`:
+In `Mytty/Services/FuzzyMatcher.swift`:
 
 ```swift
 import Foundation
@@ -180,13 +180,13 @@ struct FuzzyMatcher {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/FuzzyMatcherTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/FuzzyMatcherTests 2>&1 | tail -20`
 Expected: All 7 tests PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Services/FuzzyMatcher.swift MisttyTests/Services/FuzzyMatcherTests.swift
+git add Mytty/Services/FuzzyMatcher.swift MyttyTests/Services/FuzzyMatcherTests.swift
 git commit -m "feat: add FuzzyMatcher with strict ordered matching"
 ```
 
@@ -195,8 +195,8 @@ git commit -m "feat: add FuzzyMatcher with strict ordered matching"
 ### Task 2: FuzzyMatcher — Scoring Heuristics
 
 **Files:**
-- Modify: `MisttyTests/Services/FuzzyMatcherTests.swift`
-- Modify: `Mistty/Services/FuzzyMatcher.swift`
+- Modify: `MyttyTests/Services/FuzzyMatcherTests.swift`
+- Modify: `Mytty/Services/FuzzyMatcher.swift`
 
 - [ ] **Step 1: Write failing tests for scoring heuristics**
 
@@ -239,7 +239,7 @@ Append to `FuzzyMatcherTests.swift`:
 
 - [ ] **Step 2: Run tests to verify they pass (scoring heuristics are already built into Task 1)**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/FuzzyMatcherTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/FuzzyMatcherTests 2>&1 | tail -20`
 Expected: All tests PASS (the scoring logic from Task 1 should handle these)
 
 If any fail, adjust the scoring constants in `FuzzyMatcher.swift` to ensure the ranking invariants hold.
@@ -247,7 +247,7 @@ If any fail, adjust the scoring constants in `FuzzyMatcher.swift` to ensure the 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MisttyTests/Services/FuzzyMatcherTests.swift Mistty/Services/FuzzyMatcher.swift
+git add MyttyTests/Services/FuzzyMatcherTests.swift Mytty/Services/FuzzyMatcher.swift
 git commit -m "test: add scoring heuristic tests for FuzzyMatcher"
 ```
 
@@ -256,8 +256,8 @@ git commit -m "test: add scoring heuristic tests for FuzzyMatcher"
 ### Task 3: FuzzyMatcher — Typo-Tolerant Fallback
 
 **Files:**
-- Modify: `MisttyTests/Services/FuzzyMatcherTests.swift`
-- Modify: `Mistty/Services/FuzzyMatcher.swift`
+- Modify: `MyttyTests/Services/FuzzyMatcherTests.swift`
+- Modify: `Mytty/Services/FuzzyMatcher.swift`
 
 - [ ] **Step 1: Write failing tests for typo tolerance**
 
@@ -309,7 +309,7 @@ Append to `FuzzyMatcherTests.swift`:
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/FuzzyMatcherTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/FuzzyMatcherTests 2>&1 | tail -20`
 Expected: Typo tests FAIL (typo fallback not implemented yet)
 
 - [ ] **Step 3: Implement Damerau-Levenshtein sliding window fallback**
@@ -419,13 +419,13 @@ Update the `match` function to call typo fallback:
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/FuzzyMatcherTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/FuzzyMatcherTests 2>&1 | tail -20`
 Expected: All tests PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Services/FuzzyMatcher.swift MisttyTests/Services/FuzzyMatcherTests.swift
+git add Mytty/Services/FuzzyMatcher.swift MyttyTests/Services/FuzzyMatcherTests.swift
 git commit -m "feat: add typo-tolerant fallback to FuzzyMatcher"
 ```
 
@@ -434,16 +434,16 @@ git commit -m "feat: add typo-tolerant fallback to FuzzyMatcher"
 ### Task 4: FuzzyMatcher — Benchmark Tests
 
 **Files:**
-- Create: `MisttyTests/Services/FuzzyMatcherBenchmarkTests.swift`
+- Create: `MyttyTests/Services/FuzzyMatcherBenchmarkTests.swift`
 
 - [ ] **Step 1: Write benchmark tests**
 
-In `MisttyTests/Services/FuzzyMatcherBenchmarkTests.swift`:
+In `MyttyTests/Services/FuzzyMatcherBenchmarkTests.swift`:
 
 ```swift
 import XCTest
 
-@testable import Mistty
+@testable import Mytty
 
 final class FuzzyMatcherBenchmarkTests: XCTestCase {
 
@@ -521,7 +521,7 @@ final class FuzzyMatcherBenchmarkTests: XCTestCase {
 
 - [ ] **Step 2: Run benchmarks**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/FuzzyMatcherBenchmarkTests 2>&1 | grep -E "(test_benchmark|average|passed)"`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/FuzzyMatcherBenchmarkTests 2>&1 | grep -E "(test_benchmark|average|passed)"`
 
 Verify results are within targets:
 - Single match (short target): < 10 microseconds per call
@@ -530,7 +530,7 @@ Verify results are within targets:
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MisttyTests/Services/FuzzyMatcherBenchmarkTests.swift
+git add MyttyTests/Services/FuzzyMatcherBenchmarkTests.swift
 git commit -m "test: add FuzzyMatcher benchmark tests"
 ```
 
@@ -541,8 +541,8 @@ git commit -m "test: add FuzzyMatcher benchmark tests"
 ### Task 5: Add `newSession` Case to SessionManagerItem
 
 **Files:**
-- Modify: `Mistty/Views/SessionManager/SessionManagerViewModel.swift` (lines 4-40)
-- Modify: `MisttyTests/Views/SessionManagerViewModelTests.swift`
+- Modify: `Mytty/Views/SessionManager/SessionManagerViewModel.swift` (lines 4-40)
+- Modify: `MyttyTests/Views/SessionManagerViewModelTests.swift`
 
 - [ ] **Step 1: Write failing test for newSession item properties**
 
@@ -584,7 +584,7 @@ Append to `SessionManagerViewModelTests.swift`:
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
 Expected: Compilation failure (newSession case not defined)
 
 - [ ] **Step 3: Add newSession case to SessionManagerItem**
@@ -691,13 +691,13 @@ In `load()` sorting, replace the frecency score lines:
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
 Expected: All tests PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/SessionManager/SessionManagerViewModel.swift MisttyTests/Views/SessionManagerViewModelTests.swift
+git add Mytty/Views/SessionManager/SessionManagerViewModel.swift MyttyTests/Views/SessionManagerViewModelTests.swift
 git commit -m "feat: add newSession case to SessionManagerItem"
 ```
 
@@ -706,8 +706,8 @@ git commit -m "feat: add newSession case to SessionManagerItem"
 ### Task 6: Add ItemMatchResult and Fuzzy Filter Logic
 
 **Files:**
-- Modify: `Mistty/Views/SessionManager/SessionManagerViewModel.swift`
-- Modify: `MisttyTests/Views/SessionManagerViewModelTests.swift`
+- Modify: `Mytty/Views/SessionManager/SessionManagerViewModel.swift`
+- Modify: `MyttyTests/Views/SessionManagerViewModelTests.swift`
 
 - [ ] **Step 1: Write failing tests for fuzzy filtering**
 
@@ -838,7 +838,7 @@ Append to `SessionManagerViewModelTests.swift`:
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
 Expected: Compilation failure (matchResults not defined)
 
 - [ ] **Step 3: Implement ItemMatchResult and fuzzy filter**
@@ -972,13 +972,13 @@ Replace the `applyFilter()` method:
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
 Expected: All tests PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/SessionManager/SessionManagerViewModel.swift MisttyTests/Views/SessionManagerViewModelTests.swift
+git add Mytty/Views/SessionManager/SessionManagerViewModel.swift MyttyTests/Views/SessionManagerViewModelTests.swift
 git commit -m "feat: replace substring filter with fuzzy matching and multi-token AND"
 ```
 
@@ -989,8 +989,8 @@ git commit -m "feat: replace substring filter with fuzzy matching and multi-toke
 ### Task 7: "New" Option Resolution and Insertion
 
 **Files:**
-- Modify: `Mistty/Views/SessionManager/SessionManagerViewModel.swift`
-- Modify: `MisttyTests/Views/SessionManagerViewModelTests.swift`
+- Modify: `Mytty/Views/SessionManager/SessionManagerViewModel.swift`
+- Modify: `MyttyTests/Views/SessionManagerViewModelTests.swift`
 
 - [ ] **Step 1: Write failing tests for "New" option behavior**
 
@@ -1079,7 +1079,7 @@ Append to `SessionManagerViewModelTests.swift`:
 
     let vm = SessionManagerViewModel(store: store)
     await vm.load()
-    vm.updateQuery("/tmp/nonexistent-mistty-test-dir-\(UUID().uuidString)")
+    vm.updateQuery("/tmp/nonexistent-mytty-test-dir-\(UUID().uuidString)")
 
     guard case .newSession(_, _, let createDir, _) = vm.filteredItems.first else {
       XCTFail("First item should be newSession")
@@ -1137,7 +1137,7 @@ Append to `SessionManagerViewModelTests.swift`:
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
 Expected: Tests fail (no "New" insertion logic)
 
 - [ ] **Step 3: Implement "New" option resolution**
@@ -1157,7 +1157,7 @@ Add a private method to `SessionManagerViewModel`:
         .trimmingCharacters(in: .whitespaces)
       guard !hostname.isEmpty else { return nil }
 
-      let config = MisttyConfig.load()
+      let config = MyttyConfig.load()
       let command = config.ssh.resolveCommand(for: hostname)
       let fullCommand = "\(command) \(hostname)"
       return .newSession(
@@ -1219,13 +1219,13 @@ Replace the last section of `applyFilter()` (after the `scored.sort` call):
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
 Expected: All tests PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/SessionManager/SessionManagerViewModel.swift MisttyTests/Views/SessionManagerViewModelTests.swift
+git add Mytty/Views/SessionManager/SessionManagerViewModel.swift MyttyTests/Views/SessionManagerViewModelTests.swift
 git commit -m "feat: add 'New' option to session manager with path/SSH/plain text modes"
 ```
 
@@ -1234,8 +1234,8 @@ git commit -m "feat: add 'New' option to session manager with path/SSH/plain tex
 ### Task 8: confirmSelection with Modifier Flags and newSession Handling
 
 **Files:**
-- Modify: `Mistty/Views/SessionManager/SessionManagerViewModel.swift`
-- Modify: `MisttyTests/Views/SessionManagerViewModelTests.swift`
+- Modify: `Mytty/Views/SessionManager/SessionManagerViewModel.swift`
+- Modify: `MyttyTests/Views/SessionManagerViewModelTests.swift`
 
 - [ ] **Step 1: Write failing tests for newSession confirmation**
 
@@ -1290,7 +1290,7 @@ Append to `SessionManagerViewModelTests.swift`:
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
 Expected: Compilation failure (confirmSelection doesn't accept modifierFlags)
 
 - [ ] **Step 3: Update confirmSelection to accept modifier flags**
@@ -1314,7 +1314,7 @@ Replace `confirmSelection()` in `SessionManagerViewModel`:
       store.createSession(name: url.lastPathComponent, directory: url)
 
     case .sshHost(let host):
-      let config = MisttyConfig.load()
+      let config = MyttyConfig.load()
       let command = config.ssh.resolveCommand(for: host.alias)
       let fullCommand = "\(command) \(host.alias)"
       let session = store.createSession(
@@ -1366,13 +1366,13 @@ Add `import AppKit` at the top of `SessionManagerViewModel.swift` if not already
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests/SessionManagerViewModelTests 2>&1 | tail -20`
 Expected: All tests PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/SessionManager/SessionManagerViewModel.swift MisttyTests/Views/SessionManagerViewModelTests.swift
+git add Mytty/Views/SessionManager/SessionManagerViewModel.swift MyttyTests/Views/SessionManagerViewModelTests.swift
 git commit -m "feat: confirmSelection with modifier flags and newSession handling"
 ```
 
@@ -1383,7 +1383,7 @@ git commit -m "feat: confirmSelection with modifier flags and newSession handlin
 ### Task 9: Match Highlighting in SessionManagerView
 
 **Files:**
-- Modify: `Mistty/Views/SessionManager/SessionManagerView.swift`
+- Modify: `Mytty/Views/SessionManager/SessionManagerView.swift`
 
 - [ ] **Step 1: Add a helper function for highlighted text**
 
@@ -1461,13 +1461,13 @@ Replace the `onTapGesture` block:
 
 - [ ] **Step 4: Build and verify**
 
-Run: `xcodebuild build -scheme Mistty 2>&1 | tail -10`
+Run: `xcodebuild build -scheme Mytty 2>&1 | tail -10`
 Expected: BUILD SUCCEEDED
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/SessionManager/SessionManagerView.swift
+git add Mytty/Views/SessionManager/SessionManagerView.swift
 git commit -m "feat: add match highlighting and 'New' row styling to session manager"
 ```
 
@@ -1476,7 +1476,7 @@ git commit -m "feat: add match highlighting and 'New' row styling to session man
 ### Task 10: Tab/Right Arrow Completion in FocusableTextField
 
 **Files:**
-- Modify: `Mistty/Views/SessionManager/SessionManagerView.swift` (FocusableTextField, lines 69-112)
+- Modify: `Mytty/Views/SessionManager/SessionManagerView.swift` (FocusableTextField, lines 69-112)
 
 - [ ] **Step 1: Add onComplete callback to FocusableTextField**
 
@@ -1567,13 +1567,13 @@ Update the `FocusableTextField` usage in `SessionManagerView`:
 
 - [ ] **Step 4: Build and verify**
 
-Run: `xcodebuild build -scheme Mistty 2>&1 | tail -10`
+Run: `xcodebuild build -scheme Mytty 2>&1 | tail -10`
 Expected: BUILD SUCCEEDED
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/SessionManager/SessionManagerView.swift
+git add Mytty/Views/SessionManager/SessionManagerView.swift
 git commit -m "feat: add Tab/Right Arrow completion to session manager"
 ```
 
@@ -1582,11 +1582,11 @@ git commit -m "feat: add Tab/Right Arrow completion to session manager"
 ### Task 11: Pass Modifier Flags on Enter Key
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift` (keyboard handler for session manager)
+- Modify: `Mytty/App/ContentView.swift` (keyboard handler for session manager)
 
 - [ ] **Step 1: Update the Enter key handler at ContentView.swift:393**
 
-In `Mistty/App/ContentView.swift`, line 393, change:
+In `Mytty/App/ContentView.swift`, line 393, change:
 
 ```swift
         vm.confirmSelection()
@@ -1602,13 +1602,13 @@ This is inside the `case 36: // Return` branch of the session manager keyboard e
 
 - [ ] **Step 2: Build and verify**
 
-Run: `xcodebuild build -scheme Mistty 2>&1 | tail -10`
+Run: `xcodebuild build -scheme Mytty 2>&1 | tail -10`
 Expected: BUILD SUCCEEDED
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat: pass modifier flags on Enter in session manager"
 ```
 
@@ -1619,7 +1619,7 @@ git commit -m "feat: pass modifier flags on Enter in session manager"
 ### Task 12: Integration Tests
 
 **Files:**
-- Modify: `MisttyTests/Views/SessionManagerViewModelTests.swift`
+- Modify: `MyttyTests/Views/SessionManagerViewModelTests.swift`
 
 - [ ] **Step 1: Write integration tests covering end-to-end flows**
 
@@ -1648,7 +1648,7 @@ Append to `SessionManagerViewModelTests.swift`:
   func test_newOption_pathToFile_noNew() async {
     // Create a temp file (not directory)
     let tempFile = FileManager.default.temporaryDirectory
-      .appendingPathComponent("mistty-test-file-\(UUID().uuidString)")
+      .appendingPathComponent("mytty-test-file-\(UUID().uuidString)")
     FileManager.default.createFile(atPath: tempFile.path, contents: nil)
     defer { try? FileManager.default.removeItem(at: tempFile) }
 
@@ -1744,13 +1744,13 @@ Append to `SessionManagerViewModelTests.swift`:
 
 - [ ] **Step 2: Run all tests**
 
-Run: `xcodebuild test -scheme Mistty -only-testing MisttyTests 2>&1 | tail -30`
+Run: `xcodebuild test -scheme Mytty -only-testing MyttyTests 2>&1 | tail -30`
 Expected: All tests PASS
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MisttyTests/Views/SessionManagerViewModelTests.swift
+git add MyttyTests/Views/SessionManagerViewModelTests.swift
 git commit -m "test: add integration tests for fuzzy session manager"
 ```
 
@@ -1767,7 +1767,7 @@ In `PLAN.md`, under `## Implemented`, the session workflow section already menti
 
 - [ ] **Step 2: Run full test suite one final time**
 
-Run: `xcodebuild test -scheme Mistty 2>&1 | tail -30`
+Run: `xcodebuild test -scheme Mytty 2>&1 | tail -30`
 Expected: All tests PASS, BUILD SUCCEEDED
 
 - [ ] **Step 3: Commit**

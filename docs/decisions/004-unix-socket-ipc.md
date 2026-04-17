@@ -5,7 +5,7 @@ Date: 2026-03-18
 
 ## Context
 
-Mistty's CLI needs to communicate with the running app to create sessions,
+Mytty's CLI needs to communicate with the running app to create sessions,
 send keystrokes, query state, and control windows. Options:
 
 1. **Apple XPC.** Built-in serialization and launchd integration. But XPC
@@ -20,7 +20,7 @@ send keystrokes, query state, and control windows. Options:
 
 ## Decision
 
-Unix domain socket at `~/Library/Application Support/Mistty/mistty.sock`
+Unix domain socket at `~/Library/Application Support/Mytty/mytty.sock`
 with length-prefixed JSON framing. Each message is a 4-byte big-endian
 length followed by a JSON payload. Responses start with a status byte
 (0x00 success, 0x01 error) followed by JSON data.
@@ -35,7 +35,7 @@ processes are unlinked on startup.
 ## Consequences
 
 - Debuggable: developers can test the API with `nc` or `socat`.
-- Language-agnostic: any tool that can open a Unix socket can script Mistty.
+- Language-agnostic: any tool that can open a Unix socket can script Mytty.
 - No Apple framework dependency in the transport layer.
 - Lost XPC's built-in serialization and launchd lifecycle management.
   We handle framing and app auto-launch ourselves.

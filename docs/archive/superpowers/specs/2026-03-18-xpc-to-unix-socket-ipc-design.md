@@ -2,7 +2,7 @@
 
 ## Problem
 
-The current CFMessagePort-based communication between the Mistty CLI and app has two issues:
+The current CFMessagePort-based communication between the Mytty CLI and app has two issues:
 1. The CLI cannot reliably find/connect to the app's Mach port service
 2. Launchd plist management causes duplicate app launches
 
@@ -12,7 +12,7 @@ Replace CFMessagePort with Unix domain sockets using length-prefixed framing. Th
 
 ## Socket Location
 
-`~/Library/Application Support/Mistty/mistty.sock`
+`~/Library/Application Support/Mytty/mytty.sock`
 
 The parent directory should be created with `0700` permissions if it does not exist.
 
@@ -46,20 +46,20 @@ The app listens on the Unix domain socket.
 
 **Connection handling:**
 - Accept connections on a background `DispatchQueue`.
-- Per connection: read length-prefixed request → dispatch to `MisttyIPCService` → write length-prefixed response → close connection.
+- Per connection: read length-prefixed request → dispatch to `MyttyIPCService` → write length-prefixed response → close connection.
 - Per-connection read timeout of 5 seconds to avoid leaked file descriptors from misbehaving clients.
 - All reads and writes must loop to handle short reads/writes.
 - Set `SO_NOSIGPIPE` on accepted sockets to avoid SIGPIPE crashes when writing to a closed connection.
 
 **Dispatch:** The existing routing logic (parse `method` key, call appropriate service method) stays the same. Only the transport changes.
 
-**File:** `Mistty/Services/IPCListener.swift` (rewrite from CFMessagePort to Unix domain socket)
+**File:** `Mytty/Services/IPCListener.swift` (rewrite from CFMessagePort to Unix domain socket)
 
 ## Client Side (IPCClient)
 
 **Connection flow:**
 1. `connect()` — try to connect to the Unix domain socket.
-2. If socket doesn't exist or connection is refused, launch app with `open -a Mistty`.
+2. If socket doesn't exist or connection is refused, launch app with `open -a Mytty`.
 3. Retry with exponential backoff, up to ~3 seconds total.
 
 **`call()` method:**
@@ -70,7 +70,7 @@ The app listens on the Unix domain socket.
 
 Set `SO_NOSIGPIPE` on the client socket as well.
 
-**File:** `MisttyCLI/XPCClient.swift` (rewrite transport, class already renamed to `IPCClient`)
+**File:** `MyttyCLI/XPCClient.swift` (rewrite transport, class already renamed to `IPCClient`)
 
 ## Renames
 
@@ -78,24 +78,24 @@ All XPC naming is replaced with IPC naming since XPC is no longer used:
 
 | Old | New |
 |-----|-----|
-| `MisttyXPCService` (class) | `MisttyIPCService` |
+| `MyttyXPCService` (class) | `MyttyIPCService` |
 | `XPCService.swift` | `IPCService.swift` |
 | `XPCConstants.swift` | `IPCConstants.swift` |
-| `MisttyXPC` (enum) | `MisttyIPC` |
+| `MyttyXPC` (enum) | `MyttyIPC` |
 | `XPCServiceTests.swift` | `IPCServiceTests.swift` |
 
 ## Shared Protocol Cleanup
 
-- `MisttyServiceProtocol.swift`: Remove `@objc` attribute (was required for XPC/ObjC interop, not needed for Unix sockets).
+- `MyttyServiceProtocol.swift`: Remove `@objc` attribute (was required for XPC/ObjC interop, not needed for Unix sockets).
 - `IPCConstants.swift`: Update `serviceName` and `errorDomain` strings.
 
 ## App Entry Point
 
-- `MisttyApp.swift`: Update `XPCService` → `IPCService` reference. Remove legacy launchd plist cleanup code.
+- `MyttyApp.swift`: Update `XPCService` → `IPCService` reference. Remove legacy launchd plist cleanup code.
 
 ## Deletions
 
-- `Mistty/Services/XPCListener.swift` (already deleted in working tree).
+- `Mytty/Services/XPCListener.swift` (already deleted in working tree).
 
 ## What Does Not Change
 
@@ -110,13 +110,13 @@ All XPC naming is replaced with IPC naming since XPC is no longer used:
 
 | File | Action |
 |------|--------|
-| `Mistty/Services/IPCListener.swift` | Rewrite: CFMessagePort → Unix domain socket |
-| `Mistty/Services/XPCService.swift` → `IPCService.swift` | Rename class to `MisttyIPCService` |
-| `Mistty/Services/XPCListener.swift` | Delete (already done) |
-| `Mistty/App/MisttyApp.swift` | Remove launchd cleanup, update service reference |
-| `MisttyCLI/XPCClient.swift` | Rewrite transport: CFMessagePort → Unix domain socket |
-| `MisttyCLI/Commands/*.swift` | Update from XPCClient proxy pattern to IPCClient.call() pattern |
-| `MisttyShared/XPCConstants.swift` → `IPCConstants.swift` | Rename enum and update strings |
-| `MisttyShared/MisttyServiceProtocol.swift` | Remove `@objc` |
-| `MisttyTests/Services/XPCServiceTests.swift` → `IPCServiceTests.swift` | Rename references |
+| `Mytty/Services/IPCListener.swift` | Rewrite: CFMessagePort → Unix domain socket |
+| `Mytty/Services/XPCService.swift` → `IPCService.swift` | Rename class to `MyttyIPCService` |
+| `Mytty/Services/XPCListener.swift` | Delete (already done) |
+| `Mytty/App/MyttyApp.swift` | Remove launchd cleanup, update service reference |
+| `MyttyCLI/XPCClient.swift` | Rewrite transport: CFMessagePort → Unix domain socket |
+| `MyttyCLI/Commands/*.swift` | Update from XPCClient proxy pattern to IPCClient.call() pattern |
+| `MyttyShared/XPCConstants.swift` → `IPCConstants.swift` | Rename enum and update strings |
+| `MyttyShared/MyttyServiceProtocol.swift` | Remove `@objc` |
+| `MyttyTests/Services/XPCServiceTests.swift` → `IPCServiceTests.swift` | Rename references |
 | Response models | No changes |

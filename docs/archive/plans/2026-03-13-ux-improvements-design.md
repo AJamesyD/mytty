@@ -8,20 +8,20 @@ Seven UX improvements organized into two parallel tracks by complexity. Track 1 
 
 ### 1. Tab Switching Shortcuts
 
-Three new shortcut groups wired through the existing `NotificationCenter` pattern in `MisttyApp.swift`, handled in `ContentView.swift`.
+Three new shortcut groups wired through the existing `NotificationCenter` pattern in `MyttyApp.swift`, handled in `ContentView.swift`.
 
 **Cmd-1 through Cmd-9 — Focus tab by index:**
-- Register 9 keyboard shortcuts in `MisttyApp.commands`
-- New notification names: `.misttyFocusTab1` through `.misttyFocusTab9`
+- Register 9 keyboard shortcuts in `MyttyApp.commands`
+- New notification names: `.myttyFocusTab1` through `.myttyFocusTab9`
 - Handler guards on active session and bounds-checks: `guard let session = store.activeSession, index < session.tabs.count else { return }`, then sets `session.activeTab = session.tabs[index]`
 
 **Cmd-] / Cmd-[ — Next/previous tab:**
-- New notification names: `.misttyNextTab`, `.misttyPrevTab`
+- New notification names: `.myttyNextTab`, `.myttyPrevTab`
 - Compute current tab index in `session.tabs`
 - Wrap around with modulo arithmetic
 
 **Cmd-Shift-Up / Cmd-Shift-Down — Cycle sessions (creation order):**
-- New notification names: `.misttyNextSession`, `.misttyPrevSession`
+- New notification names: `.myttyNextSession`, `.myttyPrevSession`
 - Compute current session index in `store.sessions` (ordered by creation time)
 - Wrap around with modulo
 - Set `store.activeSession` to the target session
@@ -30,8 +30,8 @@ Three new shortcut groups wired through the existing `NotificationCenter` patter
 No model changes needed — purely keyboard wiring and `ContentView` notification handlers.
 
 **Files modified:**
-- `Mistty/App/MisttyApp.swift` — register shortcuts, add notification names
-- `Mistty/App/ContentView.swift` — handle notifications
+- `Mytty/App/MyttyApp.swift` — register shortcuts, add notification names
+- `Mytty/App/ContentView.swift` — handle notifications
 
 ### 2. Hide Current Session in Session Manager
 
@@ -40,14 +40,14 @@ When building the session manager item list in `SessionManagerViewModel.load()`,
 One-line filter change in the existing logic where `.runningSession` items are appended.
 
 **Files modified:**
-- `Mistty/Views/SessionManager/SessionManagerViewModel.swift`
+- `Mytty/Views/SessionManager/SessionManagerViewModel.swift`
 
 ### 3. Frecency Sorting
 
 The session manager currently shows items in fixed category order (running sessions, directories, SSH hosts). Frecency sorting promotes frequently and recently used items.
 
 **Score storage:**
-- New file `~/Library/Application Support/com.mistty/frecency.json` (macOS convention: mutable state in Application Support, not config dir)
+- New file `~/Library/Application Support/com.mytty/frecency.json` (macOS convention: mutable state in Application Support, not config dir)
 - Dictionary mapping item keys to `{frequency: Int, lastAccessed: Date}`
 - Item keys use prefixed format: `session:<name>`, `dir:<path>`, `ssh:<alias>`
 
@@ -70,10 +70,10 @@ The session manager currently shows items in fixed category order (running sessi
 - Items with no frecency data sort to the bottom, maintaining current category order as tiebreaker
 
 **Files created:**
-- `Mistty/Services/FrecencyService.swift`
+- `Mytty/Services/FrecencyService.swift`
 
 **Files modified:**
-- `Mistty/Views/SessionManager/SessionManagerViewModel.swift`
+- `Mytty/Views/SessionManager/SessionManagerViewModel.swift`
 
 ### 4. Join Pane to Tab (Window Mode)
 
@@ -89,23 +89,23 @@ The reverse of break-to-tab (B key). Pressing M in window mode opens a tab picke
 7. Focus moves to the target tab
 
 **Implementation:**
-- Window mode gets a sub-state enum on `MisttyTab`: `enum WindowModeState { case inactive, normal, joinPick }` (replaces the current `isWindowModeActive` bool)
+- Window mode gets a sub-state enum on `MyttyTab`: `enum WindowModeState { case inactive, normal, joinPick }` (replaces the current `isWindowModeActive` bool)
 - Window mode key monitor in `ContentView` handles M by entering `.joinPick` state
 - In join-pick state, number keys confirm selection, Escape returns to `.normal`
-- New method on `MisttyTab`: `addExistingPane(_ pane: MisttyPane, direction: SplitDirection)` — inserts an existing pane into the tab's layout tree (distinct from `splitActivePane` which creates a new pane)
+- New method on `MyttyTab`: `addExistingPane(_ pane: MyttyPane, direction: SplitDirection)` — inserts an existing pane into the tab's layout tree (distinct from `splitActivePane` which creates a new pane)
 - Model operation: remove pane from source tab's layout, call `targetTab.addExistingPane(pane, direction: .horizontal)` to insert into target
 - `WindowModeHints` overlay updates to show the tab picker when in `.joinPick` state
 
 **Files modified:**
-- `Mistty/Models/MisttyTab.swift` — `WindowModeState` enum, `addExistingPane()` method
-- `Mistty/App/ContentView.swift` — join mode handling in window mode monitor
-- `Mistty/Views/Terminal/WindowModeHints.swift` — join-pick tab list UI
+- `Mytty/Models/MyttyTab.swift` — `WindowModeState` enum, `addExistingPane()` method
+- `Mytty/App/ContentView.swift` — join mode handling in window mode monitor
+- `Mytty/Views/Terminal/WindowModeHints.swift` — join-pick tab list UI
 
 ## Track 2: Complex Features
 
 ### 5. SSH Auto-Connect + Configurable Command
 
-**Config format** in `~/.config/mistty/config.toml`:
+**Config format** in `~/.config/mytty/config.toml`:
 
 ```toml
 [ssh]
@@ -125,7 +125,7 @@ command = "et"
 - `default_command` falls back to `"ssh"` if omitted
 
 **Config parsing:**
-- New `SSHConfig` struct in `MisttyConfig` with `defaultCommand` and `hosts` array
+- New `SSHConfig` struct in `MyttyConfig` with `defaultCommand` and `hosts` array
 - Each host entry is an `SSHHostOverride` with optional `hostname`, optional `regex`, and `command`
 - Validation: exactly one of `hostname` or `regex` must be present
 
@@ -144,34 +144,34 @@ When opening an SSH host from the session manager:
 - The pane's `command` property is set to the SSH command string before the surface is created
 
 **Model change:**
-- `MisttySession` gets `sshCommand: String?`, set when created from an SSH host
+- `MyttySession` gets `sshCommand: String?`, set when created from an SSH host
 
 **Config persistence:**
-- `MisttyConfig.save()` must be updated to serialize the `[ssh]` section (default_command and host overrides) alongside existing config fields
+- `MyttyConfig.save()` must be updated to serialize the `[ssh]` section (default_command and host overrides) alongside existing config fields
 
 **Preferences pane:**
 - New SSH section in `SettingsView` to view/add/edit/remove host overrides
 - Mirrors the popup preferences pattern
 
 **Files modified:**
-- `Mistty/Config/MisttyConfig.swift` — SSH config parsing and `save()` serialization
-- `Mistty/Models/MisttySession.swift` — `sshCommand` property
-- `Mistty/App/ContentView.swift` — Opt-modifier check on splits, SSH command inheritance via pane's `command` property, SSH session creation
-- `Mistty/Views/SessionManager/SessionManagerViewModel.swift` — build SSH command on selection
-- `Mistty/Views/Settings/SettingsView.swift` — SSH overrides section
+- `Mytty/Config/MyttyConfig.swift` — SSH config parsing and `save()` serialization
+- `Mytty/Models/MyttySession.swift` — `sshCommand` property
+- `Mytty/App/ContentView.swift` — Opt-modifier check on splits, SSH command inheritance via pane's `command` property, SSH session creation
+- `Mytty/Views/SessionManager/SessionManagerViewModel.swift` — build SSH command on selection
+- `Mytty/Views/Settings/SettingsView.swift` — SSH overrides section
 
 ### 6. Smart Pane Navigation (Ctrl-H/J/K/L)
 
-Ctrl-H/J/K/L navigates between MistTY panes. When the active pane runs neovim with smart-splits.nvim, keypresses pass through to neovim first — MistTY only navigates when neovim is at its split boundary.
+Ctrl-H/J/K/L navigates between MytTY panes. When the active pane runs neovim with smart-splits.nvim, keypresses pass through to neovim first — MytTY only navigates when neovim is at its split boundary.
 
 **Protocol (industry standard, used by vim-tmux-navigator / smart-splits.nvim):**
-1. MistTY intercepts Ctrl-H/J/K/L via a local event monitor in `ContentView` (consistent with how window mode and copy mode already intercept keys)
+1. MytTY intercepts Ctrl-H/J/K/L via a local event monitor in `ContentView` (consistent with how window mode and copy mode already intercept keys)
 2. Check if the active pane is running neovim (via pane's `processTitle` property)
 3. If NOT neovim: navigate panes directly using existing `PaneLayout` directional logic, consume the event
 4. If neovim: let the keypress through (neovim receives it)
 5. Neovim's smart-splits plugin attempts to move within its own splits
-6. If neovim is at its boundary, smart-splits calls `mistty-cli pane focus --direction {left,right,up,down}`
-7. MistTY's XPC handler resolves the direction and moves focus
+6. If neovim is at its boundary, smart-splits calls `mytty-cli pane focus --direction {left,right,up,down}`
+7. MytTY's XPC handler resolves the direction and moves focus
 
 **Key interception:**
 - Use a local key event monitor in `ContentView` (not `TerminalSurfaceView.keyDown()`, which lacks access to tab/session context)
@@ -181,7 +181,7 @@ Ctrl-H/J/K/L navigates between MistTY panes. When the active pane runs neovim wi
 - If active pane's `processTitle` matches neovim, return nil to let the event pass through
 
 **Neovim detection:**
-- New `processTitle: String?` property on `MisttyPane`, updated when `ghosttySetTitle` notifications arrive (ContentView already receives these and can route to the pane)
+- New `processTitle: String?` property on `MyttyPane`, updated when `ghosttySetTitle` notifications arrive (ContentView already receives these and can route to the pane)
 - Check for process names: `nvim`, `neovim`, `vim` as a substring of the process title
 - This is more reliable than checking tab title, since tab title may be user-customized
 
@@ -190,15 +190,15 @@ Ctrl-H/J/K/L navigates between MistTY panes. When the active pane runs neovim wi
 - Extract into a shared method callable from both window mode and Ctrl-nav
 
 **CLI callback (new — does not exist yet):**
-- Add `--direction {left,right,up,down}` option to `mistty-cli pane focus` (currently only supports `--id`)
-- Add `focusPaneByDirection(direction:sessionId:reply:)` method to `MisttyServiceProtocol`
+- Add `--direction {left,right,up,down}` option to `mytty-cli pane focus` (currently only supports `--id`)
+- Add `focusPaneByDirection(direction:sessionId:reply:)` method to `MyttyServiceProtocol`
 - Implement in `XPCService` using `PaneLayout` directional navigation on the active tab of the specified (or first) session
 
-**Neovim user configuration (documented, not implemented by MistTY):**
+**Neovim user configuration (documented, not implemented by MytTY):**
 ```lua
 require('smart-splits').setup({
   at_edge = function(direction)
-    os.execute('mistty-cli pane focus --direction ' .. direction)
+    os.execute('mytty-cli pane focus --direction ' .. direction)
   end
 })
 ```
@@ -207,31 +207,31 @@ require('smart-splits').setup({
 - `docs/integrations/neovim-smart-splits.md` — setup instructions for neovim users
 
 **Files modified:**
-- `Mistty/App/ContentView.swift` — Ctrl-H/J/K/L local event monitor, shared directional focus handler
-- `Mistty/Models/MisttyPane.swift` — `processTitle` property
-- `MisttyShared/MisttyServiceProtocol.swift` — `focusPaneByDirection` method
-- `Mistty/Services/XPCService.swift` — implement `focusPaneByDirection`
-- `MisttyCLI/Commands/PaneCommand.swift` — `--direction` option on focus subcommand
+- `Mytty/App/ContentView.swift` — Ctrl-H/J/K/L local event monitor, shared directional focus handler
+- `Mytty/Models/MyttyPane.swift` — `processTitle` property
+- `MyttyShared/MyttyServiceProtocol.swift` — `focusPaneByDirection` method
+- `Mytty/Services/XPCService.swift` — implement `focusPaneByDirection`
+- `MyttyCLI/Commands/PaneCommand.swift` — `--direction` option on focus subcommand
 
 ## File Change Summary
 
 **New files:**
-- `Mistty/Services/FrecencyService.swift`
+- `Mytty/Services/FrecencyService.swift`
 - `docs/integrations/neovim-smart-splits.md`
 
 **Modified files:**
-- `Mistty/App/MisttyApp.swift` — tab/session switching shortcuts, notification names
-- `Mistty/App/ContentView.swift` — shortcut handlers, join mode, Opt-split, Ctrl-H/J/K/L event monitor
-- `Mistty/Config/MisttyConfig.swift` — SSH config parsing and `save()` serialization
-- `Mistty/Models/MisttySession.swift` — `sshCommand` property
-- `Mistty/Models/MisttyTab.swift` — `WindowModeState` enum, `addExistingPane()` method
-- `Mistty/Models/MisttyPane.swift` — `processTitle` property
-- `Mistty/Views/SessionManager/SessionManagerViewModel.swift` — hide current session, frecency sort, SSH command resolution
-- `Mistty/Views/Settings/SettingsView.swift` — SSH overrides section
-- `Mistty/Views/Terminal/WindowModeHints.swift` — join-pick tab list UI
-- `MisttyShared/MisttyServiceProtocol.swift` — `focusPaneByDirection` method
-- `Mistty/Services/XPCService.swift` — implement `focusPaneByDirection`
-- `MisttyCLI/Commands/PaneCommand.swift` — `--direction` option on focus subcommand
+- `Mytty/App/MyttyApp.swift` — tab/session switching shortcuts, notification names
+- `Mytty/App/ContentView.swift` — shortcut handlers, join mode, Opt-split, Ctrl-H/J/K/L event monitor
+- `Mytty/Config/MyttyConfig.swift` — SSH config parsing and `save()` serialization
+- `Mytty/Models/MyttySession.swift` — `sshCommand` property
+- `Mytty/Models/MyttyTab.swift` — `WindowModeState` enum, `addExistingPane()` method
+- `Mytty/Models/MyttyPane.swift` — `processTitle` property
+- `Mytty/Views/SessionManager/SessionManagerViewModel.swift` — hide current session, frecency sort, SSH command resolution
+- `Mytty/Views/Settings/SettingsView.swift` — SSH overrides section
+- `Mytty/Views/Terminal/WindowModeHints.swift` — join-pick tab list UI
+- `MyttyShared/MyttyServiceProtocol.swift` — `focusPaneByDirection` method
+- `Mytty/Services/XPCService.swift` — implement `focusPaneByDirection`
+- `MyttyCLI/Commands/PaneCommand.swift` — `--direction` option on focus subcommand
 
 ## Testing
 

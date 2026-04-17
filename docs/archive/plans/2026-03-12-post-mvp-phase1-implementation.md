@@ -15,9 +15,9 @@
 ### Task 1: Bell Indicator — Model & Notification
 
 **Files:**
-- Modify: `Mistty/Models/MisttyTab.swift`
-- Modify: `Mistty/App/GhosttyApp.swift`
-- Test: `MisttyTests/Models/SessionStoreTests.swift`
+- Modify: `Mytty/Models/MyttyTab.swift`
+- Modify: `Mytty/App/GhosttyApp.swift`
+- Test: `MyttyTests/Models/SessionStoreTests.swift`
 
 **Step 1: Write the failing test**
 
@@ -36,11 +36,11 @@ func test_tabBellFlag() {
 **Step 2: Run test to verify it fails**
 
 Run: `swift test --filter SessionStoreTests/test_tabBellFlag`
-Expected: FAIL — `MisttyTab` has no `hasBell` property
+Expected: FAIL — `MyttyTab` has no `hasBell` property
 
-**Step 3: Add `hasBell` to MisttyTab**
+**Step 3: Add `hasBell` to MyttyTab**
 
-In `Mistty/Models/MisttyTab.swift`, add:
+In `Mytty/Models/MyttyTab.swift`, add:
 
 ```swift
 var hasBell = false
@@ -53,7 +53,7 @@ Expected: PASS
 
 **Step 5: Add RING_BELL action handler to GhosttyApp**
 
-In `Mistty/App/GhosttyApp.swift`, add a new notification name:
+In `Mytty/App/GhosttyApp.swift`, add a new notification name:
 
 ```swift
 static let ghosttyRingBell = Notification.Name("ghosttyRingBell")
@@ -80,7 +80,7 @@ case GHOSTTY_ACTION_RING_BELL:
 
 **Step 6: Handle bell notification in ContentView**
 
-In `Mistty/App/ContentView.swift`, add an `.onReceive` handler:
+In `Mytty/App/ContentView.swift`, add an `.onReceive` handler:
 
 ```swift
 .onReceive(NotificationCenter.default.publisher(for: .ghosttyRingBell)) { notification in
@@ -112,7 +112,7 @@ This is handled implicitly because switching tabs makes the tab active — but w
 **Step 7: Commit**
 
 ```bash
-git add Mistty/Models/MisttyTab.swift Mistty/App/GhosttyApp.swift Mistty/App/ContentView.swift MisttyTests/Models/SessionStoreTests.swift
+git add Mytty/Models/MyttyTab.swift Mytty/App/GhosttyApp.swift Mytty/App/ContentView.swift MyttyTests/Models/SessionStoreTests.swift
 git commit -m "feat: bell indicator model and notification handling"
 ```
 
@@ -121,8 +121,8 @@ git commit -m "feat: bell indicator model and notification handling"
 ### Task 2: Bell Indicator — UI
 
 **Files:**
-- Modify: `Mistty/Views/TabBar/TabBarView.swift`
-- Modify: `Mistty/Views/Sidebar/SidebarView.swift`
+- Modify: `Mytty/Views/TabBar/TabBarView.swift`
+- Modify: `Mytty/Views/Sidebar/SidebarView.swift`
 
 **Step 1: Add bell dot to TabBarItem**
 
@@ -158,7 +158,7 @@ Expected: Compiles without errors
 **Step 4: Commit**
 
 ```bash
-git add Mistty/Views/TabBar/TabBarView.swift Mistty/Views/Sidebar/SidebarView.swift
+git add Mytty/Views/TabBar/TabBarView.swift Mytty/Views/Sidebar/SidebarView.swift
 git commit -m "feat: bell indicator dots in tab bar and sidebar"
 ```
 
@@ -167,11 +167,11 @@ git commit -m "feat: bell indicator dots in tab bar and sidebar"
 ### Task 3: Tab Rename — Model & Inline Editing
 
 **Files:**
-- Modify: `Mistty/Models/MisttyTab.swift`
-- Modify: `Mistty/Views/TabBar/TabBarView.swift`
-- Modify: `Mistty/App/MisttyApp.swift`
-- Modify: `Mistty/App/ContentView.swift`
-- Test: `MisttyTests/Models/SessionStoreTests.swift`
+- Modify: `Mytty/Models/MyttyTab.swift`
+- Modify: `Mytty/Views/TabBar/TabBarView.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Test: `MyttyTests/Models/SessionStoreTests.swift`
 
 **Step 1: Write the failing test**
 
@@ -192,9 +192,9 @@ func test_tabCustomTitle() {
 Run: `swift test --filter SessionStoreTests/test_tabCustomTitle`
 Expected: FAIL — no `customTitle` or `displayTitle`
 
-**Step 3: Add customTitle and displayTitle to MisttyTab**
+**Step 3: Add customTitle and displayTitle to MyttyTab**
 
-In `Mistty/Models/MisttyTab.swift`:
+In `Mytty/Models/MyttyTab.swift`:
 
 ```swift
 var customTitle: String?
@@ -217,7 +217,7 @@ Replace the `TabBarItem` struct with:
 
 ```swift
 struct TabBarItem: View {
-    @Bindable var tab: MisttyTab
+    @Bindable var tab: MyttyTab
     let isActive: Bool
     let onSelect: () -> Void
     let onClose: () -> Void
@@ -275,11 +275,11 @@ In `SidebarView.swift`, change `Text(tab.title)` to `Text(tab.displayTitle)`.
 
 **Step 7: Add rename shortcut**
 
-In `MisttyApp.swift`, add:
+In `MyttyApp.swift`, add:
 
 ```swift
 Button("Rename Tab") {
-    NotificationCenter.default.post(name: .misttyRenameTab, object: nil)
+    NotificationCenter.default.post(name: .myttyRenameTab, object: nil)
 }
 .keyboardShortcut("r", modifiers: [.command, .shift])
 ```
@@ -287,13 +287,13 @@ Button("Rename Tab") {
 Add the notification name:
 
 ```swift
-static let misttyRenameTab = Notification.Name("misttyRenameTab")
+static let myttyRenameTab = Notification.Name("myttyRenameTab")
 ```
 
 Handle in `ContentView.swift` — this is trickier since the TabBarItem owns the editing state. Instead, post a notification that TabBarView listens for. Add to `TabBarItem`:
 
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .misttyRenameTab)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyRenameTab)) { _ in
     if isActive {
         editText = tab.displayTitle
         isEditing = true
@@ -309,7 +309,7 @@ Expected: Compiles
 **Step 9: Commit**
 
 ```bash
-git add Mistty/Models/MisttyTab.swift Mistty/Views/TabBar/TabBarView.swift Mistty/Views/Sidebar/SidebarView.swift Mistty/App/MisttyApp.swift MisttyTests/Models/SessionStoreTests.swift
+git add Mytty/Models/MyttyTab.swift Mytty/Views/TabBar/TabBarView.swift Mytty/Views/Sidebar/SidebarView.swift Mytty/App/MyttyApp.swift MyttyTests/Models/SessionStoreTests.swift
 git commit -m "feat: tab rename via double-click and Cmd+Shift+R"
 ```
 
@@ -318,13 +318,13 @@ git commit -m "feat: tab rename via double-click and Cmd+Shift+R"
 ### Task 4: Preference Pane
 
 **Files:**
-- Modify: `Mistty/Config/MisttyConfig.swift`
-- Modify: `Mistty/App/MisttyApp.swift`
-- Create: `Mistty/Views/Settings/SettingsView.swift`
+- Modify: `Mytty/Config/MyttyConfig.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
+- Create: `Mytty/Views/Settings/SettingsView.swift`
 
-**Step 1: Extend MisttyConfig with more settings**
+**Step 1: Extend MyttyConfig with more settings**
 
-In `Mistty/Config/MisttyConfig.swift`, add:
+In `Mytty/Config/MyttyConfig.swift`, add:
 
 ```swift
 var cursorStyle: String = "block"
@@ -346,7 +346,7 @@ Add a `save()` method:
 func save() throws {
     let configURL = FileManager.default
         .homeDirectoryForCurrentUser
-        .appendingPathComponent(".config/mistty/config.toml")
+        .appendingPathComponent(".config/mytty/config.toml")
 
     // Ensure directory exists
     try FileManager.default.createDirectory(
@@ -366,13 +366,13 @@ func save() throws {
 
 **Step 2: Create SettingsView**
 
-Create `Mistty/Views/Settings/SettingsView.swift`:
+Create `Mytty/Views/Settings/SettingsView.swift`:
 
 ```swift
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var config = MisttyConfig.load()
+    @State private var config = MyttyConfig.load()
 
     var body: some View {
         Form {
@@ -411,9 +411,9 @@ struct SettingsView: View {
 }
 ```
 
-**Step 3: Add Settings scene to MisttyApp**
+**Step 3: Add Settings scene to MyttyApp**
 
-In `MisttyApp.swift`, add after `WindowGroup`:
+In `MyttyApp.swift`, add after `WindowGroup`:
 
 ```swift
 Settings {
@@ -429,7 +429,7 @@ Expected: Compiles, Cmd+, opens preferences
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Config/MisttyConfig.swift Mistty/Views/Settings/SettingsView.swift Mistty/App/MisttyApp.swift
+git add Mytty/Config/MyttyConfig.swift Mytty/Views/Settings/SettingsView.swift Mytty/App/MyttyApp.swift
 git commit -m "feat: preference pane with font, cursor, scrollback settings"
 ```
 
@@ -440,10 +440,10 @@ git commit -m "feat: preference pane with font, cursor, scrollback settings"
 ### Task 5: Window Mode — State & Entry/Exit
 
 **Files:**
-- Modify: `Mistty/Models/MisttyTab.swift`
-- Modify: `Mistty/App/MisttyApp.swift`
-- Modify: `Mistty/App/ContentView.swift`
-- Test: `MisttyTests/Models/SessionStoreTests.swift`
+- Modify: `Mytty/Models/MyttyTab.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Test: `MyttyTests/Models/SessionStoreTests.swift`
 
 **Step 1: Write failing tests**
 
@@ -470,13 +470,13 @@ func test_zoomedPaneToggle() {
 Run: `swift test --filter SessionStoreTests`
 Expected: FAIL
 
-**Step 3: Add window mode state to MisttyTab**
+**Step 3: Add window mode state to MyttyTab**
 
-In `Mistty/Models/MisttyTab.swift`:
+In `Mytty/Models/MyttyTab.swift`:
 
 ```swift
 var isWindowModeActive = false
-var zoomedPane: MisttyPane?
+var zoomedPane: MyttyPane?
 ```
 
 **Step 4: Run tests to verify they pass**
@@ -486,11 +486,11 @@ Expected: PASS
 
 **Step 5: Add Cmd+X shortcut**
 
-In `MisttyApp.swift`, add:
+In `MyttyApp.swift`, add:
 
 ```swift
 Button("Window Mode") {
-    NotificationCenter.default.post(name: .misttyWindowMode, object: nil)
+    NotificationCenter.default.post(name: .myttyWindowMode, object: nil)
 }
 .keyboardShortcut("x", modifiers: .command)
 ```
@@ -498,7 +498,7 @@ Button("Window Mode") {
 Add notification name:
 
 ```swift
-static let misttyWindowMode = Notification.Name("misttyWindowMode")
+static let myttyWindowMode = Notification.Name("myttyWindowMode")
 ```
 
 **Step 6: Handle in ContentView — install/remove key monitor**
@@ -512,7 +512,7 @@ In `ContentView.swift`, add state:
 Add receiver:
 
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .misttyWindowMode)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyWindowMode)) { _ in
     guard let tab = store.activeSession?.activeTab else { return }
     tab.isWindowModeActive.toggle()
     if tab.isWindowModeActive {
@@ -551,7 +551,7 @@ private func removeWindowModeMonitor() {
 **Step 7: Commit**
 
 ```bash
-git add Mistty/Models/MisttyTab.swift Mistty/App/MisttyApp.swift Mistty/App/ContentView.swift MisttyTests/Models/SessionStoreTests.swift
+git add Mytty/Models/MyttyTab.swift Mytty/App/MyttyApp.swift Mytty/App/ContentView.swift MyttyTests/Models/SessionStoreTests.swift
 git commit -m "feat: window mode state and Cmd+X toggle"
 ```
 
@@ -560,9 +560,9 @@ git commit -m "feat: window mode state and Cmd+X toggle"
 ### Task 6: Window Mode — Visual Indicator
 
 **Files:**
-- Modify: `Mistty/Views/Terminal/PaneView.swift`
-- Modify: `Mistty/Views/Terminal/PaneLayoutView.swift`
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/Views/Terminal/PaneView.swift`
+- Modify: `Mytty/Views/Terminal/PaneLayoutView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 **Step 1: Pass window mode state through views**
 
@@ -609,7 +609,7 @@ Run: `just build`
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/Terminal/PaneView.swift Mistty/Views/Terminal/PaneLayoutView.swift Mistty/App/ContentView.swift
+git add Mytty/Views/Terminal/PaneView.swift Mytty/Views/Terminal/PaneLayoutView.swift Mytty/App/ContentView.swift
 git commit -m "feat: window mode orange border indicator"
 ```
 
@@ -618,9 +618,9 @@ git commit -m "feat: window mode orange border indicator"
 ### Task 7: Window Mode — Pane Navigation (Arrow Keys)
 
 **Files:**
-- Modify: `Mistty/Models/PaneLayout.swift`
-- Modify: `Mistty/App/ContentView.swift`
-- Test: `MisttyTests/Models/PaneLayoutTests.swift`
+- Modify: `Mytty/Models/PaneLayout.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Test: `MyttyTests/Models/PaneLayoutTests.swift`
 
 **Step 1: Write failing tests for adjacency**
 
@@ -628,7 +628,7 @@ In `PaneLayoutTests.swift`:
 
 ```swift
 func test_adjacentPaneHorizontal() {
-    let pane1 = MisttyPane()
+    let pane1 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.split(pane: pane1, direction: .horizontal)
     let panes = layout.leaves
@@ -647,7 +647,7 @@ func test_adjacentPaneHorizontal() {
 }
 
 func test_adjacentPaneVertical() {
-    let pane1 = MisttyPane()
+    let pane1 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.split(pane: pane1, direction: .vertical)
     let panes = layout.leaves
@@ -667,7 +667,7 @@ Expected: FAIL
 
 **Step 3: Add navigation direction enum and adjacentPane method**
 
-In `Mistty/Models/PaneLayout.swift`, add:
+In `Mytty/Models/PaneLayout.swift`, add:
 
 ```swift
 enum NavigationDirection {
@@ -678,7 +678,7 @@ enum NavigationDirection {
 Add to `PaneLayout`:
 
 ```swift
-func adjacentPane(from pane: MisttyPane, direction: NavigationDirection) -> MisttyPane? {
+func adjacentPane(from pane: MyttyPane, direction: NavigationDirection) -> MyttyPane? {
     // Find the path to this pane, then walk the tree
     guard let path = Self.findPath(root, target: pane.id) else { return nil }
     return Self.findAdjacent(root, path: path, direction: direction)
@@ -705,7 +705,7 @@ private static func findAdjacent(
     _ root: PaneLayoutNode,
     path: [PathStep],
     direction: NavigationDirection
-) -> MisttyPane? {
+) -> MyttyPane? {
     // Walk up the path to find the nearest split whose direction matches,
     // where the pane is on the "wrong" side (so we can cross to the other side)
     let splitDir: SplitDirection
@@ -734,14 +734,14 @@ private static func findAdjacent(
     return nil
 }
 
-private static func firstLeaf(_ node: PaneLayoutNode) -> MisttyPane? {
+private static func firstLeaf(_ node: PaneLayoutNode) -> MyttyPane? {
     switch node {
     case .leaf(let p): return p
     case .split(_, let a, _): return firstLeaf(a)
     }
 }
 
-private static func lastLeaf(_ node: PaneLayoutNode) -> MisttyPane? {
+private static func lastLeaf(_ node: PaneLayoutNode) -> MyttyPane? {
     switch node {
     case .leaf(let p): return p
     case .split(_, _, let b): return lastLeaf(b)
@@ -788,7 +788,7 @@ private func navigatePane(_ direction: NavigationDirection) {
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Models/PaneLayout.swift Mistty/App/ContentView.swift MisttyTests/Models/PaneLayoutTests.swift
+git add Mytty/Models/PaneLayout.swift Mytty/App/ContentView.swift MyttyTests/Models/PaneLayoutTests.swift
 git commit -m "feat: window mode pane navigation with arrow keys"
 ```
 
@@ -797,16 +797,16 @@ git commit -m "feat: window mode pane navigation with arrow keys"
 ### Task 8: Window Mode — Split Ratio & Resize
 
 **Files:**
-- Modify: `Mistty/Models/PaneLayout.swift`
-- Modify: `Mistty/Views/Terminal/PaneLayoutView.swift`
-- Modify: `Mistty/App/ContentView.swift`
-- Test: `MisttyTests/Models/PaneLayoutTests.swift`
+- Modify: `Mytty/Models/PaneLayout.swift`
+- Modify: `Mytty/Views/Terminal/PaneLayoutView.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Test: `MyttyTests/Models/PaneLayoutTests.swift`
 
 **Step 1: Write failing test**
 
 ```swift
 func test_splitRatio() {
-    let pane1 = MisttyPane()
+    let pane1 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.split(pane: pane1, direction: .horizontal)
     // Default ratio should be 0.5
@@ -818,7 +818,7 @@ func test_splitRatio() {
 }
 
 func test_resizeSplit() {
-    let pane1 = MisttyPane()
+    let pane1 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.split(pane: pane1, direction: .horizontal)
     let panes = layout.leaves
@@ -838,11 +838,11 @@ Expected: FAIL
 
 **Step 3: Add ratio to PaneLayoutNode**
 
-In `Mistty/Models/PaneLayout.swift`, change:
+In `Mytty/Models/PaneLayout.swift`, change:
 
 ```swift
 indirect enum PaneLayoutNode {
-    case leaf(MisttyPane)
+    case leaf(MyttyPane)
     case split(SplitDirection, PaneLayoutNode, PaneLayoutNode, CGFloat)
 }
 ```
@@ -857,7 +857,7 @@ Update ALL existing code that creates or matches `.split` to include the ratio p
 Add `resizeSplit` method:
 
 ```swift
-mutating func resizeSplit(containing pane: MisttyPane, delta: CGFloat) {
+mutating func resizeSplit(containing pane: MyttyPane, delta: CGFloat) {
     root = Self.adjustRatio(root, target: pane.id, delta: delta)
 }
 
@@ -966,7 +966,7 @@ Run: `just build`
 **Step 8: Commit**
 
 ```bash
-git add Mistty/Models/PaneLayout.swift Mistty/Views/Terminal/PaneLayoutView.swift Mistty/App/ContentView.swift MisttyTests/Models/PaneLayoutTests.swift
+git add Mytty/Models/PaneLayout.swift Mytty/Views/Terminal/PaneLayoutView.swift Mytty/App/ContentView.swift MyttyTests/Models/PaneLayoutTests.swift
 git commit -m "feat: split ratio support and Cmd+Arrow resize in window mode"
 ```
 
@@ -975,8 +975,8 @@ git commit -m "feat: split ratio support and Cmd+Arrow resize in window mode"
 ### Task 9: Window Mode — Zoom (z key)
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
-- Modify: `Mistty/Views/Terminal/PaneLayoutView.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Modify: `Mytty/Views/Terminal/PaneLayoutView.swift`
 
 **Step 1: Wire `z` key in window mode monitor**
 
@@ -1026,7 +1026,7 @@ Run: `just build`
 **Step 4: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat: window mode zoom toggle with z key"
 ```
 
@@ -1035,25 +1035,25 @@ git commit -m "feat: window mode zoom toggle with z key"
 ### Task 10: Window Mode — Break Pane to Tab (b key)
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
-- Modify: `Mistty/Models/MisttySession.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Modify: `Mytty/Models/MyttySession.swift`
 
-**Step 1: Add `addTabWithPane` to MisttySession**
+**Step 1: Add `addTabWithPane` to MyttySession**
 
-In `Mistty/Models/MisttySession.swift`:
+In `Mytty/Models/MyttySession.swift`:
 
 ```swift
-func addTabWithPane(_ pane: MisttyPane) {
-    let tab = MisttyTab(existingPane: pane)
+func addTabWithPane(_ pane: MyttyPane) {
+    let tab = MyttyTab(existingPane: pane)
     tabs.append(tab)
     activeTab = tab
 }
 ```
 
-This requires a new `MisttyTab` initializer. In `MisttyTab.swift`:
+This requires a new `MyttyTab` initializer. In `MyttyTab.swift`:
 
 ```swift
-init(existingPane pane: MisttyPane) {
+init(existingPane pane: MyttyPane) {
     self.directory = pane.directory
     layout = PaneLayout(pane: pane)
     panes = [pane]
@@ -1090,7 +1090,7 @@ Run: `just build`
 **Step 4: Commit**
 
 ```bash
-git add Mistty/Models/MisttySession.swift Mistty/Models/MisttyTab.swift Mistty/App/ContentView.swift
+git add Mytty/Models/MyttySession.swift Mytty/Models/MyttyTab.swift Mytty/App/ContentView.swift
 git commit -m "feat: window mode break pane to tab with b key"
 ```
 
@@ -1099,16 +1099,16 @@ git commit -m "feat: window mode break pane to tab with b key"
 ### Task 11: Window Mode — Rotate Split Direction (r key)
 
 **Files:**
-- Modify: `Mistty/Models/PaneLayout.swift`
-- Modify: `Mistty/Models/SplitDirection.swift`
-- Modify: `Mistty/App/ContentView.swift`
-- Test: `MisttyTests/Models/PaneLayoutTests.swift`
+- Modify: `Mytty/Models/PaneLayout.swift`
+- Modify: `Mytty/Models/SplitDirection.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Test: `MyttyTests/Models/PaneLayoutTests.swift`
 
 **Step 1: Write failing test**
 
 ```swift
 func test_rotateSplit() {
-    let pane1 = MisttyPane()
+    let pane1 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.split(pane: pane1, direction: .horizontal)
     layout.rotateDirection(containing: pane1)
@@ -1140,7 +1140,7 @@ var toggled: SplitDirection {
 Add `rotateDirection` to `PaneLayout`:
 
 ```swift
-mutating func rotateDirection(containing pane: MisttyPane) {
+mutating func rotateDirection(containing pane: MyttyPane) {
     root = Self.rotate(root, target: pane.id)
 }
 
@@ -1201,7 +1201,7 @@ private func rotateActivePane() {
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Models/PaneLayout.swift Mistty/Models/SplitDirection.swift Mistty/App/ContentView.swift MisttyTests/Models/PaneLayoutTests.swift
+git add Mytty/Models/PaneLayout.swift Mytty/Models/SplitDirection.swift Mytty/App/ContentView.swift MyttyTests/Models/PaneLayoutTests.swift
 git commit -m "feat: window mode rotate split direction with r key"
 ```
 
@@ -1212,16 +1212,16 @@ git commit -m "feat: window mode rotate split direction with r key"
 ### Task 12: Copy Mode — State Machine
 
 **Files:**
-- Create: `Mistty/Models/CopyModeState.swift`
-- Test: `MisttyTests/Models/CopyModeStateTests.swift`
+- Create: `Mytty/Models/CopyModeState.swift`
+- Test: `MyttyTests/Models/CopyModeStateTests.swift`
 
 **Step 1: Write failing tests**
 
-Create `MisttyTests/Models/CopyModeStateTests.swift`:
+Create `MyttyTests/Models/CopyModeStateTests.swift`:
 
 ```swift
 import XCTest
-@testable import Mistty
+@testable import Mytty
 
 final class CopyModeStateTests: XCTestCase {
     func test_initialCursorPosition() {
@@ -1275,7 +1275,7 @@ Run: `swift test --filter CopyModeStateTests`
 
 **Step 3: Create CopyModeState model**
 
-Create `Mistty/Models/CopyModeState.swift`:
+Create `Mytty/Models/CopyModeState.swift`:
 
 ```swift
 import Foundation
@@ -1329,7 +1329,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeState.swift MisttyTests/Models/CopyModeStateTests.swift
+git add Mytty/Models/CopyModeState.swift MyttyTests/Models/CopyModeStateTests.swift
 git commit -m "feat: copy mode state machine with cursor movement and selection"
 ```
 
@@ -1338,13 +1338,13 @@ git commit -m "feat: copy mode state machine with cursor movement and selection"
 ### Task 13: Copy Mode — Entry/Exit & Key Monitor
 
 **Files:**
-- Modify: `Mistty/Models/MisttyTab.swift`
-- Modify: `Mistty/App/MisttyApp.swift`
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/Models/MyttyTab.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
-**Step 1: Add copy mode state to MisttyTab**
+**Step 1: Add copy mode state to MyttyTab**
 
-In `MisttyTab.swift`:
+In `MyttyTab.swift`:
 
 ```swift
 var copyModeState: CopyModeState?
@@ -1353,11 +1353,11 @@ var isCopyModeActive: Bool { copyModeState != nil }
 
 **Step 2: Add keyboard shortcut**
 
-In `MisttyApp.swift`:
+In `MyttyApp.swift`:
 
 ```swift
 Button("Copy Mode") {
-    NotificationCenter.default.post(name: .misttyCopyMode, object: nil)
+    NotificationCenter.default.post(name: .myttyCopyMode, object: nil)
 }
 .keyboardShortcut("c", modifiers: [.command, .shift])
 ```
@@ -1365,7 +1365,7 @@ Button("Copy Mode") {
 Add notification name:
 
 ```swift
-static let misttyCopyMode = Notification.Name("misttyCopyMode")
+static let myttyCopyMode = Notification.Name("myttyCopyMode")
 ```
 
 **Step 3: Handle in ContentView**
@@ -1379,7 +1379,7 @@ Add state:
 Add receiver:
 
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .misttyCopyMode)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyCopyMode)) { _ in
     guard let tab = store.activeSession?.activeTab else { return }
     if tab.isCopyModeActive {
         exitCopyMode()
@@ -1491,7 +1491,7 @@ Run: `just build`
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/MisttyTab.swift Mistty/App/MisttyApp.swift Mistty/App/ContentView.swift
+git add Mytty/Models/MyttyTab.swift Mytty/App/MyttyApp.swift Mytty/App/ContentView.swift
 git commit -m "feat: copy mode entry/exit with Cmd+Shift+C and vim keybindings"
 ```
 
@@ -1500,12 +1500,12 @@ git commit -m "feat: copy mode entry/exit with Cmd+Shift+C and vim keybindings"
 ### Task 14: Copy Mode — Overlay View
 
 **Files:**
-- Create: `Mistty/Views/Terminal/CopyModeOverlay.swift`
-- Modify: `Mistty/Views/Terminal/PaneView.swift`
+- Create: `Mytty/Views/Terminal/CopyModeOverlay.swift`
+- Modify: `Mytty/Views/Terminal/PaneView.swift`
 
 **Step 1: Create CopyModeOverlay**
 
-Create `Mistty/Views/Terminal/CopyModeOverlay.swift`:
+Create `Mytty/Views/Terminal/CopyModeOverlay.swift`:
 
 ```swift
 import SwiftUI
@@ -1660,7 +1660,7 @@ Run: `just build`
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Views/Terminal/CopyModeOverlay.swift Mistty/Views/Terminal/PaneView.swift Mistty/Views/Terminal/PaneLayoutView.swift Mistty/App/ContentView.swift
+git add Mytty/Views/Terminal/CopyModeOverlay.swift Mytty/Views/Terminal/PaneView.swift Mytty/Views/Terminal/PaneLayoutView.swift Mytty/App/ContentView.swift
 git commit -m "feat: copy mode overlay with cursor and selection highlighting"
 ```
 

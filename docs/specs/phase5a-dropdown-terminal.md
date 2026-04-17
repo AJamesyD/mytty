@@ -1,6 +1,6 @@
 # Phase 5a: Dropdown Terminal
 
-Mistty macOS terminal emulator, libghostty backend.
+Mytty macOS terminal emulator, libghostty backend.
 
 **Goal:** Add a quake-style dropdown terminal that slides in from the top of the screen on a global hotkey. The dropdown is a single-pane terminal that persists across show/hide cycles, independent of the main window.
 
@@ -57,7 +57,7 @@ A future config option could offer `moveToActiveSpace` as an alternative to `can
 
 ### 2.5 Accessibility
 
-Set `window.identifier` to `"com.mistty.dropdownTerminal"` and `accessibilitySubrole` to `.floatingWindow` so tiling window managers (AeroSpace, yabai) can identify and float it.
+Set `window.identifier` to `"com.mytty.dropdownTerminal"` and `accessibilitySubrole` to `.floatingWindow` so tiling window managers (AeroSpace, yabai) can identify and float it.
 
 ## 3. Global hotkey
 
@@ -84,7 +84,7 @@ A `GlobalHotkeyMonitor` class:
 - Handles both active and inactive cases (Ctrl+\` is not a useful terminal input, safe to consume globally)
 - Retries tap creation on a timer if Accessibility permissions are not yet granted
 
-Owned by `MisttyApp` (or an `AppDelegate` if needed for lifecycle reasons).
+Owned by `MyttyApp` (or an `AppDelegate` if needed for lifecycle reasons).
 
 ### 3.4 Menu item
 
@@ -100,7 +100,7 @@ A single `visible` bool (not a state machine). `animateIn` guards on `!visible`,
 
 ### 4.2 Show (animateIn)
 
-1. If `!NSApp.isActive`, store `NSWorkspace.shared.frontmostApplication` as `previousApp` (only if not Mistty itself)
+1. If `!NSApp.isActive`, store `NSWorkspace.shared.frontmostApplication` as `previousApp` (only if not Mytty itself)
 2. Determine target screen (see section 6)
 3. Set window level to `.popUpMenu`
 4. Position window at initial origin (above visible frame, fully off-screen)
@@ -116,7 +116,7 @@ A single `visible` bool (not a state machine). `animateIn` guards on `!visible`,
 ### 4.3 Hide (animateOut)
 
 0. If `!window.isOnActiveSpace`, skip animation: clear `previousApp`, call `window.orderOut(self)`, return. Animating a window on a different space produces visual artifacts.
-1. Restore `previousApp` via `previousApp.activate(options: [])` before the animation (so macOS doesn't bring forward another Mistty window)
+1. Restore `previousApp` via `previousApp.activate(options: [])` before the animation (so macOS doesn't bring forward another Mytty window)
 2. Set window level to `.popUpMenu`
 3. Animate with `NSAnimationContext.runAnimationGroup`:
    - `alphaValue`: 1 -> 0
@@ -132,7 +132,7 @@ Guards before acting:
 - If `!visible`, return (prevents double-processing after animateOut)
 - If `window.attachedSheet != nil`, return (don't hide during modal dialogs)
 
-When focus moves to another Mistty window (`NSApp.isActive` is still true), clear `previousApp` so focus is not restored to a stale app on next hide.
+When focus moves to another Mytty window (`NSApp.isActive` is still true), clear `previousApp` so focus is not restored to a stale app on next hide.
 
 Space-switching: track `previousActiveSpace` (via `CGSSpace.active()`) on each show. In `windowDidResignKey`, if the active space changed, the user swiped Spaces. Since the window has `.canJoinAllSpaces`, re-key it on the new space instead of hiding:
 
@@ -149,7 +149,7 @@ if currentActiveSpace != previousActiveSpace {
 
 ### 4.5 Focus restoration
 
-Track `previousApp` on show. Restore on hide. If `previousApp` is `nil` (Mistty was already frontmost), skip restoration.
+Track `previousApp` on show. Restore on hide. If `previousApp` is `nil` (Mytty was already frontmost), skip restoration.
 
 ## 5. Position and sizing
 
@@ -185,7 +185,7 @@ Future config: `dropdown-screen = "mouse"` (default), `"main"`, or `"menu-bar"`.
 
 ### 7.1 Dedicated session
 
-The dropdown controller owns its own `MisttySession`, created via `SessionStore.createDetachedSession()`. This method uses the store's shared ID counters (avoiding collisions with IPC lookups) but does not add the session to the store's `sessions` array.
+The dropdown controller owns its own `MyttySession`, created via `SessionStore.createDetachedSession()`. This method uses the store's shared ID counters (avoiding collisions with IPC lookups) but does not add the session to the store's `sessions` array.
 
 The session:
 
@@ -199,7 +199,7 @@ The session:
 ### 7.2 Why detached instead of in SessionStore?
 
 Putting the dropdown session in SessionStore's `sessions` array would require:
-- An `isDropdown` flag on MisttySession
+- An `isDropdown` flag on MyttySession
 - Filtering in the sidebar view
 - Handling edge cases (user tries to close/rename/split the dropdown session from the sidebar)
 - Persistence logic that doesn't apply (dropdown should start fresh)
@@ -214,7 +214,7 @@ The dropdown panel's `contentView` is an `NSHostingView` wrapping a SwiftUI view
 
 ### 8.1 Ownership
 
-`DropdownController` is created and held by `MisttyApp`. The global hotkey monitor calls `controller.toggle()`.
+`DropdownController` is created and held by `MyttyApp`. The global hotkey monitor calls `controller.toggle()`.
 
 ### 8.2 App lifecycle
 
@@ -257,12 +257,12 @@ toggle-dropdown = "ctrl+`"
 
 | File | Purpose |
 |------|---------|
-| `Mistty/App/DropdownPanel.swift` | NSPanel subclass |
-| `Mistty/App/DropdownController.swift` | Show/hide state, animation, focus management, window delegate, session ownership |
-| `Mistty/App/GlobalHotkeyMonitor.swift` | CGEvent tap for the hardcoded hotkey |
-| `Mistty/App/MisttyApp.swift` | Own DropdownController and GlobalHotkeyMonitor, add menu item, add NSApplicationDelegateAdaptor |
-| `Mistty/App/MisttyAppDelegate.swift` | `applicationShouldTerminateAfterLastWindowClosed` returns `false` |
-| `Mistty/Models/SessionStore.swift` | Add `createDetachedSession()` method |
+| `Mytty/App/DropdownPanel.swift` | NSPanel subclass |
+| `Mytty/App/DropdownController.swift` | Show/hide state, animation, focus management, window delegate, session ownership |
+| `Mytty/App/GlobalHotkeyMonitor.swift` | CGEvent tap for the hardcoded hotkey |
+| `Mytty/App/MyttyApp.swift` | Own DropdownController and GlobalHotkeyMonitor, add menu item, add NSApplicationDelegateAdaptor |
+| `Mytty/App/MyttyAppDelegate.swift` | `applicationShouldTerminateAfterLastWindowClosed` returns `false` |
+| `Mytty/Models/SessionStore.swift` | Add `createDetachedSession()` method |
 
 ## 11. Phasing
 
@@ -303,7 +303,7 @@ toggle-dropdown = "ctrl+`"
 - **Dock conflict**: if the Dock is positioned at the top of the screen (rare), the dropdown may overlap it. Dock auto-hide is deferred to Phase 5a-2.
 - **Not resizable**: the dropdown has a fixed 40% height. Manual resize support is deferred.
 - **No persistence**: the dropdown session starts fresh on each app launch.
-- **Accessibility permission**: if revoked mid-session, the global hotkey stops working. The menu item still works when Mistty is active.
+- **Accessibility permission**: if revoked mid-session, the global hotkey stops working. The menu item still works when Mytty is active.
 
 ## 14. Acceptance criteria
 
@@ -316,7 +316,7 @@ toggle-dropdown = "ctrl+`"
 7. The dropdown works on all Spaces and alongside fullscreen apps
 8. The dropdown is excluded from Cmd+\` window cycling
 9. A menu item shows the hotkey for discoverability
-10. Ctrl+\` works both when Mistty is active and when another app is focused
+10. Ctrl+\` works both when Mytty is active and when another app is focused
 11. If the shell exits, the next toggle re-creates the session
-12. The dropdown does not activate the app or bring other Mistty windows forward when shown
+12. The dropdown does not activate the app or bring other Mytty windows forward when shown
 13. The dropdown does not appear in the sidebar or session manager

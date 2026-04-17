@@ -2,14 +2,14 @@
 
 ## Overview
 
-Add CLI control to Mistty via XPC IPC. A separate `mistty-cli` binary communicates with the running Mistty.app through a Mach service, enabling scripting workflows, editor integration, and system automation.
+Add CLI control to Mytty via XPC IPC. A separate `mytty-cli` binary communicates with the running Mytty.app through a Mach service, enabling scripting workflows, editor integration, and system automation.
 
 ## Architecture
 
 ```
-mistty-cli ──XPC──► Mistty.app (NSXPCListener)
+mytty-cli ──XPC──► Mytty.app (NSXPCListener)
                          │
-                    MisttyServiceProtocol
+                    MyttyServiceProtocol
                     ├── session: create/list/get/close
                     ├── tab: create/list/get/close/rename
                     ├── pane: create/list/get/close/focus/resize/active
@@ -19,14 +19,14 @@ mistty-cli ──XPC──► Mistty.app (NSXPCListener)
 
 Three new components:
 
-1. **MisttyShared** — shared Swift library with the XPC protocol, Codable response types, and constants
-2. **XPC listener in Mistty.app** — implements the protocol, dispatches to SessionStore on @MainActor
-3. **mistty-cli** — separate executable using Swift Argument Parser
+1. **MyttyShared** — shared Swift library with the XPC protocol, Codable response types, and constants
+2. **XPC listener in Mytty.app** — implements the protocol, dispatches to SessionStore on @MainActor
+3. **mytty-cli** — separate executable using Swift Argument Parser
 
 ## XPC Protocol
 
 ```swift
-@objc protocol MisttyServiceProtocol {
+@objc protocol MyttyServiceProtocol {
     // Sessions
     func createSession(name: String, directory: String?, exec: String?, reply: @escaping (Data?, Error?) -> Void)
     func listSessions(reply: @escaping (Data?, Error?) -> Void)
@@ -67,36 +67,36 @@ Replies use `Data?` (JSON-encoded Codable structs) because XPC's @objc protocol 
 
 ## CLI Command Structure
 
-Grammar: `mistty-cli <entity> <action> [flags]`
+Grammar: `mytty-cli <entity> <action> [flags]`
 
 ```
-mistty-cli session create --name "project" --directory ~/code/proj --exec "nvim ."
-mistty-cli session list
-mistty-cli session get <id>
-mistty-cli session close <id>
+mytty-cli session create --name "project" --directory ~/code/proj --exec "nvim ."
+mytty-cli session list
+mytty-cli session get <id>
+mytty-cli session close <id>
 
-mistty-cli tab create --session <id> [--name "tests"] [--exec "npm test"]
-mistty-cli tab list --session <id>
-mistty-cli tab get <id>
-mistty-cli tab close <id>
-mistty-cli tab rename <id> --name "new name"
+mytty-cli tab create --session <id> [--name "tests"] [--exec "npm test"]
+mytty-cli tab list --session <id>
+mytty-cli tab get <id>
+mytty-cli tab close <id>
+mytty-cli tab rename <id> --name "new name"
 
-mistty-cli pane create --tab <id> [--direction horizontal|vertical]
-mistty-cli pane list --tab <id>
-mistty-cli pane get <id>
-mistty-cli pane close <id>
-mistty-cli pane focus <id>
-mistty-cli pane resize <id> --direction left|right|up|down --amount 5
-mistty-cli pane active
-mistty-cli pane send-keys [--pane <id>] "ls -la"
-mistty-cli pane run-command [--pane <id>] "npm test"
-mistty-cli pane get-text [--pane <id>]
+mytty-cli pane create --tab <id> [--direction horizontal|vertical]
+mytty-cli pane list --tab <id>
+mytty-cli pane get <id>
+mytty-cli pane close <id>
+mytty-cli pane focus <id>
+mytty-cli pane resize <id> --direction left|right|up|down --amount 5
+mytty-cli pane active
+mytty-cli pane send-keys [--pane <id>] "ls -la"
+mytty-cli pane run-command [--pane <id>] "npm test"
+mytty-cli pane get-text [--pane <id>]
 
-mistty-cli window create
-mistty-cli window list
-mistty-cli window get <id>
-mistty-cli window close <id>
-mistty-cli window focus <id>
+mytty-cli window create
+mytty-cli window list
+mytty-cli window get <id>
+mytty-cli window close <id>
+mytty-cli window focus <id>
 ```
 
 ### Output Format
@@ -124,7 +124,7 @@ private var nextWindowId = 1
 
 IDs are ephemeral — they reset when the app restarts. This is acceptable since sessions don't persist across restarts yet.
 
-This replaces the current UUID-based IDs on MisttySession, MisttyTab, and MisttyPane.
+This replaces the current UUID-based IDs on MyttySession, MyttyTab, and MyttyPane.
 
 ## Project Structure
 
@@ -132,32 +132,32 @@ This replaces the current UUID-based IDs on MisttySession, MisttyTab, and Mistty
 
 ```
 Package
-├── Mistty (existing app target)
-│   └── depends on MisttyShared
-├── MisttyShared (new library target)
-│   ├── MisttyServiceProtocol.swift
+├── Mytty (existing app target)
+│   └── depends on MyttyShared
+├── MyttyShared (new library target)
+│   ├── MyttyServiceProtocol.swift
 │   ├── Models/
 │   │   ├── SessionResponse.swift
 │   │   ├── TabResponse.swift
 │   │   ├── PaneResponse.swift
 │   │   └── WindowResponse.swift
 │   └── XPCConstants.swift
-├── MisttyCLI (new executable target)
-│   └── depends on MisttyShared
-└── MisttyTests (existing, unchanged)
+├── MyttyCLI (new executable target)
+│   └── depends on MyttyShared
+└── MyttyTests (existing, unchanged)
 ```
 
 ### App-side additions
 
-- `Mistty/Services/XPCService.swift` — Implements MisttyServiceProtocol, dispatches to SessionStore on @MainActor
-- `Mistty/Services/XPCListener.swift` — Starts NSXPCListener, handles connections
+- `Mytty/Services/XPCService.swift` — Implements MyttyServiceProtocol, dispatches to SessionStore on @MainActor
+- `Mytty/Services/XPCListener.swift` — Starts NSXPCListener, handles connections
 
-The listener starts in MisttyApp.swift on launch.
+The listener starts in MyttyApp.swift on launch.
 
 ### CLI-side structure
 
 ```
-MisttyCLI/
+MyttyCLI/
 ├── main.swift
 ├── Commands/
 │   ├── SessionCommand.swift
@@ -176,9 +176,9 @@ MisttyCLI/
 
 ### Service registration
 
-Mach service name: `com.mistty.cli-service`
+Mach service name: `com.mytty.cli-service`
 
-Using `NSXPCListener(machServiceName:)`. For a non-sandboxed app, register via a launchd plist at `~/Library/LaunchAgents/com.mistty.cli-service.plist`, installable on first run or via `mistty-cli install-service`.
+Using `NSXPCListener(machServiceName:)`. For a non-sandboxed app, register via a launchd plist at `~/Library/LaunchAgents/com.mytty.cli-service.plist`, installable on first run or via `mytty-cli install-service`.
 
 ### Thread safety
 
@@ -191,13 +191,13 @@ Accept all connections from the same user. No additional auth beyond macOS's bui
 ### Auto-launch
 
 1. CLI attempts XPC connection
-2. On failure, launch Mistty.app via `open -a Mistty`
+2. On failure, launch Mytty.app via `open -a Mytty`
 3. Retry with exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
-4. After ~3s, fail with: "Could not connect to Mistty.app. Is it installed?"
+4. After ~3s, fail with: "Could not connect to Mytty.app. Is it installed?"
 
 ### Error handling
 
-Errors returned as NSError with domain `com.mistty.error` and codes: entityNotFound, invalidArgument, operationFailed. CLI maps these to human-readable messages.
+Errors returned as NSError with domain `com.mytty.error` and codes: entityNotFound, invalidArgument, operationFailed. CLI maps these to human-readable messages.
 
 ## Out of Scope
 

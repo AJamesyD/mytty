@@ -1,6 +1,6 @@
 # Auto-Hide Sidebar and Tab Bar: Design Document
 
-Mistty, a macOS terminal emulator built with SwiftUI.
+Mytty, a macOS terminal emulator built with SwiftUI.
 
 ## Iteration 1: Basic Design
 
@@ -156,13 +156,13 @@ This hint is optional and can be disabled in settings (`showAutoHideHints`). Ena
 
 macOS edge gestures (Mission Control, Spaces switching) are trackpad swipe gestures, not cursor-position-based. They don't conflict with hover detection because hover uses `NSTrackingArea` (cursor position), while Spaces switching uses multi-finger swipe (handled by the system before the app sees it).
 
-The Dock auto-hide does use cursor position at the screen edge. If the Mistty window's left edge is flush with the screen's left edge and the Dock is also on the left with auto-hide, both triggers compete. Mitigation: the 150ms dwell requirement means a quick bump to the edge (which triggers the Dock at 200ms) won't trigger Mistty's sidebar if the user moves away within 150ms. In practice, the Dock's trigger zone extends below the app window, so the overlap is minimal. No special handling needed beyond the dwell timer.
+The Dock auto-hide does use cursor position at the screen edge. If the Mytty window's left edge is flush with the screen's left edge and the Dock is also on the left with auto-hide, both triggers compete. Mitigation: the 150ms dwell requirement means a quick bump to the edge (which triggers the Dock at 200ms) won't trigger Mytty's sidebar if the user moves away within 150ms. In practice, the Dock's trigger zone extends below the app window, so the overlap is minimal. No special handling needed beyond the dwell timer.
 
 If the window is not at the screen edge, there's no conflict at all.
 
 ### Configuration
 
-Settings are stored in the app's config file (e.g., `~/.config/mistty/config.toml`) and exposed in the Settings UI.
+Settings are stored in the app's config file (e.g., `~/.config/mytty/config.toml`) and exposed in the Settings UI.
 
 ```toml
 [sidebar]

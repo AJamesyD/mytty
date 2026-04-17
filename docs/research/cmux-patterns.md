@@ -1,6 +1,6 @@
 # cmux Architecture, Patterns, and Antipatterns
 
-Research for Mistty (macOS terminal emulator with libghostty + SwiftUI).
+Research for Mytty (macOS terminal emulator with libghostty + SwiftUI).
 
 ## Project Overview
 
@@ -63,7 +63,7 @@ The remote system is substantial:
 
 ### Panel protocol with typed variants
 
-The `Panel` protocol is clean: `id`, `panelType`, `displayTitle`, `displayIcon`, `isDirty`, `close()`, `focus()`, `unfocus()`, plus focus intent management. The `PanelFocusIntent` enum (`.panel`, `.terminal(.surface | .findField)`, `.browser(.webView | .addressBar | .findField)`) is a good pattern for managing focus across heterogeneous content types. Mistty could adopt this for terminal + browser + preview panes.
+The `Panel` protocol is clean: `id`, `panelType`, `displayTitle`, `displayIcon`, `isDirty`, `close()`, `focus()`, `unfocus()`, plus focus intent management. The `PanelFocusIntent` enum (`.panel`, `.terminal(.surface | .findField)`, `.browser(.webView | .addressBar | .findField)`) is a good pattern for managing focus across heterogeneous content types. Mytty could adopt this for terminal + browser + preview panes.
 
 ### Socket control API for scriptability
 
@@ -71,7 +71,7 @@ cmux exposes a Unix domain socket (`/tmp/cmux.sock`) with multiple access modes 
 
 ### Notification system via OSC sequences + CLI
 
-Notifications use standard terminal escape sequences (OSC 9/99/777) plus a `cmux notify` CLI command for agent hooks. Each pane gets a visual ring, tabs light up, and Cmd+Shift+U jumps to the most recent unread. The `WorkspaceAttentionCoordinator` manages flash decisions with a persistent state model that prevents navigation flashes from competing with notification indicators. This is directly relevant to Mistty's core value prop.
+Notifications use standard terminal escape sequences (OSC 9/99/777) plus a `cmux notify` CLI command for agent hooks. Each pane gets a visual ring, tabs light up, and Cmd+Shift+U jumps to the most recent unread. The `WorkspaceAttentionCoordinator` manages flash decisions with a persistent state model that prevents navigation flashes from competing with notification indicators. This is directly relevant to Mytty's core value prop.
 
 ### Sidebar metadata aggregation
 
@@ -109,25 +109,25 @@ Reading `~/.config/ghostty/config` for themes, fonts, and colors is a smart adop
 
 The remote SSH code alone (WorkspaceRemoteSessionController, WorkspaceRemoteDaemonRPCClient, WorkspaceRemoteDaemonProxyTunnel, WorkspaceRemoteProxyBroker, WorkspaceRemoteCLIRelayServer, and many supporting types) is embedded directly in Workspace.swift rather than in separate files. This makes the file extremely difficult to navigate and reason about.
 
-**Lesson for Mistty**: Split the workspace into focused components early. Remote session management, sidebar metadata aggregation, session persistence, and focus reconciliation should each be their own type, composed into the workspace.
+**Lesson for Mytty**: Split the workspace into focused components early. Remote session management, sidebar metadata aggregation, session persistence, and focus reconciliation should each be their own type, composed into the workspace.
 
 ### Flat source directory with no module boundaries
 
 All Swift source files live in a single `Sources/` directory with minimal subdirectory organization. There are no Swift Package modules or framework targets to enforce dependency boundaries. Any file can reference any other type. This makes it easy to accumulate coupling.
 
-**Lesson for Mistty**: Use Swift Package local packages or at least clear directory conventions from the start. Terminal rendering, session management, sidebar UI, and configuration should have clear boundaries.
+**Lesson for Mytty**: Use Swift Package local packages or at least clear directory conventions from the start. Terminal rendering, session management, sidebar UI, and configuration should have clear boundaries.
 
 ### Complex focus reconciliation
 
 The focus management code is intricate: `reconcileFocusState()`, `scheduleFocusReconcile()`, `applyTabSelection()`, `preserveFocusAfterNonFocusSplit()`, `beginEventDrivenLayoutFollowUp()`, `attemptEventDrivenLayoutFollowUp()`, with generation counters, stall detection, backoff delays, and multiple notification observers. This complexity stems from the tension between SwiftUI's declarative model and AppKit's imperative first-responder system, compounded by the portal pattern.
 
-**Lesson for Mistty**: If using a portal/hosting pattern for terminal views, design the focus ownership model carefully upfront. Consider whether SwiftUI's `@FocusState` can be the single source of truth, or commit fully to AppKit focus management with a clear state machine.
+**Lesson for Mytty**: If using a portal/hosting pattern for terminal views, design the focus ownership model carefully upfront. Consider whether SwiftUI's `@FocusState` can be the single source of truth, or commit fully to AppKit focus management with a clear state machine.
 
 ### Defensive pointer validation
 
 The `cmuxSurfacePointerAppearsLive()` function checks `malloc_zone_from_ptr` and `malloc_size` to detect freed Ghostty surface pointers. This suggests the Swift wrapper can outlive the native surface, creating use-after-free risks. The code works around this with runtime checks rather than ownership guarantees.
 
-**Lesson for Mistty**: Design the libghostty surface lifecycle so Swift wrappers cannot outlive the native surface. Use a handle type that nullifies on close rather than relying on malloc introspection.
+**Lesson for Mytty**: Design the libghostty surface lifecycle so Swift wrappers cannot outlive the native surface. Use a handle type that nullifies on close rather than relying on malloc introspection.
 
 ### Two test directories
 
@@ -139,7 +139,7 @@ The project has both `tests/` (Python integration tests) and `tests_v2/` plus `c
 
 ### Workspace-as-context (not just tabs)
 
-cmux's workspace model bundles terminal panes, browser panes, git branch, PR status, listening ports, notifications, and custom metadata into a single sidebar entry. This is richer than tmux's window concept. For Mistty, each workspace could represent a project context with all its associated state.
+cmux's workspace model bundles terminal panes, browser panes, git branch, PR status, listening ports, notifications, and custom metadata into a single sidebar entry. This is richer than tmux's window concept. For Mytty, each workspace could represent a project context with all its associated state.
 
 ### Notification rings with jump-to-unread
 
@@ -195,9 +195,9 @@ The app uses Sparkle for auto-updates, with separate feeds for stable and nightl
 
 ---
 
-## Key Takeaway for Mistty
+## Key Takeaway for Mytty
 
-The most transferable pattern is the **Workspace model as a rich context container** with the **Panel protocol** for heterogeneous content types, combined with the **socket API for scriptability** and **notification system for agent awareness**. The most important antipattern to avoid is letting the Workspace type grow into a god object. cmux's Workspace.swift demonstrates what happens when session management, remote connectivity, focus reconciliation, sidebar metadata, and panel lifecycle all live in one type: the file becomes unmaintainable. Mistty should decompose these concerns into separate types from the start, composed via protocols or dependency injection.
+The most transferable pattern is the **Workspace model as a rich context container** with the **Panel protocol** for heterogeneous content types, combined with the **socket API for scriptability** and **notification system for agent awareness**. The most important antipattern to avoid is letting the Workspace type grow into a god object. cmux's Workspace.swift demonstrates what happens when session management, remote connectivity, focus reconciliation, sidebar metadata, and panel lifecycle all live in one type: the file becomes unmaintainable. Mytty should decompose these concerns into separate types from the start, composed via protocols or dependency injection.
 
 ## Sources
 

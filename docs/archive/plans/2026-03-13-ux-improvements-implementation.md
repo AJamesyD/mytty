@@ -17,26 +17,26 @@
 ### Task 1: Tab Switching Shortcuts
 
 **Files:**
-- Modify: `Mistty/App/MisttyApp.swift:187-198` (notification names)
-- Modify: `Mistty/App/MisttyApp.swift:75-149` (keyboard shortcuts)
-- Modify: `Mistty/App/ContentView.swift:61-72` (notification handlers)
-- Test: `MisttyTests/Models/SessionStoreTests.swift`
+- Modify: `Mytty/App/MyttyApp.swift:187-198` (notification names)
+- Modify: `Mytty/App/MyttyApp.swift:75-149` (keyboard shortcuts)
+- Modify: `Mytty/App/ContentView.swift:61-72` (notification handlers)
+- Test: `MyttyTests/Models/SessionStoreTests.swift`
 
 - [ ] **Step 1: Add notification names**
 
-Add to the `Notification.Name` extension in `MisttyApp.swift:187-198`:
+Add to the `Notification.Name` extension in `MyttyApp.swift:187-198`:
 
 ```swift
-static let misttyFocusTabByIndex = Notification.Name("misttyFocusTabByIndex")
-static let misttyNextTab = Notification.Name("misttyNextTab")
-static let misttyPrevTab = Notification.Name("misttyPrevTab")
-static let misttyNextSession = Notification.Name("misttyNextSession")
-static let misttyPrevSession = Notification.Name("misttyPrevSession")
+static let myttyFocusTabByIndex = Notification.Name("myttyFocusTabByIndex")
+static let myttyNextTab = Notification.Name("myttyNextTab")
+static let myttyPrevTab = Notification.Name("myttyPrevTab")
+static let myttyNextSession = Notification.Name("myttyNextSession")
+static let myttyPrevSession = Notification.Name("myttyPrevSession")
 ```
 
 - [ ] **Step 2: Register keyboard shortcuts**
 
-Add inside `CommandGroup(after: .toolbar)` in `MisttyApp.swift`, after the existing Rename Tab section (after line 133):
+Add inside `CommandGroup(after: .toolbar)` in `MyttyApp.swift`, after the existing Rename Tab section (after line 133):
 
 ```swift
 Divider()
@@ -44,7 +44,7 @@ Divider()
 ForEach(1...9, id: \.self) { index in
   Button("Focus Tab \(index)") {
     NotificationCenter.default.post(
-      name: .misttyFocusTabByIndex,
+      name: .myttyFocusTabByIndex,
       object: nil,
       userInfo: ["index": index - 1]
     )
@@ -53,39 +53,39 @@ ForEach(1...9, id: \.self) { index in
 }
 
 Button("Next Tab") {
-  NotificationCenter.default.post(name: .misttyNextTab, object: nil)
+  NotificationCenter.default.post(name: .myttyNextTab, object: nil)
 }
 .keyboardShortcut("]", modifiers: .command)
 
 Button("Previous Tab") {
-  NotificationCenter.default.post(name: .misttyPrevTab, object: nil)
+  NotificationCenter.default.post(name: .myttyPrevTab, object: nil)
 }
 .keyboardShortcut("[", modifiers: .command)
 
 Button("Next Session") {
-  NotificationCenter.default.post(name: .misttyNextSession, object: nil)
+  NotificationCenter.default.post(name: .myttyNextSession, object: nil)
 }
 .keyboardShortcut(.upArrow, modifiers: [.command, .shift])
 
 Button("Previous Session") {
-  NotificationCenter.default.post(name: .misttyPrevSession, object: nil)
+  NotificationCenter.default.post(name: .myttyPrevSession, object: nil)
 }
 .keyboardShortcut(.downArrow, modifiers: [.command, .shift])
 ```
 
 - [ ] **Step 3: Add notification handlers in ContentView**
 
-Add to `contentWithOverlays` in `ContentView.swift`, after the `.misttySessionManager` handler (after line 72):
+Add to `contentWithOverlays` in `ContentView.swift`, after the `.myttySessionManager` handler (after line 72):
 
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .misttyFocusTabByIndex)) { notification in
+.onReceive(NotificationCenter.default.publisher(for: .myttyFocusTabByIndex)) { notification in
   guard let session = store.activeSession,
         let index = notification.userInfo?["index"] as? Int,
         index < session.tabs.count
   else { return }
   session.activeTab = session.tabs[index]
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttyNextTab)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyNextTab)) { _ in
   guard let session = store.activeSession,
         let current = session.activeTab,
         let index = session.tabs.firstIndex(where: { $0.id == current.id })
@@ -93,7 +93,7 @@ Add to `contentWithOverlays` in `ContentView.swift`, after the `.misttySessionMa
   let next = (index + 1) % session.tabs.count
   session.activeTab = session.tabs[next]
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttyPrevTab)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyPrevTab)) { _ in
   guard let session = store.activeSession,
         let current = session.activeTab,
         let index = session.tabs.firstIndex(where: { $0.id == current.id })
@@ -101,7 +101,7 @@ Add to `contentWithOverlays` in `ContentView.swift`, after the `.misttySessionMa
   let prev = (index - 1 + session.tabs.count) % session.tabs.count
   session.activeTab = session.tabs[prev]
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttyNextSession)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyNextSession)) { _ in
   guard let current = store.activeSession,
         let index = store.sessions.firstIndex(where: { $0.id == current.id }),
         store.sessions.count > 1
@@ -109,7 +109,7 @@ Add to `contentWithOverlays` in `ContentView.swift`, after the `.misttySessionMa
   let next = (index + 1) % store.sessions.count
   store.activeSession = store.sessions[next]
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttyPrevSession)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyPrevSession)) { _ in
   guard let current = store.activeSession,
         let index = store.sessions.firstIndex(where: { $0.id == current.id }),
         store.sessions.count > 1
@@ -121,7 +121,7 @@ Add to `contentWithOverlays` in `ContentView.swift`, after the `.misttySessionMa
 
 - [ ] **Step 4: Write helper methods for tab/session cycling**
 
-Extract cycling logic into testable methods. Add to `MisttySession.swift`:
+Extract cycling logic into testable methods. Add to `MyttySession.swift`:
 
 ```swift
 func nextTab() {
@@ -162,23 +162,23 @@ func prevSession() {
 Then simplify the ContentView handlers to call these methods:
 
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .misttyNextTab)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyNextTab)) { _ in
   store.activeSession?.nextTab()
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttyPrevTab)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyPrevTab)) { _ in
   store.activeSession?.prevTab()
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttyNextSession)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyNextSession)) { _ in
   store.nextSession()
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttyPrevSession)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttyPrevSession)) { _ in
   store.prevSession()
 }
 ```
 
 - [ ] **Step 5: Write tests for cycling methods**
 
-Add to `MisttyTests/Models/SessionStoreTests.swift`:
+Add to `MyttyTests/Models/SessionStoreTests.swift`:
 
 ```swift
 func test_nextTab_wrapsAround() {
@@ -238,7 +238,7 @@ Expected: All tests pass
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Mistty/App/MisttyApp.swift Mistty/App/ContentView.swift Mistty/Models/MisttySession.swift Mistty/Models/SessionStore.swift MisttyTests/Models/SessionStoreTests.swift
+git add Mytty/App/MyttyApp.swift Mytty/App/ContentView.swift Mytty/Models/MyttySession.swift Mytty/Models/SessionStore.swift MyttyTests/Models/SessionStoreTests.swift
 git commit -m "feat: add tab switching and session cycling shortcuts
 
 Cmd-1..9 to focus tab by index, Cmd-][ for next/prev tab,
@@ -250,15 +250,15 @@ Cmd-Shift-Up/Down to cycle sessions in creation order."
 ### Task 2: Hide Current Session in Session Manager
 
 **Files:**
-- Modify: `Mistty/Views/SessionManager/SessionManagerViewModel.swift:55-56`
+- Modify: `Mytty/Views/SessionManager/SessionManagerViewModel.swift:55-56`
 
 - [ ] **Step 1: Write the failing test**
 
-Add to a new test file `MisttyTests/Views/SessionManagerViewModelTests.swift`:
+Add to a new test file `MyttyTests/Views/SessionManagerViewModelTests.swift`:
 
 ```swift
 import XCTest
-@testable import Mistty
+@testable import Mytty
 
 @MainActor
 final class SessionManagerViewModelTests: XCTestCase {
@@ -311,7 +311,7 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Views/SessionManager/SessionManagerViewModel.swift MisttyTests/Views/SessionManagerViewModelTests.swift
+git add Mytty/Views/SessionManager/SessionManagerViewModel.swift MyttyTests/Views/SessionManagerViewModelTests.swift
 git commit -m "feat: hide current session from session manager list"
 ```
 
@@ -320,17 +320,17 @@ git commit -m "feat: hide current session from session manager list"
 ### Task 3: Frecency Sorting
 
 **Files:**
-- Create: `Mistty/Services/FrecencyService.swift`
-- Modify: `Mistty/Views/SessionManager/SessionManagerViewModel.swift:48-65,86-96`
-- Test: `MisttyTests/Services/FrecencyServiceTests.swift`
+- Create: `Mytty/Services/FrecencyService.swift`
+- Modify: `Mytty/Views/SessionManager/SessionManagerViewModel.swift:48-65,86-96`
+- Test: `MyttyTests/Services/FrecencyServiceTests.swift`
 
 - [ ] **Step 1: Write FrecencyService tests**
 
-Create `MisttyTests/Services/FrecencyServiceTests.swift`:
+Create `MyttyTests/Services/FrecencyServiceTests.swift`:
 
 ```swift
 import XCTest
-@testable import Mistty
+@testable import Mytty
 
 final class FrecencyServiceTests: XCTestCase {
   var service: FrecencyService!
@@ -395,7 +395,7 @@ Expected: FAIL — `FrecencyService` does not exist
 
 - [ ] **Step 3: Implement FrecencyService**
 
-Create `Mistty/Services/FrecencyService.swift`:
+Create `Mytty/Services/FrecencyService.swift`:
 
 ```swift
 import Foundation
@@ -417,7 +417,7 @@ final class FrecencyService {
 
   private static func defaultStorageURL() -> URL {
     let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-    let dir = appSupport.appendingPathComponent("com.mistty")
+    let dir = appSupport.appendingPathComponent("com.mytty")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     return dir.appendingPathComponent("frecency.json")
   }
@@ -545,7 +545,7 @@ func confirmSelection() {
 
 - [ ] **Step 6: Write integration test**
 
-Add to `MisttyTests/Views/SessionManagerViewModelTests.swift`:
+Add to `MyttyTests/Views/SessionManagerViewModelTests.swift`:
 
 ```swift
 func test_frecencySorting() async {
@@ -584,11 +584,11 @@ Expected: All pass
 - [ ] **Step 8: Commit**
 
 ```bash
-git add Mistty/Services/FrecencyService.swift Mistty/Views/SessionManager/SessionManagerViewModel.swift MisttyTests/Services/FrecencyServiceTests.swift MisttyTests/Views/SessionManagerViewModelTests.swift
+git add Mytty/Services/FrecencyService.swift Mytty/Views/SessionManager/SessionManagerViewModel.swift MyttyTests/Services/FrecencyServiceTests.swift MyttyTests/Views/SessionManagerViewModelTests.swift
 git commit -m "feat: add frecency sorting to session manager
 
 Items are sorted by frequency * recency weight. Scores persist to
-~/Library/Application Support/com.mistty/frecency.json."
+~/Library/Application Support/com.mytty/frecency.json."
 ```
 
 ---
@@ -596,12 +596,12 @@ Items are sorted by frequency * recency weight. Scores persist to
 ### Task 4: Join Pane to Tab (Window Mode)
 
 **Files:**
-- Modify: `Mistty/Models/MisttyTab.swift:17` (replace `isWindowModeActive` with `WindowModeState`, add `addExistingPane`)
-- Modify: `Mistty/App/ContentView.swift` (all `isWindowModeActive` → `windowModeState` references, join mode handling)
-- Modify: `Mistty/Views/Terminal/WindowModeHints.swift` (join-pick UI)
-- Modify: `Mistty/Views/Terminal/PaneView.swift:6,30,36` (thread `windowModeState` and `joinPickTabNames`)
-- Modify: `Mistty/Views/Terminal/PaneLayoutView.swift` (thread new params to PaneView)
-- Test: `MisttyTests/Models/SessionStoreTests.swift`
+- Modify: `Mytty/Models/MyttyTab.swift:17` (replace `isWindowModeActive` with `WindowModeState`, add `addExistingPane`)
+- Modify: `Mytty/App/ContentView.swift` (all `isWindowModeActive` → `windowModeState` references, join mode handling)
+- Modify: `Mytty/Views/Terminal/WindowModeHints.swift` (join-pick UI)
+- Modify: `Mytty/Views/Terminal/PaneView.swift:6,30,36` (thread `windowModeState` and `joinPickTabNames`)
+- Modify: `Mytty/Views/Terminal/PaneLayoutView.swift` (thread new params to PaneView)
+- Test: `MyttyTests/Models/SessionStoreTests.swift`
 
 - [ ] **Step 1: Write tests for join pane and WindowModeState**
 
@@ -648,7 +648,7 @@ Expected: FAIL — `windowModeState` and `addExistingPane` don't exist
 
 - [ ] **Step 3: Replace isWindowModeActive with WindowModeState enum**
 
-In `MisttyTab.swift`, replace line 17 (`var isWindowModeActive = false`) with:
+In `MyttyTab.swift`, replace line 17 (`var isWindowModeActive = false`) with:
 
 ```swift
 enum WindowModeState {
@@ -661,10 +661,10 @@ var isWindowModeActive: Bool { windowModeState != .inactive }
 
 - [ ] **Step 4: Add addExistingPane method**
 
-Add to `MisttyTab.swift` after `splitActivePane`:
+Add to `MyttyTab.swift` after `splitActivePane`:
 
 ```swift
-func addExistingPane(_ pane: MisttyPane, direction: SplitDirection) {
+func addExistingPane(_ pane: MyttyPane, direction: SplitDirection) {
   guard let activePane else { return }
   layout.split(pane: activePane, direction: direction, newPane: pane)
   panes = layout.leaves
@@ -830,7 +830,7 @@ struct WindowModeHints: View {
 In `PaneView.swift`, add two new properties:
 
 ```swift
-var windowModeState: MisttyTab.WindowModeState = .inactive
+var windowModeState: MyttyTab.WindowModeState = .inactive
 var joinPickTabNames: [String] = []
 ```
 
@@ -860,8 +860,8 @@ PaneView(
 In `PaneLayoutView`, add `windowModeState` and `joinPickTabNames` parameters and thread them to `PaneView`. Update the `PaneLayoutView` call in `ContentView.swift` (lines 106-114) to pass these values.
 
 **Files modified (additional):**
-- `Mistty/Views/Terminal/PaneView.swift` — add `windowModeState`, `joinPickTabNames` properties
-- `Mistty/Views/Terminal/PaneLayoutView.swift` — thread new parameters to `PaneView`
+- `Mytty/Views/Terminal/PaneView.swift` — add `windowModeState`, `joinPickTabNames` properties
+- `Mytty/Views/Terminal/PaneLayoutView.swift` — thread new parameters to `PaneView`
 
 - [ ] **Step 8: Update test for isWindowModeActive in SessionStoreTests**
 
@@ -885,7 +885,7 @@ Expected: All pass
 - [ ] **Step 10: Commit**
 
 ```bash
-git add Mistty/Models/MisttyTab.swift Mistty/App/ContentView.swift Mistty/Views/Terminal/WindowModeHints.swift Mistty/Views/Terminal/PaneView.swift Mistty/Views/Terminal/PaneLayoutView.swift MisttyTests/Models/SessionStoreTests.swift
+git add Mytty/Models/MyttyTab.swift Mytty/App/ContentView.swift Mytty/Views/Terminal/WindowModeHints.swift Mytty/Views/Terminal/PaneView.swift Mytty/Views/Terminal/PaneLayoutView.swift MyttyTests/Models/SessionStoreTests.swift
 git commit -m "feat: add join-pane-to-tab in window mode (M key)
 
 Replaces isWindowModeActive bool with WindowModeState enum.
@@ -900,13 +900,13 @@ move the active pane into that tab."
 ### Task 5: SSH Config Parsing + Model Changes
 
 **Files:**
-- Modify: `Mistty/Config/MisttyConfig.swift` (add SSH config structs, parse, save)
-- Modify: `Mistty/Models/MisttySession.swift:6` (add `sshCommand` property)
-- Test: `MisttyTests/Config/MisttyConfigTests.swift`
+- Modify: `Mytty/Config/MyttyConfig.swift` (add SSH config structs, parse, save)
+- Modify: `Mytty/Models/MyttySession.swift:6` (add `sshCommand` property)
+- Test: `MyttyTests/Config/MyttyConfigTests.swift`
 
 - [ ] **Step 1: Write SSH config parsing tests**
 
-Add to `MisttyConfigTests.swift`:
+Add to `MyttyConfigTests.swift`:
 
 ```swift
 func test_parsesSSHConfig() throws {
@@ -922,7 +922,7 @@ func test_parsesSSHConfig() throws {
     regex = "prod-.*"
     command = "ssh"
     """
-  let config = try MisttyConfig.parse(toml)
+  let config = try MyttyConfig.parse(toml)
   XCTAssertEqual(config.ssh.defaultCommand, "et")
   XCTAssertEqual(config.ssh.hosts.count, 2)
   XCTAssertEqual(config.ssh.hosts[0].hostname, "dev-box")
@@ -934,7 +934,7 @@ func test_parsesSSHConfig() throws {
 }
 
 func test_sshConfigDefaults() throws {
-  let config = try MisttyConfig.parse("")
+  let config = try MyttyConfig.parse("")
   XCTAssertEqual(config.ssh.defaultCommand, "ssh")
   XCTAssertTrue(config.ssh.hosts.isEmpty)
 }
@@ -945,7 +945,7 @@ func test_sshCommandResolution_exactMatch() throws {
     hostname = "dev-box"
     command = "et"
     """
-  let config = try MisttyConfig.parse(toml)
+  let config = try MyttyConfig.parse(toml)
   XCTAssertEqual(config.ssh.resolveCommand(for: "dev-box"), "et")
   XCTAssertEqual(config.ssh.resolveCommand(for: "other"), "ssh")
 }
@@ -956,7 +956,7 @@ func test_sshCommandResolution_regexMatch() throws {
     regex = "prod-.*"
     command = "et"
     """
-  let config = try MisttyConfig.parse(toml)
+  let config = try MyttyConfig.parse(toml)
   XCTAssertEqual(config.ssh.resolveCommand(for: "prod-web1"), "et")
   XCTAssertEqual(config.ssh.resolveCommand(for: "staging-web1"), "ssh")
 }
@@ -971,7 +971,7 @@ func test_sshCommandResolution_firstMatchWins() throws {
     regex = "prod-.*"
     command = "et"
     """
-  let config = try MisttyConfig.parse(toml)
+  let config = try MyttyConfig.parse(toml)
   // Exact match comes first, so "ssh" wins for prod-db
   XCTAssertEqual(config.ssh.resolveCommand(for: "prod-db"), "ssh")
   // prod-web matches the regex
@@ -981,12 +981,12 @@ func test_sshCommandResolution_firstMatchWins() throws {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `swift test --filter MisttyConfigTests 2>&1 | tail -10`
+Run: `swift test --filter MyttyConfigTests 2>&1 | tail -10`
 Expected: FAIL — `config.ssh` does not exist
 
 - [ ] **Step 3: Add SSH config structs and parsing**
 
-In `MisttyConfig.swift`, add before the `MisttyConfig` struct:
+In `MyttyConfig.swift`, add before the `MyttyConfig` struct:
 
 ```swift
 struct SSHHostOverride: Sendable, Equatable {
@@ -1016,7 +1016,7 @@ struct SSHConfig: Sendable, Equatable {
 }
 ```
 
-Add to `MisttyConfig` struct (after `popups` property):
+Add to `MyttyConfig` struct (after `popups` property):
 
 ```swift
 var ssh: SSHConfig = SSHConfig()
@@ -1063,9 +1063,9 @@ if ssh.defaultCommand != "ssh" || !ssh.hosts.isEmpty {
 }
 ```
 
-- [ ] **Step 4: Add sshCommand to MisttySession**
+- [ ] **Step 4: Add sshCommand to MyttySession**
 
-In `MisttySession.swift`, add after line 8 (`let directory: URL`):
+In `MyttySession.swift`, add after line 8 (`let directory: URL`):
 
 ```swift
 var sshCommand: String?
@@ -1073,31 +1073,31 @@ var sshCommand: String?
 
 - [ ] **Step 5: Run tests**
 
-Run: `swift test --filter MisttyConfigTests 2>&1 | tail -10`
+Run: `swift test --filter MyttyConfigTests 2>&1 | tail -10`
 Expected: All pass
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Mistty/Config/MisttyConfig.swift Mistty/Models/MisttySession.swift MisttyTests/Config/MisttyConfigTests.swift
+git add Mytty/Config/MyttyConfig.swift Mytty/Models/MyttySession.swift MyttyTests/Config/MyttyConfigTests.swift
 git commit -m "feat: add SSH config parsing with host overrides
 
 Supports [ssh] section in config.toml with default_command and
 [[ssh.host]] entries using hostname (exact) or regex matching.
-First match wins. Adds sshCommand property to MisttySession."
+First match wins. Adds sshCommand property to MyttySession."
 ```
 
 ---
 
 ### Task 6: SSH Session Creation + Preferences
 
-**Depends on:** Task 4 (for `addExistingPane` on `MisttyTab`)
+**Depends on:** Task 4 (for `addExistingPane` on `MyttyTab`)
 
 **Files:**
-- Modify: `Mistty/Views/SessionManager/SessionManagerViewModel.swift` (SSH host selection in `confirmSelection`)
-- Modify: `Mistty/App/ContentView.swift` (Opt-modified splits)
-- Modify: `Mistty/Views/Settings/SettingsView.swift` (SSH section)
-- Test: `MisttyTests/Views/SessionManagerViewModelTests.swift`
+- Modify: `Mytty/Views/SessionManager/SessionManagerViewModel.swift` (SSH host selection in `confirmSelection`)
+- Modify: `Mytty/App/ContentView.swift` (Opt-modified splits)
+- Modify: `Mytty/Views/Settings/SettingsView.swift` (SSH section)
+- Test: `MyttyTests/Views/SessionManagerViewModelTests.swift`
 
 - [ ] **Step 1: Implement SSH host selection in session manager**
 
@@ -1105,7 +1105,7 @@ In `SessionManagerViewModel.swift`, replace the `.sshHost` case in `confirmSelec
 
 ```swift
 case .sshHost(let host):
-  let config = MisttyConfig.load()
+  let config = MyttyConfig.load()
   let command = config.ssh.resolveCommand(for: host.alias)
   let fullCommand = "\(command) \(host.alias)"
   let session = store.createSession(
@@ -1121,12 +1121,12 @@ case .sshHost(let host):
 Replace the split handlers in `ContentView.swift` (lines 64-68):
 
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .misttySplitHorizontal)) { notification in
+.onReceive(NotificationCenter.default.publisher(for: .myttySplitHorizontal)) { notification in
   guard let session = store.activeSession,
         let tab = session.activeTab else { return }
   if let sshCommand = session.sshCommand,
      !NSEvent.modifierFlags.contains(.option) {
-    let pane = MisttyPane(id: store.generatePaneIDForSplit())
+    let pane = MyttyPane(id: store.generatePaneIDForSplit())
     pane.directory = session.directory
     pane.command = sshCommand
     pane.useCommandField = false
@@ -1135,12 +1135,12 @@ Replace the split handlers in `ContentView.swift` (lines 64-68):
     tab.splitActivePane(direction: .horizontal)
   }
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttySplitVertical)) { notification in
+.onReceive(NotificationCenter.default.publisher(for: .myttySplitVertical)) { notification in
   guard let session = store.activeSession,
         let tab = session.activeTab else { return }
   if let sshCommand = session.sshCommand,
      !NSEvent.modifierFlags.contains(.option) {
-    let pane = MisttyPane(id: store.generatePaneIDForSplit())
+    let pane = MyttyPane(id: store.generatePaneIDForSplit())
     pane.directory = session.directory
     pane.command = sshCommand
     pane.useCommandField = false
@@ -1151,17 +1151,17 @@ Replace the split handlers in `ContentView.swift` (lines 64-68):
 }
 ```
 
-Wait — `store.generatePaneIDForSplit()` doesn't exist. The pane ID generation is done through `tab.paneIDGenerator()`. But `MisttyTab.splitActivePane()` already calls `paneIDGenerator()` internally. For the SSH case, we need to create the pane externally.
+Wait — `store.generatePaneIDForSplit()` doesn't exist. The pane ID generation is done through `tab.paneIDGenerator()`. But `MyttyTab.splitActivePane()` already calls `paneIDGenerator()` internally. For the SSH case, we need to create the pane externally.
 
-Better approach: expose pane ID generation on `SessionStore` or just call `tab.paneIDGenerator()` since it's `private(set)`. Actually looking at `MisttyTab`, `paneIDGenerator` is `private(set)` which means it's readable. So:
+Better approach: expose pane ID generation on `SessionStore` or just call `tab.paneIDGenerator()` since it's `private(set)`. Actually looking at `MyttyTab`, `paneIDGenerator` is `private(set)` which means it's readable. So:
 
 ```swift
-.onReceive(NotificationCenter.default.publisher(for: .misttySplitHorizontal)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttySplitHorizontal)) { _ in
   guard let session = store.activeSession,
         let tab = session.activeTab else { return }
   if let sshCommand = session.sshCommand,
      !NSEvent.modifierFlags.contains(.option) {
-    let pane = MisttyPane(id: tab.paneIDGenerator())
+    let pane = MyttyPane(id: tab.paneIDGenerator())
     pane.directory = session.directory
     pane.command = sshCommand
     pane.useCommandField = false
@@ -1170,12 +1170,12 @@ Better approach: expose pane ID generation on `SessionStore` or just call `tab.p
     tab.splitActivePane(direction: .horizontal)
   }
 }
-.onReceive(NotificationCenter.default.publisher(for: .misttySplitVertical)) { _ in
+.onReceive(NotificationCenter.default.publisher(for: .myttySplitVertical)) { _ in
   guard let session = store.activeSession,
         let tab = session.activeTab else { return }
   if let sshCommand = session.sshCommand,
      !NSEvent.modifierFlags.contains(.option) {
-    let pane = MisttyPane(id: tab.paneIDGenerator())
+    let pane = MyttyPane(id: tab.paneIDGenerator())
     pane.directory = session.directory
     pane.command = sshCommand
     pane.useCommandField = false
@@ -1262,7 +1262,7 @@ Note: `SSHConfig` and `SSHHostOverride` need to conform to `Equatable` (already 
 
 - [ ] **Step 3b: Add test for SSH session creation**
 
-Add to `MisttyTests/Views/SessionManagerViewModelTests.swift`:
+Add to `MyttyTests/Views/SessionManagerViewModelTests.swift`:
 
 ```swift
 func test_sshHostSelectionCreatesSshSession() async {
@@ -1273,7 +1273,7 @@ func test_sshHostSelectionCreatesSshSession() async {
   // (We can't easily test confirmSelection since it depends on load(),
   // but we can test the model behavior directly)
   let host = SSHHost(alias: "dev-box", hostname: "10.0.0.1")
-  let config = MisttyConfig.default
+  let config = MyttyConfig.default
   let command = config.ssh.resolveCommand(for: host.alias)
   let fullCommand = "\(command) \(host.alias)"
   let session = store.createSession(
@@ -1304,7 +1304,7 @@ Expected: All pass
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Mistty/Views/SessionManager/SessionManagerViewModel.swift Mistty/App/ContentView.swift Mistty/Views/Settings/SettingsView.swift
+git add Mytty/Views/SessionManager/SessionManagerViewModel.swift Mytty/App/ContentView.swift Mytty/Views/Settings/SettingsView.swift
 git commit -m "feat: SSH auto-connect and configurable command
 
 Opening SSH host from session manager builds command from config.
@@ -1317,14 +1317,14 @@ SSH section added to preferences pane."
 ### Task 7: Smart Pane Navigation (Ctrl-H/J/K/L)
 
 **Files:**
-- Modify: `Mistty/Models/MisttyPane.swift` (add `processTitle`)
-- Modify: `Mistty/App/ContentView.swift:277-289` (update `handleSetTitle` to set pane processTitle)
-- Modify: `Mistty/App/ContentView.swift` (add Ctrl-nav event monitor)
-- Modify: `MisttyShared/MisttyServiceProtocol.swift` (add `focusPaneByDirection`)
-- Modify: `Mistty/Services/XPCService.swift` (implement `focusPaneByDirection`)
-- Modify: `MisttyCLI/Commands/PaneCommand.swift:224-258` (add `--direction` option)
+- Modify: `Mytty/Models/MyttyPane.swift` (add `processTitle`)
+- Modify: `Mytty/App/ContentView.swift:277-289` (update `handleSetTitle` to set pane processTitle)
+- Modify: `Mytty/App/ContentView.swift` (add Ctrl-nav event monitor)
+- Modify: `MyttyShared/MyttyServiceProtocol.swift` (add `focusPaneByDirection`)
+- Modify: `Mytty/Services/XPCService.swift` (implement `focusPaneByDirection`)
+- Modify: `MyttyCLI/Commands/PaneCommand.swift:224-258` (add `--direction` option)
 - Create: `docs/integrations/neovim-smart-splits.md`
-- Test: `MisttyTests/Models/SessionStoreTests.swift`
+- Test: `MyttyTests/Models/SessionStoreTests.swift`
 
 - [ ] **Step 1: Write tests for processTitle and neovim detection**
 
@@ -1368,9 +1368,9 @@ func test_isRunningNeovim() {
 Run: `swift test --filter SessionStoreTests/test_paneProcessTitle 2>&1 | tail -10`
 Expected: FAIL — `processTitle` doesn't exist
 
-- [ ] **Step 3: Add processTitle to MisttyPane**
+- [ ] **Step 3: Add processTitle to MyttyPane**
 
-In `MisttyPane.swift`, add after `var useCommandField`:
+In `MyttyPane.swift`, add after `var useCommandField`:
 
 ```swift
 var processTitle: String?
@@ -1447,7 +1447,7 @@ private func installCtrlNavMonitor() {
     // If running neovim, let the keypress through for smart-splits
     if pane.isRunningNeovim { return event }
 
-    // Navigate between MistTY panes — only consume event if navigation succeeds
+    // Navigate between MytTY panes — only consume event if navigation succeeds
     if let target = tab.layout.adjacentPane(from: pane, direction: direction) {
       tab.activePane = target
       DispatchQueue.main.async {
@@ -1483,7 +1483,7 @@ removeCtrlNavMonitor()
 
 - [ ] **Step 7: Add focusPaneByDirection to XPC protocol**
 
-In `MisttyServiceProtocol.swift`, add after `focusPane` (line 25):
+In `MyttyServiceProtocol.swift`, add after `focusPane` (line 25):
 
 ```swift
 func focusPaneByDirection(direction: String, sessionId: Int, reply: @escaping (Data?, Error?) -> Void)
@@ -1497,19 +1497,19 @@ In `XPCService.swift`, add after `focusPane` method (line 244):
 func focusPaneByDirection(direction: String, sessionId: Int, reply: @escaping (Data?, Error?) -> Void) {
     let reply = Reply(handler: reply)
     Task { @MainActor in
-        let session: MisttySession?
+        let session: MyttySession?
         if sessionId == 0 {
             session = self.store.activeSession
         } else {
             session = self.store.session(byId: sessionId)
         }
         guard let session else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Session not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Session not found"))
             return
         }
         guard let tab = session.activeTab,
               let pane = tab.activePane else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "No active pane"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "No active pane"))
             return
         }
 
@@ -1520,12 +1520,12 @@ func focusPaneByDirection(direction: String, sessionId: Int, reply: @escaping (D
         case "up": navDirection = .up
         case "down": navDirection = .down
         default:
-            reply(nil, MisttyXPC.error(.invalidArgument, "Invalid direction: \(direction). Use left, right, up, or down"))
+            reply(nil, MyttyXPC.error(.invalidArgument, "Invalid direction: \(direction). Use left, right, up, or down"))
             return
         }
 
         guard let target = tab.layout.adjacentPane(from: pane, direction: navDirection) else {
-            reply(nil, MisttyXPC.error(.operationFailed, "No pane in direction \(direction)"))
+            reply(nil, MyttyXPC.error(.operationFailed, "No pane in direction \(direction)"))
             return
         }
 
@@ -1645,7 +1645,7 @@ func testFocusPaneByDirectionInvalid() async throws {
     let expectation = XCTestExpectation(description: "focus by direction invalid")
     service.focusPaneByDirection(direction: "diagonal", sessionId: 0) { data, error in
         XCTAssertNotNil(error)
-        XCTAssertEqual((error! as NSError).code, MisttyXPC.ErrorCode.invalidArgument.rawValue)
+        XCTAssertEqual((error! as NSError).code, MyttyXPC.ErrorCode.invalidArgument.rawValue)
         expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -1659,15 +1659,15 @@ Create `docs/integrations/neovim-smart-splits.md`:
 ```markdown
 # Neovim Smart-Splits Integration
 
-MistTY supports seamless pane navigation with neovim's
+MytTY supports seamless pane navigation with neovim's
 [smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim) plugin.
 
 ## How It Works
 
-- **Ctrl-H/J/K/L** navigates between MistTY panes
-- When the active pane is running neovim, MistTY passes the keypress through
+- **Ctrl-H/J/K/L** navigates between MytTY panes
+- When the active pane is running neovim, MytTY passes the keypress through
 - smart-splits.nvim handles navigation within neovim splits
-- When neovim is at its boundary, smart-splits calls back to MistTY via CLI
+- When neovim is at its boundary, smart-splits calls back to MytTY via CLI
 
 ## Neovim Configuration
 
@@ -1682,7 +1682,7 @@ require('smart-splits').setup({
       up = 'up',
       down = 'down',
     }
-    os.execute('mistty-cli pane focus --direction ' .. dir_map[direction])
+    os.execute('mytty-cli pane focus --direction ' .. dir_map[direction])
   end
 })
 
@@ -1695,8 +1695,8 @@ vim.keymap.set('n', '<C-l>', require('smart-splits').move_cursor_right)
 
 ## Requirements
 
-- `mistty-cli` must be in your PATH (installed via `just install-cli`)
-- MistTY XPC service must be running (starts automatically with the app)
+- `mytty-cli` must be in your PATH (installed via `just install-cli`)
+- MytTY XPC service must be running (starts automatically with the app)
 ```
 
 - [ ] **Step 12: Run all tests**
@@ -1707,7 +1707,7 @@ Expected: All pass
 - [ ] **Step 13: Commit**
 
 ```bash
-git add Mistty/Models/MisttyPane.swift Mistty/App/ContentView.swift MisttyShared/MisttyServiceProtocol.swift Mistty/Services/XPCService.swift MisttyCLI/Commands/PaneCommand.swift MisttyTests/Models/SessionStoreTests.swift MisttyTests/Services/XPCServiceTests.swift docs/integrations/neovim-smart-splits.md
+git add Mytty/Models/MyttyPane.swift Mytty/App/ContentView.swift MyttyShared/MyttyServiceProtocol.swift Mytty/Services/XPCService.swift MyttyCLI/Commands/PaneCommand.swift MyttyTests/Models/SessionStoreTests.swift MyttyTests/Services/XPCServiceTests.swift docs/integrations/neovim-smart-splits.md
 git commit -m "feat: smart pane navigation with Ctrl-H/J/K/L
 
 Ctrl-H/J/K/L navigates between panes. When neovim is detected,

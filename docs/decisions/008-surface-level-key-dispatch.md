@@ -5,7 +5,7 @@ Date: 2026-04-17
 
 ## Context
 
-Mistty uses five independent NSEvent keyDown monitors to intercept keys
+Mytty uses five independent NSEvent keyDown monitors to intercept keys
 before they reach the terminal surface. Each manager (PaneNavigationManager,
 WindowModeManager, CopyModeManager, WhichKeyManager, session manager)
 installs its own monitor. No other terminal emulator uses this pattern.
@@ -25,7 +25,7 @@ per change, but the dispatch still happens before the surface view.
 
 **Option B (full rework):** Remove all NSEvent key monitors. Let every key
 reach `TerminalSurfaceView.keyDown`, then use `ghostty_surface_key_is_binding()`
-to decide whether to execute a Mistty action or pass to libghostty.
+to decide whether to execute a Mytty action or pass to libghostty.
 
 ## Decision
 
@@ -60,9 +60,9 @@ then run `just ci`.
 - Phase 4f-3 key tables integrate naturally into surface-level dispatch
 - Touches every key handler manager (high blast radius, mitigated by phasing)
 - Modal managers (CopyMode, WindowMode, WhichKey) intercept keys that are
-  not Ghostty bindings. The keyDown path needs a Mistty-specific modal
+  not Ghostty bindings. The keyDown path needs a Mytty-specific modal
   dispatch layer before the `ghostty_surface_key_is_binding()` check. This
-  is a two-layer dispatch (Mistty modals, then Ghostty bindings), not a
+  is a two-layer dispatch (Mytty modals, then Ghostty bindings), not a
   pure Ghostty model.
 - Testing gap: existing tests use synthetic NSEvents on monitors. Phase 1
   must verify that the same handler methods work when called from keyDown.

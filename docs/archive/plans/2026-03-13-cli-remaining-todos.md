@@ -13,12 +13,12 @@
 ### Task 1: Implement sendKeys via ghostty_surface_text
 
 **Files:**
-- Modify: `Mistty/Services/XPCService.swift` (sendKeys and runCommand methods)
-- Test: `MisttyTests/Services/XPCServiceTests.swift`
+- Modify: `Mytty/Services/XPCService.swift` (sendKeys and runCommand methods)
+- Test: `MyttyTests/Services/XPCServiceTests.swift`
 
 **Step 1: Write the failing test**
 
-Add to `MisttyTests/Services/XPCServiceTests.swift`:
+Add to `MyttyTests/Services/XPCServiceTests.swift`:
 
 ```swift
 func testSendKeysResolvesPane() async throws {
@@ -48,7 +48,7 @@ func testSendKeysPaneNotFound() async throws {
     let expectation = XCTestExpectation(description: "send keys not found")
     service.sendKeys(paneId: 999, keys: "hello") { data, error in
         XCTAssertNotNil(error)
-        XCTAssertEqual((error! as NSError).code, MisttyXPC.ErrorCode.entityNotFound.rawValue)
+        XCTAssertEqual((error! as NSError).code, MyttyXPC.ErrorCode.entityNotFound.rawValue)
         expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -62,25 +62,25 @@ Expected: FAIL — current implementation returns "Not yet implemented" error.
 
 **Step 3: Implement sendKeys**
 
-In `Mistty/Services/XPCService.swift`, replace the sendKeys method:
+In `Mytty/Services/XPCService.swift`, replace the sendKeys method:
 
 ```swift
 nonisolated func sendKeys(paneId: Int, keys: String, reply: @escaping (Data?, Error?) -> Void) {
     let reply = Reply(handler: reply)
     Task { @MainActor [store] in
-        let targetPane: MisttyPane?
+        let targetPane: MyttyPane?
         if paneId == 0 {
             targetPane = store.activePaneInfo()?.pane
         } else {
             targetPane = store.pane(byId: paneId)?.pane
         }
         guard let pane = targetPane else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Pane \(paneId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Pane \(paneId) not found"))
             return
         }
         let view = pane.surfaceView
         guard let surface = view.surface else {
-            reply(nil, MisttyXPC.error(.operationFailed, "Pane has no active surface"))
+            reply(nil, MyttyXPC.error(.operationFailed, "Pane has no active surface"))
             return
         }
         keys.withCString { ptr in
@@ -117,7 +117,7 @@ func testSendKeysResolvesPane() async throws {
     service.sendKeys(paneId: paneId, keys: "hello") { data, error in
         // Pane found but surface is nil in test → operationFailed (not entityNotFound)
         if let error = error as? NSError {
-            XCTAssertEqual(error.code, MisttyXPC.ErrorCode.operationFailed.rawValue)
+            XCTAssertEqual(error.code, MyttyXPC.ErrorCode.operationFailed.rawValue)
         }
         expectation.fulfill()
     }
@@ -130,7 +130,7 @@ func testSendKeysActivePane() async throws {
     let expectation = XCTestExpectation(description: "send keys active")
     service.sendKeys(paneId: 0, keys: "hello") { data, error in
         if let error = error as? NSError {
-            XCTAssertEqual(error.code, MisttyXPC.ErrorCode.operationFailed.rawValue)
+            XCTAssertEqual(error.code, MyttyXPC.ErrorCode.operationFailed.rawValue)
         }
         expectation.fulfill()
     }
@@ -141,7 +141,7 @@ func testSendKeysActivePane() async throws {
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Services/XPCService.swift MisttyTests/Services/XPCServiceTests.swift
+git add Mytty/Services/XPCService.swift MyttyTests/Services/XPCServiceTests.swift
 git commit -m "feat: implement sendKeys and runCommand via ghostty_surface_text"
 ```
 
@@ -150,8 +150,8 @@ git commit -m "feat: implement sendKeys and runCommand via ghostty_surface_text"
 ### Task 2: Implement getText via ghostty_surface_read_text
 
 **Files:**
-- Modify: `Mistty/Services/XPCService.swift` (getText method)
-- Test: `MisttyTests/Services/XPCServiceTests.swift`
+- Modify: `Mytty/Services/XPCService.swift` (getText method)
+- Test: `MyttyTests/Services/XPCServiceTests.swift`
 
 **Step 1: Write the failing test**
 
@@ -166,7 +166,7 @@ func testGetTextResolvesPane() async throws {
     service.getText(paneId: paneId) { data, error in
         // Pane found but surface nil in test
         if let error = error as? NSError {
-            XCTAssertEqual(error.code, MisttyXPC.ErrorCode.operationFailed.rawValue)
+            XCTAssertEqual(error.code, MyttyXPC.ErrorCode.operationFailed.rawValue)
         }
         expectation.fulfill()
     }
@@ -177,7 +177,7 @@ func testGetTextPaneNotFound() async throws {
     let expectation = XCTestExpectation(description: "get text not found")
     service.getText(paneId: 999) { data, error in
         XCTAssertNotNil(error)
-        XCTAssertEqual((error! as NSError).code, MisttyXPC.ErrorCode.entityNotFound.rawValue)
+        XCTAssertEqual((error! as NSError).code, MyttyXPC.ErrorCode.entityNotFound.rawValue)
         expectation.fulfill()
     }
     await fulfillment(of: [expectation], timeout: 2)
@@ -193,25 +193,25 @@ Expected: FAIL.
 
 The approach: create a selection covering the entire visible screen, then use `ghostty_surface_read_text` to extract the text. The existing copy mode implementation in `ContentView.swift` (lines 476-492) shows the pattern.
 
-Replace getText in `Mistty/Services/XPCService.swift`:
+Replace getText in `Mytty/Services/XPCService.swift`:
 
 ```swift
 nonisolated func getText(paneId: Int, reply: @escaping (Data?, Error?) -> Void) {
     let reply = Reply(handler: reply)
     Task { @MainActor [store] in
-        let targetPane: MisttyPane?
+        let targetPane: MyttyPane?
         if paneId == 0 {
             targetPane = store.activePaneInfo()?.pane
         } else {
             targetPane = store.pane(byId: paneId)?.pane
         }
         guard let pane = targetPane else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Pane \(paneId) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Pane \(paneId) not found"))
             return
         }
         let view = pane.surfaceView
         guard let surface = view.surface else {
-            reply(nil, MisttyXPC.error(.operationFailed, "Pane has no active surface"))
+            reply(nil, MyttyXPC.error(.operationFailed, "Pane has no active surface"))
             return
         }
 
@@ -261,7 +261,7 @@ Expected: All tests pass. getText with valid pane returns `operationFailed` (no 
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Services/XPCService.swift MisttyTests/Services/XPCServiceTests.swift
+git add Mytty/Services/XPCService.swift MyttyTests/Services/XPCServiceTests.swift
 git commit -m "feat: implement getText via ghostty_surface_read_text"
 ```
 
@@ -270,24 +270,24 @@ git commit -m "feat: implement getText via ghostty_surface_read_text"
 ### Task 3: Wire exec parameter through to ghostty surface config
 
 **Files:**
-- Modify: `Mistty/Models/MisttyPane.swift`
-- Modify: `Mistty/Views/Terminal/TerminalSurfaceView.swift`
-- Modify: `Mistty/Models/MisttyTab.swift`
-- Modify: `Mistty/Models/MisttySession.swift`
-- Modify: `Mistty/Models/SessionStore.swift`
-- Modify: `Mistty/Services/XPCService.swift`
-- Test: `MisttyTests/Models/SessionStoreTests.swift`
+- Modify: `Mytty/Models/MyttyPane.swift`
+- Modify: `Mytty/Views/Terminal/TerminalSurfaceView.swift`
+- Modify: `Mytty/Models/MyttyTab.swift`
+- Modify: `Mytty/Models/MyttySession.swift`
+- Modify: `Mytty/Models/SessionStore.swift`
+- Modify: `Mytty/Services/XPCService.swift`
+- Test: `MyttyTests/Models/SessionStoreTests.swift`
 
 The `ghostty_surface_config_s` struct has a `command` field (type `const char*`). When set, the surface launches that command instead of the default shell.
 
-**Step 1: Add exec property to MisttyPane**
+**Step 1: Add exec property to MyttyPane**
 
-In `Mistty/Models/MisttyPane.swift`, add an optional command property:
+In `Mytty/Models/MyttyPane.swift`, add an optional command property:
 
 ```swift
 @Observable
 @MainActor
-final class MisttyPane: Identifiable {
+final class MyttyPane: Identifiable {
     let id: Int
     var directory: URL?
     var command: String?
@@ -307,7 +307,7 @@ final class MisttyPane: Identifiable {
 
 **Step 2: Update TerminalSurfaceView to accept command**
 
-In `Mistty/Views/Terminal/TerminalSurfaceView.swift`, modify the init to accept and use a command parameter:
+In `Mytty/Views/Terminal/TerminalSurfaceView.swift`, modify the init to accept and use a command parameter:
 
 ```swift
 init(frame: NSRect, workingDirectory: URL? = nil, command: String? = nil) {
@@ -353,16 +353,16 @@ private var commandString: String?
 
 Note: The C pointer from `withCString` is only valid within the closure. The `ghostty_surface_new` call must happen inside the `withCString` closure. Since we might have both command and workingDirectory, we need nested closures.
 
-**Step 3: Thread exec through MisttyTab**
+**Step 3: Thread exec through MyttyTab**
 
-In `Mistty/Models/MisttyTab.swift`, update init to accept optional exec:
+In `Mytty/Models/MyttyTab.swift`, update init to accept optional exec:
 
 ```swift
 init(id: Int, directory: URL? = nil, exec: String? = nil, paneIDGenerator: @escaping () -> Int) {
     self.id = id
     self.directory = directory
     self.paneIDGenerator = paneIDGenerator
-    let pane = MisttyPane(id: paneIDGenerator())
+    let pane = MyttyPane(id: paneIDGenerator())
     pane.directory = directory
     pane.command = exec
     layout = PaneLayout(pane: pane)
@@ -371,13 +371,13 @@ init(id: Int, directory: URL? = nil, exec: String? = nil, paneIDGenerator: @esca
 }
 ```
 
-**Step 4: Thread exec through MisttySession**
+**Step 4: Thread exec through MyttySession**
 
-In `Mistty/Models/MisttySession.swift`, add a method for creating tabs with exec:
+In `Mytty/Models/MyttySession.swift`, add a method for creating tabs with exec:
 
 ```swift
 func addTab(exec: String? = nil) {
-    let tab = MisttyTab(id: tabIDGenerator(), directory: directory, exec: exec, paneIDGenerator: paneIDGenerator)
+    let tab = MyttyTab(id: tabIDGenerator(), directory: directory, exec: exec, paneIDGenerator: paneIDGenerator)
     tabs.append(tab)
     activeTab = tab
 }
@@ -385,12 +385,12 @@ func addTab(exec: String? = nil) {
 
 **Step 5: Thread exec through SessionStore**
 
-In `Mistty/Models/SessionStore.swift`, update createSession to accept exec:
+In `Mytty/Models/SessionStore.swift`, update createSession to accept exec:
 
 ```swift
 @discardableResult
-func createSession(name: String, directory: URL, exec: String? = nil) -> MisttySession {
-    let session = MisttySession(id: generateSessionID(), name: name, directory: directory,
+func createSession(name: String, directory: URL, exec: String? = nil) -> MyttySession {
+    let session = MyttySession(id: generateSessionID(), name: name, directory: directory,
                                  tabIDGenerator: { [weak self] in ... },
                                  paneIDGenerator: { [weak self] in ... })
     session.addTab(exec: exec)  // Pass exec to initial tab
@@ -400,9 +400,9 @@ func createSession(name: String, directory: URL, exec: String? = nil) -> MisttyS
 }
 ```
 
-Wait — check how `MisttySession.init` currently works. It may call `addTab()` in init. If so, the init needs to change:
+Wait — check how `MyttySession.init` currently works. It may call `addTab()` in init. If so, the init needs to change:
 
-Currently `MisttySession.init` calls `addTab()` internally. Modify to accept exec and pass it through:
+Currently `MyttySession.init` calls `addTab()` internally. Modify to accept exec and pass it through:
 
 ```swift
 init(id: Int, name: String, directory: URL, exec: String? = nil,
@@ -418,7 +418,7 @@ init(id: Int, name: String, directory: URL, exec: String? = nil,
 
 **Step 6: Wire exec in XPCService**
 
-In `Mistty/Services/XPCService.swift`, update createSession:
+In `Mytty/Services/XPCService.swift`, update createSession:
 
 ```swift
 let session = store.createSession(name: name, directory: dir, exec: exec)
@@ -434,7 +434,7 @@ Remove the TODO comments.
 
 **Step 7: Write tests**
 
-Add to `MisttyTests/Models/SessionStoreTests.swift`:
+Add to `MyttyTests/Models/SessionStoreTests.swift`:
 
 ```swift
 func testCreateSessionWithExec() {
@@ -462,7 +462,7 @@ Expected: All tests pass.
 **Step 9: Commit**
 
 ```bash
-git add Mistty/Models/ Mistty/Views/Terminal/TerminalSurfaceView.swift Mistty/Services/XPCService.swift MisttyTests/
+git add Mytty/Models/ Mytty/Views/Terminal/TerminalSurfaceView.swift Mytty/Services/XPCService.swift MyttyTests/
 git commit -m "feat: wire exec parameter through to ghostty surface config"
 ```
 
@@ -471,15 +471,15 @@ git commit -m "feat: wire exec parameter through to ghostty surface config"
 ### Task 4: Stable window IDs via window registry
 
 **Files:**
-- Modify: `Mistty/Models/SessionStore.swift` (add window registry)
-- Modify: `Mistty/App/ContentView.swift` (register/unregister windows)
-- Modify: `Mistty/Services/XPCService.swift` (use registry instead of positional IDs)
-- Modify: `MisttyShared/Models/WindowResponse.swift` (add title field)
-- Test: `MisttyTests/Models/SessionStoreTests.swift`
+- Modify: `Mytty/Models/SessionStore.swift` (add window registry)
+- Modify: `Mytty/App/ContentView.swift` (register/unregister windows)
+- Modify: `Mytty/Services/XPCService.swift` (use registry instead of positional IDs)
+- Modify: `MyttyShared/Models/WindowResponse.swift` (add title field)
+- Test: `MyttyTests/Models/SessionStoreTests.swift`
 
 **Step 1: Add window registry to SessionStore**
 
-In `Mistty/Models/SessionStore.swift`, add a tracked window type and registry:
+In `Mytty/Models/SessionStore.swift`, add a tracked window type and registry:
 
 ```swift
 struct TrackedWindow {
@@ -513,7 +513,7 @@ func trackedWindow(byId id: Int) -> TrackedWindow? {
 
 **Step 2: Write tests**
 
-Add to `MisttyTests/Models/SessionStoreTests.swift`:
+Add to `MyttyTests/Models/SessionStoreTests.swift`:
 
 ```swift
 func testRegisterWindow() {
@@ -559,7 +559,7 @@ Expected: PASS.
 
 **Step 6: Register windows in ContentView**
 
-In `Mistty/App/ContentView.swift`, use `.onAppear` and `.onDisappear` to register/unregister the window:
+In `Mytty/App/ContentView.swift`, use `.onAppear` and `.onDisappear` to register/unregister the window:
 
 ```swift
 .onAppear {
@@ -578,7 +578,7 @@ Or better, use an NSWindow lifecycle observer. Check what's simpler given the ex
 
 **Step 7: Update XPC window operations**
 
-In `Mistty/Services/XPCService.swift`, replace the positional-index window operations:
+In `Mytty/Services/XPCService.swift`, replace the positional-index window operations:
 
 ```swift
 nonisolated func listWindows(reply: @escaping (Data?, Error?) -> Void) {
@@ -595,7 +595,7 @@ nonisolated func getWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) {
     let reply = Reply(handler: reply)
     Task { @MainActor [store] in
         guard let tracked = store.trackedWindow(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Window \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Window \(id) not found"))
             return
         }
         reply(self.encode(WindowResponse(id: tracked.id, sessionCount: store.sessions.count)), nil)
@@ -606,7 +606,7 @@ nonisolated func closeWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) 
     let reply = Reply(handler: reply)
     Task { @MainActor [store] in
         guard let tracked = store.trackedWindow(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Window \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Window \(id) not found"))
             return
         }
         tracked.window.close()
@@ -619,7 +619,7 @@ nonisolated func focusWindow(id: Int, reply: @escaping (Data?, Error?) -> Void) 
     let reply = Reply(handler: reply)
     Task { @MainActor [store] in
         guard let tracked = store.trackedWindow(byId: id) else {
-            reply(nil, MisttyXPC.error(.entityNotFound, "Window \(id) not found"))
+            reply(nil, MyttyXPC.error(.entityNotFound, "Window \(id) not found"))
             return
         }
         tracked.window.makeKeyAndOrderFront(nil)
@@ -636,6 +636,6 @@ Expected: All tests pass.
 **Step 9: Commit**
 
 ```bash
-git add Mistty/Models/SessionStore.swift Mistty/App/ContentView.swift Mistty/Services/XPCService.swift MisttyTests/
+git add Mytty/Models/SessionStore.swift Mytty/App/ContentView.swift Mytty/Services/XPCService.swift MyttyTests/
 git commit -m "feat: stable window IDs via window registry"
 ```

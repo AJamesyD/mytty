@@ -1,5 +1,5 @@
 {
-  description = "Mistty - macOS terminal emulator built on libghostty";
+  description = "Mytty - macOS terminal emulator built on libghostty";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -23,7 +23,7 @@
       zigPkg = zig.packages.${system}."0.15.2";
     in {
       devShells.default = pkgs.mkShellNoCC {
-        name = "mistty-dev";
+        name = "mytty-dev";
 
         packages = [
           zigPkg
@@ -50,7 +50,7 @@
             export PATH="$XCODE_TOOLCHAIN:$PATH"
           fi
 
-          echo "Mistty dev environment"
+          echo "Mytty dev environment"
           echo "Zig: $(zig version)"
         '';
       };

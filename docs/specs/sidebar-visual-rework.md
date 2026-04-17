@@ -38,7 +38,7 @@ dot. Active session gets semibold + `.primary` color. That's it.
 - Content: bell dot (if active) + tab title. Close button on hover only (not yet,
   this is a future interaction improvement).
 - Active tab (the tab containing the focused terminal): subtle background fill
-  using `MisttyTheme.selectedRowBackground`. No left accent bar on tabs (only sessions
+  using `MyttyTheme.selectedRowBackground`. No left accent bar on tabs (only sessions
   get the accent bar, to avoid visual clutter).
 - Inactive tabs: no background, text at `.secondary` opacity. (Current behavior.)
 - Pane count indicator: when a tab has 2+ panes, show a small "⫽ N" indicator
@@ -47,7 +47,7 @@ dot. Active session gets semibold + `.primary` color. That's it.
 
 ### Theme tokens needed
 
-New tokens to add to `MisttyTheme.swift`:
+New tokens to add to `MyttyTheme.swift`:
 
 | Token | Value | Purpose |
 |---|---|---|
@@ -65,7 +65,7 @@ Everything else uses existing tokens: `selectedRowBackground`, `bellIndicator`,
   fully custom `ScrollView` is a future option if `List` becomes limiting.
 - Session tap to activate: unchanged.
 - Tab tap to activate: unchanged.
-- Bell indicator: unchanged (already uses `MisttyTheme.bellIndicator`).
+- Bell indicator: unchanged (already uses `MyttyTheme.bellIndicator`).
 
 ## What we're NOT doing
 
@@ -112,8 +112,8 @@ starting with the simpler approach follows Gall's Law.
 
 ## Files to modify
 
-1. `Mistty/App/MisttyTheme.swift` (add 2 tokens)
-2. `Mistty/Views/Sidebar/SidebarView.swift` (rework `SessionRowView` and tab rows)
+1. `Mytty/App/MyttyTheme.swift` (add 2 tokens)
+2. `Mytty/Views/Sidebar/SidebarView.swift` (rework `SessionRowView` and tab rows)
 
 ## Open questions
 

@@ -1,7 +1,7 @@
 # Swift Conventions
 
 Project-specific Swift and SwiftUI patterns. For architecture rules and
-file naming, see `.kiro/steering/mistty.md`.
+file naming, see `.kiro/steering/mytty.md`.
 
 ## Concurrency
 
@@ -23,7 +23,7 @@ monitors and are held as `@State` on ContentView.
 ## Error Handling
 
 Use guard-let with early return. Do not force-unwrap outside of tests.
-IPC errors use the `MisttyIPC.error(.code, "message")` factory.
+IPC errors use the `MyttyIPC.error(.code, "message")` factory.
 Do not throw raw `NSError` from IPC methods.
 
 ## Imports
@@ -32,7 +32,7 @@ Import only what the file needs.
 Do not import `GhosttyKit` unless the file touches libghostty types directly.
 Files that import `GhosttyKit`: GhosttyApp.swift, ContentView.swift,
 ContentView+Handlers.swift, TerminalSurfaceView.swift, PaneView.swift,
-MisttyApp.swift, CopyModeManager.swift, PaneNavigationManager.swift,
+MyttyApp.swift, CopyModeManager.swift, PaneNavigationManager.swift,
 IPCService.swift.
 Do not add new `GhosttyKit` imports without verifying the file needs
 direct access to `ghostty_surface_t` or related C types.

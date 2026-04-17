@@ -123,7 +123,7 @@ Based on the query text, "New" resolves differently:
    - If the directory exists: show "New session: name" with subtitle showing the path.
    - If the directory doesn't exist but the parent directory exists: show "New session + create directory: path".
    - If the parent doesn't exist: don't show the "New" option (likely a typo).
-3. **SSH-like** (query starts with "ssh " with at least one non-empty character after the space) — the SSH hostname is extracted by taking everything after the first space and trimming whitespace (so "ssh  myhost" yields "myhost"). Creates a new SSH session to that hostname. Uses `MisttyConfig.ssh.resolveCommand(for:)` to resolve the SSH command, falling back to the default command. The resolved command is stored in `sshCommand`.
+3. **SSH-like** (query starts with "ssh " with at least one non-empty character after the space) — the SSH hostname is extracted by taking everything after the first space and trimming whitespace (so "ssh  myhost" yields "myhost"). Creates a new SSH session to that hostname. Uses `MyttyConfig.ssh.resolveCommand(for:)` to resolve the SSH command, falling back to the default command. The resolved command is stored in `sshCommand`.
 
 ### Position and Selection
 
@@ -231,13 +231,13 @@ Each item row renders its display name and subtitle with matched characters high
 
 | File | Change |
 |------|--------|
-| New: `Mistty/Services/FuzzyMatcher.swift` | Fuzzy matching algorithm |
-| `Mistty/Views/SessionManager/SessionManagerViewModel.swift` | Filter logic, "New" item case, match results storage, multi-token AND, SSH boost, Tab completion, confirmSelection with modifiers |
-| `Mistty/Views/SessionManager/SessionManagerView.swift` | Match highlighting, "New" row styling, Tab/Right Arrow handling, modifier flag passing |
-| `Mistty/Views/SessionManager/FocusableTextField.swift` | Override `control(_:textView:doCommandBy:)` for Tab/Right Arrow interception |
-| `MisttyTests/Services/FuzzyMatcherTests.swift` | Fuzzy matcher unit tests |
-| `MisttyTests/Services/FuzzyMatcherBenchmarkTests.swift` | Performance benchmarks |
-| `MisttyTests/Views/SessionManagerViewModelTests.swift` | Updated filter/selection tests |
+| New: `Mytty/Services/FuzzyMatcher.swift` | Fuzzy matching algorithm |
+| `Mytty/Views/SessionManager/SessionManagerViewModel.swift` | Filter logic, "New" item case, match results storage, multi-token AND, SSH boost, Tab completion, confirmSelection with modifiers |
+| `Mytty/Views/SessionManager/SessionManagerView.swift` | Match highlighting, "New" row styling, Tab/Right Arrow handling, modifier flag passing |
+| `Mytty/Views/SessionManager/FocusableTextField.swift` | Override `control(_:textView:doCommandBy:)` for Tab/Right Arrow interception |
+| `MyttyTests/Services/FuzzyMatcherTests.swift` | Fuzzy matcher unit tests |
+| `MyttyTests/Services/FuzzyMatcherBenchmarkTests.swift` | Performance benchmarks |
+| `MyttyTests/Views/SessionManagerViewModelTests.swift` | Updated filter/selection tests |
 
 ## Benchmark Tests
 

@@ -72,10 +72,10 @@ The original design holds up well. Only minor adjustments needed:
 
 1. **`GhosttyAppManager` singleton** — add to Phase 1 as a proper class (not in Spike/). It manages the `ghostty_app_t` lifecycle and the runtime callbacks.
 
-2. **`MisttyPane` needs to own a `TerminalSurfaceView`** — the pane model class should create/destroy the ghostty surface. The `TerminalSurfaceView` from the spike can be promoted to production code with cleanup.
+2. **`MyttyPane` needs to own a `TerminalSurfaceView`** — the pane model class should create/destroy the ghostty surface. The `TerminalSurfaceView` from the spike can be promoted to production code with cleanup.
 
-3. **Action callback routing** — the `action_cb` needs to look up the `MisttyPane` via `ghostty_surface_userdata()` and route events (title changes, bell, close) up through the session model. This replaces the stub implementation from the spike.
+3. **Action callback routing** — the `action_cb` needs to look up the `MyttyPane` via `ghostty_surface_userdata()` and route events (title changes, bell, close) up through the session model. This replaces the stub implementation from the spike.
 
-4. **Config integration** — Mistty's own `~/.config/mistty/config.toml` is separate from Ghostty's config. But libghostty loads `~/.config/ghostty/config` for terminal-level settings (font, colors, etc.). For MVP, this is fine — users configure terminal appearance via Ghostty config. Mistty config handles app-level settings (sidebar, keybindings).
+4. **Config integration** — Mytty's own `~/.config/mytty/config.toml` is separate from Ghostty's config. But libghostty loads `~/.config/ghostty/config` for terminal-level settings (font, colors, etc.). For MVP, this is fine — users configure terminal appearance via Ghostty config. Mytty config handles app-level settings (sidebar, keybindings).
 
 5. **No changes needed to**: the session/tab/pane protocol design, the recursive PaneLayout tree, the sidebar/tab bar views, or the session manager overlay.

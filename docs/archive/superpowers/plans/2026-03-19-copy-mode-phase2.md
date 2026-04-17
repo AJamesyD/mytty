@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-03-19-copy-mode-phase2-design.md`
 
-**Test runner:** `swift test --filter MisttyTests.CopyModeStateTests` or `swift test --filter MisttyTests.CopyModeIntegrationTests`
+**Test runner:** `swift test --filter MyttyTests.CopyModeStateTests` or `swift test --filter MyttyTests.CopyModeIntegrationTests`
 
 ---
 
@@ -19,7 +19,7 @@
 ### Task 1: Add new CopyModeAction cases and update CopySubMode
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeAction.swift`
+- Modify: `Mytty/Models/CopyModeAction.swift`
 
 - [ ] **Step 1: Update CopySubMode enum**
 
@@ -77,11 +77,11 @@ case searchPrev
 ### Task 2: Update CopyModeState for new sub-modes and add new state fields
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeState.swift`
+- Modify: `Mytty/Models/CopyModeState.swift`
 
 - [ ] **Step 1: Write failing tests for new state fields**
 
-Add to `MisttyTests/Models/CopyModeStateTests.swift`:
+Add to `MyttyTests/Models/CopyModeStateTests.swift`:
 
 ```swift
 // MARK: - Phase 2: Search direction and continuation
@@ -193,7 +193,7 @@ Expected: All tests PASS (new tests + existing tests still pass)
 ### Task 3: Update CopyModeOverlay for new sub-modes
 
 **Files:**
-- Modify: `Mistty/Views/Terminal/CopyModeOverlay.swift`
+- Modify: `Mytty/Views/Terminal/CopyModeOverlay.swift`
 
 - [ ] **Step 1: Update mode indicator for search sub-modes**
 
@@ -242,7 +242,7 @@ Expected: Build succeeds
 ### Task 4: Update CopyModeHelpOverlay with phase 2 keybindings
 
 **Files:**
-- Modify: `Mistty/Views/Terminal/CopyModeHelpOverlay.swift`
+- Modify: `Mytty/Views/Terminal/CopyModeHelpOverlay.swift`
 
 - [ ] **Step 1: Update hint arrays**
 
@@ -295,7 +295,7 @@ Expected: Build succeeds
 ### Task 5: Update ContentView action handler for new sub-modes
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 - [ ] **Step 1: Update action switch for new cases**
 
@@ -338,19 +338,19 @@ Expected: All tests PASS
 - [ ] **Step 5: Commit all foundation changes together (Tasks 1-5)**
 
 ```bash
-git add Mistty/Models/CopyModeAction.swift Mistty/Models/CopyModeState.swift Mistty/Views/Terminal/CopyModeOverlay.swift Mistty/Views/Terminal/CopyModeHelpOverlay.swift Mistty/App/ContentView.swift MisttyTests/Models/CopyModeStateTests.swift
+git add Mytty/Models/CopyModeAction.swift Mytty/Models/CopyModeState.swift Mytty/Views/Terminal/CopyModeOverlay.swift Mytty/Views/Terminal/CopyModeHelpOverlay.swift Mytty/App/ContentView.swift MyttyTests/Models/CopyModeStateTests.swift
 git commit -m "feat(copy-mode): phase 2 foundation — new sub-modes, actions, search direction, help overlay"
 ```
 
 ### Task 6: Add scrollbar state tracking via GHOSTTY_ACTION_SCROLLBAR
 
 **Files:**
-- Modify: `Mistty/App/GhosttyApp.swift`
-- Modify: `Mistty/Views/Terminal/TerminalSurfaceView.swift` (or wherever pane state lives)
+- Modify: `Mytty/App/GhosttyApp.swift`
+- Modify: `Mytty/Views/Terminal/TerminalSurfaceView.swift` (or wherever pane state lives)
 
 - [ ] **Step 1: Add ScrollbarState struct**
 
-Add to `Mistty/Models/CopyModeAction.swift` (bottom of file, keeps terminal types together):
+Add to `Mytty/Models/CopyModeAction.swift` (bottom of file, keeps terminal types together):
 
 ```swift
 struct ScrollbarState: Equatable {
@@ -394,7 +394,7 @@ Expected: Build succeeds
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeAction.swift Mistty/App/GhosttyApp.swift Mistty/Views/Terminal/TerminalSurfaceView.swift
+git add Mytty/Models/CopyModeAction.swift Mytty/App/GhosttyApp.swift Mytty/Views/Terminal/TerminalSurfaceView.swift
 git commit -m "feat(copy-mode): track scrollbar state via GHOSTTY_ACTION_SCROLLBAR"
 ```
 
@@ -405,8 +405,8 @@ git commit -m "feat(copy-mode): track scrollbar state via GHOSTTY_ACTION_SCROLLB
 ### Task 7: Implement paging commands (Ctrl-D/U/F/B)
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeState.swift`
-- Test: `MisttyTests/Models/CopyModeStateTests.swift`
+- Modify: `Mytty/Models/CopyModeState.swift`
+- Test: `MyttyTests/Models/CopyModeStateTests.swift`
 
 - [ ] **Step 1: Write failing tests for paging**
 
@@ -489,15 +489,15 @@ Expected: All tests PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeState.swift MisttyTests/Models/CopyModeStateTests.swift
+git add Mytty/Models/CopyModeState.swift MyttyTests/Models/CopyModeStateTests.swift
 git commit -m "feat(copy-mode): implement Ctrl-D/U/F/B paging commands"
 ```
 
 ### Task 8: Implement scroll-on-boundary for j/k
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeState.swift`
-- Test: `MisttyTests/Models/CopyModeStateTests.swift`
+- Modify: `Mytty/Models/CopyModeState.swift`
+- Test: `MyttyTests/Models/CopyModeStateTests.swift`
 
 - [ ] **Step 1: Write failing tests for j/k at viewport edges**
 
@@ -603,14 +603,14 @@ Expected: All tests PASS
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeState.swift MisttyTests/Models/CopyModeStateTests.swift
+git add Mytty/Models/CopyModeState.swift MyttyTests/Models/CopyModeStateTests.swift
 git commit -m "feat(copy-mode): j/k scroll viewport at edges instead of clamping"
 ```
 
 ### Task 9: Wire scroll actions in ContentView
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 - [ ] **Step 1: Implement scroll action handler**
 
@@ -642,7 +642,7 @@ Expected: Build succeeds
 - [ ] **Step 3: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat(copy-mode): wire scroll actions to ghostty_surface_binding_action"
 ```
 
@@ -653,8 +653,8 @@ git commit -m "feat(copy-mode): wire scroll actions to ghostty_surface_binding_a
 ### Task 10: Implement continuePendingMotion and update word motions
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeState.swift`
-- Test: `MisttyTests/Models/CopyModeStateTests.swift`
+- Modify: `Mytty/Models/CopyModeState.swift`
+- Test: `MyttyTests/Models/CopyModeStateTests.swift`
 
 - [ ] **Step 1: Write failing tests for word motion at viewport edge**
 
@@ -901,14 +901,14 @@ Expected: All tests PASS
 - [ ] **Step 8: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeState.swift MisttyTests/Models/CopyModeStateTests.swift
+git add Mytty/Models/CopyModeState.swift MyttyTests/Models/CopyModeStateTests.swift
 git commit -m "feat(copy-mode): word motions scroll at viewport edge with continuation"
 ```
 
 ### Task 11: Wire continuation in ContentView
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 - [ ] **Step 1: Handle .needsContinuation in action loop**
 
@@ -977,7 +977,7 @@ Expected: Build succeeds
 - [ ] **Step 3: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat(copy-mode): wire continuation handler in ContentView"
 ```
 
@@ -988,7 +988,7 @@ git commit -m "feat(copy-mode): wire continuation handler in ContentView"
 ### Task 12: Add screenLineReader and upgrade performSearch
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 - [ ] **Step 1: Add readScreenLine helper**
 
@@ -1142,7 +1142,7 @@ Expected: Build succeeds
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat(copy-mode): full-scrollback search with forward/reverse and match count"
 ```
 
@@ -1153,7 +1153,7 @@ git commit -m "feat(copy-mode): full-scrollback search with forward/reverse and 
 ### Task 13: Add SearchHighlightView
 
 **Files:**
-- Create: `Mistty/Views/Terminal/SearchHighlightView.swift`
+- Create: `Mytty/Views/Terminal/SearchHighlightView.swift`
 
 - [ ] **Step 1: Create SearchHighlightView**
 
@@ -1230,14 +1230,14 @@ Expected: Build succeeds
 - [ ] **Step 4: Commit**
 
 ```bash
-git add Mistty/Views/Terminal/SearchHighlightView.swift Mistty/Views/Terminal/CopyModeOverlay.swift
+git add Mytty/Views/Terminal/SearchHighlightView.swift Mytty/Views/Terminal/CopyModeOverlay.swift
 git commit -m "feat(copy-mode): add search highlight overlay for all visible matches"
 ```
 
 ### Task 14: Update yankSelection for off-screen anchors
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 - [ ] **Step 1: Update readGhosttyText to support screen coordinates**
 
@@ -1314,14 +1314,14 @@ Expected: Build succeeds
 - [ ] **Step 4: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat(copy-mode): yank selections that span beyond viewport using screen coords"
 ```
 
 ### Task 15: Final integration test and cleanup
 
 **Files:**
-- Modify: `MisttyTests/Models/CopyModeIntegrationTests.swift`
+- Modify: `MyttyTests/Models/CopyModeIntegrationTests.swift`
 
 - [ ] **Step 1: Add integration tests for phase 2 features**
 
@@ -1366,7 +1366,7 @@ Expected: All tests PASS
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MisttyTests/Models/CopyModeIntegrationTests.swift
+git add MyttyTests/Models/CopyModeIntegrationTests.swift
 git commit -m "test(copy-mode): add phase 2 integration tests"
 ```
 

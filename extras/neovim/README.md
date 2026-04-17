@@ -1,14 +1,14 @@
-# mistty-nav
+# mytty-nav
 
-smart-splits.nvim backend for Mistty terminal emulator.
+smart-splits.nvim backend for Mytty terminal emulator.
 
-Enables bidirectional Ctrl+h/j/k/l navigation between neovim splits and Mistty panes.
+Enables bidirectional Ctrl+h/j/k/l navigation between neovim splits and Mytty panes.
 
 ## Requirements
 
-- [Mistty](https://github.com/your-user/mistty) terminal emulator
+- [Mytty](https://github.com/your-user/mytty) terminal emulator
 - [smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim)
-- `mistty-cli` in your PATH (`just install-cli` from the Mistty repo)
+- `mytty-cli` in your PATH (`just install-cli` from the Mytty repo)
 
 ## Setup
 
@@ -16,26 +16,26 @@ Add this plugin to your neovim config. With lazy.nvim:
 
 ```lua
 {
-  'your-user/mistty',
+  'your-user/mytty',
   config = function()
-    -- The plugin adds lua/smart-splits/mux/mistty.lua to the runtimepath
+    -- The plugin adds lua/smart-splits/mux/mytty.lua to the runtimepath
   end,
   subdir = 'extras/neovim',
 }
 ```
 
-Configure smart-splits to use the Mistty backend:
+Configure smart-splits to use the Mytty backend:
 
 ```lua
 require('smart-splits').setup({
-  multiplexer_integration = 'mistty',
+  multiplexer_integration = 'mytty',
 })
 ```
 
 ## How it works
 
-**Neovim to Mistty:** When you press Ctrl+h at neovim's leftmost split, smart-splits detects the edge and calls `mistty-cli pane focus --direction left` to move focus to the adjacent Mistty pane.
+**Neovim to Mytty:** When you press Ctrl+h at neovim's leftmost split, smart-splits detects the edge and calls `mytty-cli pane focus --direction left` to move focus to the adjacent Mytty pane.
 
-**Mistty to neovim:** When you press Ctrl+h in a Mistty pane running neovim, Mistty forwards the keypress to neovim. smart-splits handles it (moving within neovim or calling back to Mistty if at the edge).
+**Mytty to neovim:** When you press Ctrl+h in a Mytty pane running neovim, Mytty forwards the keypress to neovim. smart-splits handles it (moving within neovim or calling back to Mytty if at the edge).
 
-The backend sets a `is-vim` variable on the active pane via `mistty-cli pane set-var` when neovim starts, and clears it on exit. Mistty uses this variable to decide whether to forward keypresses or navigate panes directly.
+The backend sets a `is-vim` variable on the active pane via `mytty-cli pane set-var` when neovim starts, and clears it on exit. Mytty uses this variable to decide whether to forward keypresses or navigate panes directly.

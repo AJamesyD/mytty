@@ -1,6 +1,6 @@
-# Terminal UX Patterns for Mistty
+# Terminal UX Patterns for Mytty
 
-Research for Mistty (macOS terminal emulator, libghostty + SwiftUI).
+Research for Mytty (macOS terminal emulator, libghostty + SwiftUI).
 Builds on existing research: cmux patterns, tmux best parts, shpool/zmx, zellij basics.
 
 ---
@@ -79,7 +79,7 @@ One command (`tmuxinator start myproject`) creates the entire workspace. The UX 
 
 Sesh's `sesh.toml` with `[[session]]` and `[[wildcard]]` entries is the modern evolution, adding startup commands, preview commands, and window definitions without a separate tool.
 
-**Native macOS equivalent**: A `.mistty.toml` or `.mistty/layout.kdl` file in the project root (like cmux's `cmux.json`). Opening a project directory auto-detects this file and offers to apply the layout. The Layout Manager UI (like zellij's) would let users save the current workspace arrangement as a layout file, avoiding manual YAML editing.
+**Native macOS equivalent**: A `.mytty.toml` or `.mytty/layout.kdl` file in the project root (like cmux's `cmux.json`). Opening a project directory auto-detects this file and offers to apply the layout. The Layout Manager UI (like zellij's) would let users save the current workspace arrangement as a layout file, avoiding manual YAML editing.
 
 ### (e) Resurrect + Continuum for Session Persistence
 
@@ -350,13 +350,13 @@ Tabby (formerly Terminus) offers:
 
 ---
 
-## 6. Synthesis: What Mistty Should Prioritize
+## 6. Synthesis: What Mytty Should Prioritize
 
 ### Tier 1: Table Stakes (users expect these)
 - Session persistence across app restarts (automatic, invisible)
 - Command palette (Cmd+K) for feature discoverability
 - Fuzzy workspace/project switching (sesh-style, with frecency)
-- Declarative project layouts (`.mistty.toml` in project root)
+- Declarative project layouts (`.mytty.toml` in project root)
 
 ### Tier 2: Differentiators (what makes users switch)
 - Notification rings with jump-to-unread (cmux's killer feature for agent workflows)

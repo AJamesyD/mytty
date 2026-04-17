@@ -27,14 +27,14 @@ struct PopupDefinition: Codable, Sendable, Equatable {
 final class PopupState: Identifiable {
     let id: Int               // from SessionStore ID counter
     let definition: PopupDefinition
-    let pane: MisttyPane      // the actual terminal surface
+    let pane: MyttyPane      // the actual terminal surface
     var isVisible: Bool       // toggled on/off
 }
 ```
 
 ### Session integration
 
-On MisttySession:
+On MyttySession:
 - `var popups: [PopupState] = []`
 - `var activePopup: PopupState?` (at most one visible at a time)
 
@@ -99,7 +99,7 @@ Opening a popup makes its surface first responder. Closing returns focus to the 
 
 1. User presses configured shortcut
 2. Look up PopupDefinition by shortcut
-3. Create PopupState with new MisttyPane (exec = command, directory = session.directory)
+3. Create PopupState with new MyttyPane (exec = command, directory = session.directory)
 4. Set isVisible = true, session.activePopup = popupState
 5. Lazy surfaceView initializes, launching the command
 
@@ -130,15 +130,15 @@ func listPopups(sessionId: Int, reply: ...)
 
 CLI commands:
 ```
-mistty-cli popup open --name "lazygit"
-mistty-cli popup open --exec "fzf" --width 0.8 --height 0.5
-mistty-cli popup close
-mistty-cli popup list --session 1
+mytty-cli popup open --name "lazygit"
+mytty-cli popup open --exec "fzf" --width 0.8 --height 0.5
+mytty-cli popup close
+mytty-cli popup list --session 1
 ```
 
 ## Shortcut Registration
 
-Popup shortcuts registered as SwiftUI .commands in MisttyApp.swift. Read from MisttyConfig.popups at app launch. Post .misttyPopupToggle notifications with popup name. ContentView handles toggle.
+Popup shortcuts registered as SwiftUI .commands in MyttyApp.swift. Read from MyttyConfig.popups at app launch. Post .myttyPopupToggle notifications with popup name. ContentView handles toggle.
 
 Shortcuts are dynamic from config. Update on app restart (no live-reloading).
 
@@ -149,7 +149,7 @@ Add "Popups" section to SettingsView:
 - Add/edit/remove popup definitions
 - Changes write to config.toml
 
-Extend MisttyConfig to parse/serialize `[[popup]]` entries.
+Extend MyttyConfig to parse/serialize `[[popup]]` entries.
 
 ## Out of Scope
 

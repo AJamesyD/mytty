@@ -2,22 +2,22 @@
 import PackageDescription
 
 let package = Package(
-    name: "Mistty",
+    name: "Mytty",
     platforms: [.macOS(.v14)],
     dependencies: [
         .package(url: "https://github.com/LebJe/TOMLKit", from: "0.6.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
     ],
     targets: [
-        .target(name: "MisttyShared", path: "MisttyShared"),
+        .target(name: "MyttyShared", path: "MyttyShared"),
         .executableTarget(
-            name: "Mistty",
+            name: "Mytty",
             dependencies: [
                 "GhosttyKit",
-                "MisttyShared",
+                "MyttyShared",
                 .product(name: "TOMLKit", package: "TOMLKit"),
             ],
-            path: "Mistty",
+            path: "Mytty",
             exclude: ["Resources/Info.plist"],
             linkerSettings: [
                 .linkedLibrary("c++"),
@@ -26,7 +26,7 @@ let package = Package(
                     "-Xlinker", "-sectcreate",
                     "-Xlinker", "__TEXT",
                     "-Xlinker", "__info_plist",
-                    "-Xlinker", "Mistty/Resources/Info.plist",
+                    "-Xlinker", "Mytty/Resources/Info.plist",
                 ]),
             ]
         ),
@@ -35,17 +35,17 @@ let package = Package(
             path: "vendor/ghostty/macos/GhosttyKit.xcframework"
         ),
         .executableTarget(
-            name: "MisttyCLI",
+            name: "MyttyCLI",
             dependencies: [
-                "MisttyShared",
+                "MyttyShared",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ],
-            path: "MisttyCLI"
+            path: "MyttyCLI"
         ),
         .testTarget(
-            name: "MisttyTests",
-            dependencies: ["Mistty", "MisttyShared"],
-            path: "MisttyTests"
+            name: "MyttyTests",
+            dependencies: ["Mytty", "MyttyShared"],
+            path: "MyttyTests"
         )
     ]
 )

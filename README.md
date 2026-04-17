@@ -1,6 +1,6 @@
-# Mistty
+# Mytty
 
-A macOS terminal emulator built on [libghostty](https://github.com/ghostty-org/ghostty) with native session management. Mistty brings tmux-style workflows directly into the terminal: sessions, tabs, split panes, and a fuzzy session switcher, all without a separate multiplexer.
+A macOS terminal emulator built on [libghostty](https://github.com/ghostty-org/ghostty) with native session management. Mytty brings tmux-style workflows directly into the terminal: sessions, tabs, split panes, and a fuzzy session switcher, all without a separate multiplexer.
 
 ## Features
 
@@ -8,34 +8,34 @@ A macOS terminal emulator built on [libghostty](https://github.com/ghostty-org/g
 - **Tabs and split panes**: standard terminal multiplexing built in
 - **Sidebar**: persistent session tree, collapsible with `Cmd+S`
 - **Keyboard-driven**: every function accessible via keyboard shortcut
-- **Configurable**: XDG-compliant config at `~/.config/mistty/config.toml`
+- **Configurable**: XDG-compliant config at `~/.config/mytty/config.toml`
 - **Native macOS**: SwiftUI interface, system integration
 
 ## CLI Control
 
-Mistty includes a CLI tool for scripting and automation:
+Mytty includes a CLI tool for scripting and automation:
 
 ```bash
 # Install
 just install-cli
 
 # Sessions
-mistty-cli session list
-mistty-cli session create --name "project" --directory ~/code
+mytty-cli session list
+mytty-cli session create --name "project" --directory ~/code
 
 # Tabs
-mistty-cli tab create --session 1 --name "editor"
-mistty-cli tab list --session 1
+mytty-cli tab create --session 1 --name "editor"
+mytty-cli tab list --session 1
 
 # Panes
-mistty-cli pane active
-mistty-cli pane create --tab 1 --direction horizontal
-mistty-cli pane send-keys "echo hello"
-mistty-cli pane run-command "npm test"
+mytty-cli pane active
+mytty-cli pane create --tab 1 --direction horizontal
+mytty-cli pane send-keys "echo hello"
+mytty-cli pane run-command "npm test"
 
 # JSON output (auto-detected when piped, or force with --json)
-mistty-cli session list | jq .
-mistty-cli session list --json
+mytty-cli session list | jq .
+mytty-cli session list --json
 ```
 
 ## Prerequisites
@@ -76,8 +76,8 @@ xcodebuild -downloadComponent MetalToolchain
 
 ```sh
 # Clone with submodules
-git clone --recurse-submodules mistty.git
-cd mistty
+git clone --recurse-submodules mytty.git
+cd mytty
 
 # Or if already cloned:
 just setup
@@ -123,17 +123,17 @@ direnv allow
 ### Project structure
 
 ```
-mistty/
-  Mistty/              # App source
+mytty/
+  Mytty/              # App source
     App/               # Entry point, content view, handlers, managers
     Config/            # TOML config parser, keybinding store
     Models/            # Session/Tab/Pane model classes, layout engine
     Views/             # SwiftUI views by category
     Services/          # IPC, persistence, fuzzy matching
     Resources/         # Info.plist, assets
-  MisttyShared/        # IPC protocol, response models, constants
-  MisttyCLI/           # CLI commands and IPC client
-  MisttyTests/         # Unit tests
+  MyttyShared/        # IPC protocol, response models, constants
+  MyttyCLI/           # CLI commands and IPC client
+  MyttyTests/         # Unit tests
   vendor/ghostty/      # Ghostty git submodule
   docs/                # Design, specs, decisions, research
   Package.swift        # Swift package manifest
@@ -143,10 +143,10 @@ mistty/
 
 ## Architecture
 
-Mistty uses a three-layer architecture:
+Mytty uses a three-layer architecture:
 
 - **UI Layer** (SwiftUI): sidebar, session manager, tab bar, terminal views
-- **Session Layer** (Swift protocols): `SessionStore` > `MisttySession` > `MisttyTab` > `MisttyPane`, designed for future migration from in-memory to a background daemon
+- **Session Layer** (Swift protocols): `SessionStore` > `MyttySession` > `MyttyTab` > `MyttyPane`, designed for future migration from in-memory to a background daemon
 - **Terminal Layer** (libghostty): `NSViewRepresentable` wrapping a `ghostty_surface_t` for terminal rendering
 
 See [docs/DESIGN.md](docs/DESIGN.md) for the full design document.

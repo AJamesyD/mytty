@@ -13,12 +13,12 @@
 ### Task 1: Fix notification name typo
 
 **Files:**
-- Modify: `Mistty/App/MisttyApp.swift`
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/MyttyApp.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
-**Step 1: Rename in MisttyApp.swift**
+**Step 1: Rename in MyttyApp.swift**
 
-In `Mistty/App/MisttyApp.swift`, find the Notification.Name extension and rename:
+In `Mytty/App/MyttyApp.swift`, find the Notification.Name extension and rename:
 
 ```swift
 // Before:
@@ -26,8 +26,8 @@ static let mistrySplitHorizontal = Notification.Name("mistrySplitHorizontal")
 static let mistrySplitVertical = Notification.Name("mistrySplitVertical")
 
 // After:
-static let misttySplitHorizontal = Notification.Name("misttySplitHorizontal")
-static let misttySplitVertical = Notification.Name("misttySplitVertical")
+static let myttySplitHorizontal = Notification.Name("myttySplitHorizontal")
+static let myttySplitVertical = Notification.Name("myttySplitVertical")
 ```
 
 Also update the two `NotificationCenter.default.post` calls in the Button actions that reference these names.
@@ -42,8 +42,8 @@ Update the `.onReceive` handlers:
 .onReceive(NotificationCenter.default.publisher(for: .mistrySplitVertical))
 
 // After:
-.onReceive(NotificationCenter.default.publisher(for: .misttySplitHorizontal))
-.onReceive(NotificationCenter.default.publisher(for: .misttySplitVertical))
+.onReceive(NotificationCenter.default.publisher(for: .myttySplitHorizontal))
+.onReceive(NotificationCenter.default.publisher(for: .myttySplitVertical))
 ```
 
 **Step 3: Build and verify**
@@ -53,8 +53,8 @@ Run: `swift build`
 **Step 4: Commit**
 
 ```bash
-git add Mistty/App/MisttyApp.swift Mistty/App/ContentView.swift
-git commit -m "fix: rename mistrySplit* to misttySplit* notification names"
+git add Mytty/App/MyttyApp.swift Mytty/App/ContentView.swift
+git commit -m "fix: rename mistrySplit* to myttySplit* notification names"
 ```
 
 ---
@@ -62,7 +62,7 @@ git commit -m "fix: rename mistrySplit* to misttySplit* notification names"
 ### Task 2: Event monitor cleanup on view destruction
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 **Step 1: Add onDisappear cleanup**
 
@@ -115,7 +115,7 @@ Run: `swift build`
 **Step 4: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "fix: clean up event monitors on view destruction and add mutual exclusion"
 ```
 
@@ -124,9 +124,9 @@ git commit -m "fix: clean up event monitors on view destruction and add mutual e
 ### Task 3: Direction-aware resize in window mode
 
 **Files:**
-- Modify: `Mistty/Models/PaneLayout.swift`
-- Modify: `Mistty/App/ContentView.swift`
-- Test: `MisttyTests/Models/PaneLayoutTests.swift`
+- Modify: `Mytty/Models/PaneLayout.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Test: `MyttyTests/Models/PaneLayoutTests.swift`
 
 **Step 1: Write failing test**
 
@@ -134,7 +134,7 @@ Add to `PaneLayoutTests.swift`:
 
 ```swift
 func test_resizeSplitDirectionAware() {
-    let pane1 = MisttyPane()
+    let pane1 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.split(pane: pane1, direction: .vertical)
     let panes = layout.leaves
@@ -165,7 +165,7 @@ Run: `swift test --filter PaneLayoutTests/test_resizeSplitDirectionAware`
 In `PaneLayout.swift`, change `resizeSplit` signature:
 
 ```swift
-mutating func resizeSplit(containing pane: MisttyPane, delta: CGFloat, along direction: SplitDirection? = nil) {
+mutating func resizeSplit(containing pane: MyttyPane, delta: CGFloat, along direction: SplitDirection? = nil) {
     root = Self.adjustRatio(root, target: pane.id, delta: delta, along: direction)
 }
 ```
@@ -249,7 +249,7 @@ Run: `swift test`
 **Step 7: Commit**
 
 ```bash
-git add Mistty/Models/PaneLayout.swift Mistty/App/ContentView.swift MisttyTests/Models/PaneLayoutTests.swift
+git add Mytty/Models/PaneLayout.swift Mytty/App/ContentView.swift MyttyTests/Models/PaneLayoutTests.swift
 git commit -m "fix: direction-aware split resize in window mode"
 ```
 
@@ -258,7 +258,7 @@ git commit -m "fix: direction-aware split resize in window mode"
 ### Task 4: Add missing PaneLayout.remove tests
 
 **Files:**
-- Test: `MisttyTests/Models/PaneLayoutTests.swift`
+- Test: `MyttyTests/Models/PaneLayoutTests.swift`
 
 **Step 1: Write tests**
 
@@ -266,7 +266,7 @@ Add to `PaneLayoutTests.swift`:
 
 ```swift
 func test_removePaneFromTwoPaneSplit() {
-    let pane1 = MisttyPane()
+    let pane1 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.split(pane: pane1, direction: .horizontal)
     let panes = layout.leaves
@@ -279,7 +279,7 @@ func test_removePaneFromTwoPaneSplit() {
 }
 
 func test_removeLastPane() {
-    let pane1 = MisttyPane()
+    let pane1 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.remove(pane: pane1)
     XCTAssertTrue(layout.isEmpty)
@@ -287,8 +287,8 @@ func test_removeLastPane() {
 }
 
 func test_removeNonExistentPane() {
-    let pane1 = MisttyPane()
-    let pane2 = MisttyPane()
+    let pane1 = MyttyPane()
+    let pane2 = MyttyPane()
     var layout = PaneLayout(pane: pane1)
     layout.remove(pane: pane2)
     // Should not crash, layout unchanged
@@ -304,7 +304,7 @@ Run: `swift test --filter PaneLayoutTests`
 **Step 3: Commit**
 
 ```bash
-git add MisttyTests/Models/PaneLayoutTests.swift
+git add MyttyTests/Models/PaneLayoutTests.swift
 git commit -m "test: add missing PaneLayout.remove tests"
 ```
 
@@ -313,8 +313,8 @@ git commit -m "test: add missing PaneLayout.remove tests"
 ### Task 5: Real terminal dimensions for copy mode
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
-- Modify: `Mistty/Views/Terminal/PaneView.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Modify: `Mytty/Views/Terminal/PaneView.swift`
 
 **Step 1: Get terminal size from ghostty in enterCopyMode**
 
@@ -369,7 +369,7 @@ Run: `swift build`
 **Step 4: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat: use real terminal dimensions from ghostty for copy mode"
 ```
 
@@ -378,7 +378,7 @@ git commit -m "feat: use real terminal dimensions from ghostty for copy mode"
 ### Task 6: Implement working yank (copy to clipboard)
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 **Step 1: Implement yankSelection using ghostty API**
 
@@ -453,7 +453,7 @@ typedef struct {
 **Step 3: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "feat: implement yank to clipboard using ghostty_surface_read_text"
 ```
 
@@ -462,9 +462,9 @@ git commit -m "feat: implement yank to clipboard using ghostty_surface_read_text
 ### Task 7: Word jumps (w/b) in copy mode
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeState.swift`
-- Modify: `Mistty/App/ContentView.swift`
-- Test: `MisttyTests/Models/CopyModeStateTests.swift`
+- Modify: `Mytty/Models/CopyModeState.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Test: `MyttyTests/Models/CopyModeStateTests.swift`
 
 **Step 1: Write failing tests**
 
@@ -538,7 +538,7 @@ case "b": state.moveWordBackward()
 **Step 6: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeState.swift Mistty/App/ContentView.swift MisttyTests/Models/CopyModeStateTests.swift
+git add Mytty/Models/CopyModeState.swift Mytty/App/ContentView.swift MyttyTests/Models/CopyModeStateTests.swift
 git commit -m "feat: word jump (w/b) in copy mode"
 ```
 
@@ -547,9 +547,9 @@ git commit -m "feat: word jump (w/b) in copy mode"
 ### Task 8: Search in copy mode
 
 **Files:**
-- Modify: `Mistty/Models/CopyModeState.swift`
-- Modify: `Mistty/App/ContentView.swift`
-- Modify: `Mistty/Views/Terminal/CopyModeOverlay.swift`
+- Modify: `Mytty/Models/CopyModeState.swift`
+- Modify: `Mytty/App/ContentView.swift`
+- Modify: `Mytty/Views/Terminal/CopyModeOverlay.swift`
 
 **Step 1: Add search input to copy mode monitor**
 
@@ -686,7 +686,7 @@ Run: `swift build`
 **Step 5: Commit**
 
 ```bash
-git add Mistty/Models/CopyModeState.swift Mistty/App/ContentView.swift Mistty/Views/Terminal/CopyModeOverlay.swift
+git add Mytty/Models/CopyModeState.swift Mytty/App/ContentView.swift Mytty/Views/Terminal/CopyModeOverlay.swift
 git commit -m "feat: search input (/) in copy mode with visual search bar"
 ```
 
@@ -695,7 +695,7 @@ git commit -m "feat: search input (/) in copy mode with visual search bar"
 ### Task 9: Pass through system shortcuts in copy mode
 
 **Files:**
-- Modify: `Mistty/App/ContentView.swift`
+- Modify: `Mytty/App/ContentView.swift`
 
 **Step 1: Let Cmd-modified keys pass through in copy mode**
 
@@ -717,7 +717,7 @@ Run: `swift build`
 **Step 3: Commit**
 
 ```bash
-git add Mistty/App/ContentView.swift
+git add Mytty/App/ContentView.swift
 git commit -m "fix: pass through Cmd shortcuts in copy mode"
 ```
 

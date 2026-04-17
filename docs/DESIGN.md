@@ -1,16 +1,16 @@
-# Mistty Design
+# Mytty Design
 
 ## Identity
 
-Mistty is a macOS terminal emulator that eliminates the need for a separate
+Mytty is a macOS terminal emulator that eliminates the need for a separate
 multiplexer. The thesis: you never leave your flow to check what's happening.
 
-What Mistty is:
+What Mytty is:
 - A native macOS app that embeds a best-in-class terminal renderer (libghostty)
 - A session manager that replaces tmux for local workflows
 - A platform for terminal automation via its socket API and CLI
 
-What Mistty is not:
+What Mytty is not:
 - A cross-platform terminal (macOS only, by design; see ROADMAP.md for scope)
 - A Ghostty fork or skin (we use their renderer, we own the chrome)
 - A tmux replacement for remote workflows (no daemon, no attach/detach)
@@ -56,7 +56,7 @@ Technical boundaries. Do not change without discussion.
   (libghostty).** Do not add business logic to the UI layer. Do not access
   libghostty types outside TerminalSurfaceView and GhosttyApp.swift.
 
-- **libghostty parses all escape sequences internally.** Mistty handles
+- **libghostty parses all escape sequences internally.** Mytty handles
   typed action callbacks (8 notification names route actions from C callbacks
   to SwiftUI). Do not parse raw escape sequences. Do not duplicate Ghostty's
   terminal logic.
@@ -66,11 +66,11 @@ Technical boundaries. Do not change without discussion.
   Do not reverse this flow.
 
 - **Session/Tab/Pane are protocol-based.** 5 Observable model classes
-  (SessionStore, MisttySession, MisttyTab, MisttyPane, PopupState) back the
+  (SessionStore, MyttySession, MyttyTab, MyttyPane, PopupState) back the
   protocol today. The backing store can be replaced with a daemon without
   touching the UI layer. Do not leak storage assumptions into views.
 
-- **IPC contract is the protocol.** MisttyServiceProtocol (31 methods)
+- **IPC contract is the protocol.** MyttyServiceProtocol (31 methods)
   defines the boundary between transport and logic. Protocol, Service,
   Listener, and CLI must stay in sync.
 
@@ -91,15 +91,15 @@ How we work. These govern the roadmap and development workflow.
 ## Key Interfaces
 
 ```
-SessionStore -> [MisttySession] -> [MisttyTab] -> [MisttyPane]
+SessionStore -> [MyttySession] -> [MyttyTab] -> [MyttyPane]
 ```
 
 Each layer is @Observable, @MainActor. Pane owns the ghostty_surface_t.
 
-**MisttyServiceProtocol**: the IPC contract. Sessions, Tabs, Panes, Windows,
+**MyttyServiceProtocol**: the IPC contract. Sessions, Tabs, Panes, Windows,
 and Popups as nouns; CRUD + focus/resize/sendKeys as verbs.
 
-**MisttyTheme**: single source for all color tokens. Views reference tokens,
+**MyttyTheme**: single source for all color tokens. Views reference tokens,
 not raw colors.
 
 **GhosttyApp**: singleton managing the ghostty_app_t lifecycle. C callbacks

@@ -1,7 +1,7 @@
-# Mistty Improvement Plan Review
+# Mytty Improvement Plan Review
 
 Reviewed: 2026-04-13
-Plan: /tmp/ai-plan-mistty-improvements.md (iteration 4)
+Plan: /tmp/ai-plan-mytty-improvements.md (iteration 4)
 
 ## 1. Phase 1a accuracy
 
@@ -159,8 +159,8 @@ can't use @FocusedValue. The plan should note this boundary.
 ### 3.3 Notification removal scope
 
 The plan says to delete ~16 Notification.Name extensions. The actual count in
-MisttyApp.swift is 16 notification names (misttyNewTab through
-misttyPrevSession). But the plan also says to keep ghosttySetTitle,
+MyttyApp.swift is 16 notification names (myttyNewTab through
+myttyPrevSession). But the plan also says to keep ghosttySetTitle,
 ghosttyCloseSurface, ghosttyRingBell (C callbacks) and IPC notifications.
 These are defined elsewhere (likely in a GhosttyKit bridging file or another
 extension). The plan should verify where ALL notification names are defined
@@ -205,7 +205,7 @@ level (e.g., on the WindowGroup or on a parent view without .id()).
 
 The plan publishes `SessionStore` as the focused value. SessionStore is a
 reference type (@Observable). If two windows share the same SessionStore
-instance (which they do, since MisttyApp passes the same `store` to all
+instance (which they do, since MyttyApp passes the same `store` to all
 ContentView instances via WindowGroup), then @FocusedValue doesn't actually
 distinguish which window's session is active. The menu command would call
 `store.activeSession`, which is a single property on the shared store.
@@ -214,7 +214,7 @@ This means the architecture assumes `store.activeSession` is always the
 session for the key window. If window focus changes but `store.activeSession`
 isn't updated synchronously, menu commands could target the wrong session.
 The plan should verify that `store.activeSession` is updated on window focus
-change, or publish the specific `MisttySession` as the focused value instead.
+change, or publish the specific `MyttySession` as the focused value instead.
 
 ## 5. Phase ordering
 
@@ -268,5 +268,5 @@ convenience of a slightly smaller file.
 - flake.nix: current devShell configuration (2026-04-13)
 - flake.lock: nixpkgs pinned to 608d0cad... (2026-04-13)
 - justfile: current build-libghostty recipe (2026-04-13)
-- Mistty/App/ContentView.swift: 1095 lines, god view (2026-04-13)
-- Mistty/App/MisttyApp.swift: 189 lines, menu commands (2026-04-13)
+- Mytty/App/ContentView.swift: 1095 lines, god view (2026-04-13)
+- Mytty/App/MyttyApp.swift: 189 lines, menu commands (2026-04-13)

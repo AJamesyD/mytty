@@ -1,6 +1,6 @@
 # Phase 4f-1: Key Sequences
 
-Mistty macOS terminal emulator, libghostty backend.
+Mytty macOS terminal emulator, libghostty backend.
 
 **Goal:** Support multi-key bindings (e.g., `ctrl+a>h`) in config. Parse `>` as a sequence separator in `TriggerParser`. Add a sequence state machine that tracks pending leaders and dispatches the final action. Timeout after 1s (configurable). Visual indicator for pending sequences.
 
@@ -35,7 +35,7 @@ These are user overrides. The compiled-in defaults remain single-key bindings (`
 | Kitty | `ctrl+f>2 set_font_size 20` | Configurable (`map_timeout`, default 0 = off) | Discards buffered keys |
 | tmux | Prefix key + one key | None for non-repeat bindings | Ignores invalid key, returns to root |
 
-Mistty follows Kitty's timeout model (configurable, default 1s) and Kitty's discard-on-invalid behavior. Flushing buffered leader keys to the terminal after a timeout or invalid key is confusing: the user waited too long or pressed the wrong key, and the leader suddenly appears in their shell.
+Mytty follows Kitty's timeout model (configurable, default 1s) and Kitty's discard-on-invalid behavior. Flushing buffered leader keys to the terminal after a timeout or invalid key is confusing: the user waited too long or pressed the wrong key, and the leader suddenly appears in their shell.
 
 ## 2. Config syntax
 
@@ -135,9 +135,9 @@ private(set) var sequenceTrie: SequenceTrieNode = SequenceTrieNode()
 
 ### Build pipeline changes
 
-Currently, `MisttyConfig` parses each trigger string into a `KeyboardTrigger` and passes `[BindingMode: [String: KeyboardTrigger]]` to `KeybindingStore.build()`. With sequences:
+Currently, `MyttyConfig` parses each trigger string into a `KeyboardTrigger` and passes `[BindingMode: [String: KeyboardTrigger]]` to `KeybindingStore.build()`. With sequences:
 
-1. `MisttyConfig` parses each trigger string using `TriggerParser.parseSequence()` instead of `TriggerParser.parse()`, producing `KeySequence` values.
+1. `MyttyConfig` parses each trigger string using `TriggerParser.parseSequence()` instead of `TriggerParser.parse()`, producing `KeySequence` values.
 2. For single-key sequences (length 1), extract the `KeyboardTrigger` and store in the existing `[String: KeyboardTrigger]` map (no change to the flat binding path).
 3. For multi-key sequences (length > 1), store in a new `[String: KeySequence]` map passed to `build()`.
 4. `KeybindingStore.build()` gains a new parameter: `sequenceOverrides: [String: KeySequence]`. It builds the trie from these, then checks for leader-shadows-standalone conflicts against the flat bindings.
@@ -160,7 +160,7 @@ The standalone binding is removed from the flat map. The leader takes precedence
 
 ## 5. State machine
 
-New enum in `Mistty/App/KeySequenceManager.swift`:
+New enum in `Mytty/App/KeySequenceManager.swift`:
 
 ```swift
 enum KeySequenceState {
@@ -235,7 +235,7 @@ Implementation: a `Task` that sleeps for the configured duration, similar to `Wh
 
 On timeout: transition to `idle`, discard buffered keys, hide the visual indicator. Do not flush keys to the terminal.
 
-`KeySequenceManager` reads the timeout value from `KeybindingStore` (parsed from config by `MisttyConfig`).
+`KeySequenceManager` reads the timeout value from `KeybindingStore` (parsed from config by `MyttyConfig`).
 
 ## 8. Visual indicator
 
@@ -248,7 +248,7 @@ Example: after pressing `ctrl+a`, the overlay shows `ctrl+a …`. After pressing
 A new `SequenceIndicatorView` (SwiftUI) that reads from `KeySequenceManager.pendingDisplay` (a stored property on the `@Observable` class, empty string when idle). The view:
 
 - Appears with a spring animation (0.3s response, 0.8 damping)
-- Uses `MisttyTheme` tokens for colors (no `Color` literals)
+- Uses `MyttyTheme` tokens for colors (no `Color` literals)
 - Positioned at the bottom center of the active pane via `.overlay` on the pane content
 - Text only for v1 (no keycap styling)
 - Disappears when the sequence completes, is cancelled, or times out
@@ -330,21 +330,21 @@ Different leaders can coexist. `ctrl+a>h` and `ctrl+b>h` define two independent 
 
 | File | Purpose |
 |------|---------|
-| `Mistty/App/KeySequenceManager.swift` | State machine, NSEvent monitor, timeout, pending display state |
-| `Mistty/Views/Terminal/SequenceIndicatorView.swift` | Floating overlay showing pending leader keys |
-| `MisttyTests/App/KeySequenceManagerTests.swift` | State machine transitions, timeout, edge cases |
-| `MisttyTests/Config/KeySequenceParsingTests.swift` | `parseSequence`, depth validation, `>` splitting |
+| `Mytty/App/KeySequenceManager.swift` | State machine, NSEvent monitor, timeout, pending display state |
+| `Mytty/Views/Terminal/SequenceIndicatorView.swift` | Floating overlay showing pending leader keys |
+| `MyttyTests/App/KeySequenceManagerTests.swift` | State machine transitions, timeout, edge cases |
+| `MyttyTests/Config/KeySequenceParsingTests.swift` | `parseSequence`, depth validation, `>` splitting |
 
 ### Modified files
 
 | File | Changes |
 |------|---------|
-| `Mistty/Config/TriggerParser.swift` | Add `KeySequence` type, `parseSequence(_:)` method, `sequenceTooDeep` error |
-| `Mistty/Config/KeybindingStore.swift` | Add `SequenceTrieNode`, trie construction in `build()`, leader-shadows-standalone detection, `sequence-timeout` storage |
-| `Mistty/Config/MisttyConfig.swift` | Parse `sequence-timeout` from `[keybindings]` section |
-| `Mistty/App/WhichKeyManager.swift` | Add `showContinuations(_:)` method for display-only mode during sequences |
-| `Mistty/App/ContentView.swift` | Add `@State` for `KeySequenceManager`, wire `.overlay` for `SequenceIndicatorView` |
-| `Mistty/App/ContentView+Handlers.swift` | Activate/deactivate `KeySequenceManager`, provide action dispatch closure |
+| `Mytty/Config/TriggerParser.swift` | Add `KeySequence` type, `parseSequence(_:)` method, `sequenceTooDeep` error |
+| `Mytty/Config/KeybindingStore.swift` | Add `SequenceTrieNode`, trie construction in `build()`, leader-shadows-standalone detection, `sequence-timeout` storage |
+| `Mytty/Config/MyttyConfig.swift` | Parse `sequence-timeout` from `[keybindings]` section |
+| `Mytty/App/WhichKeyManager.swift` | Add `showContinuations(_:)` method for display-only mode during sequences |
+| `Mytty/App/ContentView.swift` | Add `@State` for `KeySequenceManager`, wire `.overlay` for `SequenceIndicatorView` |
+| `Mytty/App/ContentView+Handlers.swift` | Activate/deactivate `KeySequenceManager`, provide action dispatch closure |
 
 ## 12. Phasing
 
@@ -376,7 +376,7 @@ Different leaders can coexist. `ctrl+a>h` and `ctrl+b>h` define two independent 
 
 | Feature | Reason | Target |
 |---------|--------|--------|
-| `end_key_sequence` action (flush buffered keys to terminal) | Ghostty-specific; Mistty discards on cancel | Future, if requested |
+| `end_key_sequence` action (flush buffered keys to terminal) | Ghostty-specific; Mytty discards on cancel | Future, if requested |
 | Sequences in window mode / copy mode | Those modes have their own dispatch | Not planned |
 | `global:` prefix on sequence leaders | Global hotkeys are a separate feature (Phase 4f-2) | Phase 4f-2 |
 | Configurable cancel key (replacing Escape) | Escape is overridable by binding it in the sequence tree | Not planned |

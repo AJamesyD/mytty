@@ -1,10 +1,10 @@
-# SwiftLint configuration for Mistty
+# SwiftLint configuration for Mytty
 # Modeled on Ice (macOS menu bar app, 14.7k stars) with adjustments for C interop
 
 excluded:
   - .build
   - vendor
-  - MisttyCLI
+  - MyttyCLI
 
 # Relax for C interop and idiomatic Swift
 identifier_name:

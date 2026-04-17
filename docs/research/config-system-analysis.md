@@ -1,11 +1,11 @@
-# Mistty Configuration System Analysis
+# Mytty Configuration System Analysis
 
 Date: 2026-04-14
 
 ## What already exists
 
-1. **TOMLKit** is a dependency. Config is TOML at `~/.config/mistty/config.toml`.
-2. **MisttyConfig** struct (Mistty/Config/MisttyConfig.swift): parse/load/save with hand-rolled field-by-field TOML parsing. Currently handles: fontSize, fontFamily, cursorStyle, scrollbackLines, sidebarVisible, popups, SSH config.
+1. **TOMLKit** is a dependency. Config is TOML at `~/.config/mytty/config.toml`.
+2. **MyttyConfig** struct (Mytty/Config/MyttyConfig.swift): parse/load/save with hand-rolled field-by-field TOML parsing. Currently handles: fontSize, fontFamily, cursorStyle, scrollbackLines, sidebarVisible, popups, SSH config.
 3. **Ghostty C API** for terminal-level config: `ghostty_config_new()`, `ghostty_config_load_file()`, `ghostty_config_get()`, `ghostty_config_finalize()`. Already wired up in GhosttyApp.swift. Handles ~200 terminal settings with validation and diagnostics.
 
 ## Reuse strategy: two layers, no new dependencies
@@ -15,15 +15,15 @@ Layer 1: Terminal rendering (Ghostty C API)
   - Font, colors, cursor, scrollback, terminal keybinds
   - Parsed by Ghostty's Zig config system (battle-tested, ~200 settings)
   - Loaded from ~/.config/ghostty/config (Ghostty compat for free)
-  - Mistty can override via its own config
+  - Mytty can override via its own config
 
-Layer 2: App behavior (MisttyConfig + TOMLKit)
+Layer 2: App behavior (MyttyConfig + TOMLKit)
   - Panels, sessions, which-key, notifications, keybindings
   - Parsed by TOMLKit (already a dependency)
-  - Loaded from ~/.config/mistty/config.toml
+  - Loaded from ~/.config/mytty/config.toml
 
 Layer 3 (future): Per-project overrides
-  - .mistty.toml in project root
+  - .mytty.toml in project root
   - Overrides Layer 2 settings for that workspace
   - Directory trust model for security
 ```
@@ -46,7 +46,7 @@ Layer 3 (future): Per-project overrides
 - window-opacity, background-blur
 - padding
 
-### Appearance (Layer 2, Mistty-specific)
+### Appearance (Layer 2, Mytty-specific)
 - sidebar-position: left | right
 - tab-bar-style: custom | native
 
@@ -96,7 +96,7 @@ Layer 3 (future): Per-project overrides
 
 ## Implementation approach
 
-The current MisttyConfig uses hand-rolled field-by-field parsing:
+The current MyttyConfig uses hand-rolled field-by-field parsing:
 ```swift
 if let size = table["font_size"]?.int { config.fontSize = size }
 ```
@@ -117,22 +117,22 @@ if FileManager.default.fileExists(atPath: ghosttyConfigPath) {
     ghostty_config_load_file(cfg, ghosttyConfigPath)
 }
 ```
-cmux does exactly this. Mistty's own config overrides Ghostty's (loaded after).
+cmux does exactly this. Mytty's own config overrides Ghostty's (loaded after).
 
 ## Sources
 
-- Mistty/Config/MisttyConfig.swift (current implementation)
-- Mistty/App/GhosttyApp.swift (Ghostty C API usage)
+- Mytty/Config/MyttyConfig.swift (current implementation)
+- Mytty/App/GhosttyApp.swift (Ghostty C API usage)
 - vendor/ghostty/src/config/CApi.zig (Ghostty config C API)
 - vendor/ghostty/include/ghostty.h (C API declarations)
 - /tmp/ai-research-cmux-patterns.md (cmux's GhosttyConfig.swift)
 
 ## Example config file
 
-Shows the full shape of what `~/.config/mistty/config.toml` could look like:
+Shows the full shape of what `~/.config/mytty/config.toml` could look like:
 
 ```toml
-# ~/.config/mistty/config.toml
+# ~/.config/mytty/config.toml
 
 # Appearance (overrides Ghostty config if read-ghostty-config = true)
 font-family = "Berkeley Mono"
