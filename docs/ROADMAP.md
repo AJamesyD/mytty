@@ -10,7 +10,7 @@ Design tenets and architecture constraints: see [DESIGN.md](DESIGN.md).
 
 These are process and scope rules that govern the roadmap:
 
-0. **macOS-only**: no Windows, ever. Linux is a distant stretch goal. Lean fully into SwiftUI and AppKit, use macOS system APIs directly (NSPanel, NSUserActivity, CGEvent taps), no cross-platform abstraction layers.
+0. **Apple-first**: macOS (Apple Silicon) is the primary platform. Linux is a distant stretch goal (see Phase 6f). No Windows, ever. Lean fully into SwiftUI and AppKit for now; use macOS system APIs directly (NSPanel, NSUserActivity, CGEvent taps).
 1. **Time to daily driver**: optimize for the shortest path to replacing your current terminal setup.
 2. **Personal-first, generalizable**: solve your own workflow pain, design interfaces that generalize.
 3. **Infrastructure ships with features**: build plumbing when a feature needs it, not before.
@@ -68,19 +68,19 @@ Other candidates: Phase 7a (Ghostty submodule upgrade), Phase 4f-2 (global hotke
 
 Bring keybinding configurability to Ghostty parity, then exceed it.
 
-### 4f-1: Key Sequences (done)
+### - [x] 4f-1: Key Sequences
 Parses `ctrl+a>h` syntax. Sequence state machine with 1s configurable timeout. `SequenceIndicatorView` overlay shows pending leader keys with which-key integration after 500ms.
 
-### 4f-2: Global Hotkeys
+### - [ ] 4f-2: Global Hotkeys
 System-wide hotkey registration via `CGEvent` tap or `NSEvent.addGlobalMonitorForEvents`. Requires accessibility permissions. Needed for dropdown terminal (5a) configurable hotkey, though 5a already ships with a hardcoded hotkey.
 - Complexity: 2
 
-### 4f-3: Key Tables and Modal Bindings
+### - [ ] 4f-3: Key Tables and Modal Bindings
 Named binding sets activated/deactivated at runtime. Generalizes which-key into a single mechanism; copy mode adopts key tables for top-level dispatch but retains its internal state machine. Prefixes: `performable:` (only consume if action can execute), `all:` (broadcast to all surfaces). Chained actions.
 - Complexity: 3
 - Ghostty parity: `activate_key_table:<name>`, one-shot mode, `keybind=clear`
 
-### 4f-4: Beyond Ghostty (stretch, no timeline)
+### - [ ] 4f-4: Beyond Ghostty (stretch, no timeline)
 Ideas for future consideration, not planned work:
 - Conditional bindings (bind differently based on running process, pane count, or mode)
 - tmux-style `bind-key -r` (repeatable prefix within a timeout)
@@ -107,13 +107,13 @@ Global hotkey summons a dropdown terminal (NSPanel). Also support floating termi
 - Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty QuickTerminal.
 - Hardcoded hotkey works without config, like Phase 1a keybindings.
 
-#### 5a-1: Core dropdown (done)
+#### - [x] 5a-1: Core dropdown
 NSPanel-based dropdown with Ctrl+` hotkey, slide animation, auto-hide on focus loss, persistent session.
 
-#### 5a-2: Dropdown polish
+#### - [ ] 5a-2: Dropdown polish
 Configurable position (top/bottom/left/right), size (percentage of screen), per-monitor behavior. Not started.
 
-### 5b. Hints Mode
+### - [ ] 5b. Hints Mode
 Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type the label to act (open, copy, insert).
 
 - Complexity: 2
@@ -121,7 +121,7 @@ Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type
 - Prior art: Kitty hints kitten. Ghostty has ~180 combined votes.
 - Pairs with 6c (inline preview panes).
 
-### 5c. Floating Panes
+### - [ ] 5c. Floating Panes
 Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. Panes keep running when hidden.
 
 - Complexity: 3
@@ -137,33 +137,33 @@ Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. 
 - Complexity: 2
 - Required for App Store submission
 
-### 5d. Ghostty Config Compatibility
+### - [ ] 5d. Ghostty Config Compatibility
 Read `~/.config/ghostty/config` for themes, fonts, colors. Zero-friction migration.
 
 - Complexity: 2
 - `/spec` required: which Ghostty config keys to support, conflict resolution with Mytty config.
 - Depends on: 4a
 
-### 5e. Declarative Project Layouts
+### - [ ] 5e. Declarative Project Layouts
 `.mytty.toml` in project root: pane arrangement, commands, working directories. Directory trust prompt for untrusted projects. `start_suspended` option. Includes Layout Manager UI: "Save current layout" generates `.mytty.toml` from the live workspace.
 
 - Complexity: 2
 - `/spec` required: file format, trust model, layout manager UI design.
 - Depends on: 4a (config format), 2c (layout serialization format)
 
-### 5f. Command Palette (Cmd+K)
+### - [ ] 5f. Command Palette (Cmd+K)
 Fuzzy-searchable floating panel. All actions with shortcuts. Lower priority because which-key (1a) covers discoverability.
 
 - Complexity: 2
 - `/spec` required: action registry, search ranking, visual design. Prior art: Raycast, Nova, Linear.
 
-### 5g. Enhanced Session Manager
+### - [ ] 5g. Enhanced Session Manager
 Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide integration exists), Nerd Font icons, preview pane showing recent output. Cmd+\` for instant last-workspace toggle.
 
 - Complexity: 2
 - `/spec` required: preview pane content, icon mapping, frecency algorithm tuning.
 
-### 5h. System Notifications for Background Events
+### - [ ] 5h. System Notifications
 Optional macOS Notification Center integration for events when Mytty is not frontmost. Glow dots remain the primary in-app signal; system notifications supplement for the background case.
 
 - Complexity: 2
@@ -177,7 +177,7 @@ Optional macOS Notification Center integration for events when Mytty is not fron
 
 ## Phase 6: Moonshots
 
-### 6a. Native tmux Control Mode
+### - [ ] 6a. Native tmux Control Mode
 Render tmux panes as native Mytty splits via `tmux -CC`. Only iTerm2 has this.
 
 - Complexity: 5
@@ -185,32 +185,39 @@ Render tmux panes as native Mytty splits via `tmux -CC`. Only iTerm2 has this.
 - Defensible moat: hard to copy.
 - Ghostty's tmux control mode is in progress (DCS parser landed). If it ships, Mytty could use libghostty's tmux support, reducing the effort here.
 
-### 6b. Block-Based Output
+### - [ ] 6b. Block-Based Output
 Command+output as selectable blocks. Metadata: exit code, duration, cwd. Click to select entire block. Cmd+Up/Down to navigate. Only Warp has this.
 
 - Complexity: 4
 - `/spec` required: block detection from OSC 133, visual design, selection model, keyboard navigation.
 - Depends on: Phase 2a (shell integration / OSC 133)
 
-### 6c. Inline Preview Panes
+### - [ ] 6c. Inline Preview Panes
 Hover file paths in terminal output for Quick Look preview. Click to open in split pane. No terminal does this.
 
 - Complexity: 4
 - `/spec` required: path detection, Quick Look integration, split-pane creation flow.
 - Pairs with 5b (hints mode provides keyboard-driven target selection).
 
-### 6d. Terminal Automation API
+### - [ ] 6d. Terminal Automation API
 Expose surface state (cells, colors, cursor position) via the socket API for scripting and testing. The "Playwright for terminals" gap.
 
 - Complexity: 3
 - `/spec` required: API surface, read vs write operations, security model.
 - Depends on: 3a (socket API)
 
-### 6e. SSH Workspace Creation
+### - [ ] 6e. SSH Workspace Creation
 `mytty ssh user@host` creates a dedicated workspace with port detection, sidebar metadata, and cleanup on disconnect. Optional Eternal Terminal (`et`) integration.
 
 - Complexity: 4
 - `/spec` required: workspace lifecycle, port detection, et integration model.
+
+### - [ ] 6f. Cross-Platform (Apple Silicon + Linux)
+Explore porting to Linux while keeping Apple Silicon macOS as the primary platform. Requires replacing SwiftUI/AppKit with a cross-platform UI layer. libghostty already supports Linux. No Windows support planned.
+
+- Complexity: 5
+- `/spec` required: UI framework evaluation (GTK4, platform-native split), build system, feature parity scope.
+- Depends on: stable macOS feature set
 
 ---
 
@@ -220,27 +227,27 @@ Expose surface state (cells, colors, cursor position) via the socket API for scr
 
 ADR: `docs/decisions/007-ghostty-upgrade-policy.md`
 
-### 7a. Ghostty Submodule Upgrade
+### - [ ] 7a. Ghostty Submodule Upgrade
 Pin to a commit after the `ghostty_surface_free_text` memory leak fix (or v1.3.2 when tagged). Zero API changes between v1.3.1 and current main.
 
 - Complexity: 1
 - Upgrade procedure: ADR-007
 - Trigger: v1.3.2 tag, or proactively before next Mytty release
 
-### 7b. `just ci` Target (done)
+### - [x] 7b. `just ci` Target
 Single justfile recipe that CI and local dev both call. Runs: swift-format check, SwiftLint (strict), swift build, swift test, typos. Prerequisite for CI parity.
 
 - Complexity: 1
 - Depends on: nothing
 
-### 7c. Nix CI Workflow (done)
+### - [x] 7c. Nix CI Workflow
 GitHub Actions workflow on `macos-15`. `DeterminateSystems/nix-installer-action` + `magic-nix-cache-action`. Runs `nix develop -c just ci`. Concurrency control (cancel stale PR runs). Path filtering (skip for docs-only changes).
 
 - Complexity: 1
 - Depends on: 7b
 - Reference: Ghostty's CI pattern (DeterminateSystems on macOS due to NixOS/nix#13342)
 
-### 7d. Tag-Based Releases + Changelog (done)
+### - [x] 7d. Tag-Based Releases + Changelog
 `v*.*.*` tag triggers: build, bundle .app, create DMG (via `create-dmg`), generate changelog (via `git-cliff` from conventional commits), publish GitHub Release. Unsigned initially.
 
 - Complexity: 2
@@ -248,20 +255,26 @@ GitHub Actions workflow on `macos-15`. `DeterminateSystems/nix-installer-action`
 - Conventional commits already in use (verified via git log)
 - Produces a release from whatever is on main. No feature-phase dependency.
 
-### 7e. Periphery + Pre-Commit Hooks
+### - [ ] 7e. Periphery + Pre-Commit Hooks
 Periphery dead code detection on weekly cron. Pre-commit hooks for swift-format and SwiftLint locally.
 
 - Complexity: 1
 - Depends on: 7c
 
-### 7f. Code Signing + Notarization
+### - [ ] 7h. App Icon
+Design and add a custom app icon. Currently uses the default macOS app icon.
+
+- Complexity: 1
+- Depends on: nothing
+
+### - [ ] 7f. Code Signing + Notarization
 Developer ID certificate in GitHub secrets (keychain pattern from CodeEdit). Hardened runtime codesign. `notarytool submit` + `stapler staple`. Annual cert renewal.
 
 - Complexity: 2
 - Depends on: 7d
 - **Trigger: launch decision.** One-way door ($99/year, cert rotation). Do not start until a public release date exists.
 
-### 7g. Sparkle Auto-Updates
+### - [ ] 7g. Sparkle Auto-Updates
 Embed Sparkle framework, EdDSA signing, appcast generation in release workflow.
 
 - Complexity: 2
