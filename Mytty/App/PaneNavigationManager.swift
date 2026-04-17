@@ -14,7 +14,6 @@ private struct NavigationBinding {
 
 @MainActor @Observable
 final class PaneNavigationManager {
-  @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private var isActive = false
   private var store: SessionStore?
   private var navigationBindings: [NavigationKey: NavigationBinding] = [:]
@@ -29,7 +28,7 @@ final class PaneNavigationManager {
 
     loadBindings()
 
-    monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+    TerminalSurfaceView.keyDispatch = { [weak self] event in
       self?.handleKeyDown(event) ?? event
     }
   }
@@ -92,10 +91,7 @@ final class PaneNavigationManager {
 
   func deactivate() {
     guard isActive else { return }
-    if let monitor {
-      NSEvent.removeMonitor(monitor)
-    }
-    monitor = nil
+    TerminalSurfaceView.keyDispatch = nil
     store = nil
     navigationBindings = [:]
     passthroughProcesses = KeybindingStore.defaultPassthroughProcesses
@@ -120,12 +116,6 @@ final class PaneNavigationManager {
           isUnconsumed: trigger.prefix == .unconsumed
         )
       }
-    }
-  }
-
-  deinit {
-    if let monitor {
-      NSEvent.removeMonitor(monitor)
     }
   }
 }

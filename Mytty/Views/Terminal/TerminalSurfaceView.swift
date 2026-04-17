@@ -5,6 +5,7 @@ import MyttyShared
 final class TerminalSurfaceView: NSView {
   nonisolated(unsafe) private(set) var surface: ghostty_surface_t?
   var onSelect: (() -> Void)?
+  @MainActor static var keyDispatch: ((NSEvent) -> NSEvent?)?
   var scrollbarState = ScrollbarState()
 
   /// Back-reference to the owning pane (set by MyttyPane).
@@ -215,6 +216,10 @@ final class TerminalSurfaceView: NSView {
 
     if KeyEventDebug.enabled {
       KeyEventDebug.log("Surface.keyDown", event)
+    }
+
+    if let dispatch = Self.keyDispatch, dispatch(event) == nil {
+      return
     }
 
     let action: ghostty_input_action_e =
