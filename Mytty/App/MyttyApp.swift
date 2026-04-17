@@ -45,6 +45,19 @@ struct MyttyApp: App {
         }
     }
     .commands {
+      CommandGroup(replacing: .newItem) {
+        Button("New Session") { commands?.sessionManager() }
+          .keyboardShortcut("n")
+        Divider()
+        Button("Close Pane") { commands?.closePane() }
+          .keyboardShortcut(from: config.keybindingStore.trigger(for: "close-pane", in: .global))
+        Button("Close Tab") { commands?.closeTab() }
+          .keyboardShortcut(from: config.keybindingStore.trigger(for: "close-tab", in: .global))
+      }
+      CommandGroup(replacing: .undoRedo) { EmptyView() }
+      CommandGroup(replacing: .pasteboard) { EmptyView() }
+      CommandGroup(replacing: .textEditing) { EmptyView() }
+      CommandGroup(replacing: .printItem) { EmptyView() }
       CommandGroup(after: .toolbar) {
         Divider()
 
@@ -90,16 +103,6 @@ struct MyttyApp: App {
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "session-manager", in: .global))
 
         Divider()
-
-        Button("Close Pane") {
-          commands?.closePane()
-        }
-        .keyboardShortcut(from: config.keybindingStore.trigger(for: "close-pane", in: .global))
-
-        Button("Close Tab") {
-          commands?.closeTab()
-        }
-        .keyboardShortcut(from: config.keybindingStore.trigger(for: "close-tab", in: .global))
 
         Button("Window Mode") {
           commands?.windowMode()
