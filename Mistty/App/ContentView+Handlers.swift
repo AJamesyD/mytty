@@ -476,18 +476,18 @@ extension ContentView {
   }
 
   func handleSessionManagerKeyDown(_ event: NSEvent, vm: SessionManagerViewModel) -> NSEvent? {
-    switch event.keyCode {
-    case 53:
+    switch event.keyName {
+    case "escape":
       showingSessionManager = false
       return nil
-    case 36:
+    case "return":
       vm.confirmSelection(modifierFlags: event.modifierFlags)
       showingSessionManager = false
       return nil
-    case 126:
+    case "up":
       vm.moveUp()
       return nil
-    case 125:
+    case "down":
       vm.moveDown()
       return nil
     default:
