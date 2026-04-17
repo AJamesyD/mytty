@@ -51,6 +51,19 @@ final class WhichKeyManager {
     dismissTask = nil
   }
 
+  func showContinuations(_ bindings: [WhichKeyBinding]) {
+    currentBindings = bindings
+    breadcrumb = []
+    isActive = true
+  }
+
+  func hideContinuations() {
+    guard monitor == nil else { return }
+    isActive = false
+    currentBindings = []
+    breadcrumb = []
+  }
+
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
     if event.modifierFlags.intersection([.command, .option]).isEmpty == false {
       return event
