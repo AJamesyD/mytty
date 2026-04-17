@@ -6,12 +6,12 @@ Mytty is a macOS terminal emulator that eliminates the need for a separate
 multiplexer. The thesis: you never leave your flow to check what's happening.
 
 What Mytty is:
-- A native macOS app that embeds a best-in-class terminal renderer (libghostty)
+- A native macOS app that embeds libghostty for terminal rendering
 - A session manager that replaces tmux for local workflows
 - A platform for terminal automation via its socket API and CLI
 
 What Mytty is not:
-- A cross-platform terminal (macOS only, by design; see ROADMAP.md for scope)
+- A cross-platform terminal (macOS only, by design; see [ROADMAP.md](ROADMAP.md) for scope)
 - A Ghostty fork or skin (we use their renderer, we own the chrome)
 - A tmux replacement for remote workflows (no daemon, no attach/detach)
 - A plugin platform (the socket API covers automation)
@@ -57,7 +57,7 @@ Technical boundaries. Do not change without discussion.
   libghostty types outside TerminalSurfaceView and GhosttyApp.swift.
 
 - **libghostty parses all escape sequences internally.** Mytty handles
-  typed action callbacks (8 notification names route actions from C callbacks
+  typed action callbacks (notification names route actions from C callbacks
   to SwiftUI). Do not parse raw escape sequences. Do not duplicate Ghostty's
   terminal logic.
 
@@ -70,7 +70,7 @@ Technical boundaries. Do not change without discussion.
   protocol today. The backing store can be replaced with a daemon without
   touching the UI layer. Do not leak storage assumptions into views.
 
-- **IPC contract is the protocol.** MyttyServiceProtocol (31 methods)
+- **IPC contract is the protocol.** MyttyServiceProtocol
   defines the boundary between transport and logic. Protocol, Service,
   Listener, and CLI must stay in sync.
 

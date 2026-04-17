@@ -42,7 +42,6 @@ mytty-cli session list --json
 
 - macOS 14 (Sonoma) or later
 - Xcode 16.3 (for building libghostty via Zig)
-- Xcode 26+ (for Swift 6.3 build, if on macOS 26)
 - [Nix](https://nixos.org/download/) (provides Zig 0.15.2 for the Ghostty build)
 - [just](https://github.com/casey/just) (command runner, optional but recommended)
 
@@ -76,7 +75,7 @@ xcodebuild -downloadComponent MetalToolchain
 
 ```sh
 # Clone with submodules
-git clone --recurse-submodules mytty.git
+git clone --recurse-submodules https://github.com/milch/mistty.git mytty
 cd mytty
 
 # Or if already cloned:
@@ -103,9 +102,13 @@ just run
 | `just clean` | Clean build artifacts |
 | `just build-libghostty` | Rebuild libghostty from vendored Ghostty |
 | `just dev` | Enter nix dev shell |
-| `just fmt` | Format Swift code |
+| `just fmt` | Format all code (Swift + Nix) |
 | `just lint` | SwiftLint |
 | `just check` | Format + lint + test |
+| `just ci` | Full CI check (format + typos + strict lint + build + test) |
+| `just setup` | First-time setup (init git submodules) |
+| `just bundle` | Create Mytty.app bundle |
+| `just install` | Build, bundle, and install to /Applications |
 | `just info` | Show project info |
 
 ### Nix dev shell
@@ -135,6 +138,7 @@ mytty/
   MyttyCLI/           # CLI commands and IPC client
   MyttyTests/         # Unit tests
   vendor/ghostty/      # Ghostty git submodule
+  extras/neovim/       # smart-splits.nvim backend for pane navigation
   docs/                # Design, specs, decisions, research
   Package.swift        # Swift package manifest
   flake.nix            # Nix dev environment
@@ -146,7 +150,7 @@ mytty/
 Mytty uses a three-layer architecture:
 
 - **UI Layer** (SwiftUI): sidebar, session manager, tab bar, terminal views
-- **Session Layer** (Swift protocols): `SessionStore` > `MyttySession` > `MyttyTab` > `MyttyPane`, designed for future migration from in-memory to a background daemon
+- **Session Layer** (@Observable models): `SessionStore` > `MyttySession` > `MyttyTab` > `MyttyPane`, protocol-backed for future migration from in-memory to a background daemon
 - **Terminal Layer** (libghostty): `NSViewRepresentable` wrapping a `ghostty_surface_t` for terminal rendering
 
 See [docs/DESIGN.md](docs/DESIGN.md) for the full design document.
@@ -155,8 +159,6 @@ See [docs/DESIGN.md](docs/DESIGN.md) for the full design document.
 
 Mytty is built on [Ghostty](https://github.com/ghostty-org/ghostty) by Mitchell Hashimoto, which provides the terminal rendering engine (libghostty).
 
-This project was originally named "Mistty" and shares early design DNA with [milch/mistty](https://github.com/milch/mistty), another libghostty-based terminal. The rename to Mytty was made to avoid confusion between the two projects.
-
 Other projects that informed Mytty's design:
 
 - [Cmux](https://github.com/manaflow-ai/cmux) for patterns around libghostty integration and session architecture
@@ -164,6 +166,12 @@ Other projects that informed Mytty's design:
 - [smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim) for the bidirectional Neovim pane navigation pattern
 - [zoxide](https://github.com/ajeetdsouza/zoxide) for recent directory tracking in the session manager
 
+## Contributing
+
+1. Run `just ci` before submitting changes (typos, strict lint, build, test)
+2. Read [docs/DESIGN.md](docs/DESIGN.md) for architecture constraints and design tenets
+3. Every feature gets a written spec before implementation (see `docs/specs/`)
+
 ## License
 
-TBD
+MIT License. See [LICENSE](LICENSE).

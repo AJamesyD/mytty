@@ -6,7 +6,7 @@ Iteration: 24
 
 ## Working Agreements
 
-Design tenets and architecture constraints: see [docs/DESIGN.md](DESIGN.md).
+Design tenets and architecture constraints: see [DESIGN.md](DESIGN.md).
 
 These are process and scope rules that govern the roadmap:
 
@@ -42,21 +42,33 @@ NSPanel-based dropdown terminal with Ctrl+` hotkey, slide animation, auto-hide o
 
 Cleanup gate (partial): scene body perf fix and dead code sweep completed. Integration test coverage and API stability review still pending.
 
+### Phase 4f-1: Key Sequences
+Sequence parser (`ctrl+a>h` syntax), state machine with configurable timeout, `SequenceIndicatorView` overlay with which-key integration after 500ms.
+
+### Phase 7b-7d: CI/CD Pipeline
+`just ci` target (typos + strict lint + build + test). GitHub Actions workflow on macos-latest with Nix. Tag-based release workflow with changelog (git-cliff) and DMG.
+
+### ADR-008 Phase 1: Surface-Level Key Dispatch
+Moved pane navigation and key sequence dispatch from NSEvent monitor into `TerminalSurfaceView.keyDown`. See `docs/decisions/008-surface-level-key-dispatch.md`.
+
+### Rename: Mistty to Mytty
+Project renamed across all source, config, docs, and CI files. Bundle ID: `com.mytty.app`, config path: `~/.config/mytty/`, CLI: `mytty-cli`.
+
 ---
 
 ## Current
 
-Phase 4f-1c (visual feedback for key sequences) is on branch `feat/sequence-visual-feedback` with three commits, pending merge to main. This completes Phase 4f-1 (key sequences).
+ADR-008 Phase 2 (modal key dispatch rework) is next. This moves CopyModeManager, WindowModeManager, WhichKeyManager, and session manager key handling from NSEvent monitors into the surface keyDown path, completing the key dispatch consolidation.
 
-The key interception architecture rework (see Findings below) is recommended before Phase 4f-3 (key tables) but is not blocking current work.
+After that: Phase 4f-3 (key tables and modal bindings), which depends on the completed dispatch rework.
 
-Next candidates: Phase 7a-7c (infrastructure), Phase 4f-2 (global hotkeys), Phase 5a-2 (dropdown polish).
+Other candidates: Phase 7a (Ghostty submodule upgrade), Phase 4f-2 (global hotkeys), Phase 5a-2 (dropdown polish).
 
 ## Phase 4f: Keybinding System Upgrade
 
 Bring keybinding configurability to Ghostty parity, then exceed it.
 
-### 4f-1: Key Sequences (done, pending merge)
+### 4f-1: Key Sequences (done)
 Parses `ctrl+a>h` syntax. Sequence state machine with 1s configurable timeout. `SequenceIndicatorView` overlay shows pending leader keys with which-key integration after 500ms.
 
 ### 4f-2: Global Hotkeys
@@ -215,20 +227,20 @@ Pin to a commit after the `ghostty_surface_free_text` memory leak fix (or v1.3.2
 - Upgrade procedure: ADR-007
 - Trigger: v1.3.2 tag, or proactively before next Mytty release
 
-### 7b. `just ci` Target
+### 7b. `just ci` Target (done)
 Single justfile recipe that CI and local dev both call. Runs: swift-format check, SwiftLint (strict), swift build, swift test, typos. Prerequisite for CI parity.
 
 - Complexity: 1
 - Depends on: nothing
 
-### 7c. Nix CI Workflow
+### 7c. Nix CI Workflow (done)
 GitHub Actions workflow on `macos-15`. `DeterminateSystems/nix-installer-action` + `magic-nix-cache-action`. Runs `nix develop -c just ci`. Concurrency control (cancel stale PR runs). Path filtering (skip for docs-only changes).
 
 - Complexity: 1
 - Depends on: 7b
 - Reference: Ghostty's CI pattern (DeterminateSystems on macOS due to NixOS/nix#13342)
 
-### 7d. Tag-Based Releases + Changelog
+### 7d. Tag-Based Releases + Changelog (done)
 `v*.*.*` tag triggers: build, bundle .app, create DMG (via `create-dmg`), generate changelog (via `git-cliff` from conventional commits), publish GitHub Release. Unsigned initially.
 
 - Complexity: 2
@@ -266,14 +278,17 @@ Embed Sparkle framework, EdDSA signing, appcast generation in release workflow.
 Completed:
   Phases 0-3 (quality gate, UI, OSC, sidebar, persistence, socket API, neovim nav) ✓
   Phase 4a-4e (config, live reload, sidebar config, auto-hide polish) ✓
-  Phase 5a-1 (core dropdown), Phase 4f-1a/1b (key sequence parsing + state machine) ✓
+  Phase 4f-1 (key sequences) ✓
+  Phase 5a-1 (core dropdown) ✓
+  Phase 7b-7d (CI, releases) ✓
+  ADR-008 Phase 1 (surface-level key dispatch) ✓
 
 Current:
-  Phase 4f-1c (visual feedback): pending merge
-  Key interception architecture rework: recommended before 4f-3, not blocking
+  ADR-008 Phase 2 (modal key dispatch rework)
+  Then: 4f-3 (key tables)
 
 Future:
-  4f-1 (done) ──> 4f-3 (key tables)
+  4f-3 (key tables) depends on ADR-008 Phase 2
   Phase 5 Essential:
     5a (dropdown, hardcoded hotkey first) ──> 4f-2 adds configurable global hotkey
     5b (hints mode) pairs with 4f-3 for one-shot key table
@@ -293,7 +308,7 @@ Late dependencies:
 
 Infrastructure:
   7a (Ghostty upgrade) ──> independent
-  7b (just ci) ──> 7c (Nix CI) ──> 7d (releases) ──> 7f (signing) ──> 7g (Sparkle)
+  7b-7d (CI, releases) ✓
   7c ──> 7e (Periphery)
   7f trigger: launch decision
   7g trigger: established user base
@@ -336,7 +351,9 @@ Options:
 1. **Incremental**: consolidate five monitors into one with an explicit dispatch chain. Lower risk, partial fix.
 2. **Full rework**: move binding dispatch into the surface keyDown path (Ghostty model). Eliminates the bug class entirely but touches every manager.
 
-Rework recommended before 4f-3 (key tables would add more monitors).
+ADR-008 accepted (Option 2, full rework). Phase 1 complete: pane navigation and key sequence dispatch moved to surface keyDown. Phase 2 (modal dispatch) is next.
+
+Rework in progress (ADR-008). Phase 1 complete, Phase 2 next.
 
 ### Testing gap: synthetic NSEvents
 
