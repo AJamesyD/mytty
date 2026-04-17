@@ -13,6 +13,7 @@ struct MyttyApp: App {
   @FocusedValue(\.terminalCommands) var commands
 
   init() {
+    NSWindow.allowsAutomaticWindowTabbing = false
     _ = GhosttyAppManager.shared
   }
 
