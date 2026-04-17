@@ -19,10 +19,6 @@ final class PaneNavigationManager {
   private var navigationBindings: [NavigationKey: NavigationBinding] = [:]
   private var passthroughProcesses: [String] = KeybindingStore.defaultPassthroughProcesses
   var sequenceManager: KeySequenceManager?
-  var sessionManagerKeyHandler: ((NSEvent) -> NSEvent?)?
-  var whichKeyHandler: ((NSEvent) -> NSEvent?)?
-  var copyModeHandler: ((NSEvent) -> NSEvent?)?
-  var windowModeHandler: ((NSEvent) -> NSEvent?)?
 
   func activate(store: SessionStore) {
     guard !isActive else { return }
@@ -39,19 +35,6 @@ final class PaneNavigationManager {
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
     if KeyEventDebug.enabled {
       KeyEventDebug.log("PaneNav.in", event)
-    }
-
-    if let handler = sessionManagerKeyHandler, handler(event) == nil {
-      return nil
-    }
-    if let handler = whichKeyHandler, handler(event) == nil {
-      return nil
-    }
-    if let handler = copyModeHandler, handler(event) == nil {
-      return nil
-    }
-    if let handler = windowModeHandler, handler(event) == nil {
-      return nil
     }
 
     if let sequenceManager, sequenceManager.handleKeyDown(event) == nil {
@@ -107,10 +90,6 @@ final class PaneNavigationManager {
     store = nil
     navigationBindings = [:]
     passthroughProcesses = KeybindingStore.defaultPassthroughProcesses
-    sessionManagerKeyHandler = nil
-    whichKeyHandler = nil
-    copyModeHandler = nil
-    windowModeHandler = nil
     isActive = false
   }
 
@@ -138,20 +117,12 @@ final class PaneNavigationManager {
 
 struct PaneNavigationModifier: ViewModifier {
   let store: SessionStore
-  var sessionManagerKeyHandler: ((NSEvent) -> NSEvent?)?
-  var whichKeyHandler: ((NSEvent) -> NSEvent?)?
-  var copyModeHandler: ((NSEvent) -> NSEvent?)?
-  var windowModeHandler: ((NSEvent) -> NSEvent?)?
   var sequenceManager: KeySequenceManager?
   @State private var manager = PaneNavigationManager()
 
   func body(content: Content) -> some View {
     content
       .onAppear {
-        manager.sessionManagerKeyHandler = sessionManagerKeyHandler
-        manager.whichKeyHandler = whichKeyHandler
-        manager.copyModeHandler = copyModeHandler
-        manager.windowModeHandler = windowModeHandler
         manager.sequenceManager = sequenceManager
         manager.activate(store: store)
       }
@@ -167,19 +138,11 @@ struct PaneNavigationModifier: ViewModifier {
 extension View {
   func paneNavigation(
     store: SessionStore,
-    sessionManagerKeyHandler: ((NSEvent) -> NSEvent?)?,
-    whichKeyHandler: ((NSEvent) -> NSEvent?)?,
-    copyModeHandler: ((NSEvent) -> NSEvent?)?,
-    windowModeHandler: ((NSEvent) -> NSEvent?)?,
     sequenceManager: KeySequenceManager?
   ) -> some View {
     modifier(
       PaneNavigationModifier(
         store: store,
-        sessionManagerKeyHandler: sessionManagerKeyHandler,
-        whichKeyHandler: whichKeyHandler,
-        copyModeHandler: copyModeHandler,
-        windowModeHandler: windowModeHandler,
         sequenceManager: sequenceManager
       ))
   }

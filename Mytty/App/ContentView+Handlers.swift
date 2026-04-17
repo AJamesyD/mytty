@@ -84,19 +84,6 @@ extension ContentView {
       }
       .paneNavigation(
         store: store,
-        sessionManagerKeyHandler: { [self] event in
-          guard showingSessionManager, let vm = sessionManagerVM else { return event }
-          return handleSessionManagerKeyDown(event, vm: vm)
-        },
-        whichKeyHandler: { [self] event in
-          whichKeyManager.handleKeyDown(event)
-        },
-        copyModeHandler: { [self] event in
-          copyModeManager.handleKeyDown(event)
-        },
-        windowModeHandler: { [self] event in
-          windowModeManager.handleKeyDown(event)
-        },
         sequenceManager: keySequenceManager)
   }
 

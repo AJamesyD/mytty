@@ -13,6 +13,7 @@ struct ContentView: View {
   @State var copyModeManager = CopyModeManager()
   @State var whichKeyManager = WhichKeyManager()
   @State var keySequenceManager = KeySequenceManager()
+  @State var modalKeyDispatcher = ModalKeyDispatcher()
   @State var panelState = PanelState()
   @State var configWatcher = ConfigWatcher()
   @State var terminalCommands: TerminalCommands?
@@ -275,8 +276,23 @@ struct ContentView: View {
       DispatchQueue.main.async {
         if let window = NSApplication.shared.keyWindow {
           _ = store.registerWindow(window)
+          modalKeyDispatcher.window = window
         }
       }
+      modalKeyDispatcher.sessionManagerKeyHandler = { [self] event in
+        guard showingSessionManager, let vm = sessionManagerVM else { return event }
+        return handleSessionManagerKeyDown(event, vm: vm)
+      }
+      modalKeyDispatcher.whichKeyHandler = { [self] event in
+        whichKeyManager.handleKeyDown(event)
+      }
+      modalKeyDispatcher.copyModeHandler = { [self] event in
+        copyModeManager.handleKeyDown(event)
+      }
+      modalKeyDispatcher.windowModeHandler = { [self] event in
+        windowModeManager.handleKeyDown(event)
+      }
+      modalKeyDispatcher.activate()
     }
     .onDisappear {
       configWatcher.stop()
@@ -285,6 +301,7 @@ struct ContentView: View {
           store.unregisterWindow(tracked.window)
         }
       }
+      modalKeyDispatcher.deactivate()
       windowModeManager.deactivate()
       copyModeManager.deactivate()
       store.activeSession?.activeTab?.windowModeState = .inactive
