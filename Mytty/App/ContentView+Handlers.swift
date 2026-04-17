@@ -49,7 +49,14 @@ extension ContentView {
         handleProgressReport(notification)
       }
       .onReceive(NotificationCenter.default.publisher(for: .configDidChange)) { _ in
-        applyConfig(MyttyConfig.load())
+        let newConfig = MyttyConfig.load()
+        applyConfig(newConfig)
+        if let error = newConfig.parseError {
+          print("[Mytty] Config parse error: \(error)")
+        }
+        for warning in newConfig.keybindingStore.warnings {
+          print("[Mytty] Keybinding warning: \(warning)")
+        }
         if windowModeManager.isActive {
           windowModeManager.reloadConfig()
         }

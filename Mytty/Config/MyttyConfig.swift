@@ -47,6 +47,7 @@ struct MyttyConfig: Sendable, Equatable {
   var popups: [PopupDefinition] = []
   var ssh = SSHConfig()
   var keybindingStore: KeybindingStore = .init()
+  var parseError: String?
 
   static let `default` = MyttyConfig()
 
@@ -262,6 +263,12 @@ struct MyttyConfig: Sendable, Equatable {
     guard let contents = try? String(contentsOf: configFileURL, encoding: .utf8) else {
       return .default
     }
-    return (try? parse(contents)) ?? .default
+    do {
+      return try parse(contents)
+    } catch {
+      var config = MyttyConfig.default
+      config.parseError = error.localizedDescription
+      return config
+    }
   }
 }

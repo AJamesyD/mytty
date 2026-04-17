@@ -266,7 +266,11 @@ struct ContentView: View {
     )
     .onAppear {
       terminalCommands = makeTerminalCommands()
-      applyConfig(MyttyConfig.load())
+      let initialConfig = MyttyConfig.load()
+      applyConfig(initialConfig)
+      if let error = initialConfig.parseError {
+        print("[Mytty] Config parse error: \(error)")
+      }
       configWatcher.start()
       windowModeManager.onNeedExitCopyMode = { copyModeManager.exit() }
       copyModeManager.onNeedExitWindowMode = {

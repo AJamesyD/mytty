@@ -22,6 +22,9 @@ struct MyttyApp: App {
       ContentView(store: store)
         .onReceive(NotificationCenter.default.publisher(for: .configDidChange)) { _ in
           config = MyttyConfig.load()
+          if let error = config.parseError {
+            print("[Mytty] Config parse error: \(error)", to: &standardError)
+          }
         }
         .onAppear {
           if persistenceService == nil {
@@ -228,6 +231,13 @@ struct MyttyApp: App {
     return modifiers.isEmpty ? nil : modifiers
   }
 }
+
+private struct StandardError: TextOutputStream {
+  mutating func write(_ string: String) {
+    FileHandle.standardError.write(Data(string.utf8))
+  }
+}
+nonisolated(unsafe) private var standardError = StandardError()
 
 extension Notification.Name {
   static let myttyRenameTab = Notification.Name("myttyRenameTab")
