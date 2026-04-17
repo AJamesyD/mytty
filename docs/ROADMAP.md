@@ -87,6 +87,13 @@ Ideas for future consideration, not planned work:
 - Zellij-style named modes with visual indicators
 - User-defined key tables loadable from separate files
 
+## Phase 4g: Font Configuration
+
+Expand font config beyond `font_family` and `font_size` to support Ghostty's full font model: per-style families (`font-family-bold`, `font-family-italic`, `font-family-bold-italic`), font style overrides, `font-thicken` for non-Retina, and `font-codepoint-map` for symbol fallback. Goal: port a Ghostty font config to Mytty's `config.toml` with no loss.
+
+- Complexity: 1
+- Depends on: 4a (config format)
+
 ## Phase 4c: Advanced Session Persistence
 
 Extends 2c with scrollback persistence, running command restoration, and optional shpool/zmx integration for shell survival across app restarts.

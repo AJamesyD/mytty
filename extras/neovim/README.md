@@ -6,7 +6,7 @@ Enables bidirectional Ctrl+h/j/k/l navigation between neovim splits and Mytty pa
 
 ## Requirements
 
-- [Mytty](https://github.com/your-user/mytty) terminal emulator
+- [Mytty](https://github.com/AJamesyD/mytty) terminal emulator
 - [smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim)
 - `mytty-cli` in your PATH (`just install-cli` from the Mytty repo)
 
@@ -16,7 +16,7 @@ Add this plugin to your neovim config. With lazy.nvim:
 
 ```lua
 {
-  'your-user/mytty',
+  'AJamesyD/mytty',
   config = function()
     -- The plugin adds lua/smart-splits/mux/mytty.lua to the runtimepath
   end,
@@ -38,4 +38,4 @@ require('smart-splits').setup({
 
 **Mytty to neovim:** When you press Ctrl+h in a Mytty pane running neovim, Mytty forwards the keypress to neovim. smart-splits handles it (moving within neovim or calling back to Mytty if at the edge).
 
-The backend sets a `is-vim` variable on the active pane via `mytty-cli pane set-var` when neovim starts, and clears it on exit. Mytty uses this variable to decide whether to forward keypresses or navigate panes directly.
+The backend sets an `is-vim` variable on the active pane via `mytty-cli pane set-var` when neovim starts, and clears it on exit. Mytty uses this variable to decide whether to forward keypresses or navigate panes directly.
