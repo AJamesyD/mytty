@@ -59,17 +59,9 @@ final class KeySequenceManager {
       return event
     }
 
-    let keyName: String
-    if let name = Self.keycodeNames[event.keyCode] {
-      keyName = name
-    } else {
-      guard let chars = event.characters(byApplyingModifiers: [])?.lowercased() else {
-        return event
-      }
-      keyName = chars
-    }
+    guard let keyName = event.keyName else { return event }
 
-    let mods = modifiersFromEvent(event)
+    let mods = event.keyboardTriggerModifiers
     let trigger = KeyboardTrigger(prefix: nil, modifiers: mods, key: keyName)
 
     switch state {
@@ -94,19 +86,7 @@ final class KeySequenceManager {
 
       if let action = child.action {
         if child.isUnconsumed, let surface = surfaceForUnconsumed?() {
-          var keyEvent = ghostty_input_key_s()
-          keyEvent.action = GHOSTTY_ACTION_PRESS
-          keyEvent.keycode = UInt32(event.keyCode)
-          keyEvent.mods = ghosttyMods(event.modifierFlags)
-          keyEvent.consumed_mods = ghostty_input_mods_e(rawValue: 0)
-          keyEvent.text = nil
-          keyEvent.composing = false
-          keyEvent.unshifted_codepoint = 0
-          if let chars = event.characters(byApplyingModifiers: []),
-            let codepoint = chars.unicodeScalars.first
-          {
-            keyEvent.unshifted_codepoint = codepoint.value
-          }
+          let keyEvent = event.ghosttyKeyEvent(GHOSTTY_ACTION_PRESS)
           var flags = ghostty_binding_flags_e(0)
           if ghostty_surface_key_is_binding(surface, keyEvent, &flags) {
             cancel()
@@ -148,41 +128,6 @@ final class KeySequenceManager {
     pendingDisplay = keys.map { TriggerParser.normalize($0) }.joined(separator: " > ") + " ..."
   }
 
-  private func modifiersFromEvent(_ event: NSEvent) -> Set<KeyboardTrigger.Modifier> {
-    var mods: Set<KeyboardTrigger.Modifier> = []
-    if event.modifierFlags.contains(.command) { mods.insert(.cmd) }
-    if event.modifierFlags.contains(.control) { mods.insert(.ctrl) }
-    if event.modifierFlags.contains(.option) { mods.insert(.alt) }
-    if event.modifierFlags.contains(.shift) { mods.insert(.shift) }
-    return mods
-  }
-
-  private func ghosttyMods(_ flags: NSEvent.ModifierFlags) -> ghostty_input_mods_e {
-    var raw: UInt32 = 0
-    if flags.contains(.shift) { raw |= GHOSTTY_MODS_SHIFT.rawValue }
-    if flags.contains(.control) { raw |= GHOSTTY_MODS_CTRL.rawValue }
-    if flags.contains(.option) { raw |= GHOSTTY_MODS_ALT.rawValue }
-    if flags.contains(.command) { raw |= GHOSTTY_MODS_SUPER.rawValue }
-    if flags.contains(.capsLock) { raw |= GHOSTTY_MODS_CAPS.rawValue }
-    return ghostty_input_mods_e(rawValue: raw)
-  }
-
   // macOS virtual keycodes for modifier-only keys (Cmd, Shift, Caps, Alt, Ctrl, Fn)
   private static let modifierKeycodes: Set<UInt16> = [54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
-
-  private static let keycodeNames: [UInt16: String] = [
-    53: "escape",
-    123: "left",
-    124: "right",
-    125: "down",
-    126: "up",
-    36: "return",
-    48: "tab",
-    49: "space",
-    51: "delete",
-    115: "home",
-    119: "end",
-    116: "pageup",
-    121: "pagedown",
-  ]
 }

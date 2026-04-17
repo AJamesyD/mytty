@@ -230,12 +230,12 @@ final class TerminalSurfaceView: NSView {
 
     if keyTextAccumulator.isEmpty {
       // No text produced (e.g. Escape, arrows, function keys) — send key event only
-      let keyEvent = buildKeyEvent(action: action, event: event)
+      let keyEvent = event.ghosttyKeyEvent(action)
       _ = ghostty_surface_key(surface, keyEvent)
     } else {
       // Send key event with accumulated text
       for text in keyTextAccumulator {
-        var keyEvent = buildKeyEvent(action: action, event: event)
+        var keyEvent = event.ghosttyKeyEvent(action)
         text.withCString { ptr in
           keyEvent.text = ptr
           _ = ghostty_surface_key(surface, keyEvent)
@@ -246,7 +246,7 @@ final class TerminalSurfaceView: NSView {
 
   override func keyUp(with event: NSEvent) {
     guard let surface else { return }
-    let keyEvent = buildKeyEvent(action: GHOSTTY_ACTION_RELEASE, event: event)
+    let keyEvent = event.ghosttyKeyEvent(GHOSTTY_ACTION_RELEASE)
     _ = ghostty_surface_key(surface, keyEvent)
   }
 
@@ -266,31 +266,8 @@ final class TerminalSurfaceView: NSView {
 
     let pressed = ghosttyMods(event.modifierFlags).rawValue & mod != 0
     let action: ghostty_input_action_e = pressed ? GHOSTTY_ACTION_PRESS : GHOSTTY_ACTION_RELEASE
-    let keyEvent = buildKeyEvent(action: action, event: event)
+    let keyEvent = event.ghosttyKeyEvent(action)
     _ = ghostty_surface_key(surface, keyEvent)
-  }
-
-  private func buildKeyEvent(action: ghostty_input_action_e, event: NSEvent) -> ghostty_input_key_s
-  {
-    var key = ghostty_input_key_s()
-    key.action = action
-    key.keycode = UInt32(event.keyCode)
-    key.mods = ghosttyMods(event.modifierFlags)
-    key.consumed_mods = ghosttyMods(event.modifierFlags.subtracting([.control, .command]))
-    key.text = nil
-    key.composing = false
-
-    // Unshifted codepoint
-    key.unshifted_codepoint = 0
-    if event.type == .keyDown || event.type == .keyUp {
-      if let chars = event.characters(byApplyingModifiers: []),
-        let codepoint = chars.unicodeScalars.first
-      {
-        key.unshifted_codepoint = codepoint.value
-      }
-    }
-
-    return key
   }
 
   // MARK: - Mouse Input
@@ -330,15 +307,6 @@ final class TerminalSurfaceView: NSView {
     ghostty_surface_mouse_scroll(surface, event.scrollingDeltaX, event.scrollingDeltaY, 0)
   }
 
-  private func ghosttyMods(_ flags: NSEvent.ModifierFlags) -> ghostty_input_mods_e {
-    var raw: UInt32 = 0
-    if flags.contains(.shift) { raw |= GHOSTTY_MODS_SHIFT.rawValue }
-    if flags.contains(.control) { raw |= GHOSTTY_MODS_CTRL.rawValue }
-    if flags.contains(.option) { raw |= GHOSTTY_MODS_ALT.rawValue }
-    if flags.contains(.command) { raw |= GHOSTTY_MODS_SUPER.rawValue }
-    if flags.contains(.capsLock) { raw |= GHOSTTY_MODS_CAPS.rawValue }
-    return ghostty_input_mods_e(rawValue: raw)
-  }
   override func doCommand(by selector: Selector) {
     // Intentionally empty: prevents NSBeep when interpretKeyEvents
     // dispatches selectors (insertTab:, insertNewline:, etc.) that

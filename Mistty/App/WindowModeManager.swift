@@ -42,31 +42,9 @@ final class WindowModeManager {
     isActive = false
   }
 
-  private static let keycodeNames: [UInt16: String] = [
-    53: "escape",
-    123: "left",
-    124: "right",
-    125: "down",
-    126: "up",
-    36: "return",
-    48: "tab",
-    49: "space",
-    51: "delete",
-  ]
-
   private func actionName(for event: NSEvent) -> String? {
-    let key: String
-    if let name = Self.keycodeNames[event.keyCode] {
-      key = name
-    } else {
-      guard let chars = event.characters(byApplyingModifiers: [])?.lowercased() else { return nil }
-      key = chars
-    }
-    var mods: Set<KeyboardTrigger.Modifier> = []
-    if event.modifierFlags.contains(.command) { mods.insert(.cmd) }
-    if event.modifierFlags.contains(.control) { mods.insert(.ctrl) }
-    if event.modifierFlags.contains(.option) { mods.insert(.alt) }
-    if event.modifierFlags.contains(.shift) { mods.insert(.shift) }
+    guard let key = event.keyName else { return nil }
+    let mods = event.keyboardTriggerModifiers
     let trigger = KeyboardTrigger(prefix: nil, modifiers: mods, key: key)
     return actionLookup[trigger]
   }

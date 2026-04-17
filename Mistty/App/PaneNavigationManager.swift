@@ -43,17 +43,9 @@ final class PaneNavigationManager {
       return nil
     }
 
-    let key: String
-    if let name = Self.keycodeNames[event.keyCode] {
-      key = name
-    } else {
-      guard let chars = event.characters(byApplyingModifiers: [])?.lowercased() else {
-        return event
-      }
-      key = chars
-    }
+    guard let key = event.keyName else { return event }
 
-    let eventMods = modifiersFromEvent(event)
+    let eventMods = event.keyboardTriggerModifiers
     let navKey = NavigationKey(key: key, modifiers: eventMods)
     guard let binding = navigationBindings[navKey] else { return event }
     let direction = binding.direction
@@ -61,19 +53,7 @@ final class PaneNavigationManager {
     if binding.isUnconsumed,
       let surface = store?.activeSession?.activeTab?.activePane?.surfaceView.surface
     {
-      var keyEvent = ghostty_input_key_s()
-      keyEvent.action = GHOSTTY_ACTION_PRESS
-      keyEvent.keycode = UInt32(event.keyCode)
-      keyEvent.mods = ghosttyMods(event.modifierFlags)
-      keyEvent.consumed_mods = ghosttyMods(event.modifierFlags.subtracting([.control, .command]))
-      keyEvent.text = nil
-      keyEvent.composing = false
-      keyEvent.unshifted_codepoint = 0
-      if let chars = event.characters(byApplyingModifiers: []),
-        let codepoint = chars.unicodeScalars.first
-      {
-        keyEvent.unshifted_codepoint = codepoint.value
-      }
+      let keyEvent = event.ghosttyKeyEvent(GHOSTTY_ACTION_PRESS)
 
       var flags = ghostty_binding_flags_e(0)
       if ghostty_surface_key_is_binding(surface, keyEvent, &flags) {
@@ -143,41 +123,6 @@ final class PaneNavigationManager {
     }
   }
 
-  private func modifiersFromEvent(_ event: NSEvent) -> Set<KeyboardTrigger.Modifier> {
-    var mods: Set<KeyboardTrigger.Modifier> = []
-    if event.modifierFlags.contains(.command) { mods.insert(.cmd) }
-    if event.modifierFlags.contains(.control) { mods.insert(.ctrl) }
-    if event.modifierFlags.contains(.option) { mods.insert(.alt) }
-    if event.modifierFlags.contains(.shift) { mods.insert(.shift) }
-    return mods
-  }
-
-  private func ghosttyMods(_ flags: NSEvent.ModifierFlags) -> ghostty_input_mods_e {
-    var raw: UInt32 = 0
-    if flags.contains(.shift) { raw |= GHOSTTY_MODS_SHIFT.rawValue }
-    if flags.contains(.control) { raw |= GHOSTTY_MODS_CTRL.rawValue }
-    if flags.contains(.option) { raw |= GHOSTTY_MODS_ALT.rawValue }
-    if flags.contains(.command) { raw |= GHOSTTY_MODS_SUPER.rawValue }
-    if flags.contains(.capsLock) { raw |= GHOSTTY_MODS_CAPS.rawValue }
-    return ghostty_input_mods_e(rawValue: raw)
-  }
-
-  private static let keycodeNames: [UInt16: String] = [
-    53: "escape",
-    123: "left",
-    124: "right",
-    125: "down",
-    126: "up",
-    36: "return",
-    48: "tab",
-    49: "space",
-    51: "delete",
-    115: "home",
-    119: "end",
-    116: "pageup",
-    121: "pagedown",
-  ]
-
   deinit {
     if let monitor {
       NSEvent.removeMonitor(monitor)
@@ -208,7 +153,12 @@ struct PaneNavigationModifier: ViewModifier {
 }
 
 extension View {
-  func paneNavigation(store: SessionStore, showingSessionManager: Binding<Bool>, sequenceManager: KeySequenceManager?) -> some View {
-    modifier(PaneNavigationModifier(store: store, showingSessionManager: showingSessionManager, sequenceManager: sequenceManager))
+  func paneNavigation(
+    store: SessionStore, showingSessionManager: Binding<Bool>, sequenceManager: KeySequenceManager?
+  ) -> some View {
+    modifier(
+      PaneNavigationModifier(
+        store: store, showingSessionManager: showingSessionManager, sequenceManager: sequenceManager
+      ))
   }
 }
