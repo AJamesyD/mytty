@@ -320,11 +320,9 @@ extension ContentView {
       let title = notification.userInfo?["title"] as? String
     else { return }
     for session in store.sessions {
-      for tab in session.tabs {
-        if tab.panes.contains(where: { $0.id == paneID }) {
-          tab.tabTitle = title
-          return
-        }
+      for tab in session.tabs where tab.panes.contains(where: { $0.id == paneID }) {
+        tab.tabTitle = title
+        return
       }
     }
   }

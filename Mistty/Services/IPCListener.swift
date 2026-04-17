@@ -416,5 +416,4 @@ final class IPCListener {
     writeAll(fd: fd, data: Data(header.utf8))
     writeAll(fd: fd, data: data)
   }
-
 }

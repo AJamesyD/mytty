@@ -28,7 +28,7 @@ struct KeybindingStore: Sendable, Equatable {
   private(set) var whichKeyGroups: [WhichKeyGroup] = []
   private(set) var passthroughProcesses: [String]
   private(set) var warnings: [String] = []
-  private(set) var sequenceTrie: SequenceTrieNode = SequenceTrieNode()
+  private(set) var sequenceTrie = SequenceTrieNode()
   private(set) var sequenceTimeout: TimeInterval = 1.0
 
   static let defaultPassthroughProcesses = ["nvim", "neovim", "vim", "helix", "lazygit"]

@@ -59,7 +59,7 @@ struct SessionRowView: View {
   var showTree: Bool = true
   @State private var isExpanded = true
   @State private var isEditingSession = false
-  @State private var editingTabID: Int? = nil
+  @State private var editingTabID: Int?
   @State private var editText = ""
   @FocusState private var editFocused: Bool
 

@@ -12,7 +12,7 @@ final class KeySequenceManager {
   private(set) var state: KeySequenceState = .idle
   private(set) var pendingDisplay: String = ""
   private(set) var pendingContinuations: [WhichKeyBinding]?
-  private var trie: SequenceTrieNode = SequenceTrieNode()
+  private var trie = SequenceTrieNode()
   private var timeout: TimeInterval = 1.0
   private var timeoutTask: Task<Void, Never>?
   private var dispatch: ((String) -> Void)?

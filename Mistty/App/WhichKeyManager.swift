@@ -65,7 +65,7 @@ final class WhichKeyManager {
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
-    if event.modifierFlags.intersection([.command, .option]).isEmpty == false {
+    if event.modifierFlags.isDisjoint(with: [.command, .option]) == false {
       return event
     }
     guard let chars = event.characters(byApplyingModifiers: []),
