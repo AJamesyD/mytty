@@ -134,9 +134,21 @@ clean:
     swift package clean
     rm -rf build/
 
+# Clean all build artifacts including libghostty
+clean-all: clean
+    rm -rf vendor/ghostty/zig-out vendor/ghostty/.zig-cache vendor/ghostty/macos/GhosttyKit.xcframework
+
 # Build libghostty from the vendored submodule (requires nix)
 build-libghostty:
-    nix develop --command bash -c "cd vendor/ghostty && DEVELOPER_DIR={{DEVELOPER_DIR}} zig build -Dapp-runtime=none -Demit-xcframework=true -Doptimize=ReleaseFast"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    nix develop --command bash -c "cd vendor/ghostty && DEVELOPER_DIR={{DEVELOPER_DIR}} zig build -Dapp-runtime=none -Demit-xcframework=true -Demit-macos-app=false -Doptimize=ReleaseFast"
+    # HACK: Zig-produced .o files are not 8-byte aligned, causing Apple's
+    #   libtool to silently drop them. Rebuild the xcframework library from
+    #   all arm64 static libs in the zig cache.
+    #   Remove after Zig fixes object alignment
+    #   (https://github.com/ziglang/zig/issues/22292) or Ghostty switches to ar.
+    just _fix-xcframework
 
 # Enter the nix dev shell
 dev:
@@ -201,3 +213,45 @@ info:
     @echo ""
     @echo "Ghostty submodule:"
     @git submodule status vendor/ghostty
+
+# Rebuild xcframework library from zig-cache static libs (workaround for libtool alignment bug)
+[private]
+_fix-xcframework:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    xcfw="vendor/ghostty/macos/GhosttyKit.xcframework/macos-arm64_x86_64"
+    if [ ! -d "$xcfw" ]; then
+      echo "No universal xcframework found, skipping fixup"
+      exit 0
+    fi
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    # HACK: Apple's libtool silently drops Zig-produced .o files that aren't
+    #   8-byte aligned. Recombine all macOS static libs with zig's ar (LLVM)
+    #   using an MRI script to flatten archives.
+    #   Remove after Zig fixes object alignment
+    #   (https://github.com/ziglang/zig/issues/22292) or Ghostty switches to ar.
+    shopt -s nullglob
+    for arch in arm64 x86_64; do
+      mri="CREATE $tmp/$arch.a"$'\n'
+      count=0
+      for f in vendor/ghostty/.zig-cache/o/*/lib*.a; do
+        [[ "$f" == *"-fat.a" ]] && continue
+        got_arch=$(lipo -info "$f" 2>/dev/null | grep -oE "${arch}$" || true)
+        [ "$got_arch" != "$arch" ] && continue
+        plat=$(otool -l "$f" 2>/dev/null | grep -A 2 "LC_BUILD_VERSION" | grep "platform" | head -1 | awk '{print $2}')
+        [ "$plat" = "1" ] || continue
+        absf="$(cd "$(dirname "$f")" && pwd)/$(basename "$f")"
+        mri+="ADDLIB $absf"$'\n'
+        count=$((count+1))
+      done
+      if [ "$count" -eq 0 ]; then
+        echo "error: no $arch macOS libraries found in zig cache" >&2
+        exit 1
+      fi
+      mri+="SAVE"$'\n'"END"$'\n'
+      echo "$mri" | nix develop --command zig ar -M
+    done
+    lipo -create "$tmp/arm64.a" "$tmp/x86_64.a" -output "$xcfw/libghostty.a"
+    count=$(nm "$xcfw/libghostty.a" | grep -c ' T _ghostty' || echo 0)
+    echo "xcframework library rebuilt ($count ghostty symbols)"
