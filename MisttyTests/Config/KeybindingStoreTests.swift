@@ -200,14 +200,18 @@ final class KeybindingStoreTests: XCTestCase {
 
   func test_sequenceTrieConstruction() {
     let sequences: [String: KeySequence] = [
-      "navigate-left": KeySequence(prefix: nil, triggers: [
-        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
-        KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
-      ]),
-      "navigate-right": KeySequence(prefix: nil, triggers: [
-        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
-        KeyboardTrigger(prefix: nil, modifiers: [], key: "l"),
-      ]),
+      "navigate-left": KeySequence(
+        prefix: nil,
+        triggers: [
+          KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+          KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
+        ]),
+      "navigate-right": KeySequence(
+        prefix: nil,
+        triggers: [
+          KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+          KeyboardTrigger(prefix: nil, modifiers: [], key: "l"),
+        ]),
     ]
     let store = KeybindingStore.build(
       defaults: [:],
@@ -234,13 +238,15 @@ final class KeybindingStoreTests: XCTestCase {
     let overrides: [BindingMode: [String: KeyboardTrigger]] = [
       .global: [
         "some-action": KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a")
-      ],
+      ]
     ]
     let sequences: [String: KeySequence] = [
-      "navigate-left": KeySequence(prefix: nil, triggers: [
-        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
-        KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
-      ]),
+      "navigate-left": KeySequence(
+        prefix: nil,
+        triggers: [
+          KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+          KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
+        ])
     ]
     let store = KeybindingStore.build(
       defaults: [:],
@@ -253,7 +259,8 @@ final class KeybindingStoreTests: XCTestCase {
       sequenceOverrides: sequences
     )
     XCTAssertNil(store.trigger(for: "some-action", in: .global))
-    XCTAssertTrue(store.warnings.contains { $0.contains("sequence leader") && $0.contains("some-action") })
+    XCTAssertTrue(
+      store.warnings.contains { $0.contains("sequence leader") && $0.contains("some-action") })
     let leader = KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a")
     let hKey = KeyboardTrigger(prefix: nil, modifiers: [], key: "h")
     XCTAssertNotNil(store.sequenceTrie.children[leader]?.children[hKey])
@@ -288,10 +295,12 @@ final class KeybindingStoreTests: XCTestCase {
 
   func test_unconsumedSequence() {
     let sequences: [String: KeySequence] = [
-      "navigate-left": KeySequence(prefix: .unconsumed, triggers: [
-        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
-        KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
-      ]),
+      "navigate-left": KeySequence(
+        prefix: .unconsumed,
+        triggers: [
+          KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+          KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
+        ])
     ]
     let store = KeybindingStore.build(
       defaults: [:],

@@ -258,10 +258,12 @@ struct KeybindingStore: Sendable, Equatable {
     for (action, seq) in sequences.sorted(by: { $0.key < $1.key }) {
       guard seq.triggers.count > 1 else { continue }
       guard seq.triggers.count <= KeySequence.maxDepth else {
-        warnings.append("Sequence for '\(action)' exceeds max depth of \(KeySequence.maxDepth), skipping")
+        warnings.append(
+          "Sequence for '\(action)' exceeds max depth of \(KeySequence.maxDepth), skipping")
         continue
       }
-      insertIntoTrie(&root, triggers: seq.triggers, action: action, isUnconsumed: seq.prefix == .unconsumed)
+      insertIntoTrie(
+        &root, triggers: seq.triggers, action: action, isUnconsumed: seq.prefix == .unconsumed)
     }
     for leaderTrigger in root.children.keys {
       for (action, trigger) in flatBindings where trigger == leaderTrigger {
@@ -289,7 +291,9 @@ struct KeybindingStore: Sendable, Equatable {
       node.children[first]!.action = action
       node.children[first]!.isUnconsumed = isUnconsumed
     } else {
-      insertIntoTrie(&node.children[first]!, triggers: Array(triggers.dropFirst()), action: action, isUnconsumed: isUnconsumed)
+      insertIntoTrie(
+        &node.children[first]!, triggers: Array(triggers.dropFirst()), action: action,
+        isUnconsumed: isUnconsumed)
     }
   }
 }

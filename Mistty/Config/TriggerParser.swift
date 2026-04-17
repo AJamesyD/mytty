@@ -114,8 +114,11 @@ struct TriggerParser {
       }
     }
 
-    let segments = remaining.split(separator: ">", omittingEmptySubsequences: false).map(String.init)
-    guard segments.count <= KeySequence.maxDepth else { throw TriggerParseError.sequenceTooDeep(segments.count) }
+    let segments = remaining.split(separator: ">", omittingEmptySubsequences: false).map(
+      String.init)
+    guard segments.count <= KeySequence.maxDepth else {
+      throw TriggerParseError.sequenceTooDeep(segments.count)
+    }
 
     var triggers: [KeyboardTrigger] = []
     for segment in segments {

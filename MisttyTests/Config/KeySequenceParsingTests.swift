@@ -60,18 +60,22 @@ final class KeySequenceParsingTests: XCTestCase {
   }
 
   func test_normalizeSequence() {
-    let seq = KeySequence(prefix: nil, triggers: [
-      KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
-      KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
-    ])
+    let seq = KeySequence(
+      prefix: nil,
+      triggers: [
+        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+        KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
+      ])
     XCTAssertEqual(TriggerParser.normalizeSequence(seq), "ctrl+a>h")
   }
 
   func test_normalizeSequenceWithPrefix() {
-    let seq = KeySequence(prefix: .unconsumed, triggers: [
-      KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
-      KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
-    ])
+    let seq = KeySequence(
+      prefix: .unconsumed,
+      triggers: [
+        KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "a"),
+        KeyboardTrigger(prefix: nil, modifiers: [], key: "h"),
+      ])
     XCTAssertEqual(TriggerParser.normalizeSequence(seq), "unconsumed:ctrl+a>h")
   }
 

@@ -80,7 +80,9 @@ extension ContentView {
           sessionManagerVM = nil
         }
       }
-      .paneNavigation(store: store, showingSessionManager: $showingSessionManager, sequenceManager: keySequenceManager)
+      .paneNavigation(
+        store: store, showingSessionManager: $showingSessionManager,
+        sequenceManager: keySequenceManager)
   }
 
   func splitPane(direction: SplitDirection) {
