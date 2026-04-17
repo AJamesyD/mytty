@@ -423,6 +423,12 @@ extension ContentView {
       },
       surfaceForUnconsumed: { [self] in
         store.activeSession?.activeTab?.activePane?.surfaceView.surface
+      },
+      showWhichKey: { [self] bindings in
+        whichKeyManager.showContinuations(bindings)
+      },
+      hideWhichKey: { [self] in
+        whichKeyManager.hideContinuations()
       }
     )
   }

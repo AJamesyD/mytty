@@ -11,6 +11,7 @@ enum KeySequenceState {
 final class KeySequenceManager {
   private(set) var state: KeySequenceState = .idle
   private(set) var pendingDisplay: String = ""
+  private(set) var pendingContinuations: [WhichKeyBinding]?
   private var trie: SequenceTrieNode = SequenceTrieNode()
   private var timeout: TimeInterval = 1.0
   private var timeoutTask: Task<Void, Never>?
@@ -18,6 +19,9 @@ final class KeySequenceManager {
   private var isWindowModeActive: (() -> Bool)?
   private var isCopyModeActive: (() -> Bool)?
   private var surfaceForUnconsumed: (() -> ghostty_surface_t?)?
+  private var showWhichKey: (([WhichKeyBinding]) -> Void)?
+  private var hideWhichKey: (() -> Void)?
+  private var whichKeyTask: Task<Void, Never>?
 
   func activate(
     trie: SequenceTrieNode,
@@ -25,7 +29,9 @@ final class KeySequenceManager {
     dispatch: @escaping (String) -> Void,
     isWindowModeActive: @escaping () -> Bool,
     isCopyModeActive: @escaping () -> Bool,
-    surfaceForUnconsumed: @escaping () -> ghostty_surface_t?
+    surfaceForUnconsumed: @escaping () -> ghostty_surface_t?,
+    showWhichKey: (([WhichKeyBinding]) -> Void)? = nil,
+    hideWhichKey: (() -> Void)? = nil
   ) {
     self.trie = trie
     self.timeout = timeout
@@ -33,6 +39,8 @@ final class KeySequenceManager {
     self.isWindowModeActive = isWindowModeActive
     self.isCopyModeActive = isCopyModeActive
     self.surfaceForUnconsumed = surfaceForUnconsumed
+    self.showWhichKey = showWhichKey
+    self.hideWhichKey = hideWhichKey
   }
 
   func deactivate() {
@@ -41,6 +49,10 @@ final class KeySequenceManager {
     isWindowModeActive = nil
     isCopyModeActive = nil
     surfaceForUnconsumed = nil
+    showWhichKey = nil
+    hideWhichKey = nil
+    whichKeyTask?.cancel()
+    whichKeyTask = nil
   }
 
   func reloadConfig(trie: SequenceTrieNode, timeout: TimeInterval) {
@@ -70,6 +82,7 @@ final class KeySequenceManager {
       state = .pending(node: child, keys: [trigger])
       startTimeout()
       updatePendingDisplay(keys: [trigger])
+      startWhichKeyDelay(for: child)
       return nil
 
     case .pending(let node, let keys):
@@ -102,6 +115,7 @@ final class KeySequenceManager {
       state = .pending(node: child, keys: newKeys)
       startTimeout()
       updatePendingDisplay(keys: newKeys)
+      startWhichKeyDelay(for: child)
       return nil
     }
   }
@@ -111,6 +125,9 @@ final class KeySequenceManager {
     pendingDisplay = ""
     timeoutTask?.cancel()
     timeoutTask = nil
+    whichKeyTask?.cancel()
+    whichKeyTask = nil
+    hideWhichKey?()
   }
 
   private func startTimeout() {
@@ -126,6 +143,36 @@ final class KeySequenceManager {
 
   private func updatePendingDisplay(keys: [KeyboardTrigger]) {
     pendingDisplay = keys.map { TriggerParser.normalize($0) }.joined(separator: " > ") + " ..."
+  }
+
+  private func startWhichKeyDelay(for node: SequenceTrieNode) {
+    whichKeyTask?.cancel()
+    hideWhichKey?()
+    guard !node.children.isEmpty else { return }
+    let bindings = continuations(from: node)
+    whichKeyTask = Task {
+      try? await Task.sleep(for: .milliseconds(500))
+      guard !Task.isCancelled else { return }
+      showWhichKey?(bindings)
+    }
+  }
+
+  private func continuations(from node: SequenceTrieNode) -> [WhichKeyBinding] {
+    node.children.compactMap { trigger, child in
+      let label: String
+      if let action = child.action {
+        label = action
+      } else {
+        label = "..."
+      }
+      guard let key = trigger.key.first else { return nil }
+      if child.action != nil {
+        return WhichKeyBinding(key: key, action: .command(label: label, action: {}))
+      } else {
+        let subBindings = self.continuations(from: child)
+        return WhichKeyBinding(key: key, action: .group(label: label, children: subBindings))
+      }
+    }.sorted { String($0.key) < String($1.key) }
   }
 
   // macOS virtual keycodes for modifier-only keys (Cmd, Shift, Caps, Alt, Ctrl, Fn)
