@@ -149,11 +149,11 @@ setup:
 
 # Format Swift code
 fmt-swift:
-    swift format --in-place --recursive Mistty/ MisttyTests/
+    swift format --in-place --recursive Mistty/ MisttyTests/ MisttyCLI/ MisttyShared/
 
 # Check formatting without modifying
 fmt-check:
-    swift format --recursive Mistty/ MisttyTests/
+    swift format --recursive Mistty/ MisttyTests/ MisttyCLI/ MisttyShared/
 
 # Lint Swift code
 lint:
@@ -162,6 +162,10 @@ lint:
 # Lint and auto-fix Swift code
 lint-fix:
     swiftlint lint --fix --quiet
+
+# Lint Swift code (strict: warnings are errors)
+lint-strict:
+    swiftlint lint --quiet --strict
 
 # Format nix files
 nix-fmt:
@@ -175,6 +179,10 @@ fmt: fmt-all
 
 # Pre-commit check: format, lint, test
 check: fmt-check lint test
+
+# CI pipeline: format check, strict lint, build, test, typos
+ci: fmt-check lint-strict build test
+    typos
 
 # Show project info
 info:

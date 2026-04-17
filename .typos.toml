@@ -1,0 +1,7 @@
+[files]
+extend-exclude = ["vendor/"]
+
+[default.extend-words]
+# Intentional misspellings in fuzzy match test data
+proejct = "proejct"
+fo = "fo"

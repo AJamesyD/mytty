@@ -33,6 +33,7 @@
           pkgs.aria2
           pkgs.zls
           pkgs.swiftlint
+          pkgs.typos
         ];
 
         shellHook = ''
