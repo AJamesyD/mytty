@@ -9,7 +9,6 @@ struct ContentView: View {
   @Environment(\.accessibilityReduceMotion) var reduceMotion
   @State var showingSessionManager = false
   @State var sessionManagerVM: SessionManagerViewModel?
-  @State var eventMonitor: Any?
   @State var windowModeManager = WindowModeManager()
   @State var copyModeManager = CopyModeManager()
   @State var whichKeyManager = WhichKeyManager()
@@ -286,7 +285,6 @@ struct ContentView: View {
           store.unregisterWindow(tracked.window)
         }
       }
-      removeKeyMonitor()
       windowModeManager.deactivate()
       copyModeManager.deactivate()
       store.activeSession?.activeTab?.windowModeState = .inactive

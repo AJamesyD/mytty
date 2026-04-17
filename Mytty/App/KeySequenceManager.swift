@@ -16,8 +16,6 @@ final class KeySequenceManager {
   private var timeout: TimeInterval = 1.0
   private var timeoutTask: Task<Void, Never>?
   private var dispatch: ((String) -> Void)?
-  private var isWindowModeActive: (() -> Bool)?
-  private var isCopyModeActive: (() -> Bool)?
   private var surfaceForUnconsumed: (() -> ghostty_surface_t?)?
   private var showWhichKey: (([WhichKeyBinding]) -> Void)?
   private var hideWhichKey: (() -> Void)?
@@ -27,8 +25,6 @@ final class KeySequenceManager {
     trie: SequenceTrieNode,
     timeout: TimeInterval,
     dispatch: @escaping (String) -> Void,
-    isWindowModeActive: @escaping () -> Bool,
-    isCopyModeActive: @escaping () -> Bool,
     surfaceForUnconsumed: @escaping () -> ghostty_surface_t?,
     showWhichKey: (([WhichKeyBinding]) -> Void)? = nil,
     hideWhichKey: (() -> Void)? = nil
@@ -36,8 +32,6 @@ final class KeySequenceManager {
     self.trie = trie
     self.timeout = timeout
     self.dispatch = dispatch
-    self.isWindowModeActive = isWindowModeActive
-    self.isCopyModeActive = isCopyModeActive
     self.surfaceForUnconsumed = surfaceForUnconsumed
     self.showWhichKey = showWhichKey
     self.hideWhichKey = hideWhichKey
@@ -46,8 +40,6 @@ final class KeySequenceManager {
   func deactivate() {
     cancel()
     dispatch = nil
-    isWindowModeActive = nil
-    isCopyModeActive = nil
     surfaceForUnconsumed = nil
     showWhichKey = nil
     hideWhichKey = nil
@@ -62,11 +54,6 @@ final class KeySequenceManager {
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
-    if isWindowModeActive?() == true || isCopyModeActive?() == true {
-      if case .pending = state { cancel() }
-      return event
-    }
-
     if Self.modifierKeycodes.contains(event.keyCode) {
       return event
     }

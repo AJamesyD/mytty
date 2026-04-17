@@ -14,10 +14,6 @@ struct WhichKeyBinding: Identifiable {
 
 @MainActor @Observable
 final class WhichKeyManager {
-  // NOTE: @ObservationIgnored prevents the @Observable macro from wrapping this
-  // property with @ObservationTracked, which conflicts with nonisolated(unsafe)
-  // on Swift 6.3. The monitor handle must be nonisolated for deinit access.
-  @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private(set) var isActive = false
   private(set) var currentBindings: [WhichKeyBinding] = []
   private(set) var breadcrumb: [String] = []
@@ -31,18 +27,10 @@ final class WhichKeyManager {
     breadcrumb = []
     isActive = true
     resetTimeout()
-
-    monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      self?.handleKeyDown(event) ?? event
-    }
   }
 
   func deactivate() {
     guard isActive else { return }
-    if let monitor {
-      NSEvent.removeMonitor(monitor)
-    }
-    monitor = nil
     isActive = false
     currentBindings = []
     rootBindings = []
@@ -58,13 +46,13 @@ final class WhichKeyManager {
   }
 
   func hideContinuations() {
-    guard monitor == nil else { return }
     isActive = false
     currentBindings = []
     breadcrumb = []
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
+    guard isActive else { return event }
     if event.modifierFlags.isDisjoint(with: [.command, .option]) == false {
       return event
     }
@@ -106,12 +94,6 @@ final class WhichKeyManager {
       try? await Task.sleep(for: .seconds(3))
       guard !Task.isCancelled else { return }
       deactivate()
-    }
-  }
-
-  deinit {
-    if let monitor {
-      NSEvent.removeMonitor(monitor)
     }
   }
 

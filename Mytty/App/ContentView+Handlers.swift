@@ -78,14 +78,25 @@ extension ContentView {
         if isShowing {
           let vm = SessionManagerViewModel(store: store)
           sessionManagerVM = vm
-          installKeyMonitor(vm: vm)
         } else {
-          removeKeyMonitor()
           sessionManagerVM = nil
         }
       }
       .paneNavigation(
-        store: store, showingSessionManager: $showingSessionManager,
+        store: store,
+        sessionManagerKeyHandler: { [self] event in
+          guard showingSessionManager, let vm = sessionManagerVM else { return event }
+          return handleSessionManagerKeyDown(event, vm: vm)
+        },
+        whichKeyHandler: { [self] event in
+          whichKeyManager.handleKeyDown(event)
+        },
+        copyModeHandler: { [self] event in
+          copyModeManager.handleKeyDown(event)
+        },
+        windowModeHandler: { [self] event in
+          windowModeManager.handleKeyDown(event)
+        },
         sequenceManager: keySequenceManager)
   }
 
@@ -413,12 +424,6 @@ extension ContentView {
       dispatch: { [self] action in
         dispatchSequenceAction(action)
       },
-      isWindowModeActive: { [self] in
-        store.activeSession?.activeTab?.isWindowModeActive == true
-      },
-      isCopyModeActive: { [self] in
-        store.activeSession?.activeTab?.isCopyModeActive == true
-      },
       surfaceForUnconsumed: { [self] in
         store.activeSession?.activeTab?.activePane?.surfaceView.surface
       },
@@ -477,12 +482,6 @@ extension ContentView {
 
   // MARK: - Key Monitors
 
-  func installKeyMonitor(vm: SessionManagerViewModel) {
-    eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-      self.handleSessionManagerKeyDown(event, vm: vm)
-    }
-  }
-
   func handleSessionManagerKeyDown(_ event: NSEvent, vm: SessionManagerViewModel) -> NSEvent? {
     switch event.keyName {
     case "escape":
@@ -513,13 +512,6 @@ extension ContentView {
     }
 
     return event
-  }
-
-  func removeKeyMonitor() {
-    if let monitor = eventMonitor {
-      NSEvent.removeMonitor(monitor)
-      eventMonitor = nil
-    }
   }
 
   func jumpToPrompt(direction: Int) {

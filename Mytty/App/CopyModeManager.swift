@@ -4,7 +4,6 @@ import SwiftUI
 
 @MainActor @Observable
 final class CopyModeManager {
-  @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private(set) var isActive = false
   private var store: SessionStore?
   var onNeedExitWindowMode: () -> Void = {}
@@ -37,7 +36,6 @@ final class CopyModeManager {
 
     tab.copyModeState = CopyModeState(
       rows: rows, cols: cols, cursorRow: cursorRow, cursorCol: cursorCol)
-    installMonitor()
   }
 
   func exit() {
@@ -49,7 +47,6 @@ final class CopyModeManager {
       _ = ghostty_surface_binding_action(surface, actionStr, UInt(actionStr.utf8.count))
     }
     store?.activeSession?.activeTab?.copyModeState = nil
-    removeMonitor()
     store = nil
     isActive = false
   }
@@ -57,12 +54,6 @@ final class CopyModeManager {
   func deactivate() {
     guard isActive else { return }
     exit()
-  }
-
-  private func installMonitor() {
-    monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      self?.handleKeyDown(event) ?? event
-    }
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
@@ -148,13 +139,6 @@ final class CopyModeManager {
 
     store?.activeSession?.activeTab?.copyModeState = state
     return nil
-  }
-
-  private func removeMonitor() {
-    if let monitor {
-      NSEvent.removeMonitor(monitor)
-    }
-    monitor = nil
   }
 
   private func scrollViewport(_ state: inout CopyModeState, delta: Int) {
@@ -450,11 +434,5 @@ final class CopyModeManager {
     defer { ghostty_surface_free_text(surface, &text) }
     guard let ptr = text.text else { return nil }
     return String(cString: ptr)
-  }
-
-  deinit {
-    if let monitor {
-      NSEvent.removeMonitor(monitor)
-    }
   }
 }

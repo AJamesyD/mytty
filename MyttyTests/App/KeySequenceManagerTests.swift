@@ -27,8 +27,6 @@ final class KeySequenceManagerTests: XCTestCase {
       trie: trie,
       timeout: timeout,
       dispatch: { [self] action in dispatched.append(action) },
-      isWindowModeActive: { false },
-      isCopyModeActive: { false },
       surfaceForUnconsumed: { nil }
     )
   }

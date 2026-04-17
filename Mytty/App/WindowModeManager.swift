@@ -3,7 +3,6 @@ import SwiftUI
 
 @MainActor @Observable
 final class WindowModeManager {
-  @ObservationIgnored nonisolated(unsafe) private var monitor: Any?
   private(set) var isActive = false
   private var store: SessionStore?
   private var actionLookup: [KeyboardTrigger: String] = [:]
@@ -19,10 +18,6 @@ final class WindowModeManager {
     if store.activeSession?.activeTab?.isCopyModeActive == true {
       onNeedExitCopyMode()
     }
-
-    monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      self?.handleKeyDown(event) ?? event
-    }
   }
 
   func reloadConfig() {
@@ -33,10 +28,6 @@ final class WindowModeManager {
 
   func deactivate() {
     guard isActive else { return }
-    if let monitor {
-      NSEvent.removeMonitor(monitor)
-    }
-    monitor = nil
     store = nil
     actionLookup = [:]
     isActive = false
@@ -184,11 +175,5 @@ final class WindowModeManager {
       let pane = tab.activePane
     else { return }
     tab.layout.resizeSplit(containing: pane, delta: delta, along: direction)
-  }
-
-  deinit {
-    if let monitor {
-      NSEvent.removeMonitor(monitor)
-    }
   }
 }
