@@ -151,6 +151,19 @@ Mytty uses a three-layer architecture:
 
 See [docs/DESIGN.md](docs/DESIGN.md) for the full design document.
 
+## Acknowledgments
+
+Mytty is built on [Ghostty](https://github.com/ghostty-org/ghostty) by Mitchell Hashimoto, which provides the terminal rendering engine (libghostty).
+
+This project was originally named "Mistty" and shares early design DNA with [milch/mistty](https://github.com/milch/mistty), another libghostty-based terminal. The rename to Mytty was made to avoid confusion between the two projects.
+
+Other projects that informed Mytty's design:
+
+- [Cmux](https://github.com/manaflow-ai/cmux) for patterns around libghostty integration and session architecture
+- [tmux](https://github.com/tmux/tmux) for the session/window/pane workflow model
+- [smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim) for the bidirectional Neovim pane navigation pattern
+- [zoxide](https://github.com/ajeetdsouza/zoxide) for recent directory tracking in the session manager
+
 ## License
 
 TBD
