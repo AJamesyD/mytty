@@ -63,6 +63,10 @@ extension ContentView {
     mainContent
       .overlay { sessionManagerOverlay }
       .overlay { popupOverlay }
+      .overlay(alignment: .bottom) {
+        SequenceIndicatorView(text: keySequenceManager.pendingDisplay)
+          .padding(.bottom, 40)
+      }
       .overlay {
         WhichKeyOverlay(
           bindings: whichKeyManager.currentBindings,
