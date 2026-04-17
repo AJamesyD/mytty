@@ -211,6 +211,15 @@ final class TerminalSurfaceView: NSView {
   /// Accumulates text from interpretKeyEvents → insertText
   private var keyTextAccumulator: [String] = []
 
+  override func performKeyEquivalent(with event: NSEvent) -> Bool {
+    guard event.type == .keyDown else { return false }
+    guard event.modifierFlags.contains(.command) else { return false }
+    if let mainMenu = NSApp.mainMenu, mainMenu.performKeyEquivalent(with: event) {
+      return true
+    }
+    return false
+  }
+
   override func keyDown(with event: NSEvent) {
     guard let surface else { return }
 
