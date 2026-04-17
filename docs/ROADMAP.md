@@ -1,8 +1,8 @@
 # Mistty Roadmap
 
 Created: 2026-04-14
-Last updated: 2026-04-16
-Iteration: 22
+Last updated: 2026-04-17
+Iteration: 24
 
 ## Working Agreements
 
@@ -16,352 +16,72 @@ These are process and scope rules that govern the roadmap:
 3. **Infrastructure ships with features**: build plumbing when a feature needs it, not before.
 4. **Dependency-ordered**: phases are sequenced by what unblocks what. No fake timelines.
 5. **Opinionated defaults, constrained configuration**: ship one good design. When configuration is needed, prefer presets over arbitrary values. Don't push design decisions to the user. Code must be written with the assumption that hardcoded values will become configurable later: access through abstractions (e.g., `theme.surface` not `Color.white.opacity(0.03)`), even when the backing store is a static singleton.
-6. **Principle of Least Astonishment**: follow macOS conventions wherever possible. Standard shortcuts (Cmd+S, Cmd+X, Cmd+C/V, Cmd+Q, Cmd+H, Cmd+Shift+]/[) must not be overridden for non-standard purposes. When Mistty needs a shortcut, pick one that doesn't conflict with universal macOS muscle memory. Custom behaviors (modes, which-key, split panes) are fine where macOS has no convention, but defaults should never surprise a user coming from another macOS app. Research: `/tmp/ai-research-macos-native-divergence-framework.md`.
+6. **Principle of Least Astonishment**: follow macOS conventions wherever possible. Standard shortcuts (Cmd+S, Cmd+X, Cmd+C/V, Cmd+Q, Cmd+H, Cmd+Shift+]/[) must not be overridden for non-standard purposes. When Mistty needs a shortcut, pick one that doesn't conflict with universal macOS muscle memory. Custom behaviors (modes, which-key, split panes) are fine where macOS has no convention, but defaults should never surprise a user coming from another macOS app.
 
 ---
 
 ## Completed
 
 ### Phase 0: Quality Gate
-All tests pass (271, 0 failures), zero compiler warnings, zero swiftlint violations. Cleanup shipped: test isolation, swift format, swiftlint config, CopyModeManager bug fixes, dead code removal.
+All tests passing, zero compiler warnings, zero swiftlint violations.
 
-### Phase 1a: Which-Key Overlay
-Transient hierarchical keybinding overlay (Ctrl+Space). Categorized actions (w=windows, p=panes, s=sessions). Fades after selection or timeout. Hardcoded keybindings until config system lands.
+### Phase 1: UI Foundation (1a, 1b, 1c)
+Which-key overlay (Ctrl+Space) with categorized actions. Visual polish across all UI regions: theme system (`MisttyTheme.swift` with semantic tokens), sidebar rework (accent bars, badges, indicators), session/tab renaming, tab bar "if-multiple" visibility, tab drag-and-drop. Auto-hide panels (Pinned / Auto-hide / Hidden modes, overlay without reflow). Cleanup gates completed: @FocusedValue migration, ContentView extraction, sidebar accessibility audit.
 
----
+### Phase 2: Terminal Intelligence (2a, 2b, 2c)
+OSC action callback handling (PWD, titles, notifications, command finished, progress). Contextual sidebar: notification badges (glow dots for bell/failure, count pills), shell integration (OSC 133) with process title and command result in tab rows, prompt navigation (Cmd+Shift+Up/Down), clipboard paste fix. Rich sidebar metadata (git branch) was built and reverted: per-pane data doesn't belong at session level. Basic session persistence: tree saved to disk on quit, restored on launch. Cleanup gates completed: event handler extraction, IPC audit, OSC test coverage, IPC parity check.
 
-## Phase 1b: Daily Driver Polish
+### Phase 3: Platform (3a, 3b)
+JSON-RPC 2.0 socket API with `noun.verb` naming, structured error codes, and event subscription. Neovim split navigation (bidirectional Ctrl+h/j/k/l via smart-splits.nvim). Cleanup gates completed: config audit, MisttyTheme review.
 
-**Why first:** the app works but looks like a prototype. Every user's first impression is visual. These items are the difference between "interesting project" and "I could use this."
+### Phase 4: Configuration (4a, 4b, 4d, 4e)
+Config file (`~/.config/mistty/config.toml`) as single source of truth (see ADR-006). TriggerParser, KeybindingStore, per-mode keybinding sections with `unconsumed:` prefix. Default keybindings aligned with macOS conventions. Modal keybindings wired for WindowModeManager and WhichKeyManager. Live config reload via `DispatchSource` file watcher. Sidebar position/tree-depth configurable. Auto-hide UX polish: spring animations, Reduce Motion support, improved hint bar. Deferred auto-hide items tracked: dismiss-while-browsing, popup suppression, asymmetric animation, flash-on-background-event, escape-to-dismiss.
 
-- [x] Cmd+/- beep fix: add no-op menu commands so AppKit stops alerting (ghostty handles font size internally)
-- [x] Tab-completion beep fix: add `doCommand(by:)` override to TerminalSurfaceView so `interpretKeyEvents` selectors don't fall through to NSBeep (matches Ghostty's approach)
-- [x] Sidebar/terminal divider: 1px separator or subtle shadow between panels
-- [x] Tab active/inactive contrast: increase highlight difference
-- [x] Typography hierarchy: lighter weight or smaller size for sidebar labels vs terminal text
-- [x] Inactive pane dimming: black overlay on inactive split panes
-- [x] Muted inactive sidebar text
-- [x] Sidebar truncation: tooltips on hover for truncated session names
-### Cleanup gate (before remaining 1b work)
-- [x] **Theme file extraction**: `MisttyTheme.swift` with 25 semantic color tokens. All hardcoded color values migrated across 12 view files. Spec: `/tmp/ai-design-sidebar-visual-rework.md`.
+### Phase 5a-1: Core Dropdown Terminal
+NSPanel-based dropdown terminal with Ctrl+` hotkey, slide animation, auto-hide on focus loss, persistent session.
 
-### Remaining 1b features
-- [x] Sidebar visual rework: accent bar on active session (via `listRowBackground`), tab count badge, pane count indicator, active tab highlight, increased indentation, session spacing. Spec: `/tmp/ai-design-sidebar-visual-rework.md`. Future work: per-session colors (needs config system), hover close buttons, pane sub-rows.
-- [x] Session/tab renaming (sidebar + tab bar only). `/spec` before implementation. Scope: double-click to rename in sidebar and tab bar. Right-click context menu with "Rename" option. CLI rename and OSC 0/1/2 title integration deferred to Phase 2/3. Prior art: Kitty `tab_title_template`, iTerm2 session naming. Spec: /tmp/ai-design-session-tab-renaming.md.
-- [x] Tab bar visibility mode: "always", "never", "if-multiple" (hide when only 1 tab). Small enough to implement directly (no `/spec` needed). Prior art: Kitty `tab_bar_min_tabs`, WezTerm `hide_tab_bar_if_only_one_tab`, neovim bufferline. Hardcode "if-multiple" as default, expose via config in Phase 4.
-- [x] Tab drag-and-drop reordering. `/spec` before implementation. Prior art: iTerm2, Kitty, browser tab bars. Spec: /tmp/ai-design-tab-drag-drop.md.
-- ~~Dropdown / Quake mode~~: moved to Phase 5 as 5a (not blocking daily driver use).
-
-- Complexity: 2 (visual polish items are individually small; dropdown moved to Phase 5)
-
-**Done when (core):** no system alert sounds on standard shortcuts, clear visual boundaries between all UI regions, sessions and tabs renameable, tab bar hides with single tab, tabs reorderable by drag.
+Cleanup gate (partial): scene body perf fix and dead code sweep completed. Integration test coverage and API stability review still pending.
 
 ---
 
-### Cleanup gate (before Phase 1c)
-- [x] `/refactor` **@FocusedValue migration** (moved from Phase 3a): replace NotificationCenter menu commands with @FocusedValue. Currently 45 NotificationCenter usages across MisttyApp.swift and ContentView.swift. Every new feature adds more. Fix now before auto-hide panels add more notification-based toggles. Fixes multi-window menu targeting bug. Done: TerminalCommands struct with closures, .focusedSceneValue. 15 notification names removed.
-- [x] `/refactor` **ContentView extraction**: split ContentView.swift (472 lines, growing) into focused components. Extract notification routing, overlay management, and keyboard monitor setup into separate files. Pure refactor. Done: split into ContentView.swift (layout) and ContentView+Handlers.swift (event routing).
-- [x] `/cleanup` **Sidebar interaction audit**: review sidebar tap targets, hover states, and accessibility traits after the visual rework. Ensure VoiceOver reads session/tab hierarchy correctly. Done: tap targets correct, accessibility labels added for bell, pane count, tab count.
+## Current
 
-## Phase 1c: Auto-Hide Panels
+Phase 4f-1c (visual feedback for key sequences) is on branch `feat/sequence-visual-feedback` with three commits, pending merge to main. This completes Phase 4f-1 (key sequences).
 
-**Why here:** screen real estate is everything for a terminal. Without this, the sidebar and tab bar eat space permanently.
+The key interception architecture rework (see Findings below) is recommended before Phase 4f-3 (key tables) but is not blocking current work.
 
-Sidebar and tab bar support Pinned / Auto-hide / Hidden modes. Auto-hide: overlay slides in on edge hover (150ms dwell, 20px trigger zone), out on mouse leave (300ms delay). Panels overlay terminal content (no resize/reflow). Keyboard shortcuts always work regardless of mode.
+Next candidates: Phase 7a-7c (infrastructure), Phase 4f-2 (global hotkeys), Phase 5a-2 (dropdown polish).
 
+## Phase 4f: Keybinding System Upgrade
+
+Bring keybinding configurability to Ghostty parity, then exceed it.
+
+### 4f-1: Key Sequences (done, pending merge)
+Parses `ctrl+a>h` syntax. Sequence state machine with 1s configurable timeout. `SequenceIndicatorView` overlay shows pending leader keys with which-key integration after 500ms.
+
+### 4f-2: Global Hotkeys
+System-wide hotkey registration via `CGEvent` tap or `NSEvent.addGlobalMonitorForEvents`. Requires accessibility permissions. Needed for dropdown terminal (5a) configurable hotkey, though 5a already ships with a hardcoded hotkey.
 - Complexity: 2
-- [x] `/spec` review: spec updated with Iteration 4 (hide-when-single-tab interaction, WezTerm-style config shape).
-- [x] `d088f29` feat(ui): add auto-hide panels for sidebar and tab bar. Three modes (pinned/auto-hide/hidden), EdgeTriggerView with NSTrackingArea, modal suppression, Reduce Motion support, Settings UI pickers.
 
-**Future opportunity:** live config reload (watch config file with DispatchSource, push changes to PanelState without restart). Panel modes are good candidates since they don't require terminal reflow.
-
-**Done when:** ~~sidebar and tab bar can be set to auto-hide, panels overlay without reflowing terminal content, keyboard shortcuts work in all modes. Menu commands target the correct window in multi-window (verified by @FocusedValue migration in cleanup gate).~~ Done 2026-04-14. Visually verified all six acceptance criteria.
-
----
-
-### Cleanup gate (before Phase 2)
-- [x] `/cleanup` **Swiftlint + swift format pass**: `2d4522c` style: swift format pass. Zero violations.
-- [x] `/cleanup` **Test coverage audit**: `c6e79ee` test: PanelStateTests, MisttyConfigTests additions, MisttySessionTests. 275 → 304 tests. Remaining gaps: manager classes (NSEvent-dependent), view files (need UI tests).
-- [x] `/refactor` **Manager pattern review**: evaluated. The 4 managers share ~8 lines of boilerplate (monitor field, isActive guard, deactivate cleanup) but differ in activate signatures, state shape, and event handling. CopyMode has exit/deactivate split. Extraction not warranted (shared code is trivial, managers won't change together). Pattern for Phase 2's attention coordinator: `@Observable` class, `@ObservationIgnored nonisolated(unsafe) var monitor: Any?`, `isActive` flag, `activate(...)` installs `NSEvent.addLocalMonitorForEvents(.keyDown)`, `deactivate()` removes monitor and nils state.
-- [x] `/cleanup` **MisttyTheme token audit**: all existing tokens in use. Added `panelOverlayShadow` and `autoHideHint` tokens for Phase 1c hardcoded colors.
-
-## Phase 2a: OSC Foundation
-
-**Why this phase:** the sidebar is Mistty's most visible differentiator from Ghostty. Right now it's a list of names. This phase and 2b make it the "you never leave your flow" feature. The action callback handlers are shared infrastructure that Phase 2b, Phase 4c, and Phase 6b depend on.
-
-- Handle libghostty OSC action callbacks (PWD, SET_TAB_TITLE, DESKTOP_NOTIFICATION, COMMAND_FINISHED, PROGRESS_REPORT)
-- Working directory tracking per pane (from OSC 7 via PWD action)
-- Title priority chain: customTitle > tabTitle > processTitle > "Shell"
-- 75ms title debounce, 15s progress auto-expiry
-- Desktop notifications via UNUserNotificationCenter (suppressed when pane is focused)
-
-Key finding: libghostty already parses all OSC sequences internally. Phase 2a handles the typed action callbacks, not raw escape sequences.
-
-- Complexity: 2
-- [x] `/spec`: `/tmp/ai-design-phase2a-osc-foundation.md`
-- [x] `48c15ac` feat(terminal): handle libghostty OSC action callbacks
-
-**Done when:** ~~OSC parser handles all listed sequences, sidebar shows working directory per session, OSC title sequences update tab names.~~ Done 2026-04-14. All six acceptance criteria met.
-
-## Phase 2b: Contextual Sidebar ✅
-
-The consumer features that build on Phase 2a's action callbacks. Spec: `/tmp/ai-design-phase2b-contextual-sidebar.md`.
-
-### Notification Badges
-Leading glow dots on tab rows (6px Circle with color-matched shadow: red for bell, orange for command failure). Session-level rollup as count pill (Mail-style) on collapsed sessions. Command-boundary notifications only (COMMAND_FINISHED), not output-based. Bell stays immediate. Identity (accent bar) and status (dots) are independent visual channels.
-
-### ~~Rich Sidebar Metadata~~ (reverted)
-~~Session-level only for v1: git branch + dirty indicator and working directory on the session row.~~
-Reverted: git branch and working directory are per-pane data. Sessions are units of work that can span multiple repos. Even tabs can have split panes in different directories. The sidebar is an awareness channel for background activity, not a metadata display for the active pane. The shell prompt already shows branch and directory. Git detection infrastructure will return when a real consumer exists (status bar, project layouts).
-
-### Shell Integration (OSC 133)
-Tab row shows process title (left, running indicator) + last command result (right-aligned: checkmark/X + duration). Process title from SET_TITLE serves as the running-state indicator ("cargo" = running, "zsh" = idle). Prompt navigation via `jump_to_prompt` binding action (confirmed in Ghostty source). Cmd+Shift+Up/Down to jump between prompts.
-
-Design decisions (8 total, each with presupposition and revisit condition) documented in spec. Key decisions:
-- D1: Process title as running indicator (revisit when libghostty exposes OSC 133 C)
-- D2: ~~macOS-native SF Symbols, not colored dots~~ Reversed: glow dots (pre-attentive) over SF Symbols (cognitive). Identity and status are independent channels.
-- D3: ~~Session-level metadata only~~ Reverted: per-pane data doesn't belong at session level. Sessions span repos.
-- D5: No "unread output" for v1 (revisit when socket API provides output events)
-- D6: Success is quiet, failure is loud (revisit if users want long-command success notifications)
-- D7: jump_to_prompt confirmed feasible via ghostty_surface_binding_action
-- D9 (from review): 200ms debounce on git detection triggers (coalesces rapid COMMAND_FINISHED)
-
-Port detection (lsof integration) removed from Phase 2b scope. Standalone item, no dependency on 2b. Candidate for Phase 5 polish.
-
-- Complexity: 2
-- Gap analysis: cmux has notification rings. No one else combines notifications + git + ports + working directory in a sidebar.
-- [x] `/spec`: `/tmp/ai-design-phase2b-contextual-sidebar.md` (with decision log D1-D8)
-- Depends on: 2a (done)
-
-### Clipboard Paste (Cmd+V)
-`readClipboardCallback` in `GhosttyApp.swift` is a stub: reads `NSPasteboard.general` but never calls `ghostty_surface_complete_clipboard_request` to deliver text back to Ghostty. Returns `false` unconditionally. Copy (Cmd+C) works because `writeClipboardCallback` is complete. Fix: complete the callback following the pattern in `vendor/ghostty/macos/Sources/Ghostty/Ghostty.App.swift` (`readClipboard`). Also complete `confirmReadClipboardCallback` for unsafe-paste confirmation.
-
-- Complexity: 1
-- Standalone fix, no spec needed.
-
-**Done when:** ~~background tab failures show orange glow dot, collapsed sessions show count pill, tab row shows process title + last command result, Cmd+Shift+Up/Down jumps between prompts, Cmd+V pastes clipboard content into terminal.~~ Done 2026-04-14.
-
-## Phase 2c: Basic Session Persistence
-
-Save session/tab/pane tree to disk on quit. Restore layout on launch (shells restart fresh). Codable JSON to `~/.config/mistty/sessions.json`.
-
-- Saves on willTerminate (immediate) and didResignActive (2s debounce)
-- Restores with fresh IDs, missing directories fall back to home
-- Prefers workingDirectory (OSC 7, Phase 2a) over initial directory
-- Graceful fallback on corrupt, missing, or version-mismatched JSON
-
-- Complexity: 2
-- [x] `/spec`: `/tmp/ai-design-phase2c-session-persistence.md`
-- [x] `9f2fbf8` feat(persistence): save and restore session tree across app restarts
-- Does not depend on 2a or 2b. Built in parallel.
-
-**Done when:** ~~quit+relaunch restores session layout with correct names and working directories.~~ Done 2026-04-14. All five acceptance criteria met.
-
----
-
-### Cleanup gate (before Phase 3)
-- [x] `/refactor` **Event handler extraction**: extract NSEvent monitor closure bodies into testable `handleKeyDown(_ event: NSEvent) -> NSEvent?` methods on each manager (WindowMode, CopyMode, WhichKey, PaneNavigation, and Phase 2's attention coordinator). Monitor becomes a one-liner that delegates. Tests call the method directly with `NSEvent.keyEvent(with:...)`. Research: `/tmp/ai-research-nsevent-testing.md`. Done: `d8e7336`.
-- [x] `/refactor` **IPC audit**: review existing IPCService.swift and IPCListener.swift. Use `/refactor` to evaluate: understand current IPC mechanism before designing socket API replacement. Document what works, what's fragile, what the socket API replaces vs extends. Done: `/tmp/ai-research-ipc-audit.md`.
-- [x] `/cleanup` **OSC action handler test coverage**: ensure Phase 2a action handlers and Phase 2b notification/git logic have tests covering all supported actions before building socket API on top. Done: `5a51875`.
-- [x] `/cleanup` **IPC parity check**: verify all stable noun+verb operations from Phases 1b, 2a, and 2b have IPC methods per the IPC parity commitment (see DESIGN.md). Backfill any gaps (session rename, tab move, etc.). Done: `c071d82` (added `renameSession`, `moveTab`).
-
-## Phase 3: Platform
-
-**Why this phase:** the socket API is the foundation for neovim navigation (personal pain point), CLI scripting, Raycast/Hammerspoon integration, and future automation. Recommend completing Phase 2 first (daily-driver value, unblocks 6b).
-
-**Contingency:** Ghostty is actively designing a text protocol for runtime control (Discussion #2353). If Ghostty ships IPC before Mistty reaches Phase 3, evaluate adopting Ghostty's protocol as transport instead of building a custom socket API. This could reduce 3a scope and accelerate 3b (neovim nav).
-
-### 3a. Socket API + CLI ✅
-JSON-RPC 2.0 over persistent Unix domain socket connections with Content-Length framing. All 31 service methods migrated to `noun.verb` naming. Structured error codes (1001-1004). Event subscription via `subscribe`/`unsubscribe`. MisttyServiceProtocol migrated to async/await, semaphore bridges eliminated. EventBroker actor ready for model integration.
-
-- Spec: `docs/specs/phase3a-socket-api.md`
-- Research: `/tmp/ai-research-jsonrpc-terminal-ipc.md`
-
-### 3b. Neovim Split Navigation ✅
-Bidirectional Ctrl+h/j/k/l between neovim splits and Mistty panes via smart-splits.nvim backend. IPC-based pane variables for vim detection (OSC 1337 SetUserVar not available in libghostty). Process detection kept as fallback.
-
-- Spec: `docs/specs/phase3b-neovim-navigation.md`
-- Backend: `extras/neovim/lua/smart-splits/mux/mistty.lua`
-- New IPC methods: `pane.atEdge`, `pane.setVar`, `pane.getVar`
-- Env vars: `MISTTY_SOCKET`, `TERM_PROGRAM=mistty`
-
----
-
-### Cleanup gate (before Phase 4)
-- [x] `/cleanup` **Config audit**: catalog every hardcoded value that users have wanted to change during daily driving (keybindings, colors, panel modes, hotkeys, tab bar visibility mode). Done 2026-04-15: `/tmp/ai-research-config-audit.md`. ~50 keybindings, 7 raw colors (fixed), ~15 behavior values.
-- [x] `/refactor` **MisttyTheme review**: 29 tokens, all raw colors in views extracted. 5 new tokens added (bellGlow, commandSuccessIndicator, sessionManagerShadow, windowModeHUD, copyModeKeyBadge). Zero raw Color literals remain in view files.
-
-## Phase 4: Configuration + Persistence
-
-**Why deferred to here:** by this point you've used the app daily for weeks and know what actually needs configuring. The investigation is grounded in real usage, not speculation.
-
-### 4a. Configuration System
-
-Config file (`~/.config/mistty/config.toml`) is the single source of truth. Settings GUI is read-only (shows current values + "Open Config File" button). See ADR-006.
-
-- Spec: `docs/specs/phase4a-config-keybindings.md`
-- Config audit: `/tmp/ai-research-config-audit.md`
+### 4f-3: Key Tables and Modal Bindings
+Named binding sets activated/deactivated at runtime. Generalizes which-key into a single mechanism; copy mode adopts key tables for top-level dispatch but retains its internal state machine. Prefixes: `performable:` (only consume if action can execute), `all:` (broadcast to all surfaces). Chained actions.
 - Complexity: 3
-- Retroactively enhances: which-key (1a reads keybindings from config), auto-hide (1c modes configurable)
-- Enables: 4b (live reload), 5d (Ghostty config compat), 5e (project layouts)
+- Ghostty parity: `activate_key_table:<name>`, one-shot mode, `keybind=clear`
 
-#### 4a-1: Config parsing infrastructure ✅
-TriggerParser, KeybindingStore, TOML `[keybindings]` section parsing. Per-mode sections (global, window-mode, copy-mode), action-as-key format, `unconsumed:` prefix, merge/override/unbind/reset semantics.
-
-- `d94b10f` docs: Phase 4a configurable keybindings spec
-- `3ee6e13` feat: TriggerParser, KeybindingStore, keybindings parsing
-
-#### 4a-2: Wire global keybindings ✅
-Menu shortcuts (MisttyApp), pane navigation (PaneNavigationManager), and passthrough process list (MisttyPane) read from KeybindingStore. `unconsumed:` triggers call `ghostty_surface_key_is_binding()` to let ghostty claim keys before Mistty intercepts. Settings GUI replaced with read-only config viewer.
-
-- `22af138` feat: wire global keybindings from KeybindingStore
-- `d37a787` refactor: rename vimLikeProcesses to passthroughProcesses
-- `e1167bc` fix: replace writable Settings GUI with read-only config viewer
-
-#### Doc maintenance (between 4a-2 and 4a-3)
-- [x] Fix stale facts in steering docs (GhosttyKit import list)
-- [x] Update README (project structure, architecture link)
-- [x] Add config system rules to steering docs
-- [x] ADR-006: config-file-only approach
-- [x] Archive old plan/implementation transcripts to docs/archive/
-
-#### Hardening gate (4a-2) ✅
-- [x] Tests for `toKeyboardShortcut()` conversion (7 tests)
-- [x] Tests for `isPassthroughProcess(processes:)` with custom lists (1 test)
-- [x] Tests for PaneNavigationManager key matching logic (5 tests)
-- [x] Fix special key matching (arrow keys, escape) via keycode-to-name mapping
-
-#### Bug fix: Ctrl+hjkl navigation unreliable ✅
-PaneNavigationManager uses `event.charactersIgnoringModifiers` to extract the key character. On macOS, this returns control characters when Ctrl is held (Ctrl+H = `\u{08}`, Ctrl+J = `\n`, Ctrl+K = `\u{0B}`, Ctrl+L = `\u{0C}`) instead of the letter. Ghostty's own code explicitly avoids this (see `NSEvent+Extension.swift` comment: "We have to use `byApplyingModifiers` instead of `charactersIgnoringModifiers` because the latter changes behavior with ctrl pressed"). Fix: use `event.characters(byApplyingModifiers: [])?.lowercased()` instead. Standalone fix, no spec needed.
-
-- Complexity: 1
-- [x] Fix `PaneNavigationManager.handleKeyDown` to use `characters(byApplyingModifiers: [])` instead of `charactersIgnoringModifiers`
-
-#### 4a-2b: Native keybinding defaults ✅
-Apply Principle of Least Astonishment to default keybindings. All changes are to `KeybindingStore.defaultBindings` only; existing user configs are unaffected.
-
-- [x] Change `toggle-sidebar` default from `Cmd+S` to `Cmd+\` (Cmd+S is "Save" in every macOS app)
-- [x] Change `window-mode` default from `Cmd+X` to `Ctrl+W` (Cmd+X is "Cut" universally; Ctrl+W is the tmux prefix convention. Conflicts with shell word-delete, but configurable.)
-- [x] Change `next-tab` default from `Cmd+]` to `Cmd+Shift+]` (matches Safari, Chrome, Finder)
-- [x] Change `previous-tab` default from `Cmd+[` to `Cmd+Shift+[` (matches Safari, Chrome, Finder)
-- [ ] Add `Cmd+W` behavior config option: "multiplexer" (Cmd+W closes pane, default) vs "macos" (Cmd+W closes tab). Deferred: current default is correct for multiplexer identity. Revisit if users request.
-- [ ] Document Ctrl+Space conflict with macOS input source switcher in config spec
-
-Research: `/tmp/ai-research-macos-native-divergence-framework.md`
-
-- Complexity: 1
-- Depends on: 4a-2
-
-#### 4a-3: Wire modal keybindings ✅
-Replace hardcoded keybindings in WindowModeManager and WhichKeyManager with store lookups. CopyModeState deferred: no terminal emulator (Ghostty, kitty, WezTerm) makes vim copy-mode keys configurable, and the 622-line state machine would need a full rewrite to become data-driven. Vim users expect vim keys.
-
-- Depends on: 4a-2b
-- Research: `/tmp/ai-research-phase4a3-modal-keybindings.md`
-- WindowModeManager: convert keyCode dispatch to action-name lookup from store
-- WhichKeyManager: read `whichKeyGroups` from store, map action names to closures
-
-### 4b. Live Config Reload ✅
-Watch config file with `DispatchSource.makeFileSystemObjectSource`. Reload on change. Panel modes, fonts, colors, and keybindings apply immediately. Terminal-affecting options (scrollback size) apply to new panes only.
-
-- Complexity: 1
-- `/spec` not needed (straightforward file watcher + partial apply).
-- Depends on: 4a
-- `6670121` feat(config): live config reload via file watcher
-
-### 4c. Advanced Session Persistence
-Extends 2c with scrollback persistence, running command restoration, and optional shpool/zmx integration for shell survival across app restarts.
-
-- `/spec` required: scrollback serialization format, shpool/zmx integration decision, migration from basic persistence (2c).
-- Complexity: 3 (built-in) or 2 (shpool/zmx integration)
-- Depends on: 2c
-
-### 4d. Sidebar Configuration ✅
-- Sidebar position: configurable left or right (`sidebar.position = "left" | "right"`)
-- Sidebar tree depth: configurable whether tabs/panes show under sessions or sessions only (`sidebar.show-tree = true | false`)
-- Spec: `/tmp/ai-design-phase4d-sidebar-config.md`
-- Complexity: 2
-- Depends on: 4a (config system)
-- `b928716` feat(sidebar): add position and show-tree config
-
-### 4e. Auto-Hide UX Polish
-Revisit auto-hide panel behavior with better animations and tuning. Studied Zen Browser, macOS Dock, Arc Browser, and Apple HIG for prior art.
-
-- [x] Spring animation (critically damped, interruptible) replacing bezier curves
-- [x] Reduce Motion: opacity fade instead of slide (accessibility correctness)
-- [x] Hint bar: 3x28px at 0.2 opacity (was 2x24px at 0.15)
-- Complexity: 1
-- Depends on: 4a (config system for tuning values), 1c (auto-hide panels)
-
-Deferred (tracked for future work):
-- [ ] Dismiss-while-browsing fix: add hover tracking to revealed panel body. Currently EdgeTriggerView only tracks the 20px trigger strip; cursor in the panel body starts the dismiss timer. The 300ms dismiss delay masks this.
-- [ ] Popup/context menu suppression: keep panel open while context menus are active (SidebarView has context menus at 2 sites, TabBarView at 1). Pattern from Zen Browser.
-- [ ] Asymmetric show/hide animation: faster show (response: 0.2), slower hide (response: 0.3)
-- [ ] Flash sidebar on background session events (bell, exit): briefly reveal for ~800ms. Pattern from Zen Browser.
-- [ ] Escape-to-dismiss auto-hide panel (conflicts with terminal Escape key; needs design)
-
-Research: /tmp/ai-research-autohide-ux-prior-art.md
-
-**Done when:** config file controls keybindings (global + window mode + which-key), sidebar position and tree depth are configurable, auto-hide panels feel polished, config changes apply without restart.
-
----
-
-### Cleanup gate (before Phase 5)
-- [x] **Scene body perf fix**: cache MisttyConfig in MisttyApp @State (eliminates 26x disk reads per focus change) and stabilize TerminalCommands identity (reduces unnecessary scene re-evaluations). Also fixed PersistenceService actor isolation warnings.
-- [ ] `/cleanup` **Integration test coverage**: ensure socket API (3a) and config system (4a) have tests covering the interfaces that Phase 5 features build on. 5d and 5e depend directly on these.
-- [ ] `/refactor` **API stability review**: review socket API method signatures and config file format for breaking changes before building features on top of them. Socket API reviewed 2026-04-15: `/tmp/ai-review-api-stability.md`. Config format review deferred to Phase 4a.
-- [x] `/cleanup` **Dead code sweep**: codebase is clean. Removed 1 dead function (`notImplemented` in IPCService) and 2 redundant imports. Systematic scan found no other dead code.
-
-### 4f. Keybinding System Upgrade
-Bring keybinding configurability to Ghostty parity, then exceed it. Current system only supports single key combos with `unconsumed:` prefix.
-
-**4f-1. Key sequences** (priority: high, blocks daily use)
-Parse `ctrl+a>h` syntax in TriggerParser. Add sequence state machine to PaneNavigationManager and WhichKeyManager. Timeout after 1s (configurable). This alone unblocks tmux-style `ctrl+a>h/j/k/l` navigation.
-- Complexity: 2
-- Spec: `docs/specs/phase4f1-key-sequences.md`
-- Research: `/tmp/ai-research-key-sequences.md`
-
-#### 4f-1a: Parsing and storage ✅
-`KeySequence` type, `TriggerParser.parseSequence()`, `SequenceTrieNode` trie in `KeybindingStore.build()`, leader-shadows-standalone detection, `sequence-timeout` config key.
-- `8015118` feat(config): add key sequence parsing and trie storage
-
-#### 4f-1b: State machine and dispatch ✅
-`KeySequenceManager` with idle/pending state machine, timeout, escape cancel, modifier-only ignore, unconsumed check on final key. Wired into `PaneNavigationManager.handleKeyDown` (called first, before navigation). Action dispatch via `dispatchSequenceAction` in `ContentView+Handlers`.
-- `a01f2d7` feat(keys): add key sequence state machine and dispatch
-
-#### 4f-1c: Visual feedback
-`SequenceIndicatorView` overlay showing pending leader keys. Which-key integration (`showContinuations` after 500ms during sequences).
-- Not started.
-
-#### Bug: key interception architecture (discovered during 4f-1)
-Investigation of a `:` key not reaching neovim revealed a structural problem: Mistty uses five independent NSEvent keyDown monitors between AppKit and the terminal surface. No other terminal emulator does this. Ghostty, Kitty, Alacritty, and WezTerm all check bindings at a single point after the key reaches the terminal layer, not before.
-
-Research: `/tmp/ai-research-terminal-key-handling.md`
-
-The right fix is to stop intercepting keyDown events with NSEvent monitors and instead let every key reach `TerminalSurfaceView.keyDown`, then use `ghostty_surface_key_is_binding()` (already available) to decide whether to execute a Mistty action. This eliminates the entire class of "monitor eats a key it shouldn't" bugs.
-
-This is a significant architecture rework that should happen before 4f-1c (visual feedback) and before 4f-3 (key tables). Adding more monitors makes the problem worse. Options:
-1. **Incremental**: consolidate the five monitors into one, with an explicit dispatch chain. Lower risk, partial fix.
-2. **Full rework**: move binding dispatch into the surface keyDown path (Ghostty model). Eliminates the bug class entirely but touches every manager.
-
-Decision needed before continuing 4f-1c.
-
-**4f-2. Global hotkeys** (priority: high, needed for 5a)
-System-wide hotkey registration via `CGEvent` tap or `NSEvent.addGlobalMonitorForEvents`. Requires accessibility permissions. Needed for dropdown terminal (5a), though 5a can ship with a hardcoded hotkey first.
-- Complexity: 2
-
-**4f-3. Key tables and modal bindings** (priority: medium)
-Named binding sets activated/deactivated at runtime. Generalizes which-key into a single mechanism; copy mode adopts key tables for top-level dispatch but retains its internal state machine. `performable:` prefix (only consume if action can execute). `all:` prefix (broadcast to all surfaces). Chained actions.
-- Complexity: 3
-- Ghostty features: `activate_key_table:<name>`, one-shot mode, `performable:`, `all:`, chained actions, `keybind=clear`
-
-**4f-4. Beyond Ghostty** (stretch, no timeline)
+### 4f-4: Beyond Ghostty (stretch, no timeline)
 Ideas for future consideration, not planned work:
 - Conditional bindings (bind differently based on running process, pane count, or mode)
 - tmux-style `bind-key -r` (repeatable prefix within a timeout)
 - Zellij-style named modes with visual indicators
 - User-defined key tables loadable from separate files
 
-Current gap: key interception architecture (see bug above). `ctrl+a>h/j/k/l` parsing and dispatch work (4f-1a/1b) but the monitor-based architecture may cause key delivery issues.
+## Phase 4c: Advanced Session Persistence
+
+Extends 2c with scrollback persistence, running command restoration, and optional shpool/zmx integration for shell survival across app restarts.
+
+- `/spec` required: scrollback serialization format, shpool/zmx integration decision, migration from basic persistence (2c).
+- Complexity: 3 (built-in) or 2 (shpool/zmx integration)
+- Depends on: 2c
 
 ## Phase 5: Differentiators
 
@@ -372,41 +92,38 @@ Global hotkey summons a dropdown terminal (NSPanel). Also support floating termi
 
 - Complexity: 3
 - Spec: `docs/specs/phase5a-dropdown-terminal.md`
-- Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty QuickTerminal (study for edge cases: screen switching, activation policy, window level, animation timing).
-- Does not depend on other Phase 5 items. Hardcoded hotkey works without config, like Phase 1a keybindings.
+- Prior art: Guake, Yakuake, iTerm2 hotkey window, Ghostty QuickTerminal.
+- Hardcoded hotkey works without config, like Phase 1a keybindings.
 
-#### 5a-1: Core dropdown ✅
-NSPanel-based dropdown terminal with Ctrl+` hotkey, slide animation, auto-hide on focus loss, persistent session across toggles.
-- `e9d31cf` feat(dropdown): add quake-style dropdown terminal
+#### 5a-1: Core dropdown (done)
+NSPanel-based dropdown with Ctrl+` hotkey, slide animation, auto-hide on focus loss, persistent session.
 
 #### 5a-2: Dropdown polish
-Configurable position (top/bottom/left/right), size (percentage of screen), per-monitor behavior.
-- Not started.
+Configurable position (top/bottom/left/right), size (percentage of screen), per-monitor behavior. Not started.
 
 ### 5b. Hints Mode
-Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type the label to act (open, copy, insert). Keyboard-driven alternative to clicking links.
+Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type the label to act (open, copy, insert).
 
 - Complexity: 2
-- `/spec` required: label assignment algorithm, action menu, visual overlay design. Prior art: Kitty hints kitten.
-- Kitty ships this ("hints kitten"). Ghostty has ~180 combined votes across related discussions.
-- Pairs with 6c (inline preview panes): hints selects targets, previews displays them.
+- `/spec` required: label assignment algorithm, action menu, visual overlay design.
+- Prior art: Kitty hints kitten. Ghostty has ~180 combined votes.
+- Pairs with 6c (inline preview panes).
 
 ### 5c. Floating Panes
-Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. Panes keep running when hidden. Drag to reposition.
+Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. Panes keep running when hidden.
 
 - Complexity: 3
 - `/spec` required: z-ordering, resize behavior, keyboard navigation between floating and tiled panes.
-- 201 votes on Ghostty. Mistty's SwiftUI architecture makes this easier than Ghostty's renderer-level splits.
+- 201 votes on Ghostty. SwiftUI architecture makes this easier than renderer-level splits.
 
 ### Polish
 
 ### Cleanup gate (before Phase 5 Polish)
 
-**VoiceOver Accessibility Audit**: audit all custom controls for VoiceOver coverage. SidebarView has a start (bell notification, command failed, pane count labels). Other custom views likely lack labels: tab bar, which-key overlay, copy mode overlay, session manager, window mode hints, auto-hide edge triggers.
+**VoiceOver Accessibility Audit**: audit all custom controls for VoiceOver coverage. SidebarView has a start; other custom views (tab bar, which-key, copy mode, session manager, auto-hide triggers) likely lack labels.
 
 - Complexity: 2
 - Required for App Store submission
-- Research: `/tmp/ai-research-macos-native-divergence-framework.md`
 
 ### 5d. Ghostty Config Compatibility
 Read `~/.config/ghostty/config` for themes, fonts, colors. Zero-friction migration.
@@ -416,9 +133,7 @@ Read `~/.config/ghostty/config` for themes, fonts, colors. Zero-friction migrati
 - Depends on: 4a
 
 ### 5e. Declarative Project Layouts
-`.mistty.toml` in project root: pane arrangement, commands, working directories. Directory trust prompt for untrusted projects. `start_suspended` option for panes that show the command but don't execute until Enter.
-
-Includes Layout Manager UI: "Save current layout" command that generates `.mistty.toml` from the live workspace.
+`.mistty.toml` in project root: pane arrangement, commands, working directories. Directory trust prompt for untrusted projects. `start_suspended` option. Includes Layout Manager UI: "Save current layout" generates `.mistty.toml` from the live workspace.
 
 - Complexity: 2
 - `/spec` required: file format, trust model, layout manager UI design.
@@ -431,64 +146,117 @@ Fuzzy-searchable floating panel. All actions with shortcuts. Lower priority beca
 - `/spec` required: action registry, search ranking, visual design. Prior art: Raycast, Nova, Linear.
 
 ### 5g. Enhanced Session Manager
-Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide integration already exists), Nerd Font icons, preview pane showing recent output. Cmd+\` for instant last-workspace toggle.
+Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide integration exists), Nerd Font icons, preview pane showing recent output. Cmd+\` for instant last-workspace toggle.
 
 - Complexity: 2
 - `/spec` required: preview pane content, icon mapping, frecency algorithm tuning.
 
 ### 5h. System Notifications for Background Events
-Optional macOS Notification Center integration (via UserNotifications) for events when Mistty is not the frontmost app. Bell and command-failure glow dots remain the primary in-app signal. System notifications supplement them for the "I'm in another app" case.
+Optional macOS Notification Center integration for events when Mistty is not frontmost. Glow dots remain the primary in-app signal; system notifications supplement for the background case.
 
 - Complexity: 2
 - `/spec` required: which events trigger notifications, grouping, action buttons, user preference toggle.
 - Depends on: 2b (notification infrastructure)
 
 **Essential done when:** dropdown terminal works via global hotkey, hints mode selects visible targets, floating panes work.
-
-**Polish done when:** Ghostty themes import, project layouts load from `.mistty.toml` with save-current-layout command, command palette searches all actions, session manager shows frecency-ranked results with icons, system notifications fire for background events when Mistty is not frontmost.
+**Polish done when:** Ghostty themes import, project layouts load from `.mistty.toml`, command palette searches all actions, session manager shows frecency-ranked results, system notifications fire for background events.
 
 ---
 
 ## Phase 6: Moonshots
 
 ### 6a. Native tmux Control Mode
-Render tmux panes as native Mistty splits via `tmux -CC`. The headline feature. Only iTerm2 has this.
+Render tmux panes as native Mistty splits via `tmux -CC`. Only iTerm2 has this.
 
 - Complexity: 5
-- `/spec` required: full design doc. Protocol analysis, sync model, edge case catalog. Study iTerm2's implementation.
+- `/spec` required: protocol analysis, sync model, edge case catalog.
 - Defensible moat: hard to copy.
-- Ghostty's tmux control mode is in progress (DCS parser landed as of 2026-04-14). If it ships, Mistty could use libghostty's tmux support to render tmux panes as native splits, reducing the implementation effort here.
+- Ghostty's tmux control mode is in progress (DCS parser landed). If it ships, Mistty could use libghostty's tmux support, reducing the effort here.
 
 ### 6b. Block-Based Output
-Command+output as selectable blocks. Metadata: exit code, duration, cwd. Click to select entire block. Cmd+Up/Down to navigate.
+Command+output as selectable blocks. Metadata: exit code, duration, cwd. Click to select entire block. Cmd+Up/Down to navigate. Only Warp has this.
 
 - Complexity: 4
 - `/spec` required: block detection from OSC 133, visual design, selection model, keyboard navigation.
 - Depends on: Phase 2a (shell integration / OSC 133)
-- Extends Phase 2a/2b shell integration: upgrades line-level prompt navigation to visual block selection with metadata.
-- Only Warp has this.
 
 ### 6c. Inline Preview Panes
-Hover file paths in terminal output for Quick Look preview. Click to open in split pane.
+Hover file paths in terminal output for Quick Look preview. Click to open in split pane. No terminal does this.
 
 - Complexity: 4
 - `/spec` required: path detection, Quick Look integration, split-pane creation flow.
-- No terminal does this. Novel.
 - Pairs with 5b (hints mode provides keyboard-driven target selection).
 
 ### 6d. Terminal Automation API
-Expose surface state (cells, colors, cursor position) via the socket API for scripting and testing. The "Playwright for terminals" gap: AI agents can write TUI code but can't see the rendered result.
+Expose surface state (cells, colors, cursor position) via the socket API for scripting and testing. The "Playwright for terminals" gap.
 
 - Complexity: 3
 - `/spec` required: API surface, read vs write operations, security model.
 - Depends on: 3a (socket API)
-- Only ghostty-automator exists in this space, and it's Ghostty-specific.
 
 ### 6e. SSH Workspace Creation
-`mistty ssh user@host` creates a dedicated workspace with port detection, sidebar metadata, and proper cleanup on disconnect. Optional Eternal Terminal (`et`) integration for connection persistence.
+`mistty ssh user@host` creates a dedicated workspace with port detection, sidebar metadata, and cleanup on disconnect. Optional Eternal Terminal (`et`) integration.
 
 - Complexity: 4
-- `/spec` required: workspace lifecycle, port detection mechanism, et integration model.
+- `/spec` required: workspace lifecycle, port detection, et integration model.
+
+---
+
+## Phase 7: Infrastructure and Distribution
+
+**Why here:** AI collapses implementation effort, so the ranking axis is maintenance burden and commitment timing, not hours. Low-maintenance two-way doors first, high-maintenance one-way doors deferred to launch triggers. Phase 7 is independent of Phases 5 and 6; items can be done in parallel or earlier.
+
+ADR: `docs/decisions/007-ghostty-upgrade-policy.md`
+
+### 7a. Ghostty Submodule Upgrade
+Pin to a commit after the `ghostty_surface_free_text` memory leak fix (or v1.3.2 when tagged). Zero API changes between v1.3.1 and current main.
+
+- Complexity: 1
+- Upgrade procedure: ADR-007
+- Trigger: v1.3.2 tag, or proactively before next Mistty release
+
+### 7b. `just ci` Target
+Single justfile recipe that CI and local dev both call. Runs: swift-format check, SwiftLint (strict), swift build, swift test, typos. Prerequisite for CI parity.
+
+- Complexity: 1
+- Depends on: nothing
+
+### 7c. Nix CI Workflow
+GitHub Actions workflow on `macos-15`. `DeterminateSystems/nix-installer-action` + `magic-nix-cache-action`. Runs `nix develop -c just ci`. Concurrency control (cancel stale PR runs). Path filtering (skip for docs-only changes).
+
+- Complexity: 1
+- Depends on: 7b
+- Reference: Ghostty's CI pattern (DeterminateSystems on macOS due to NixOS/nix#13342)
+
+### 7d. Tag-Based Releases + Changelog
+`v*.*.*` tag triggers: build, bundle .app, create DMG (via `create-dmg`), generate changelog (via `git-cliff` from conventional commits), publish GitHub Release. Unsigned initially.
+
+- Complexity: 2
+- Depends on: 7c
+- Conventional commits already in use (verified via git log)
+- Produces a release from whatever is on main. No feature-phase dependency.
+
+### 7e. Periphery + Pre-Commit Hooks
+Periphery dead code detection on weekly cron. Pre-commit hooks for swift-format and SwiftLint locally.
+
+- Complexity: 1
+- Depends on: 7c
+
+### 7f. Code Signing + Notarization
+Developer ID certificate in GitHub secrets (keychain pattern from CodeEdit). Hardened runtime codesign. `notarytool submit` + `stapler staple`. Annual cert renewal.
+
+- Complexity: 2
+- Depends on: 7d
+- **Trigger: launch decision.** One-way door ($99/year, cert rotation). Do not start until a public release date exists.
+
+### 7g. Sparkle Auto-Updates
+Embed Sparkle framework, EdDSA signing, appcast generation in release workflow.
+
+- Complexity: 2
+- Depends on: 7f
+- **Trigger: established user base.** Premature until there are users to update.
+
+**Done when:** CI runs on every push, tag-based releases produce unsigned DMGs, changelog generates automatically. Signing and auto-updates activate when launch is decided.
 
 ---
 
@@ -496,42 +264,23 @@ Expose surface state (cells, colors, cursor position) via the socket API for scr
 
 ```
 Completed:
-  Phase 0 (cleanup) ✓
-  Phase 1a (which-key) ✓
-  Phase 1b (daily driver polish) ✓
-  Phase 1c (auto-hide panels) ✓
-  Phase 2a (OSC foundation) ✓
-  Phase 2b (contextual sidebar) ✓
-  Phase 2c (basic session persistence) ✓
-  Phase 3a (socket API + CLI) ✓
-  Phase 3b (neovim navigation) ✓
-  Phase 4a-1 (config parsing) ✓
-  Phase 4a-2 (wire global keybindings) ✓
-  Phase 4a-2b (native keybinding defaults) ✓
-  Phase 4a-3 (wire modal keybindings) ✓
-  Phase 4b (live config reload) ✓
-  Phase 4d (sidebar config) ✓
-  Phase 4e (auto-hide UX polish) ✓
-  Phase 5a-1 (dropdown terminal) ✓
+  Phases 0-3 (quality gate, UI, OSC, sidebar, persistence, socket API, neovim nav) ✓
+  Phase 4a-4e (config, live reload, sidebar config, auto-hide polish) ✓
+  Phase 5a-1 (core dropdown), Phase 4f-1a/1b (key sequence parsing + state machine) ✓
 
 Current:
-  Phase 4e (auto-hide UX polish) — done
-  Phase 4f-1a (key sequence parsing) ✓
-  Phase 4f-1b (key sequence state machine) ✓
-  Phase 5a-1 (dropdown terminal) ✓
-  Phase 4f-1c (visual feedback) — blocked on architecture decision
-  Key interception architecture rework — decision needed
+  Phase 4f-1c (visual feedback): pending merge
+  Key interception architecture rework: recommended before 4f-3, not blocking
 
-After Phase 4:
-  ──> cleanup gate (integration tests, API stability) [non-blocking for Phase 5]
-  ──> 4f-1 (key sequences) ──> 4f-3 (key tables)
-  ──> Phase 5 Essential:
-      5a (dropdown, hardcoded hotkey first) ──> 4f-2 adds configurable global hotkey
-      5b (hints mode) pairs with 4f-3 for one-shot key table
-      5c (floating panes) no keybinding dependency
-    ──> VoiceOver audit gate
-      ──> Phase 5 Polish (Ghostty compat, layouts, palette, session manager, notifications)
-      ──> Phase 6 (moonshots)
+Future:
+  4f-1 (done) ──> 4f-3 (key tables)
+  Phase 5 Essential:
+    5a (dropdown, hardcoded hotkey first) ──> 4f-2 adds configurable global hotkey
+    5b (hints mode) pairs with 4f-3 for one-shot key table
+    5c (floating panes) no keybinding dependency
+  ──> VoiceOver audit gate
+    ──> Phase 5 Polish (Ghostty compat, layouts, palette, session manager, notifications)
+    ──> Phase 6 (moonshots)
 
 Late dependencies:
   2a ──> 6b (block-based output)
@@ -540,86 +289,55 @@ Late dependencies:
   4f-3 ──> 5b (hints mode uses one-shot key table for label selection)
   4f-2 ──> 5a configurable global hotkey (5a can ship with hardcoded hotkey first)
   2c ──> 5e (layouts), 4c (advanced persistence)
-  4a ──> 4b (live reload)
   5b (hints) ──> 6c (inline previews)
+
+Infrastructure:
+  7a (Ghostty upgrade) ──> independent
+  7b (just ci) ──> 7c (Nix CI) ──> 7d (releases) ──> 7f (signing) ──> 7g (Sparkle)
+  7c ──> 7e (Periphery)
+  7f trigger: launch decision
+  7g trigger: established user base
 ```
+
+---
 
 ## What's NOT on this roadmap
 
-- **Daemon architecture**: evaluated and deferred. A headless process owning sessions (like tmux's server) would give CLI/GUI parity and attach/detach, but the daemon-to-surface rendering bridge is unsolved for native GUI terminals. The IPC protocol boundary is the escape hatch if this becomes needed later.
-- **Alternative terminal base**: evaluated WezTerm (stalled, last release 2024-02) and Kitty (strong IPC but no embeddable library). Neither is embeddable. libghostty is the only option for a native macOS app with custom UI chrome.
-- **Explicit multi-window support**: multi-window works implicitly (SwiftUI WindowGroup, FocusedValue menu targeting). No plans for cross-window features (drag tabs between windows, window-specific config). If needed, it's a Phase 5 candidate.
-- CI/CD (GitHub Actions): deferred until contributors exist
-- IPC service refactoring as standalone effort: works, not broken. Phase 3 cleanup gate audits it as input to socket API design.
-- C callback notification replacement: works, low priority
-- Cursor trail: likely ships upstream in Ghostty. Track, don't build.
-- Smooth/pixel scrolling: depends on libghostty upstream. Track, don't build.
-- RTL/BiDi text: renderer-level, lives in libghostty. Track, don't build.
-- AI-assisted command generation: premature. Phase 6d (terminal automation API) provides the infrastructure if revisited.
-- Input broadcasting: scriptable via socket API (3b), doesn't need to be built-in.
+- **Daemon architecture**: evaluated and deferred. The daemon-to-surface rendering bridge is unsolved for native GUI terminals. The IPC protocol boundary is the escape hatch if needed later.
+- **Alternative terminal base**: WezTerm (stalled) and Kitty (no embeddable library) evaluated. libghostty is the only option for a native macOS app with custom UI chrome.
+- **Explicit multi-window**: works implicitly (SwiftUI WindowGroup, FocusedValue). No cross-window features planned.
+- Cursor trail, smooth scrolling, RTL/BiDi: renderer-level, track upstream Ghostty.
+- AI command generation: premature. Phase 6d provides the infrastructure if revisited.
+- Input broadcasting: scriptable via socket API (3a), doesn't need to be built-in.
 - Multi-client shared sessions: niche for a personal-first terminal.
-- Workspace snapshots: novel but no one's asking for it.
-- Warp-style workflows: overlaps with project layouts (5a) and shell scripts.
 
-## Upstream tracking (free wins if Ghostty ships them)
+---
 
-- Cursor trail (347 votes on Ghostty)
-- Smooth pixel scrolling (112 votes on Ghostty, Kitty shipped in 0.46)
-- RTL/BiDi text support
+## Upstream Tracking (free wins if Ghostty ships them)
+
+- Cursor trail (347 votes), smooth pixel scrolling (112 votes, Kitty shipped in 0.46), RTL/BiDi text
 - Ghostty scripting API (planned, no timeline; 109+ comments on Discussion #2353)
 - Ghostty tmux control mode (in progress; DCS parser landed, Issue #1935)
-- OSC 133 C (command output start) as apprt action: would enable explicit running-state detection in sidebar (Phase 2b D1 revisit condition)
-- Native git branch OSC sequence: would replace event-driven git rev-parse (Phase 2b D4 revisit condition)
+- OSC 133 C as apprt action: would enable explicit running-state detection in sidebar
+- Native git branch OSC sequence: would replace event-driven git rev-parse
+- Ghostty v1.3.2: fixes `ghostty_surface_free_text` memory leak (5 Mistty call sites). ADR-007 tracks upgrade policy.
 
-## Findings (iteration 22)
+---
 
-- Mistty's five independent NSEvent keyDown monitors are architecturally unique among terminal emulators. Ghostty, Kitty, Alacritty, and WezTerm all check bindings at a single point after the key reaches the terminal layer. Ghostty specifically does NOT use NSEvent keyDown monitors; it lets every key reach the surface view and uses `ghostty_surface_key_is_binding()` in the Zig core. Research: `/tmp/ai-research-terminal-key-handling.md`.
-- `KeyEventDebug` utility added (enabled via `MISTTY_KEY_DEBUG=1` env var) to trace key events through the monitor pipeline and surface keyDown. Temporary, for diagnosing the `:` key bug.
-- Tests using synthetic NSEvents mask real keyboard behavior. The `8aa64ef` fix (ctrl+h) documented this gap but the lesson wasn't generalized. Shifted printable characters (`:`, `A`, `!`) are an untested category.
+## Findings
 
-## Findings (iteration 16)
+### Key interception architecture (affects Phase 4f-3)
 
-- `readClipboardCallback` in `GhosttyApp.swift` is a stub that never completes the clipboard request. Cmd+V (paste) does not work. Cmd+C (copy) works because `writeClipboardCallback` is complete. Fix pattern exists in `vendor/ghostty/macos/Sources/Ghostty/Ghostty.App.swift`.
-- `jump_to_prompt` exists as a Ghostty binding action (found in `vendor/ghostty/src/input/Binding.zig`). Takes signed integer: negative = previous, positive = next. Callable via `ghostty_surface_binding_action`. Confirmed for Phase 2b prompt navigation.
-- libghostty parses all OSC sequences internally and delivers typed actions via the apprt callback. Mistty does not need its own OSC parser. Phase 2a was action callback handling, not parser construction.
-- Ghostty uses 75ms title debounce and 15s progress auto-expiry. Mistty adopted both patterns.
-- No terminal shows a persistent "running" indicator in sidebar/tab chrome. Process title (SET_TITLE) is the universal running-state signal. Phase 2b uses this pattern.
+Mistty uses five independent NSEvent keyDown monitors between AppKit and the terminal surface. No other terminal emulator does this. Ghostty, Kitty, Alacritty, and WezTerm all check bindings at a single point after the key reaches the terminal layer. Ghostty lets every key reach the surface view and uses `ghostty_surface_key_is_binding()` in the Zig core.
 
-## Sources
+The fix: stop intercepting keyDown events with NSEvent monitors. Let every key reach `TerminalSurfaceView.keyDown`, then use `ghostty_surface_key_is_binding()` (already available) to decide whether to execute a Mistty action. This eliminates the entire class of "monitor eats a key it shouldn't" bugs.
 
-- /tmp/ai-research-terminal-landscape-2026.md (competitive landscape, 2026-04-14)
-- /tmp/ai-research-mistty-unused-ideas.md (unused ideas from prior research, 2026-04-14)
-- /tmp/ai-research-mistty-roadmap-iteration.md (iteration analysis, 2026-04-14)
-- /tmp/ai-brainstorm-mistty-ux.md (14 ideas scored)
-- /tmp/ai-debate-mistty-features.md (debate transcript)
-- /tmp/ai-design-autohide-panels.md (auto-hide panel design, 3 iterations)
-- /tmp/ai-plan-mistty-improvements.md (v5, original improvement plan)
-- /tmp/ai-review-mistty-plan.md (plan review findings)
-- /tmp/ai-research-terminal-ux-patterns.md
-- /tmp/ai-research-terminal-feature-requests.md
-- ~/Documents/research/terminal/terminal-session-management-research.md
-- /tmp/ai-design-sidebar-visual-rework.md (sidebar visual rework spec, 2026-04-14)
-- /tmp/ai-research-ghostty-planned-features.md (Ghostty feature overlap analysis, 2026-04-14)
-- /tmp/ai-research-ghostty-rejected-features.md (Ghostty rejected/out-of-scope features, 2026-04-14)
-- /tmp/ai-research-wezterm-kitty-comparison.md (WezTerm and Kitty comparison, 2026-04-14)
-- /tmp/ai-design-session-tab-renaming.md (session/tab renaming spec, 2026-04-14)
-- /tmp/ai-design-tab-drag-drop.md (tab drag-and-drop spec, 2026-04-14)
-- /tmp/ai-research-nsevent-testing.md (NSEvent monitor testing strategies, 2026-04-14)
-- /tmp/ai-research-terminal-tab-bar-config.md (tab bar visibility config comparison, 2026-04-14)
-- /tmp/ai-research-ghostty-osc-handling.md (Ghostty OSC action handling patterns, 2026-04-14)
-- /tmp/ai-design-phase2a-osc-foundation.md (Phase 2a spec, 2026-04-14)
-- /tmp/ai-design-phase2c-session-persistence.md (Phase 2c spec, 2026-04-14)
-- /tmp/ai-design-phase2b-contextual-sidebar.md (Phase 2b spec with decision log D1-D8, 2026-04-14)
-- /tmp/ai-research-phase2b-inputs.md (consolidated Phase 2b prior research, 2026-04-14)
-- /tmp/ai-research-phase2b-notification-patterns.md (notification patterns across terminals/IDEs, 2026-04-14)
-- /tmp/ai-research-command-state-indicators.md (command running/idle/done state patterns, 2026-04-14)
-- /tmp/ai-brainstorm-phase2b-sidebar.md (Phase 2b brainstorm, 2026-04-14)
-- /tmp/ai-debate-phase2b-sidebar.md (Phase 2b debate transcript, 2026-04-14)
-- /tmp/ai-research-macos-native-divergence-framework.md (native vs custom decision framework, 2026-04-15)
-- /tmp/ai-research-macos-native-ui-tradeoffs.md (terminal UI native patterns analysis, 2026-04-15)
-- /tmp/ai-research-macos-native-apis-terminals.md (macOS native APIs for terminals, 2026-04-15)
-- /tmp/ai-research-terminal-key-handling.md (key interception architecture prior art, 2026-04-16)
-- /tmp/ai-research-key-sequences.md (key sequence design research, 2026-04-16)
-- /tmp/ai-research-kitty-keybindings.md (Kitty keybinding architecture, 2026-04-16)
-- /tmp/ai-research-alacritty-wezterm-keybindings.md (Alacritty/WezTerm keybinding architecture, 2026-04-16)
-- /tmp/ai-research-ghostty-keybinding-interception.md (Ghostty key interception architecture, 2026-04-16)
+Options:
+1. **Incremental**: consolidate five monitors into one with an explicit dispatch chain. Lower risk, partial fix.
+2. **Full rework**: move binding dispatch into the surface keyDown path (Ghostty model). Eliminates the bug class entirely but touches every manager.
+
+Rework recommended before 4f-3 (key tables would add more monitors).
+
+### Testing gap: synthetic NSEvents
+
+Tests using synthetic NSEvents mask real keyboard behavior. Shifted printable characters (`:`, `A`, `!`) are an untested category. The `characters(byApplyingModifiers:)` fix for Ctrl+hjkl documented this gap.
