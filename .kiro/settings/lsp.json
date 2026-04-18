@@ -204,6 +204,32 @@
       },
       "request_timeout_secs": 60
     },
+    "yaml": {
+      "name": "yaml-language-server",
+      "command": "yaml-language-server",
+      "args": [
+        "--stdio"
+      ],
+      "file_extensions": [
+        "yml",
+        "yaml"
+      ],
+      "project_patterns": [],
+      "exclude_patterns": [],
+      "multi_workspace": false,
+      "initialization_options": {
+        "yaml": {
+          "schemas": {
+            "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml",
+            "https://json.schemastore.org/github-action.json": "action.yml"
+          },
+          "validate": true,
+          "completion": true,
+          "hover": true
+        }
+      },
+      "request_timeout_secs": 60
+    },
     "typescript": {
       "name": "typescript-language-server",
       "command": "typescript-language-server",
