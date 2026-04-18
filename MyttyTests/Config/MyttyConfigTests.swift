@@ -5,28 +5,29 @@ import XCTest
 final class MyttyConfigTests: XCTestCase {
   func test_defaultConfig() {
     let config = MyttyConfig.default
-    XCTAssertEqual(config.fontSize, 13)
-    XCTAssertEqual(config.fontFamily, "monospace")
+    XCTAssertEqual(config.sidebarMode, .pinned)
+    XCTAssertEqual(config.tabBarMode, .pinned)
   }
 
   func test_parsesValidTOML() throws {
     let toml = """
-      font_size = 16
-      font_family = "JetBrains Mono"
+      [sidebar]
+      mode = "auto-hide"
+      position = "right"
       """
     let config = try MyttyConfig.parse(toml)
-    XCTAssertEqual(config.fontSize, 16)
-    XCTAssertEqual(config.fontFamily, "JetBrains Mono")
+    XCTAssertEqual(config.sidebarMode, .autoHide)
+    XCTAssertEqual(config.sidebarPosition, .right)
   }
 
   func test_missingKeysUseDefaults() throws {
     let config = try MyttyConfig.parse("")
-    XCTAssertEqual(config.fontSize, 13)
-    XCTAssertEqual(config.fontFamily, "monospace")
+    XCTAssertEqual(config.sidebarMode, .pinned)
+    XCTAssertEqual(config.tabBarMode, .pinned)
   }
 
   func test_invalidTOMLThrows() {
-    XCTAssertThrowsError(try MyttyConfig.parse("font_size = !!!invalid"))
+    XCTAssertThrowsError(try MyttyConfig.parse("x = !!!invalid"))
   }
 
   func test_parsesPopupDefinitions() throws {

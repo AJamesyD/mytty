@@ -68,8 +68,13 @@ UserNotifications without discussion.
 
 ## Configuration
 
-Config file (`~/.config/mytty/config.toml`) is the single source of truth.
+Config file (`~/.config/mytty/config.toml`) is the single source of truth for Mytty chrome.
 The Settings GUI (Cmd+,) is read-only. See ADR-006.
+
+Terminal rendering config (fonts, colors, themes, cursor) uses Ghostty's format:
+- `~/.config/ghostty/config` (base, shared with Ghostty.app)
+- `~/.config/mytty/ghostty.conf` (optional overrides)
+Both are loaded at launch by GhosttyApp.swift. Changes require restart.
 
 Config types live in `Mytty/Config/`:
 - `MyttyConfig.swift`: TOML parser, `load()` entry point, `configFileURL` static

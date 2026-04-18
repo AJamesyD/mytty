@@ -259,7 +259,20 @@ final class GhosttyAppManager {
       return
     }
 
-    // Load Mytty's own ghostty config (always separate from Ghostty.app config)
+    // Load Ghostty config as base (fonts, colors, theme carry over).
+    // Ghostty 1.3+ uses config.ghostty; older versions use config. Load both if present.
+    let ghosttyConfigDir = FileManager.default.homeDirectoryForCurrentUser
+      .appendingPathComponent(".config/ghostty")
+    for filename in ["config", "config.ghostty"] {
+      let path = ghosttyConfigDir.appendingPathComponent(filename).path
+      if FileManager.default.fileExists(atPath: path) {
+        path.withCString { cPath in
+          ghostty_config_load_file(cfg, cPath)
+        }
+      }
+    }
+
+    // Mytty overrides (optional, takes precedence over Ghostty config)
     let myttyConfigPath = FileManager.default.homeDirectoryForCurrentUser
       .appendingPathComponent(".config/mytty/ghostty.conf").path
     if FileManager.default.fileExists(atPath: myttyConfigPath) {

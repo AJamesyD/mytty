@@ -34,11 +34,17 @@ For development setup, build commands, project structure, and macOS 26 notes, se
 
 ## Configuration
 
-Mytty reads `~/.config/mytty/config.toml`. All fields are optional; defaults apply when omitted.
+Mytty reads two kinds of config:
+
+- **`~/.config/mytty/config.toml`** controls Mytty's chrome: sidebar, keybindings, tab bar, passthrough processes. All fields are optional; defaults apply when omitted. Reloads live on save.
+- **Ghostty config** controls terminal rendering: fonts, colors, themes, cursor, shell integration.
+  - `~/.config/ghostty/config` is loaded as a base. If you already use [Ghostty](https://ghostty.org), your settings carry over automatically.
+  - `~/.config/mytty/ghostty.conf` (optional) overrides the base. Use this for Mytty-specific tweaks. See [Ghostty docs](https://ghostty.org/docs/config) for all options.
+
+Ghostty config files are read at launch. Restart Mytty to apply changes.
 
 ```toml
-font_size = 14
-font_family = "JetBrains Mono"
+# ~/.config/mytty/config.toml
 
 [sidebar]
 position = "right"
@@ -50,6 +56,15 @@ split-horizontal = "cmd+shift+d"
 
 # Apps that receive all keys directly (bypasses Mytty keybindings)
 passthrough-processes = ["nvim", "emacs", "htop"]
+```
+
+```ini
+# ~/.config/mytty/ghostty.conf (optional, overrides ~/.config/ghostty/config)
+# See https://ghostty.org/docs/config for all options.
+
+font-family = BlexMono Nerd Font
+font-size = 16
+font-thicken = true
 ```
 
 ## CLI

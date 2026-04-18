@@ -5,16 +5,6 @@ struct SettingsView: View {
 
   var body: some View {
     Form {
-      Section("Font") {
-        row("Family", config.fontFamily)
-        row("Size", "\(config.fontSize)")
-      }
-
-      Section("Terminal") {
-        row("Cursor Style", config.cursorStyle)
-        row("Scrollback Lines", "\(config.scrollbackLines)")
-      }
-
       Section("Appearance") {
         row("Sidebar Mode", config.sidebarMode.configValue)
         row("Tab Bar Mode", config.tabBarMode.configValue)
@@ -68,7 +58,7 @@ struct SettingsView: View {
       } header: {
         Text("Configuration File")
       } footer: {
-        Text("Edit the TOML file directly to change settings. Restart Mytty to apply changes.")
+        Text("Font, color, and terminal settings are loaded from Ghostty config at launch. Override in ~/.config/mytty/ghostty.conf.")
           .font(.caption)
           .foregroundStyle(.tertiary)
       }

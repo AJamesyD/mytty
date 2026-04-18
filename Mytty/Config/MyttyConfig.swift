@@ -32,10 +32,6 @@ enum SidebarPosition: String, Sendable, Equatable {
 }
 
 struct MyttyConfig: Sendable, Equatable {
-  var fontSize: Int = 13
-  var fontFamily: String = "monospace"
-  var cursorStyle: String = "block"
-  var scrollbackLines: Int = 10000
   var sidebarMode: PanelMode = .pinned
   var sidebarPosition: SidebarPosition = .left
   var sidebarShowTree: Bool = true
@@ -57,10 +53,6 @@ struct MyttyConfig: Sendable, Equatable {
   static func parse(_ toml: String) throws -> MyttyConfig {
     let table = try TOMLTable(string: toml)
     var config = MyttyConfig()
-    if let size = table["font_size"]?.int { config.fontSize = size }
-    if let family = table["font_family"]?.string { config.fontFamily = family }
-    if let cursor = table["cursor_style"]?.string { config.cursorStyle = cursor }
-    if let scrollback = table["scrollback_lines"]?.int { config.scrollbackLines = scrollback }
     if let sidebarTable = table["sidebar"]?.table {
       if let modeStr = sidebarTable["mode"]?.string,
         let mode = PanelMode.fromConfig(modeStr)
