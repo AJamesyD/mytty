@@ -79,32 +79,27 @@ then run `just ci`.
 from `TerminalSurfaceView.keyDown` via a static `keyDispatch` closure. The
 PaneNavigationManager NSEvent monitor is removed.
 
-**Phase 2: diverged, hybrid approach adopted.** Modals (session manager,
-which-key, copy mode, window mode) were not moved into keyDown. They remain
-in a single NSEvent monitor (`ModalKeyDispatcher`), consolidating the
-previous four monitors into one. This is a hybrid of Options A and B.
+**Phase 2: complete.** Modal dispatch (session manager, which-key, copy mode,
+window mode) moved from `ModalKeyDispatcher` (NSEvent monitor) into a second
+static closure, `modalKeyHandler`, on `TerminalSurfaceView`. Called at the
+top of `keyDown`, before `keyDispatch`. `ModalKeyDispatcher.swift` deleted.
 
-### Actual architecture (two layers)
+### Architecture (single dispatch point)
 
-**Layer 1 (modal, NSEvent monitor):**
-`ModalKeyDispatcher.handleKeyDown` in `Mytty/App/ModalKeyDispatcher.swift`.
-Dispatch chain: sessionManager -> whichKey -> copyMode -> windowMode.
-Consumes the event if a modal is active; otherwise the event proceeds to
-the surface.
-
-**Layer 2 (surface, keyDown override):**
 `TerminalSurfaceView.keyDown(with:)` in
-`Mytty/Views/Terminal/TerminalSurfaceView.swift`. Calls `Self.keyDispatch`,
-a static closure set by `PaneNavigationManager.activate()`. Delegates to
-`KeySequenceManager.handleKeyDown`, then checks navigation bindings via
-`ghostty_surface_key_is_binding()`.
+`Mytty/Views/Terminal/TerminalSurfaceView.swift`:
 
-Keys surviving both layers flow to `interpretKeyEvents`, then
-`ghostty_surface_key()`.
+1. `Self.modalKeyHandler` (set by ContentView): chains sessionManager,
+   whichKey, copyMode, windowMode. Returns nil to consume.
+2. `Self.keyDispatch` (set by PaneNavigationManager): delegates to
+   KeySequenceManager, then checks navigation bindings via
+   `ghostty_surface_key_is_binding()`. Returns nil to consume.
+3. `interpretKeyEvents` then `ghostty_surface_key()`.
 
-### Why the hybrid
+No NSEvent key monitors remain. The only NSEvent monitor is the dropdown
+terminal global hotkey (GlobalHotkeyMonitor), which is app-wide, not
+per-surface.
 
-Moving modals into keyDown would require the terminal surface to know about
-modal state, coupling the view to modal logic. The NSEvent monitor intercepts
-before keyDown, keeping modals decoupled from the surface. This preserves
-the architecture rule that views do not access state beyond their own scope.
+The static closure pattern keeps the surface view decoupled from modal
+state: it calls closures without knowing what modals exist. ContentView
+owns the closure lifecycle (set in onAppear, nil in onDisappear).
