@@ -7,7 +7,7 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   ci:
@@ -19,9 +19,11 @@ jobs:
     needs: ci
     runs-on: macos-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -30,12 +32,12 @@ jobs:
         id: ghostty
         run: echo "rev=$(git -C vendor/ghostty rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v13
+      - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
 
       - name: Cache Zig build
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             vendor/ghostty/zig-out
@@ -46,7 +48,7 @@ jobs:
             zig-${{ runner.os }}-
 
       - name: Cache SwiftPM
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             .build
@@ -59,14 +61,21 @@ jobs:
         run: nix develop --command just bundle-release
 
       - name: Create DMG
-        run: nix develop --command just dmg ${{ github.ref_name }}
+        env:
+          TAG: ${{ github.ref_name }}
+        run: nix develop --command just dmg "$TAG"
 
       - name: Generate changelog
-        run: nix develop --command just changelog ${{ github.ref_name }} > RELEASE_NOTES.md
+        env:
+          TAG: ${{ github.ref_name }}
+        run: nix develop --command just changelog "$TAG" > RELEASE_NOTES.md
+
+      - name: Verify artifacts
+        run: ls build/Mytty-*.dmg
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           draft: true
           body_path: RELEASE_NOTES.md
-          files: build/Mytty-${{ github.ref_name }}-arm64.dmg
+          files: build/Mytty-*.dmg
