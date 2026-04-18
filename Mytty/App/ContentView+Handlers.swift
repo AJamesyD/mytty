@@ -48,6 +48,9 @@ extension ContentView {
         notification in
         handleProgressReport(notification)
       }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyColorChange)) { notification in
+        handleColorChange(notification)
+      }
       .onReceive(NotificationCenter.default.publisher(for: .configDidChange)) { _ in
         let newConfig = MyttyConfig.load()
         applyConfig(newConfig)
@@ -406,6 +409,20 @@ extension ContentView {
         }
       }
     }
+  }
+
+  func handleColorChange(_ notification: Notification) {
+    guard let kind = notification.userInfo?["kind"] as? String,
+      kind == "background",
+      let r = notification.userInfo?["r"] as? CGFloat,
+      let g = notification.userInfo?["g"] as? CGFloat,
+      let b = notification.userInfo?["b"] as? CGFloat,
+      let paneID = notification.userInfo?["paneID"] as? Int,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.pane.surfaceView.layer?.backgroundColor = NSColor(
+      red: r, green: g, blue: b, alpha: 1.0
+    ).cgColor
   }
 
   // MARK: - Key Sequence

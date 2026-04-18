@@ -40,6 +40,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
   case GHOSTTY_ACTION_CLOSE_WINDOW:
     return true
 
+  // CELL_SIZE: read on-demand via ghostty_surface_size(); no cached property to update
   case GHOSTTY_ACTION_CELL_SIZE,
     GHOSTTY_ACTION_SIZE_LIMIT,
     GHOSTTY_ACTION_INITIAL_SIZE,
@@ -168,6 +169,39 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
     }
     return true
 
+  case GHOSTTY_ACTION_COLOR_CHANGE:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let change = action.action.color_change
+      let r = CGFloat(change.r) / 255.0
+      let g = CGFloat(change.g) / 255.0
+      let b = CGFloat(change.b) / 255.0
+      let kind: String = switch change.kind {
+      case GHOSTTY_ACTION_COLOR_KIND_BACKGROUND: "background"
+      case GHOSTTY_ACTION_COLOR_KIND_FOREGROUND: "foreground"
+      case GHOSTTY_ACTION_COLOR_KIND_CURSOR: "cursor"
+      default: "palette"
+      }
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyColorChange,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any,
+            "kind": kind,
+            "r": r, "g": g, "b": b,
+          ]
+        )
+      }
+    }
+    return true
+
+  // TODO(phase-6): clone config and propagate to derive NSAppearance and scrollbar style
+  case GHOSTTY_ACTION_CONFIG_CHANGE:
+    return true
+
   default:
     return false
   }
@@ -234,6 +268,7 @@ extension Notification.Name {
   static let ghosttyDesktopNotification = Notification.Name("ghosttyDesktopNotification")
   static let ghosttyCommandFinished = Notification.Name("ghosttyCommandFinished")
   static let ghosttyProgressReport = Notification.Name("ghosttyProgressReport")
+  static let ghosttyColorChange = Notification.Name("ghosttyColorChange")
 }
 
 // MARK: - GhosttyAppManager

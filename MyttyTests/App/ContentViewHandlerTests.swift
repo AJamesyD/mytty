@@ -202,4 +202,46 @@ final class ContentViewHandlerTests: XCTestCase {
 
     XCTAssertNil(pane.progressState)
   }
+
+  // MARK: - handleColorChange
+
+  func test_handleColorChange_background_setsLayerColor() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    pane.surfaceView.wantsLayer = true
+    let view = ContentView(store: store)
+
+    view.handleColorChange(
+      Notification(
+        name: .ghosttyColorChange, object: nil,
+        userInfo: [
+          "paneID": pane.id as Any,
+          "kind": "background",
+          "r": CGFloat(0.2),
+          "g": CGFloat(0.3),
+          "b": CGFloat(0.4),
+        ]))
+
+    XCTAssertNotNil(pane.surfaceView.layer?.backgroundColor)
+  }
+
+  func test_handleColorChange_foreground_ignored() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    pane.surfaceView.wantsLayer = true
+    let view = ContentView(store: store)
+
+    view.handleColorChange(
+      Notification(
+        name: .ghosttyColorChange, object: nil,
+        userInfo: [
+          "paneID": pane.id as Any,
+          "kind": "foreground",
+          "r": CGFloat(1.0),
+          "g": CGFloat(1.0),
+          "b": CGFloat(1.0),
+        ]))
+
+    XCTAssertNil(pane.surfaceView.layer?.backgroundColor)
+  }
 }
