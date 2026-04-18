@@ -78,11 +78,7 @@ private func globalHotkeyCallback(
   else { return result }
 
   MainActor.assumeIsolated {
-    NotificationCenter.default.post(name: .dropdownHotkeyPressed, object: nil)
+    NotificationCenter.default.post(name: .myttyDropdownHotkeyPressed, object: nil)
   }
   return nil
-}
-
-extension Notification.Name {
-  static let dropdownHotkeyPressed = Notification.Name("dropdownHotkeyPressed")
 }

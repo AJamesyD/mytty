@@ -51,7 +51,7 @@ extension ContentView {
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyColorChange)) { notification in
         handleColorChange(notification)
       }
-      .onReceive(NotificationCenter.default.publisher(for: .configDidChange)) { _ in
+      .onReceive(NotificationCenter.default.publisher(for: .myttyConfigDidChange)) { _ in
         let newConfig = MyttyConfig.load()
         applyConfig(newConfig)
         if let error = newConfig.parseError {

@@ -29,7 +29,7 @@ class DropdownController: NSObject, NSWindowDelegate {
     NotificationCenter.default.addObserver(
       self,
       selector: #selector(hotkeyPressed),
-      name: .dropdownHotkeyPressed,
+      name: .myttyDropdownHotkeyPressed,
       object: nil
     )
   }

@@ -38,11 +38,11 @@ final class ConfigWatcher {
       stop()
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
         self?.start()
-        NotificationCenter.default.post(name: .configDidChange, object: nil)
+        NotificationCenter.default.post(name: .myttyConfigDidChange, object: nil)
       }
       return
     }
-    NotificationCenter.default.post(name: .configDidChange, object: nil)
+    NotificationCenter.default.post(name: .myttyConfigDidChange, object: nil)
   }
 
   deinit {
@@ -53,8 +53,4 @@ final class ConfigWatcher {
       fileDescriptor = -1
     }
   }
-}
-
-extension Notification.Name {
-  static let configDidChange = Notification.Name("configDidChange")
 }

@@ -20,7 +20,7 @@ struct MyttyApp: App {
   var body: some Scene {
     WindowGroup {
       ContentView(store: store)
-        .onReceive(NotificationCenter.default.publisher(for: .configDidChange)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .myttyConfigDidChange)) { _ in
           config = MyttyConfig.load()
           if let error = config.parseError {
             print("[Mytty] Config parse error: \(error)", to: &standardError)
@@ -237,6 +237,8 @@ nonisolated(unsafe) private var standardError = StandardError()
 extension Notification.Name {
   static let myttyRenameTab = Notification.Name("myttyRenameTab")
   static let myttyRenameSession = Notification.Name("myttyRenameSession")
+  static let myttyConfigDidChange = Notification.Name("myttyConfigDidChange")
+  static let myttyDropdownHotkeyPressed = Notification.Name("myttyDropdownHotkeyPressed")
 }
 
 extension View {

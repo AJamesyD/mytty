@@ -129,7 +129,7 @@ struct PaneNavigationModifier: ViewModifier {
       .onDisappear {
         manager.deactivate()
       }
-      .onReceive(NotificationCenter.default.publisher(for: .configDidChange)) { _ in
+      .onReceive(NotificationCenter.default.publisher(for: .myttyConfigDidChange)) { _ in
         manager.reloadConfig()
       }
   }
