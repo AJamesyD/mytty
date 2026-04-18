@@ -320,6 +320,51 @@ final class GhosttyAppManager {
     if let config { ghostty_config_free(config) }
   }
 
+  struct WindowConfig {
+    let decorations: Bool
+    let titlebarStyle: String
+    let windowButtons: String
+
+    init(config: ghostty_config_t?) {
+      guard let cfg = config else {
+        self.decorations = true
+        self.titlebarStyle = "transparent"
+        self.windowButtons = "visible"
+        return
+      }
+
+      var decPtr: UnsafePointer<Int8>?
+      let decKey = "window-decoration"
+      if ghostty_config_get(cfg, &decPtr, decKey, UInt(decKey.lengthOfBytes(using: .utf8))),
+         let ptr = decPtr {
+        let str = String(cString: ptr)
+        self.decorations = (str != "none" && str != "false")
+      } else {
+        self.decorations = true
+      }
+
+      var tsPtr: UnsafePointer<Int8>?
+      let tsKey = "macos-titlebar-style"
+      if ghostty_config_get(cfg, &tsPtr, tsKey, UInt(tsKey.lengthOfBytes(using: .utf8))),
+         let ptr = tsPtr {
+        self.titlebarStyle = String(cString: ptr)
+      } else {
+        self.titlebarStyle = "transparent"
+      }
+
+      var wbPtr: UnsafePointer<Int8>?
+      let wbKey = "macos-window-buttons"
+      if ghostty_config_get(cfg, &wbPtr, wbKey, UInt(wbKey.lengthOfBytes(using: .utf8))),
+         let ptr = wbPtr {
+        self.windowButtons = String(cString: ptr)
+      } else {
+        self.windowButtons = "visible"
+      }
+    }
+  }
+
+  var windowConfig: WindowConfig { WindowConfig(config: config) }
+
   func tick() {
     guard let app else { return }
     ghostty_app_tick(app)

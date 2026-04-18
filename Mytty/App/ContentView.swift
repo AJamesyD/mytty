@@ -281,6 +281,19 @@ struct ContentView: View {
         if let window = NSApplication.shared.keyWindow {
           _ = store.registerWindow(window)
           modalKeyDispatcher.window = window
+          let wc = GhosttyAppManager.shared.windowConfig
+          if !wc.decorations {
+            window.styleMask.remove(.titled)
+          } else if wc.titlebarStyle == "hidden" {
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.styleMask.insert(.fullSizeContentView)
+          }
+          if wc.windowButtons == "hidden" {
+            window.standardWindowButton(.closeButton)?.isHidden = true
+            window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+            window.standardWindowButton(.zoomButton)?.isHidden = true
+          }
         }
       }
       modalKeyDispatcher.sessionManagerKeyHandler = { [self] event in
