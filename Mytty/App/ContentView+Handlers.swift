@@ -497,18 +497,28 @@ extension ContentView {
       let directionRaw = notification.userInfo?["direction"] as? UInt32,
       let match = store.pane(byId: paneID)
     else { return }
-    let navDirection: NavigationDirection
+    let target: MyttyPane
     switch directionRaw {
-    case GHOSTTY_GOTO_SPLIT_UP.rawValue: navDirection = .up
-    case GHOSTTY_GOTO_SPLIT_DOWN.rawValue: navDirection = .down
-    case GHOSTTY_GOTO_SPLIT_LEFT.rawValue: navDirection = .left
-    case GHOSTTY_GOTO_SPLIT_RIGHT.rawValue: navDirection = .right
-    case GHOSTTY_GOTO_SPLIT_PREVIOUS.rawValue: navDirection = .left
-    case GHOSTTY_GOTO_SPLIT_NEXT.rawValue: navDirection = .right
-    default: return
+    case GHOSTTY_GOTO_SPLIT_PREVIOUS.rawValue, GHOSTTY_GOTO_SPLIT_NEXT.rawValue:
+      let panes = match.tab.layout.leaves
+      guard let idx = panes.firstIndex(where: { $0.id == match.pane.id }) else { return }
+      let next = directionRaw == GHOSTTY_GOTO_SPLIT_NEXT.rawValue
+        ? panes.index(after: idx) % panes.count
+        : (idx - 1 + panes.count) % panes.count
+      target = panes[next]
+    default:
+      let navDirection: NavigationDirection
+      switch directionRaw {
+      case GHOSTTY_GOTO_SPLIT_UP.rawValue: navDirection = .up
+      case GHOSTTY_GOTO_SPLIT_DOWN.rawValue: navDirection = .down
+      case GHOSTTY_GOTO_SPLIT_LEFT.rawValue: navDirection = .left
+      case GHOSTTY_GOTO_SPLIT_RIGHT.rawValue: navDirection = .right
+      default: return
+      }
+      guard let adj = match.tab.layout.adjacentPane(from: match.pane, direction: navDirection)
+      else { return }
+      target = adj
     }
-    guard let target = match.tab.layout.adjacentPane(from: match.pane, direction: navDirection)
-    else { return }
     match.tab.activePane = target
     DispatchQueue.main.async {
       target.surfaceView.window?.makeFirstResponder(target.surfaceView)
