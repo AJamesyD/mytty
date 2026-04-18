@@ -4,7 +4,7 @@
 
 <!-- TODO: screenshot or demo GIF -->
 
-Mytty puts sessions, tabs, split panes, and a fuzzy session switcher inside a native macOS terminal. No tmux, no extra process, no second config file.
+Mytty puts sessions, tabs, split panes, and a fuzzy session switcher inside a native macOS terminal. No tmux, no extra process.
 
 > [!NOTE]
 > Mytty is under active development. Core features work, but expect rough edges and breaking changes.
