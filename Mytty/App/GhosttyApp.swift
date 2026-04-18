@@ -272,6 +272,9 @@ final class GhosttyAppManager {
       }
     }
 
+    // Process config-file directives from the base Ghostty config
+    ghostty_config_load_recursive_files(cfg)
+
     // Mytty overrides (optional, takes precedence over Ghostty config)
     let myttyConfigPath = FileManager.default.homeDirectoryForCurrentUser
       .appendingPathComponent(".config/mytty/ghostty.conf").path
