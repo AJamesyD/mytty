@@ -58,9 +58,11 @@ struct SettingsView: View {
       } header: {
         Text("Configuration File")
       } footer: {
-        Text("Font, color, and terminal settings are loaded from Ghostty config at launch. Override in ~/.config/mytty/ghostty.conf.")
-          .font(.caption)
-          .foregroundStyle(.tertiary)
+        Text(
+          "Font, color, and terminal settings are loaded from Ghostty config at launch. Override in ~/.config/mytty/ghostty.conf."
+        )
+        .font(.caption)
+        .foregroundStyle(.tertiary)
       }
     }
     .formStyle(.grouped)
