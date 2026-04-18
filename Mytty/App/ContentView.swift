@@ -20,6 +20,9 @@ struct ContentView: View {
 
   var body: some View {
     contentWithNotifications
+      .ignoresSafeArea(
+        .container,
+        edges: GhosttyAppManager.shared.windowConfig.titlebarStyle == "hidden" ? .top : [])
       .focusedSceneValue(\.terminalCommands, terminalCommands)
   }
 

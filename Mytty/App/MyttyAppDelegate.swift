@@ -2,7 +2,15 @@ import AppKit
 
 @MainActor
 class MyttyAppDelegate: NSObject, NSApplicationDelegate {
-  private var enforcedStyleMask: NSWindow.StyleMask?
+  private var isApplyingChrome = false
+  private var isInFullscreen = false
+  private var chromeMode: ChromeMode = .default
+
+  private enum ChromeMode {
+    case `default`
+    case hidden
+    case undecorated
+  }
 
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     false
@@ -25,10 +33,26 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
       ) { [weak self] note in
         let window = note.object as? NSWindow
         MainActor.assumeIsolated {
-          guard let self, let mask = self.enforcedStyleMask,
-            let window, window.styleMask != mask
-          else { return }
-          window.styleMask = mask
+          guard let self, !self.isApplyingChrome, !self.isInFullscreen,
+                let window else { return }
+          switch self.chromeMode {
+          case .hidden:
+            if window.titleVisibility == .hidden,
+               window.titlebarAppearsTransparent,
+               window.standardWindowButton(.closeButton)?.isHidden == true {
+              return
+            }
+            self.isApplyingChrome = true
+            self.applyWindowChrome(window)
+            self.isApplyingChrome = false
+          case .undecorated:
+            if !window.styleMask.contains(.titled) { return }
+            self.isApplyingChrome = true
+            self.applyWindowChrome(window)
+            self.isApplyingChrome = false
+          case .default:
+            break
+          }
         }
       }
 
@@ -38,7 +62,7 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
         queue: .main
       ) { [weak self] _ in
         MainActor.assumeIsolated {
-          self?.enforcedStyleMask = nil
+          self?.isInFullscreen = true
         }
       }
 
@@ -50,6 +74,7 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
         let window = note.object as? NSWindow
         MainActor.assumeIsolated {
           guard let self, let window else { return }
+          self.isInFullscreen = false
           self.applyWindowChrome(window)
         }
       }
@@ -62,17 +87,25 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
 
   private func applyWindowChrome(_ window: NSWindow) {
     let wc = GhosttyAppManager.shared.windowConfig
-    if !wc.decorations || wc.titlebarStyle == "hidden" {
+
+    if !wc.decorations {
       window.styleMask.remove(.titled)
-      enforcedStyleMask = window.styleMask
-      if wc.titlebarStyle == "hidden" {
-        window.isMovableByWindowBackground = true
-        window.contentView?.wantsLayer = true
-        window.contentView?.layer?.cornerRadius = 16
-        window.contentView?.layer?.masksToBounds = true
-      }
+      chromeMode = .undecorated
+    } else if wc.titlebarStyle == "hidden" {
+      window.styleMask.insert(.fullSizeContentView)
+      window.titleVisibility = .hidden
+      window.titlebarAppearsTransparent = true
+      window.isMovableByWindowBackground = true
+      window.tabbingMode = .disallowed
+      window.standardWindowButton(.closeButton)?.isHidden = true
+      window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+      window.standardWindowButton(.zoomButton)?.isHidden = true
+      chromeMode = .hidden
+    } else {
+      chromeMode = .default
     }
-    if wc.windowButtons == "hidden" || wc.titlebarStyle == "hidden" {
+
+    if wc.windowButtons == "hidden" {
       window.standardWindowButton(.closeButton)?.isHidden = true
       window.standardWindowButton(.miniaturizeButton)?.isHidden = true
       window.standardWindowButton(.zoomButton)?.isHidden = true
