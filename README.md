@@ -13,13 +13,14 @@ Mytty puts sessions, tabs, split panes, and a fuzzy session switcher inside a na
 
 ## Features
 
-- **Session manager** (`Cmd+J`): fuzzy-find sessions, recent directories ([zoxide](https://github.com/ajeetdsouza/zoxide)), and SSH hosts
-- **Splits and tabs**: `Cmd+D` / `Cmd+T`, navigate with `Ctrl+h/j/k/l` (works across Neovim panes via [smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim))
-- **Keyboard-driven**: which-key overlay (`Ctrl+Space`) shows available shortcuts in context
-- **Dropdown terminal**: system-wide hotkey summons a slide-down terminal
+- **Session manager**: fuzzy-find sessions, recent directories ([zoxide](https://github.com/ajeetdsouza/zoxide)), and SSH hosts
+- **Splits and tabs**: horizontal and vertical splits with tabbed sessions
+- **Pane navigation**: move between splits with configurable keys, with optional Neovim integration via [smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim)
+- **Which-key overlay**: shows available shortcuts in context, so you don't have to memorize them
+- **Dropdown terminal**: a system-wide hotkey summons a slide-down terminal
 - **Sidebar**: persistent session tree with background activity indicators
 - **CLI**: `mytty-cli` controls sessions, tabs, and panes over a JSON-RPC socket
-- **Live config**: `~/.config/mytty/config.toml`, changes apply on save
+- **Configurable**: all keybindings, sidebar position, and passthrough processes are set in `~/.config/mytty/config.toml`. Changes apply on save.
 
 ## Quick Start
 
