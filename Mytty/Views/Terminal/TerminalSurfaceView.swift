@@ -164,10 +164,27 @@ final class TerminalSurfaceView: NSView {
     let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0
     let cellW = CGFloat(size.cell_width_px) / scale
     let cellH = CGFloat(size.cell_height_px) / scale
-    // Ghostty positions the grid at (window-padding-x, window-padding-y) from top-left.
-    // Default window-padding is 2pt on all sides. Blank space goes to bottom/right.
-    let padding: CGFloat = 2.0
-    return GridMetrics(cellWidth: cellW, cellHeight: cellH, offsetX: padding, offsetY: padding)
+    // Derive grid origin from ime_point: the cursor at column C has x = offsetX + C * cellW,
+    // so offsetX = x % cellW (padding is always less than one cell width).
+    // Falls back to Ghostty's default 2pt padding if ime_point returns zeros.
+    var imeX: Double = 0
+    var imeY: Double = 0
+    var imeW: Double = 0
+    var imeH: Double = 0
+    ghostty_surface_ime_point(surface, &imeX, &imeY, &imeW, &imeH)
+    let offsetX: CGFloat
+    let offsetY: CGFloat
+    if imeX > 0, cellW > 0 {
+      offsetX = CGFloat(imeX).truncatingRemainder(dividingBy: cellW)
+    } else {
+      offsetX = 2.0
+    }
+    if imeY > 0, cellH > 0 {
+      offsetY = CGFloat(imeY - imeH).truncatingRemainder(dividingBy: cellH)
+    } else {
+      offsetY = 2.0
+    }
+    return GridMetrics(cellWidth: cellW, cellHeight: cellH, offsetX: offsetX, offsetY: offsetY)
   }
 
   /// Returns the terminal cursor position as (row, col) in grid coordinates.
