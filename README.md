@@ -1,5 +1,7 @@
 # Mytty
 
+[![CI](https://github.com/AJamesyD/mytty/actions/workflows/ci.yml/badge.svg)](https://github.com/AJamesyD/mytty/actions/workflows/ci.yml)
+
 *Mighty terminal. My TTY.* A macOS terminal emulator with built-in session management, powered by [libghostty](https://github.com/ghostty-org/ghostty).
 
 <!-- TODO: screenshot or demo GIF -->
