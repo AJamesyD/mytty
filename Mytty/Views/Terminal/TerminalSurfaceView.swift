@@ -256,9 +256,50 @@ final class TerminalSurfaceView: NSView {
     let action: ghostty_input_action_e =
       event.isARepeat ? GHOSTTY_ACTION_REPEAT : GHOSTTY_ACTION_PRESS
 
+    // Translate modifiers for option-as-alt config support.
+    // ghostty_surface_key_translation_mods reads the config internally and
+    // returns translated modifier flags (e.g., Option removed).
+    let translationModsGhostty = eventModifierFlags(
+      mods: ghostty_surface_key_translation_mods(
+        surface,
+        ghosttyMods(event.modifierFlags)
+      )
+    )
+
+    // Preserve hidden bits in the original flags that matter for dead keys.
+    // Only update the four standard modifier flags from the translation result.
+    var translationMods = event.modifierFlags
+    for flag in [NSEvent.ModifierFlags.shift, .control, .option, .command] {
+      if translationModsGhostty.contains(flag) {
+        translationMods.insert(flag)
+      } else {
+        translationMods.remove(flag)
+      }
+    }
+
+    // Reuse the original event when mods are unchanged to preserve AppKit
+    // identity (required for input methods like Korean).
+    let translationEvent: NSEvent
+    if translationMods == event.modifierFlags {
+      translationEvent = event
+    } else {
+      translationEvent = NSEvent.keyEvent(
+        with: event.type,
+        location: event.locationInWindow,
+        modifierFlags: translationMods,
+        timestamp: event.timestamp,
+        windowNumber: event.windowNumber,
+        context: nil,
+        characters: event.characters(byApplyingModifiers: translationMods) ?? "",
+        charactersIgnoringModifiers: event.charactersIgnoringModifiers ?? "",
+        isARepeat: event.isARepeat,
+        keyCode: event.keyCode
+      ) ?? event
+    }
+
     // Use interpretKeyEvents to get OS-resolved text (handles keyboard layouts, dead keys, IME)
     keyTextAccumulator = []
-    interpretKeyEvents([event])
+    interpretKeyEvents([translationEvent])
 
     if KeyEventDebug.enabled {
       KeyEventDebug.print("Surface.interpret: text=\(keyTextAccumulator)")
@@ -266,12 +307,12 @@ final class TerminalSurfaceView: NSView {
 
     if keyTextAccumulator.isEmpty {
       // No text produced (e.g. Escape, arrows, function keys) — send key event only
-      let keyEvent = event.ghosttyKeyEvent(action)
+      let keyEvent = event.ghosttyKeyEvent(action, translationMods: translationEvent.modifierFlags)
       _ = ghostty_surface_key(surface, keyEvent)
     } else {
       // Send key event with accumulated text
       for text in keyTextAccumulator {
-        var keyEvent = event.ghosttyKeyEvent(action)
+        var keyEvent = event.ghosttyKeyEvent(action, translationMods: translationEvent.modifierFlags)
         text.withCString { ptr in
           keyEvent.text = ptr
           _ = ghostty_surface_key(surface, keyEvent)

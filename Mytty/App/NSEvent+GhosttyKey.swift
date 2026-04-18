@@ -12,13 +12,26 @@ func ghosttyMods(_ flags: NSEvent.ModifierFlags) -> ghostty_input_mods_e {
   return ghostty_input_mods_e(rawValue: raw)
 }
 
+func eventModifierFlags(mods: ghostty_input_mods_e) -> NSEvent.ModifierFlags {
+  var flags = NSEvent.ModifierFlags(rawValue: 0)
+  if mods.rawValue & GHOSTTY_MODS_SHIFT.rawValue != 0 { flags.insert(.shift) }
+  if mods.rawValue & GHOSTTY_MODS_CTRL.rawValue != 0 { flags.insert(.control) }
+  if mods.rawValue & GHOSTTY_MODS_ALT.rawValue != 0 { flags.insert(.option) }
+  if mods.rawValue & GHOSTTY_MODS_SUPER.rawValue != 0 { flags.insert(.command) }
+  return flags
+}
+
 extension NSEvent {
-  func ghosttyKeyEvent(_ action: ghostty_input_action_e) -> ghostty_input_key_s {
+  func ghosttyKeyEvent(
+    _ action: ghostty_input_action_e,
+    translationMods: NSEvent.ModifierFlags? = nil
+  ) -> ghostty_input_key_s {
     var key = ghostty_input_key_s()
     key.action = action
     key.keycode = UInt32(keyCode)
     key.mods = ghosttyMods(modifierFlags)
-    key.consumed_mods = ghosttyMods(modifierFlags.subtracting([.control, .command]))
+    key.consumed_mods = ghosttyMods(
+      (translationMods ?? modifierFlags).subtracting([.control, .command]))
     key.text = nil
     key.composing = false
     key.unshifted_codepoint = 0
