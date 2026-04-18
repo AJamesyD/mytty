@@ -216,10 +216,7 @@ final class ContentViewHandlerTests: XCTestCase {
         name: .ghosttyColorChange, object: nil,
         userInfo: [
           "paneID": pane.id as Any,
-          "kind": "background",
-          "r": CGFloat(0.2),
-          "g": CGFloat(0.3),
-          "b": CGFloat(0.4),
+          "payload": ColorChangePayload(kind: .background, r: 0.2, g: 0.3, b: 0.4),
         ]))
 
     XCTAssertNotNil(pane.surfaceView.layer?.backgroundColor)
@@ -236,10 +233,7 @@ final class ContentViewHandlerTests: XCTestCase {
         name: .ghosttyColorChange, object: nil,
         userInfo: [
           "paneID": pane.id as Any,
-          "kind": "foreground",
-          "r": CGFloat(1.0),
-          "g": CGFloat(1.0),
-          "b": CGFloat(1.0),
+          "payload": ColorChangePayload(kind: .foreground, r: 1.0, g: 1.0, b: 1.0),
         ]))
 
     XCTAssertNil(pane.surfaceView.layer?.backgroundColor)

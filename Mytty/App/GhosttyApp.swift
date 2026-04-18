@@ -173,15 +173,18 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
     if target.tag == GHOSTTY_TARGET_SURFACE {
       let surface = target.target.surface
       let change = action.action.color_change
-      let r = CGFloat(change.r) / 255.0
-      let g = CGFloat(change.g) / 255.0
-      let b = CGFloat(change.b) / 255.0
-      let kind: String = switch change.kind {
-      case GHOSTTY_ACTION_COLOR_KIND_BACKGROUND: "background"
-      case GHOSTTY_ACTION_COLOR_KIND_FOREGROUND: "foreground"
-      case GHOSTTY_ACTION_COLOR_KIND_CURSOR: "cursor"
-      default: "palette"
+      let kind: ColorChangePayload.Kind = switch change.kind {
+      case GHOSTTY_ACTION_COLOR_KIND_BACKGROUND: .background
+      case GHOSTTY_ACTION_COLOR_KIND_FOREGROUND: .foreground
+      case GHOSTTY_ACTION_COLOR_KIND_CURSOR: .cursor
+      default: .palette
       }
+      let payload = ColorChangePayload(
+        kind: kind,
+        r: CGFloat(change.r) / 255.0,
+        g: CGFloat(change.g) / 255.0,
+        b: CGFloat(change.b) / 255.0
+      )
       DispatchQueue.main.async {
         guard let userdata = ghostty_surface_userdata(surface) else { return }
         let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
@@ -190,8 +193,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
           object: nil,
           userInfo: [
             "paneID": view.pane?.id as Any,
-            "kind": kind,
-            "r": r, "g": g, "b": b,
+            "payload": payload,
           ]
         )
       }
@@ -269,6 +271,19 @@ extension Notification.Name {
   static let ghosttyCommandFinished = Notification.Name("ghosttyCommandFinished")
   static let ghosttyProgressReport = Notification.Name("ghosttyProgressReport")
   static let ghosttyColorChange = Notification.Name("ghosttyColorChange")
+}
+
+struct ColorChangePayload {
+  enum Kind {
+    case background
+    case foreground
+    case cursor
+    case palette
+  }
+  let kind: Kind
+  let r: CGFloat
+  let g: CGFloat
+  let b: CGFloat
 }
 
 // MARK: - GhosttyAppManager

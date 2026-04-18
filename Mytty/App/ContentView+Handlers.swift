@@ -412,16 +412,13 @@ extension ContentView {
   }
 
   func handleColorChange(_ notification: Notification) {
-    guard let kind = notification.userInfo?["kind"] as? String,
-      kind == "background",
-      let r = notification.userInfo?["r"] as? CGFloat,
-      let g = notification.userInfo?["g"] as? CGFloat,
-      let b = notification.userInfo?["b"] as? CGFloat,
+    guard let payload = notification.userInfo?["payload"] as? ColorChangePayload,
+      payload.kind == .background,
       let paneID = notification.userInfo?["paneID"] as? Int,
       let match = store.pane(byId: paneID)
     else { return }
     match.pane.surfaceView.layer?.backgroundColor = NSColor(
-      red: r, green: g, blue: b, alpha: 1.0
+      red: payload.r, green: payload.g, blue: payload.b, alpha: 1.0
     ).cgColor
   }
 
