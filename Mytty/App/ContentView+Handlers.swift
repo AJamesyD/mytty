@@ -16,7 +16,7 @@ extension ContentView {
   }
 
   var contentWithNotifications: some View {
-    contentWithOverlays
+    contentWithGhosttyActions
       .onReceive(NotificationCenter.default.publisher(for: .ghosttySetTitle)) { notification in
         handleSetTitle(notification)
       }
@@ -50,6 +50,45 @@ extension ContentView {
       }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyColorChange)) { notification in
         handleColorChange(notification)
+      }
+  }
+
+  var contentWithGhosttyActions: some View {
+    contentWithOverlays
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyNewTab)) { notification in
+        handleGhosttyNewTab(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyNewSplit)) { notification in
+        handleGhosttyNewSplit(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyCloseTab)) { notification in
+        handleGhosttyCloseTab(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyGotoSplit)) { notification in
+        handleGhosttyGotoSplit(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyResizeSplit)) { notification in
+        handleGhosttyResizeSplit(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyEqualizeSplits)) {
+        notification in
+        handleGhosttyEqualizeSplits(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyToggleSplitZoom)) {
+        notification in
+        handleGhosttyToggleSplitZoom(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyGotoTab)) { notification in
+        handleGhosttyGotoTab(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyMoveTab)) { notification in
+        handleGhosttyMoveTab(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyToggleQuickTerminal)) { _ in
+        handleGhosttyToggleQuickTerminal()
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyChildExited)) { notification in
+        handleGhosttyChildExited(notification)
       }
       .onReceive(NotificationCenter.default.publisher(for: .myttyConfigDidChange)) { _ in
         let newConfig = MyttyConfig.load()
@@ -420,6 +459,118 @@ extension ContentView {
     match.pane.surfaceView.layer?.backgroundColor = NSColor(
       red: payload.r, green: payload.g, blue: payload.b, alpha: 1.0
     ).cgColor
+  }
+
+  // MARK: - Ghostty Action Handlers
+
+  func handleGhosttyNewTab(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.session.addTab()
+  }
+
+  func handleGhosttyNewSplit(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let directionRaw = notification.userInfo?["direction"] as? UInt32,
+      let match = store.pane(byId: paneID)
+    else { return }
+    let direction: SplitDirection =
+      (directionRaw == GHOSTTY_SPLIT_DIRECTION_DOWN.rawValue
+        || directionRaw == GHOSTTY_SPLIT_DIRECTION_UP.rawValue)
+      ? .vertical : .horizontal
+    match.tab.splitActivePane(direction: direction)
+  }
+
+  func handleGhosttyCloseTab(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.session.closeTab(match.tab)
+    if match.session.tabs.isEmpty {
+      store.closeSession(match.session)
+    }
+  }
+
+  func handleGhosttyGotoSplit(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let directionRaw = notification.userInfo?["direction"] as? UInt32,
+      let match = store.pane(byId: paneID)
+    else { return }
+    let navDirection: NavigationDirection
+    switch directionRaw {
+    case GHOSTTY_GOTO_SPLIT_UP.rawValue: navDirection = .up
+    case GHOSTTY_GOTO_SPLIT_DOWN.rawValue: navDirection = .down
+    case GHOSTTY_GOTO_SPLIT_LEFT.rawValue: navDirection = .left
+    case GHOSTTY_GOTO_SPLIT_RIGHT.rawValue: navDirection = .right
+    case GHOSTTY_GOTO_SPLIT_PREVIOUS.rawValue: navDirection = .left
+    case GHOSTTY_GOTO_SPLIT_NEXT.rawValue: navDirection = .right
+    default: return
+    }
+    guard let target = match.tab.layout.adjacentPane(from: match.pane, direction: navDirection)
+    else { return }
+    match.tab.activePane = target
+    DispatchQueue.main.async {
+      target.surfaceView.window?.makeFirstResponder(target.surfaceView)
+    }
+  }
+
+  func handleGhosttyResizeSplit(_ notification: Notification) {
+    // TODO(phase-7): add split resize support to PaneLayout
+    guard notification.userInfo?["paneID"] is Int else { return }
+  }
+
+  func handleGhosttyEqualizeSplits(_ notification: Notification) {
+    // TODO(phase-7): add equalize splits support to PaneLayout
+    guard notification.userInfo?["paneID"] is Int else { return }
+  }
+
+  func handleGhosttyToggleSplitZoom(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let match = store.pane(byId: paneID)
+    else { return }
+    if match.tab.zoomedPane != nil {
+      match.tab.zoomedPane = nil
+    } else {
+      match.tab.zoomedPane = match.pane
+    }
+  }
+
+  func handleGhosttyGotoTab(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int,
+      let tabRaw = notification.userInfo?["tab"] as? Int32,
+      let match = store.pane(byId: paneID)
+    else { return }
+    let session = match.session
+    switch tabRaw {
+    case -1: session.prevTab()
+    case -2: session.nextTab()
+    case -3:
+      if let last = session.tabs.last { session.activeTab = last }
+    default:
+      let index = Int(tabRaw)
+      if index >= 0, index < session.tabs.count {
+        session.activeTab = session.tabs[index]
+      }
+    }
+  }
+
+  func handleGhosttyMoveTab(_ notification: Notification) {
+    // TODO(phase-7): add tab reordering support to MyttySession
+    guard notification.userInfo?["paneID"] is Int else { return }
+  }
+
+  func handleGhosttyToggleQuickTerminal() {
+    NotificationCenter.default.post(
+      name: .myttyDropdownHotkeyPressed,
+      object: nil
+    )
+  }
+
+  func handleGhosttyChildExited(_ notification: Notification) {
+    guard let paneID = notification.userInfo?["paneID"] as? Int else { return }
+    // TODO(phase-7): show child exited overlay on the pane
+    _ = store.pane(byId: paneID)
   }
 
   // MARK: - Key Sequence

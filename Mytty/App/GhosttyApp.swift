@@ -204,6 +204,250 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
   case GHOSTTY_ACTION_CONFIG_CHANGE:
     return true
 
+  // Category B: actions that map to Mytty operations
+
+  case GHOSTTY_ACTION_NEW_TAB:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyNewTab,
+          object: nil,
+          userInfo: ["paneID": view.pane?.id as Any]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_NEW_SPLIT:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let direction = action.action.new_split
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyNewSplit,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any,
+            "direction": direction.rawValue,
+          ]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_CLOSE_TAB:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyCloseTab,
+          object: nil,
+          userInfo: ["paneID": view.pane?.id as Any]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_GOTO_SPLIT:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let direction = action.action.goto_split
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyGotoSplit,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any,
+            "direction": direction.rawValue,
+          ]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_RESIZE_SPLIT:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let resize = action.action.resize_split
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyResizeSplit,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any,
+            "amount": resize.amount,
+            "direction": resize.direction.rawValue,
+          ]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_EQUALIZE_SPLITS:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyEqualizeSplits,
+          object: nil,
+          userInfo: ["paneID": view.pane?.id as Any]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_TOGGLE_SPLIT_ZOOM:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyToggleSplitZoom,
+          object: nil,
+          userInfo: ["paneID": view.pane?.id as Any]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_GOTO_TAB:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let tab = action.action.goto_tab
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyGotoTab,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any,
+            "tab": tab.rawValue,
+          ]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_MOVE_TAB:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let amount = action.action.move_tab.amount
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyMoveTab,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any,
+            "amount": amount,
+          ]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_TOGGLE_FULLSCREEN:
+    DispatchQueue.main.async {
+      NSApp.keyWindow?.toggleFullScreen(nil)
+    }
+    return true
+
+  case GHOSTTY_ACTION_OPEN_URL:
+    let openUrl = action.action.open_url
+    if let urlPtr = openUrl.url {
+      let urlStr = String(cString: urlPtr)
+      DispatchQueue.main.async {
+        if let url = URL(string: urlStr) {
+          NSWorkspace.shared.open(url)
+        }
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_TOGGLE_QUICK_TERMINAL:
+    DispatchQueue.main.async {
+      NotificationCenter.default.post(
+        name: .ghosttyToggleQuickTerminal,
+        object: nil
+      )
+    }
+    return true
+
+  case GHOSTTY_ACTION_SHOW_CHILD_EXITED:
+    if target.tag == GHOSTTY_TARGET_SURFACE {
+      let surface = target.target.surface
+      let exitCode = action.action.child_exited.exit_code
+      DispatchQueue.main.async {
+        guard let userdata = ghostty_surface_userdata(surface) else { return }
+        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+        NotificationCenter.default.post(
+          name: .ghosttyChildExited,
+          object: nil,
+          userInfo: [
+            "paneID": view.pane?.id as Any,
+            "exitCode": exitCode,
+          ]
+        )
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_RELOAD_CONFIG:
+    return true
+
+  // Category C: acknowledged, no Mytty equivalent
+  case GHOSTTY_ACTION_QUIT,
+    GHOSTTY_ACTION_CHECK_FOR_UPDATES,
+    GHOSTTY_ACTION_SHOW_GTK_INSPECTOR,
+    GHOSTTY_ACTION_PRESENT_TERMINAL,
+    GHOSTTY_ACTION_READONLY,
+    GHOSTTY_ACTION_START_SEARCH,
+    GHOSTTY_ACTION_END_SEARCH,
+    GHOSTTY_ACTION_SEARCH_TOTAL,
+    GHOSTTY_ACTION_SEARCH_SELECTED,
+    GHOSTTY_ACTION_CLOSE_ALL_WINDOWS,
+    GHOSTTY_ACTION_NEW_WINDOW,
+    GHOSTTY_ACTION_GOTO_WINDOW,
+    GHOSTTY_ACTION_FLOAT_WINDOW,
+    GHOSTTY_ACTION_TOGGLE_MAXIMIZE,
+    GHOSTTY_ACTION_TOGGLE_TAB_OVERVIEW,
+    GHOSTTY_ACTION_TOGGLE_VISIBILITY,
+    GHOSTTY_ACTION_TOGGLE_WINDOW_DECORATIONS,
+    GHOSTTY_ACTION_TOGGLE_BACKGROUND_OPACITY,
+    GHOSTTY_ACTION_TOGGLE_COMMAND_PALETTE,
+    GHOSTTY_ACTION_RESET_WINDOW_SIZE,
+    GHOSTTY_ACTION_INSPECTOR,
+    GHOSTTY_ACTION_RENDER_INSPECTOR,
+    GHOSTTY_ACTION_PROMPT_TITLE,
+    GHOSTTY_ACTION_QUIT_TIMER,
+    GHOSTTY_ACTION_SECURE_INPUT,
+    GHOSTTY_ACTION_KEY_SEQUENCE,
+    GHOSTTY_ACTION_KEY_TABLE,
+    GHOSTTY_ACTION_OPEN_CONFIG,
+    GHOSTTY_ACTION_RENDERER_HEALTH,
+    GHOSTTY_ACTION_MOUSE_OVER_LINK,
+    GHOSTTY_ACTION_COPY_TITLE_TO_CLIPBOARD,
+    GHOSTTY_ACTION_SHOW_ON_SCREEN_KEYBOARD,
+    GHOSTTY_ACTION_UNDO,
+    GHOSTTY_ACTION_REDO:
+    return true
+
   default:
     return false
   }
@@ -271,6 +515,17 @@ extension Notification.Name {
   static let ghosttyCommandFinished = Notification.Name("ghosttyCommandFinished")
   static let ghosttyProgressReport = Notification.Name("ghosttyProgressReport")
   static let ghosttyColorChange = Notification.Name("ghosttyColorChange")
+  static let ghosttyNewTab = Notification.Name("ghosttyNewTab")
+  static let ghosttyNewSplit = Notification.Name("ghosttyNewSplit")
+  static let ghosttyCloseTab = Notification.Name("ghosttyCloseTab")
+  static let ghosttyGotoSplit = Notification.Name("ghosttyGotoSplit")
+  static let ghosttyResizeSplit = Notification.Name("ghosttyResizeSplit")
+  static let ghosttyEqualizeSplits = Notification.Name("ghosttyEqualizeSplits")
+  static let ghosttyToggleSplitZoom = Notification.Name("ghosttyToggleSplitZoom")
+  static let ghosttyGotoTab = Notification.Name("ghosttyGotoTab")
+  static let ghosttyMoveTab = Notification.Name("ghosttyMoveTab")
+  static let ghosttyToggleQuickTerminal = Notification.Name("ghosttyToggleQuickTerminal")
+  static let ghosttyChildExited = Notification.Name("ghosttyChildExited")
 }
 
 struct ColorChangePayload {
