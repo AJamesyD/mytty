@@ -23,31 +23,14 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  ci:
+  lint:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - uses: DeterminateSystems/nix-installer-action@v22
 
       - uses: DeterminateSystems/magic-nix-cache-action@v13
 
-      - name: Get ghostty submodule commit
-        id: ghostty-rev
-        run: echo "rev=$(git -C vendor/ghostty rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache libghostty xcframework
-        id: cache-libghostty
-        uses: actions/cache@v4
-        with:
-          path: vendor/ghostty/macos/GhosttyKit.xcframework
-          key: libghostty-${{ runner.os }}-${{ steps.ghostty-rev.outputs.rev }}
-
-      - name: Build libghostty
-        if: steps.cache-libghostty.outputs.cache-hit != 'true'
-        run: nix develop --command just build-libghostty
-
-      - name: Run CI
-        run: nix develop --command just ci
+      - name: Lint
+        run: nix develop --command bash -c "just fmt-check && just nix-fmt-check && just lint-strict && typos"
