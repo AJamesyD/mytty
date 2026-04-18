@@ -42,21 +42,23 @@
             pkgs.create-dmg
           ];
 
-          shellHook = ''
-            # Use system Xcode SDK, not Nix-provided one (same as Ghostty's devShell)
-            unset SDKROOT
-            unset DEVELOPER_DIR
-            export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 !~ /xcrun/ || $0 == "/usr/bin" {print}' | sed 's/:$//')
+          shellHook =
+            # bash
+            ''
+              # Use system Xcode SDK, not Nix-provided one (same as Ghostty's devShell)
+              unset SDKROOT
+              unset DEVELOPER_DIR
+              export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 !~ /xcrun/ || $0 == "/usr/bin" {print}' | sed 's/:$//')
 
-            # Add Xcode toolchain to PATH for sourcekit-lsp and swift-format
-            XCODE_TOOLCHAIN="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/bin"
-            if [ -d "$XCODE_TOOLCHAIN" ]; then
-              export PATH="$XCODE_TOOLCHAIN:$PATH"
-            fi
+              # Add Xcode toolchain to PATH for sourcekit-lsp and swift-format
+              XCODE_TOOLCHAIN="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/bin"
+              if [ -d "$XCODE_TOOLCHAIN" ]; then
+              	export PATH="$XCODE_TOOLCHAIN:$PATH"
+              fi
 
-            echo "Mytty dev environment"
-            echo "Zig: $(zig version)"
-          '';
+              echo "Mytty dev environment"
+              echo "Zig: $(zig version)"
+            '';
         };
 
         formatter = pkgs.nixfmt;
