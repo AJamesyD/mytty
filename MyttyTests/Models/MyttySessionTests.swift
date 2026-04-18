@@ -108,4 +108,152 @@ final class MyttySessionTests: XCTestCase {
     session.nextTab()
     XCTAssertEqual(session.activeTab?.id, tabID)
   }
+
+  // MARK: - Popup methods
+
+  private func makePopupDef(name: String = "test", command: String = "htop") -> PopupDefinition {
+    PopupDefinition(name: name, command: command)
+  }
+
+  func test_togglePopup_createsNewPopup() {
+    let session = makeSession()
+    let def = makePopupDef()
+
+    session.togglePopup(definition: def)
+
+    XCTAssertEqual(session.popups.count, 1)
+    XCTAssertTrue(session.popups[0].isVisible)
+    XCTAssertEqual(session.activePopup?.definition.name, "test")
+  }
+
+  func test_togglePopup_hidesVisiblePopup() {
+    let session = makeSession()
+    let def = makePopupDef()
+    session.togglePopup(definition: def)
+    XCTAssertTrue(session.popups[0].isVisible)
+
+    session.togglePopup(definition: def)
+
+    XCTAssertFalse(session.popups[0].isVisible)
+    XCTAssertNil(session.activePopup)
+  }
+
+  func test_togglePopup_showsHiddenPopup() {
+    let session = makeSession()
+    let def = makePopupDef()
+    session.togglePopup(definition: def)
+    session.togglePopup(definition: def)
+    XCTAssertFalse(session.popups[0].isVisible)
+
+    session.togglePopup(definition: def)
+
+    XCTAssertTrue(session.popups[0].isVisible)
+    XCTAssertNotNil(session.activePopup)
+  }
+
+  func test_togglePopup_hidesOtherPopupWhenShowing() {
+    let session = makeSession()
+    let def1 = makePopupDef(name: "popup1", command: "htop")
+    let def2 = makePopupDef(name: "popup2", command: "btop")
+    session.togglePopup(definition: def1)
+    session.togglePopup(definition: def2)
+    XCTAssertTrue(session.popups[1].isVisible)
+
+    session.togglePopup(definition: def2)
+    session.togglePopup(definition: def1)
+
+    XCTAssertTrue(session.popups[0].isVisible)
+    XCTAssertEqual(session.activePopup?.definition.name, "popup1")
+  }
+
+  func test_openPopup_createsIfNotExists() {
+    let session = makeSession()
+    let def = makePopupDef()
+
+    session.openPopup(definition: def)
+
+    XCTAssertEqual(session.popups.count, 1)
+    XCTAssertTrue(session.popups[0].isVisible)
+  }
+
+  func test_openPopup_showsHiddenPopup() {
+    let session = makeSession()
+    let def = makePopupDef()
+    session.togglePopup(definition: def)
+    session.togglePopup(definition: def)
+    XCTAssertFalse(session.popups[0].isVisible)
+
+    session.openPopup(definition: def)
+
+    XCTAssertTrue(session.popups[0].isVisible)
+  }
+
+  func test_openPopup_visiblePopup_isNoop() {
+    let session = makeSession()
+    let def = makePopupDef()
+    session.openPopup(definition: def)
+    let popupCount = session.popups.count
+
+    session.openPopup(definition: def)
+
+    XCTAssertEqual(session.popups.count, popupCount)
+  }
+
+  func test_closePopup_removesFromArray() {
+    let session = makeSession()
+    let def = makePopupDef()
+    session.togglePopup(definition: def)
+    let popup = session.popups[0]
+
+    session.closePopup(popup)
+
+    XCTAssertTrue(session.popups.isEmpty)
+    XCTAssertNil(session.activePopup)
+  }
+
+  func test_closePopup_clearsActiveIfMatch() {
+    let session = makeSession()
+    let def1 = makePopupDef(name: "p1")
+    let def2 = makePopupDef(name: "p2")
+    session.togglePopup(definition: def1)
+    session.togglePopup(definition: def2)
+    let popup2 = session.popups[1]
+
+    session.closePopup(popup2)
+
+    XCTAssertEqual(session.popups.count, 1)
+    XCTAssertNil(session.activePopup)
+  }
+
+  func test_hideActivePopup_hidesAndClears() {
+    let session = makeSession()
+    let def = makePopupDef()
+    session.togglePopup(definition: def)
+    XCTAssertNotNil(session.activePopup)
+
+    session.hideActivePopup()
+
+    XCTAssertFalse(session.popups[0].isVisible)
+    XCTAssertNil(session.activePopup)
+  }
+
+  func test_hideActivePopup_noActivePopup_isNoop() {
+    let session = makeSession()
+    session.hideActivePopup()
+    XCTAssertNil(session.activePopup)
+  }
+
+  func test_togglePopup_closeOnExit_setsUseCommandField() {
+    let session = makeSession()
+    let def = PopupDefinition(name: "test", command: "htop", closeOnExit: true)
+    session.togglePopup(definition: def)
+    XCTAssertFalse(session.popups[0].pane.useCommandField)
+  }
+
+  func test_togglePopup_noCloseOnExit_keepsUseCommandField() {
+    let session = makeSession()
+    let def = PopupDefinition(name: "test", command: "htop", closeOnExit: false)
+    session.togglePopup(definition: def)
+    XCTAssertTrue(session.popups[0].pane.useCommandField)
+  }
 }

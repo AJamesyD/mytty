@@ -214,7 +214,7 @@ final class CopyModeManager {
     }
   }
 
-  private func findMatchOnLine(
+  func findMatchOnLine(
     _ line: String, query: String, cursorCol: Int, forward: Bool
   ) -> Int? {
     var bestCol: Int?
