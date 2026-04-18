@@ -335,4 +335,168 @@ final class IPCServiceTests: XCTestCase {
       XCTAssertEqual((error as NSError).code, MyttyIPC.ErrorCode.invalidArgument.rawValue)
     }
   }
+
+  // MARK: - Rename Session Tests
+
+  func testRenameSession() async throws {
+    let session = store.createSession(name: "old", directory: URL(fileURLWithPath: "/tmp"))
+    let data = try await service.renameSession(id: session.id, name: "new")
+    let response = try JSONDecoder().decode(SessionResponse.self, from: data)
+    XCTAssertEqual(response.name, "new")
+    XCTAssertEqual(session.name, "new")
+  }
+
+  func testRenameSessionNotFound() async {
+    do {
+      _ = try await service.renameSession(id: 999, name: "x")
+      XCTFail("Expected error")
+    } catch {}
+  }
+
+  // MARK: - Get Tab Tests
+
+  func testGetTab() async throws {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.activeTab!
+    let data = try await service.getTab(id: tab.id)
+    let response = try JSONDecoder().decode(TabResponse.self, from: data)
+    XCTAssertEqual(response.id, tab.id)
+    XCTAssertEqual(response.paneCount, 1)
+  }
+
+  func testGetTabNotFound() async {
+    do {
+      _ = try await service.getTab(id: 999)
+      XCTFail("Expected error")
+    } catch {}
+  }
+
+  // MARK: - Move Tab Tests
+
+  func testMoveTab() async throws {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    session.addTab()
+    let tab = session.tabs[0]
+    let data = try await service.moveTab(id: tab.id, toIndex: 1)
+    let response = try JSONDecoder().decode(TabResponse.self, from: data)
+    XCTAssertEqual(response.id, tab.id)
+    XCTAssertEqual(session.tabs[1].id, tab.id)
+  }
+
+  // MARK: - Create Pane Tests
+
+  func testCreatePane() async throws {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.activeTab!
+    let data = try await service.createPane(tabId: tab.id, direction: "horizontal")
+    let response = try JSONDecoder().decode(PaneResponse.self, from: data)
+    XCTAssertEqual(tab.panes.count, 2)
+    XCTAssertNotNil(response.id)
+  }
+
+  func testCreatePaneNotFound() async {
+    do {
+      _ = try await service.createPane(tabId: 999, direction: nil)
+      XCTFail("Expected error")
+    } catch {}
+  }
+
+  // MARK: - Get Pane Tests
+
+  func testGetPane() async throws {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.activeTab!.panes[0]
+    let data = try await service.getPane(id: pane.id)
+    let response = try JSONDecoder().decode(PaneResponse.self, from: data)
+    XCTAssertEqual(response.id, pane.id)
+  }
+
+  // MARK: - Resize Pane Tests
+
+  func testResizePaneInvalidDirection() async {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.activeTab!
+    tab.splitActivePane(direction: .horizontal)
+    let pane = tab.activePane!
+    do {
+      _ = try await service.resizePane(id: pane.id, direction: "diagonal", amount: 10)
+      XCTFail("Expected error")
+    } catch {}
+  }
+
+  func testResizePaneValidDirection() async throws {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.activeTab!
+    tab.splitActivePane(direction: .horizontal)
+    let pane = tab.activePane!
+    let data = try await service.resizePane(id: pane.id, direction: "left", amount: 10)
+    XCTAssertFalse(data.isEmpty)
+  }
+
+  func testResizePaneNotFound() async {
+    do {
+      _ = try await service.resizePane(id: 999, direction: "left", amount: 10)
+      XCTFail("Expected error")
+    } catch {}
+  }
+
+  // MARK: - Popup Tests
+
+  func testOpenPopup() async throws {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let data = try await service.openPopup(
+      sessionId: session.id, name: "test", exec: "htop",
+      width: 0.8, height: 0.8, closeOnExit: true)
+    let response = try JSONDecoder().decode(PopupResponse.self, from: data)
+    XCTAssertEqual(response.name, "test")
+    XCTAssertEqual(response.command, "htop")
+    XCTAssertTrue(response.isVisible)
+    XCTAssertEqual(session.popups.count, 1)
+  }
+
+  func testOpenPopupSessionNotFound() async {
+    do {
+      _ = try await service.openPopup(
+        sessionId: 999, name: "x", exec: "x", width: 0.8, height: 0.8, closeOnExit: true)
+      XCTFail("Expected error")
+    } catch {}
+  }
+
+  func testClosePopup() async throws {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    _ = try await service.openPopup(
+      sessionId: session.id, name: "test", exec: "htop",
+      width: 0.8, height: 0.8, closeOnExit: true)
+    let popup = session.popups[0]
+    _ = try await service.closePopup(id: popup.id)
+    XCTAssertTrue(session.popups.isEmpty)
+  }
+
+  func testClosePopupNotFound() async {
+    do {
+      _ = try await service.closePopup(id: 999)
+      XCTFail("Expected error")
+    } catch {}
+  }
+
+  func testListPopups() async throws {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    _ = try await service.openPopup(
+      sessionId: session.id, name: "p1", exec: "htop",
+      width: 0.8, height: 0.8, closeOnExit: true)
+    _ = try await service.openPopup(
+      sessionId: session.id, name: "p2", exec: "btop",
+      width: 0.8, height: 0.8, closeOnExit: true)
+    let data = try await service.listPopups(sessionId: session.id)
+    let responses = try JSONDecoder().decode([PopupResponse].self, from: data)
+    XCTAssertEqual(responses.count, 2)
+  }
+
+  // MARK: - Window Tests
+
+  func testListWindows() async throws {
+    let data = try await service.listWindows()
+    let responses = try JSONDecoder().decode([WindowResponse].self, from: data)
+    XCTAssertTrue(responses.isEmpty)
+  }
 }
