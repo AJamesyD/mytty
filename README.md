@@ -48,7 +48,7 @@ Mytty reads two kinds of config:
   - `~/.config/ghostty/config` is loaded as a base. If you already use [Ghostty](https://ghostty.org), your settings carry over automatically.
   - `~/.config/mytty/ghostty.conf` (optional) overrides the base. Use this for Mytty-specific tweaks. See [Ghostty docs](https://ghostty.org/docs/config) for all options.
 
-Ghostty config files are read at launch. Restart Mytty to apply changes.
+Ghostty config files reload automatically when saved.
 
 ```toml
 # ~/.config/mytty/config.toml

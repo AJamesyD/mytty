@@ -14,6 +14,7 @@ struct ContentView: View {
   @State var keySequenceManager = KeySequenceManager()
   @State var panelState = PanelState()
   @State var configWatcher = ConfigWatcher()
+  @State var ghosttyConfigWatcher = GhosttyConfigWatcher()
   @State var terminalCommands: TerminalCommands?
 
   var body: some View {
@@ -273,6 +274,7 @@ struct ContentView: View {
         print("[Mytty] Config parse error: \(error)")
       }
       configWatcher.start()
+      ghosttyConfigWatcher.start()
       windowModeManager.onNeedExitCopyMode = { copyModeManager.exit() }
       copyModeManager.onNeedExitWindowMode = {
         store.activeSession?.activeTab?.windowModeState = .inactive
@@ -295,6 +297,7 @@ struct ContentView: View {
     }
     .onDisappear {
       configWatcher.stop()
+      ghosttyConfigWatcher.stop()
       DispatchQueue.main.async { [store] in
         for tracked in store.trackedWindows where !tracked.window.isVisible {
           store.unregisterWindow(tracked.window)

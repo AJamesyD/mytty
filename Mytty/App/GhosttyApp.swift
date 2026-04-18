@@ -328,6 +328,9 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
     return true
 
   case GHOSTTY_ACTION_RELOAD_CONFIG:
+    DispatchQueue.main.async {
+      GhosttyAppManager.shared.reloadGhosttyConfig()
+    }
     return true
 
   // Category C: acknowledged, no Mytty equivalent
@@ -591,6 +594,46 @@ final class GhosttyAppManager {
   }
 
   var windowConfig: WindowConfig { WindowConfig(config: config) }
+
+  func reloadGhosttyConfig() {
+    guard let app else { return }
+    guard let cfg = ghostty_config_new() else { return }
+
+    let ghosttyConfigDir = FileManager.default.homeDirectoryForCurrentUser
+      .appendingPathComponent(".config/ghostty")
+    for filename in ["config", "config.ghostty"] {
+      let path = ghosttyConfigDir.appendingPathComponent(filename).path
+      if FileManager.default.fileExists(atPath: path) {
+        path.withCString { cPath in
+          ghostty_config_load_file(cfg, cPath)
+        }
+      }
+    }
+
+    ghostty_config_load_recursive_files(cfg)
+
+    let myttyConfigPath = FileManager.default.homeDirectoryForCurrentUser
+      .appendingPathComponent(".config/mytty/ghostty.conf").path
+    if FileManager.default.fileExists(atPath: myttyConfigPath) {
+      myttyConfigPath.withCString { path in
+        ghostty_config_load_file(cfg, path)
+      }
+    }
+    ghostty_config_finalize(cfg)
+
+    let diagCount = ghostty_config_diagnostics_count(cfg)
+    for i in 0..<diagCount {
+      let diag = ghostty_config_get_diagnostic(cfg, i)
+      if let msg = diag.message {
+        print("[GhosttyAppManager] config diagnostic: \(String(cString: msg))")
+      }
+    }
+
+    ghostty_app_update_config(app, cfg)
+    let oldConfig = self.config
+    self.config = cfg
+    if let old = oldConfig { ghostty_config_free(old) }
+  }
 
   func tick() {
     guard let app else { return }
