@@ -97,4 +97,9 @@ final class CopyModeManagerTests: XCTestCase {
     let result = manager.findMatchOnLine("hello world", query: "world", cursorCol: Int.max, forward: false)
     XCTAssertEqual(result, 6)
   }
+
+  func test_findMatch_forward_unicode() {
+    let result = manager.findMatchOnLine("日本語hello世界", query: "hello", cursorCol: 0, forward: true)
+    XCTAssertEqual(result, 3)
+  }
 }

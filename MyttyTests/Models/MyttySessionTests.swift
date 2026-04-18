@@ -256,4 +256,33 @@ final class MyttySessionTests: XCTestCase {
     session.togglePopup(definition: def)
     XCTAssertTrue(session.popups[0].pane.useCommandField)
   }
+
+  func test_togglePopup_showingNewHidesExistingVisible() {
+    let session = makeSession()
+    let def1 = makePopupDef(name: "p1")
+    let def2 = makePopupDef(name: "p2")
+    session.togglePopup(definition: def1)
+    XCTAssertTrue(session.popups[0].isVisible)
+
+    session.togglePopup(definition: def2)
+
+    XCTAssertFalse(session.popups[0].isVisible)
+    XCTAssertTrue(session.popups[1].isVisible)
+    XCTAssertEqual(session.activePopup?.definition.name, "p2")
+  }
+
+  func test_togglePopup_showHiddenHidesOtherVisible() {
+    let session = makeSession()
+    let def1 = makePopupDef(name: "p1")
+    let def2 = makePopupDef(name: "p2")
+    session.togglePopup(definition: def1)
+    session.togglePopup(definition: def2)
+    // p1 hidden, p2 visible
+    session.togglePopup(definition: def2)
+    // Both hidden now
+    session.togglePopup(definition: def1)
+    // p1 should be visible, p2 should stay hidden
+    XCTAssertTrue(session.popups[0].isVisible)
+    XCTAssertFalse(session.popups[1].isVisible)
+  }
 }
