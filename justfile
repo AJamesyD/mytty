@@ -179,9 +179,13 @@ lint-fix:
 lint-strict:
     swiftlint lint --quiet --strict
 
+# Check nix formatting
+nix-fmt-check:
+    nix fmt -- --check flake.nix
+
 # Format nix files
 nix-fmt:
-    nix fmt .
+    nix fmt flake.nix
 
 # Format all code (Swift + Nix)
 fmt-all: fmt-swift nix-fmt
@@ -193,7 +197,7 @@ fmt: fmt-all
 check: fmt-check lint test
 
 # CI pipeline: format check, strict lint, build, test, typos
-ci: fmt-check lint-strict build test
+ci: fmt-check nix-fmt-check lint-strict build test
     typos
 
 # Generate changelog for a release
