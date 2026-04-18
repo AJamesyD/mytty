@@ -220,6 +220,7 @@ import MyttyShared
     store.activeSession = session
     session.activeTab = tab
     tab.activePane = pane
+    pane.surfaceView.window?.makeFirstResponder(pane.surfaceView)
     Task { await broker.publish(event: "pane.focused", params: ["paneId": .int(id)]) }
     return try encodeOrThrow(paneResponse(pane, tab: tab))
   }
@@ -256,6 +257,7 @@ import MyttyShared
     }
 
     tab.activePane = target
+    target.surfaceView.window?.makeFirstResponder(target.surfaceView)
     Task { await broker.publish(event: "pane.focused", params: ["paneId": .int(target.id)]) }
     return try encodeOrThrow(paneResponse(target, tab: tab))
   }
