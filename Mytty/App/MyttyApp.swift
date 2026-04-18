@@ -64,15 +64,10 @@ struct MyttyApp: App {
       CommandGroup(after: .toolbar) {
         Divider()
 
-        Button("Increase Font Size") {}
-          .keyboardShortcut(
-            from: config.keybindingStore.trigger(for: "increase-font-size", in: .global))
-
-        Button("Decrease Font Size") {}
-          .keyboardShortcut(
-            from: config.keybindingStore.trigger(for: "decrease-font-size", in: .global))
-
-        Divider()
+        // TODO: font size shortcuts (Cmd+/-, Cmd+0) are handled by libghostty
+        // via keyDown. Adding menu items here would intercept them. Consider
+        // migrating to AppKit menus (NSMenu) for full control over shortcut
+        // routing, matching Ghostty's approach.
 
         Button("Toggle Sidebar") {
           commands?.toggleSidebar()
