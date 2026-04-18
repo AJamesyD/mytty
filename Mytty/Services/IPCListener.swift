@@ -60,6 +60,8 @@ final class IPCListener {
       return
     }
 
+    chmod(path, 0o600)
+
     guard Darwin.listen(fd, 5) == 0 else {
       print("Warning: failed to listen on IPC socket: \(String(cString: strerror(errno)))")
       Darwin.close(fd)
