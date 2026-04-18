@@ -72,3 +72,39 @@ then run `just ci`.
 - `ghostty_surface_key_is_binding()` cannot distinguish key table context
 - Surface keyDown dispatch breaks IME or dead key input
 - The dispatch preamble grows beyond a manageable size (>30 lines)
+
+## Outcome
+
+**Phase 1: complete.** PaneNavigationManager and KeySequenceManager dispatch
+from `TerminalSurfaceView.keyDown` via a static `keyDispatch` closure. The
+PaneNavigationManager NSEvent monitor is removed.
+
+**Phase 2: diverged, hybrid approach adopted.** Modals (session manager,
+which-key, copy mode, window mode) were not moved into keyDown. They remain
+in a single NSEvent monitor (`ModalKeyDispatcher`), consolidating the
+previous four monitors into one. This is a hybrid of Options A and B.
+
+### Actual architecture (two layers)
+
+**Layer 1 (modal, NSEvent monitor):**
+`ModalKeyDispatcher.handleKeyDown` in `Mytty/App/ModalKeyDispatcher.swift`.
+Dispatch chain: sessionManager -> whichKey -> copyMode -> windowMode.
+Consumes the event if a modal is active; otherwise the event proceeds to
+the surface.
+
+**Layer 2 (surface, keyDown override):**
+`TerminalSurfaceView.keyDown(with:)` in
+`Mytty/Views/Terminal/TerminalSurfaceView.swift`. Calls `Self.keyDispatch`,
+a static closure set by `PaneNavigationManager.activate()`. Delegates to
+`KeySequenceManager.handleKeyDown`, then checks navigation bindings via
+`ghostty_surface_key_is_binding()`.
+
+Keys surviving both layers flow to `interpretKeyEvents`, then
+`ghostty_surface_key()`.
+
+### Why the hybrid
+
+Moving modals into keyDown would require the terminal surface to know about
+modal state, coupling the view to modal logic. The NSEvent monitor intercepts
+before keyDown, keeping modals decoupled from the surface. This preserves
+the architecture rule that views do not access state beyond their own scope.
