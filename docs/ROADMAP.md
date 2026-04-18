@@ -64,12 +64,17 @@ Next: Phase 4f-3 (key tables and modal bindings), which depends on the completed
 
 Other candidates: Phase 7a (Ghostty submodule upgrade), Phase 4f-2 (global hotkeys), Phase 5a-2 (dropdown polish).
 
+### Blockers
+
+- **Fix CI**: GitHub Actions workflow failing. See [run 24593114276](https://github.com/AJamesyD/mytty/actions/runs/24593114276/job/71917903017).
+
 ### Deferred from platform defaults (2026-04-17)
 
 - **Terminal search (Cmd+F)**: removing `.textEditing` removed the Find menu. Copy mode has `/` for search, but no Cmd+F equivalent. Needs a search overlay.
 - **Config error UI**: parse errors go to stderr, invisible from Finder. Add a toast or status bar indicator.
 - **Config key validation**: unrecognized keys (typos) are silently ignored. Warn on unknown top-level and section keys.
 - **AppKit menu migration**: SwiftUI `CommandGroup` intercepts shortcuts before `keyDown`, causing conflicts with libghostty bindings. Ghostty uses NSMenu for full control. Evaluate migration cost.
+- **Sidebar active session indicator**: when sidebar is on the right, the accent bar is on the wrong side. Consider a background pill instead of a side-anchored bar so the indicator works regardless of sidebar position.
 
 ## Phase 4f: Keybinding System Upgrade
 
@@ -153,6 +158,12 @@ Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. 
 
 ### - [ ] 5d. Ghostty Config Compatibility
 Read `~/.config/ghostty/config` for themes, fonts, colors. Zero-friction migration.
+
+Base config loading and override file (`ghostty.conf`) shipped in Phase 4. Remaining:
+
+- [ ] Inherit Mytty UI element colors (sidebar, tab bar, overlays) from the active Ghostty theme
+- [ ] Audit which of the 44 window/macos Ghostty keys Mytty should honor vs. ignore
+- [ ] Handle `macos-window-shadow` from Ghostty config
 
 - Complexity: 2
 - `/spec` required: which Ghostty config keys to support, conflict resolution with Mytty config.
