@@ -13,6 +13,20 @@ private let wakeupCallback: ghostty_runtime_wakeup_cb = { userdata in
   }
 }
 
+/// Resolves the surface's TerminalSurfaceView on the main thread and calls the body.
+private nonisolated func withSurfaceView(
+  _ target: ghostty_target_s,
+  body: @escaping @MainActor (TerminalSurfaceView) -> Void
+) {
+  guard target.tag == GHOSTTY_TARGET_SURFACE else { return }
+  let surface = target.target.surface
+  DispatchQueue.main.async {
+    guard let userdata = ghostty_surface_userdata(surface) else { return }
+    let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
+    body(view)
+  }
+}
+
 /// Called when ghostty wants the apprt to perform an action.
 private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
   switch action.tag {
@@ -20,19 +34,14 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
     return true
 
   case GHOSTTY_ACTION_SET_TITLE:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      if let title = action.action.set_title.title {
-        let titleStr = String(cString: title)
-        DispatchQueue.main.async {
-          guard let userdata = ghostty_surface_userdata(surface) else { return }
-          let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-          NotificationCenter.default.post(
-            name: .ghosttySetTitle,
-            object: nil,
-            userInfo: ["paneID": view.pane?.id as Any, "title": titleStr]
-          )
-        }
+    if let title = action.action.set_title.title {
+      let titleStr = String(cString: title)
+      withSurfaceView(target) { view in
+        NotificationCenter.default.post(
+          name: .ghosttySetTitle,
+          object: nil,
+          userInfo: ["paneID": view.pane?.id as Any, "title": titleStr]
+        )
       }
     }
     return true
@@ -49,154 +58,114 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
     return true
 
   case GHOSTTY_ACTION_RING_BELL:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyRingBell,
-          object: nil,
-          userInfo: ["paneID": view.pane?.id as Any]
-        )
-      }
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyRingBell,
+        object: nil,
+        userInfo: ["paneID": view.pane?.id as Any]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_SCROLLBAR:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let sb = action.action.scrollbar
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        view.scrollbarState = ScrollbarState(total: sb.total, offset: sb.offset, len: sb.len)
-      }
+    let sb = action.action.scrollbar
+    withSurfaceView(target) { view in
+      view.scrollbarState = ScrollbarState(total: sb.total, offset: sb.offset, len: sb.len)
     }
     return true
 
   case GHOSTTY_ACTION_PWD:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      guard let pwd = action.action.pwd.pwd else { return true }
-      let pwdStr = String(cString: pwd)
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyPwd,
-          object: nil,
-          userInfo: ["paneID": view.pane?.id as Any, "pwd": pwdStr]
-        )
-      }
+    guard let pwd = action.action.pwd.pwd else { return true }
+    let pwdStr = String(cString: pwd)
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyPwd,
+        object: nil,
+        userInfo: ["paneID": view.pane?.id as Any, "pwd": pwdStr]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_SET_TAB_TITLE:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      guard let title = action.action.set_tab_title.title else { return true }
-      let titleStr = String(cString: title)
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttySetTabTitle,
-          object: nil,
-          userInfo: ["paneID": view.pane?.id as Any, "title": titleStr]
-        )
-      }
+    guard let title = action.action.set_tab_title.title else { return true }
+    let titleStr = String(cString: title)
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttySetTabTitle,
+        object: nil,
+        userInfo: ["paneID": view.pane?.id as Any, "title": titleStr]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_DESKTOP_NOTIFICATION:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      guard let title = action.action.desktop_notification.title,
-        let body = action.action.desktop_notification.body
-      else { return true }
-      let titleStr = String(cString: title)
-      let bodyStr = String(cString: body)
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyDesktopNotification,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any, "title": titleStr, "body": bodyStr,
-          ]
-        )
-      }
+    guard let title = action.action.desktop_notification.title,
+      let body = action.action.desktop_notification.body
+    else { return true }
+    let titleStr = String(cString: title)
+    let bodyStr = String(cString: body)
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyDesktopNotification,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any, "title": titleStr, "body": bodyStr,
+        ]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_COMMAND_FINISHED:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let exitCode = action.action.command_finished.exit_code
-      let duration = action.action.command_finished.duration
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyCommandFinished,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any, "exitCode": exitCode, "duration": duration,
-          ]
-        )
-      }
+    let exitCode = action.action.command_finished.exit_code
+    let duration = action.action.command_finished.duration
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyCommandFinished,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any, "exitCode": exitCode, "duration": duration,
+        ]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_PROGRESS_REPORT:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let state = action.action.progress_report.state.rawValue
-      let progress = action.action.progress_report.progress
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyProgressReport,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any, "state": state, "progress": progress,
-          ]
-        )
-      }
+    let state = action.action.progress_report.state.rawValue
+    let progress = action.action.progress_report.progress
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyProgressReport,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any, "state": state, "progress": progress,
+        ]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_COLOR_CHANGE:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let change = action.action.color_change
-      let kind: ColorChangePayload.Kind = switch change.kind {
-      case GHOSTTY_ACTION_COLOR_KIND_BACKGROUND: .background
-      case GHOSTTY_ACTION_COLOR_KIND_FOREGROUND: .foreground
-      case GHOSTTY_ACTION_COLOR_KIND_CURSOR: .cursor
-      default: .palette
-      }
-      let payload = ColorChangePayload(
-        kind: kind,
-        r: CGFloat(change.r) / 255.0,
-        g: CGFloat(change.g) / 255.0,
-        b: CGFloat(change.b) / 255.0
+    let change = action.action.color_change
+    let kind: ColorChangePayload.Kind = switch change.kind {
+    case GHOSTTY_ACTION_COLOR_KIND_BACKGROUND: .background
+    case GHOSTTY_ACTION_COLOR_KIND_FOREGROUND: .foreground
+    case GHOSTTY_ACTION_COLOR_KIND_CURSOR: .cursor
+    default: .palette
+    }
+    let payload = ColorChangePayload(
+      kind: kind,
+      r: CGFloat(change.r) / 255.0,
+      g: CGFloat(change.g) / 255.0,
+      b: CGFloat(change.b) / 255.0
+    )
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyColorChange,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any,
+          "payload": payload,
+        ]
       )
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyColorChange,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any,
-            "payload": payload,
-          ]
-        )
-      }
     }
     return true
 
@@ -207,158 +176,113 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
   // Category B: actions that map to Mytty operations
 
   case GHOSTTY_ACTION_NEW_TAB:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyNewTab,
-          object: nil,
-          userInfo: ["paneID": view.pane?.id as Any]
-        )
-      }
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyNewTab,
+        object: nil,
+        userInfo: ["paneID": view.pane?.id as Any]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_NEW_SPLIT:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let direction = action.action.new_split
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyNewSplit,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any,
-            "direction": direction.rawValue,
-          ]
-        )
-      }
+    let direction = action.action.new_split
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyNewSplit,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any,
+          "direction": direction.rawValue,
+        ]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_CLOSE_TAB:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyCloseTab,
-          object: nil,
-          userInfo: ["paneID": view.pane?.id as Any]
-        )
-      }
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyCloseTab,
+        object: nil,
+        userInfo: ["paneID": view.pane?.id as Any]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_GOTO_SPLIT:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let direction = action.action.goto_split
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyGotoSplit,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any,
-            "direction": direction.rawValue,
-          ]
-        )
-      }
+    let direction = action.action.goto_split
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyGotoSplit,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any,
+          "direction": direction.rawValue,
+        ]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_RESIZE_SPLIT:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let resize = action.action.resize_split
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyResizeSplit,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any,
-            "amount": resize.amount,
-            "direction": resize.direction.rawValue,
-          ]
-        )
-      }
+    let resize = action.action.resize_split
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyResizeSplit,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any,
+          "amount": resize.amount,
+          "direction": resize.direction.rawValue,
+        ]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_EQUALIZE_SPLITS:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyEqualizeSplits,
-          object: nil,
-          userInfo: ["paneID": view.pane?.id as Any]
-        )
-      }
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyEqualizeSplits,
+        object: nil,
+        userInfo: ["paneID": view.pane?.id as Any]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_TOGGLE_SPLIT_ZOOM:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyToggleSplitZoom,
-          object: nil,
-          userInfo: ["paneID": view.pane?.id as Any]
-        )
-      }
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyToggleSplitZoom,
+        object: nil,
+        userInfo: ["paneID": view.pane?.id as Any]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_GOTO_TAB:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let tab = action.action.goto_tab
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyGotoTab,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any,
-            "tab": tab.rawValue,
-          ]
-        )
-      }
+    let tab = action.action.goto_tab
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyGotoTab,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any,
+          "tab": tab.rawValue,
+        ]
+      )
     }
     return true
 
   case GHOSTTY_ACTION_MOVE_TAB:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let amount = action.action.move_tab.amount
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyMoveTab,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any,
-            "amount": amount,
-          ]
-        )
-      }
+    let amount = action.action.move_tab.amount
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyMoveTab,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any,
+          "amount": amount,
+        ]
+      )
     }
     return true
 
@@ -390,21 +314,16 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
     return true
 
   case GHOSTTY_ACTION_SHOW_CHILD_EXITED:
-    if target.tag == GHOSTTY_TARGET_SURFACE {
-      let surface = target.target.surface
-      let exitCode = action.action.child_exited.exit_code
-      DispatchQueue.main.async {
-        guard let userdata = ghostty_surface_userdata(surface) else { return }
-        let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
-        NotificationCenter.default.post(
-          name: .ghosttyChildExited,
-          object: nil,
-          userInfo: [
-            "paneID": view.pane?.id as Any,
-            "exitCode": exitCode,
-          ]
-        )
-      }
+    let exitCode = action.action.child_exited.exit_code
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyChildExited,
+        object: nil,
+        userInfo: [
+          "paneID": view.pane?.id as Any,
+          "exitCode": exitCode,
+        ]
+      )
     }
     return true
 
@@ -490,7 +409,7 @@ private let writeClipboardCallback: ghostty_runtime_write_clipboard_cb = {
   }
 }
 
-/// Close surface callback — shell exited.
+/// Close surface callback: shell exited.
 private let closeSurfaceCallback: ghostty_runtime_close_surface_cb = { userdata, processAlive in
   guard let userdata else { return }
   let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
