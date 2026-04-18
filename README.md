@@ -15,7 +15,7 @@ Mytty puts sessions, tabs, split panes, and a fuzzy session switcher inside a na
 
 - **Session manager**: fuzzy-find sessions, recent directories ([zoxide](https://github.com/ajeetdsouza/zoxide)), and SSH hosts
 - **Splits and tabs**: horizontal and vertical splits with tabbed sessions
-- **Pane navigation**: move between splits with configurable keys, with optional Neovim integration via [smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim)
+- **Pane navigation**: move between splits with configurable keys
 - **Which-key overlay**: shows available shortcuts in context, so you don't have to memorize them
 - **Dropdown terminal**: a system-wide hotkey summons a slide-down terminal
 - **Sidebar**: persistent session tree with background activity indicators

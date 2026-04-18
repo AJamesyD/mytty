@@ -5,6 +5,7 @@ Mytty macOS terminal emulator, libghostty backend.
 **Goal:** Enable bidirectional split navigation between neovim and Mytty panes via a smart-splits.nvim backend. A user pressing Ctrl+h/j/k/l moves focus across neovim splits and Mytty panes as if they were a single layout.
 
 **Date:** 2026-04-15
+**Status:** Backend removed (2026-04-18). The IPC commands (`pane focus`, `pane at-edge`, `pane set-var`) and `unconsumed:` keybinding prefix remain as general-purpose infrastructure. The smart-splits Lua backend (`extras/neovim/`) was removed because shipping a Neovim plugin from a terminal repo is not standard practice; all existing smart-splits backends live in the smart-splits repo itself.
 
 ---
 

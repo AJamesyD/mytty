@@ -94,7 +94,6 @@ MyttyShared/           # IPC protocol, response models, constants
 MyttyCLI/              # CLI commands and IPC client
 MyttyTests/            # Unit tests
 vendor/ghostty/         # Ghostty git submodule (do not modify)
-extras/neovim/          # smart-splits.nvim backend for pane navigation
 docs/                   # Design, specs, decisions, research
 Package.swift           # Swift package manifest
 flake.nix               # Nix dev environment
