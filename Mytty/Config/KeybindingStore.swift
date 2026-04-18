@@ -42,7 +42,6 @@ struct KeybindingStore: Sendable, Equatable {
       "new-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "t"),
       "split-horizontal": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "d"),
       "split-vertical": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "d"),
-      "session-manager": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "j"),
       "close-pane": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "w"),
       "close-tab": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "w"),
       "window-mode": KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "w"),
@@ -124,7 +123,6 @@ struct KeybindingStore: Sendable, Equatable {
       key: "s",
       bindings: [
         WhichKeyNode(action: "new-session", key: "n"),
-        WhichKeyNode(action: "session-manager", key: "j"),
         WhichKeyNode(action: "close-session", key: "c"),
       ]),
     WhichKeyGroup(

@@ -61,7 +61,7 @@ final class CopyModeManager {
     else { return event }
 
     if event.modifierFlags.contains(.command) && !state.isSearching {
-      return event
+      return nil
     }
 
     guard let keyStr = event.charactersIgnoringModifiers, let key = keyStr.first else {
