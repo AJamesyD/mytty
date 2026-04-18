@@ -58,10 +58,12 @@ struct CopyModeState {
     let targetRow = cursorRow + delta
     if targetRow < 0 {
       cursorRow = 0
-      return targetRow  // negative = scroll up
+      // negative = scroll up
+      return targetRow
     } else if targetRow >= rows {
       cursorRow = rows - 1
-      return targetRow - (rows - 1)  // positive = scroll down
+      // positive = scroll down
+      return targetRow - (rows - 1)
     } else {
       cursorRow = targetRow
       return 0
@@ -159,11 +161,13 @@ struct CopyModeState {
   // MARK: - Search keys
 
   private mutating func handleSearchKey(key: Character, keyCode: UInt16) -> [CopyModeAction] {
-    if keyCode == 36 {  // Return
+    // Return
+    if keyCode == 36 {
       subMode = .normal
       return [.confirmSearch]
     }
-    if keyCode == 51 {  // Backspace
+    // Backspace
+    if keyCode == 51 {
       _ = searchQuery.popLast()
       return [.updateSearch(query: searchQuery)]
     }
@@ -474,7 +478,8 @@ struct CopyModeState {
     if lastContent >= 0 {
       cursorCol = min(cursorCol, lastContent)
     } else {
-      cursorCol = 0  // empty/whitespace-only line
+      // empty/whitespace-only line
+      cursorCol = 0
     }
   }
 
@@ -602,7 +607,8 @@ struct CopyModeState {
         motionFn = { line, col in WordMotion.prevWordEnd(in: line, from: col, bigWord: bigWord) }
         isForward = false
       case .lineDown, .lineUp:
-        return motionActions()  // already handled above
+        // already handled above
+        return motionActions()
       }
 
       if isForward {

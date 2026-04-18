@@ -57,9 +57,11 @@ struct PaneLayout {
   private static func removeNode(_ node: PaneLayoutNode, target: Int) -> PaneLayoutNode? {
     switch node {
     case .leaf(let p) where p.id == target:
-      return nil  // Remove this leaf
+      // Remove this leaf
+      return nil
     case .leaf:
-      return node  // Not the target, keep it
+      // Not the target, keep it
+      return node
     case .empty:
       return node
     case .split(let dir, let a, let b, let ratio):

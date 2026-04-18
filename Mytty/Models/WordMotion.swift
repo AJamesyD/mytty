@@ -80,7 +80,8 @@ enum WordMotion {
     let chars = Array(line)
     guard col < chars.count else { return nil }
 
-    var i = col + 1  // Move at least one position
+    // Move at least one position
+    var i = col + 1
     guard i < chars.count else { return nil }
 
     // Step 1: skip whitespace

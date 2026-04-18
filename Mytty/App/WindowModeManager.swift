@@ -137,7 +137,8 @@ final class WindowModeManager {
       let tab = session.activeTab,
       let pane = tab.activePane,
       tab.panes.count > 1
-    else { return }  // Don't break if it's the only pane
+    // Don't break if it's the only pane
+    else { return }
 
     tab.windowModeState = .inactive
     deactivate()

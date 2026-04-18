@@ -1,4 +1,3 @@
-import GhosttyKit
 import SwiftUI
 
 @main

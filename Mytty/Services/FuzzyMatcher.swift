@@ -209,9 +209,12 @@ struct FuzzyMatcher {
       for j in 1...m {
         let cost = a[i - 1] == b[j - 1] ? 0 : 1
         dp[i][j] = min(
-          dp[i - 1][j] + 1,  // deletion
-          dp[i][j - 1] + 1,  // insertion
-          dp[i - 1][j - 1] + cost  // substitution
+          // deletion
+          dp[i - 1][j] + 1,
+          // insertion
+          dp[i][j - 1] + 1,
+          // substitution
+          dp[i - 1][j - 1] + cost
         )
         // Transposition (always costs 1 edit)
         if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {

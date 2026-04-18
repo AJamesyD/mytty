@@ -131,11 +131,13 @@ final class SessionManagerViewModel {
   ) {
     switch item {
     case .runningSession(let s):
-      return (s.name, nil, 2)  // "▶ " is 2 chars
+      // "▶ " is 2 chars
+      return (s.name, nil, 2)
     case .directory(let u):
       return (u.lastPathComponent, u.path, 0)
     case .sshHost(let h):
-      return (h.alias, h.hostname, 2)  // "⌁ " is 2 chars
+      // "⌁ " is 2 chars
+      return (h.alias, h.hostname, 2)
     case .newSession:
       return ("", nil, 0)
     }
@@ -286,7 +288,8 @@ final class SessionManagerViewModel {
 
       var isDir: ObjCBool = false
       if fm.fileExists(atPath: url.path, isDirectory: &isDir) {
-        if !isDir.boolValue { return nil }  // points to a file
+        // points to a file
+        if !isDir.boolValue { return nil }
         return .newSession(query: query, directory: url, createDirectory: false, sshCommand: nil)
       }
 
@@ -297,7 +300,8 @@ final class SessionManagerViewModel {
         return .newSession(query: query, directory: url, createDirectory: true, sshCommand: nil)
       }
 
-      return nil  // parent doesn't exist
+      // parent doesn't exist
+      return nil
     }
 
     // Plain text: create session with query as name in active pane's CWD

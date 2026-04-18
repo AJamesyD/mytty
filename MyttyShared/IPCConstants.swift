@@ -12,7 +12,8 @@ public enum MyttyIPC {
     return appSupport.appendingPathComponent("Mytty/mytty.sock").path
   }
 
-  public static let maxMessageSize: UInt32 = 16 * 1024 * 1024  // 16 MB
+  // 16 MB
+  public static let maxMessageSize: UInt32 = 16 * 1024 * 1024
 
   public enum ErrorCode: Int {
     case entityNotFound = 1
