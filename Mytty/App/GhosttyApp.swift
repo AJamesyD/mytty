@@ -471,6 +471,7 @@ final class GhosttyAppManager {
 
   nonisolated(unsafe) private(set) var app: ghostty_app_t?
   nonisolated(unsafe) private var config: ghostty_config_t?
+  private var appearanceObserver: NSKeyValueObservation?
 
   private init() {
     // 1. Initialize ghostty
@@ -539,6 +540,19 @@ final class GhosttyAppManager {
     self.app = ghostty_app_new(&runtimeCfg, cfg)
     if self.app == nil {
       print("[GhosttyAppManager] ghostty_app_new failed")
+    }
+
+    // 5. Sync dark/light mode to libghostty
+    if let app = self.app {
+      appearanceObserver = NSApplication.shared.observe(
+        \.effectiveAppearance, options: [.new, .initial]
+      ) { _, change in
+        guard let appearance = change.newValue else { return }
+        let scheme: ghostty_color_scheme_e =
+          appearance.name.rawValue.lowercased().contains("dark")
+          ? GHOSTTY_COLOR_SCHEME_DARK : GHOSTTY_COLOR_SCHEME_LIGHT
+        ghostty_app_set_color_scheme(app, scheme)
+      }
     }
   }
 
