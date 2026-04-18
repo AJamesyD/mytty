@@ -58,11 +58,18 @@ Project renamed across all source, config, docs, and CI files. Bundle ID: `com.m
 
 ## Current
 
-ADR-008 Phase 2 (modal key dispatch rework) is next. This moves CopyModeManager, WindowModeManager, WhichKeyManager, and session manager key handling from NSEvent monitors into the surface keyDown path, completing the key dispatch consolidation.
+ADR-008 Phase 2 (modal key dispatch rework) is complete. Document the two-layer architecture in the ADR.
 
-After that: Phase 4f-3 (key tables and modal bindings), which depends on the completed dispatch rework.
+Next: Phase 4f-3 (key tables and modal bindings), which depends on the completed dispatch rework.
 
 Other candidates: Phase 7a (Ghostty submodule upgrade), Phase 4f-2 (global hotkeys), Phase 5a-2 (dropdown polish).
+
+### Deferred from platform defaults (2026-04-17)
+
+- **Terminal search (Cmd+F)**: removing `.textEditing` removed the Find menu. Copy mode has `/` for search, but no Cmd+F equivalent. Needs a search overlay.
+- **Config error UI**: parse errors go to stderr, invisible from Finder. Add a toast or status bar indicator.
+- **Config key validation**: unrecognized keys (typos) are silently ignored. Warn on unknown top-level and section keys.
+- **AppKit menu migration**: SwiftUI `CommandGroup` intercepts shortcuts before `keyDown`, causing conflicts with libghostty bindings. Ghostty uses NSMenu for full control. Evaluate migration cost.
 
 ## Phase 4f: Keybinding System Upgrade
 
