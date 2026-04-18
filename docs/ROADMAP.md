@@ -73,7 +73,7 @@ Other candidates: Phase 7a (Ghostty submodule upgrade), Phase 4f-2 (global hotke
 - **Terminal search (Cmd+F)**: removing `.textEditing` removed the Find menu. Copy mode has `/` for search, but no Cmd+F equivalent. Needs a search overlay.
 - **Config error UI**: parse errors go to stderr, invisible from Finder. Add a toast or status bar indicator.
 - **Config key validation**: unrecognized keys (typos) are silently ignored. Warn on unknown top-level and section keys.
-- **AppKit menu migration**: SwiftUI `CommandGroup` intercepts shortcuts before `keyDown`, causing conflicts with libghostty bindings. Ghostty uses NSMenu for full control. Evaluate migration cost.
+- **AppKit window and menu lifecycle**: SwiftUI `WindowGroup` creates a plain NSWindow that Mytty modifies after the fact. This causes: shortcut interception (`CommandGroup` eats keys before `keyDown`), window chrome hacks (`DispatchQueue.main.async` to modify styleMask), and fragile titlebar hiding (macOS can re-show the titlebar on state changes). Ghostty and cmux both use AppKit-owned windows with SwiftUI content via `NSHostingView`. Migration path: `NSWindowController` subclass hosts `ContentView`, window chrome applied at creation, `NSMenu` replaces `CommandGroup`. SwiftUI content, state management, and overlays stay unchanged.
 - **Sidebar active session indicator**: when sidebar is on the right, the accent bar is on the wrong side. Consider a background pill instead of a side-anchored bar so the indicator works regardless of sidebar position.
 
 ## Phase 4f: Keybinding System Upgrade
