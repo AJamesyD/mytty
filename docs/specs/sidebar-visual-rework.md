@@ -1,7 +1,7 @@
 # Sidebar Visual Rework Spec
 
 Created: 2026-04-14
-Status: Draft, awaiting approval
+Status: Implemented (Phase 1b)
 Prior art: /tmp/ai-research-sidebar-patterns.md
 
 ## Goal

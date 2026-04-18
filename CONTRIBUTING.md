@@ -66,13 +66,19 @@ direnv allow
 | `just clean` | Clean build artifacts |
 | `just build-libghostty` | Rebuild libghostty from vendored Ghostty |
 | `just dev` | Enter nix dev shell |
-| `just fmt` | Format all code (Swift + Nix) |
+| `just fmt` | Format all code |
+| `just fmt-all` | Format all code (Swift + Nix) |
 | `just lint` | SwiftLint |
+| `just lint-fix` | Lint and auto-fix |
+| `just lint-strict` | Lint (warnings are errors) |
 | `just check` | Format + lint + test |
 | `just ci` | Full CI (format + typos + strict lint + build + test) |
 | `just bundle` | Create Mytty.app bundle |
 | `just install` | Build, bundle, install to /Applications |
 | `just install-cli` | Build and install `mytty-cli` |
+| `just test-filter PATTERN` | Run tests matching a filter |
+| `just run-dev` | Build and run (optimized debug) |
+| `just build-cli` | Build the CLI tool |
 
 ## Project Structure
 
@@ -106,12 +112,16 @@ justfile                # Task runner
 ```sh
 # Sessions
 mytty-cli session list
+mytty-cli session get --id 1
 mytty-cli session create --name "project" --directory ~/code
 mytty-cli session close --id 1
 
 # Tabs
 mytty-cli tab create --session 1 --name "editor"
 mytty-cli tab list --session 1
+mytty-cli tab get --id 1
+mytty-cli tab rename --id 1 --name "editor"
+mytty-cli tab move --direction right
 
 # Panes
 mytty-cli pane active
@@ -119,6 +129,23 @@ mytty-cli pane create --tab 1 --direction horizontal
 mytty-cli pane focus --direction left
 mytty-cli pane send-keys "echo hello"
 mytty-cli pane run-command "npm test"
+mytty-cli pane list --tab 1
+mytty-cli pane close --id 1
+mytty-cli pane resize --direction right --amount 10
+mytty-cli pane get-text --id 1
+mytty-cli pane at-edge --direction left
+
+# Popups
+mytty-cli popup open --name scratch
+mytty-cli popup close --name scratch
+mytty-cli popup toggle --name scratch
+mytty-cli popup list
+
+# Windows
+mytty-cli window swap --direction right
+mytty-cli window zoom
+mytty-cli window break
+mytty-cli window rotate
 
 # JSON output (auto-detected when piped, or force with --json)
 mytty-cli session list | jq .
@@ -126,3 +153,21 @@ mytty-cli session list --json
 ```
 
 Install with `just install-cli`.
+
+## Troubleshooting
+
+**`just build-libghostty` fails with Zig errors**
+
+Make sure you're in the Nix dev shell (`just dev` or `nix develop`). System Zig will not work; the build requires the exact Zig version pinned in `flake.nix`.
+
+**Build fails on macOS 26 (Tahoe)**
+
+You need two Xcode versions. See the macOS 26 notes above. Make sure `just build-libghostty` uses Xcode 16.3 (it selects this automatically via `DEVELOPER_DIR`).
+
+**`mytty-cli` can't connect**
+
+The CLI communicates over a Unix socket. Make sure Mytty.app is running. The socket path is printed at launch; check Console.app or stderr if the default path doesn't work.
+
+**Tests fail with "no such module GhosttyKit"**
+
+Run `just build-libghostty` first. The test target depends on the compiled libghostty framework.

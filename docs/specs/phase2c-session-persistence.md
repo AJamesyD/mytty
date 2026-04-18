@@ -1,6 +1,6 @@
 # Phase 2c: Basic Session Persistence
 
-**Status:** Draft
+**Status:** Implemented
 **Date:** 2026-04-14
 **Scope:** Save and restore the session/tab/pane tree across app restarts. Shells restart fresh (no scrollback, no process restoration).
 

@@ -6,7 +6,7 @@ This file encodes those constraints as actionable rules.
 ## Architecture Rules
 
 Do not add logic to the UI layer beyond view composition and event routing.
-Do not access ghostty_surface_t outside TerminalSurfaceView and GhosttyApp.swift.
+Do not access ghostty_surface_t outside TerminalSurfaceView, GhosttyApp.swift, CopyModeManager.swift, KeySequenceManager.swift, and IPCService.swift.
 Do not parse raw escape sequences. libghostty handles all terminal protocol parsing.
 Do not reverse the state flow. Direction is: libghostty -> C callbacks -> NotificationCenter -> handlers -> model updates -> SwiftUI.
 Do not leak storage assumptions into views. Session/Tab/Pane are protocol-based; the backing store is swappable.
@@ -92,3 +92,50 @@ A future GUI editor requires format-preserving TOML round-trip (see TODO in Sett
 
 Keybinding actions use kebab-case: `new-tab`, `navigate-left`, `focus-tab-1`.
 TOML config key for the process list: `passthrough-processes`.
+
+## Key Dispatch
+
+Key events flow through a two-layer system (ADR-008):
+1. TerminalSurfaceView.keyDown checks modal state (copy mode, window mode, key sequence)
+2. If no modal consumes the key, it falls through to libghostty via ghostty_surface_key
+
+Do not add key handling outside TerminalSurfaceView.keyDown.
+Do not re-introduce a centralized key dispatcher. The previous ModalKeyDispatcher
+was deleted in Phase 2 of ADR-008.
+
+## Dropdown Terminal
+
+DropdownController.swift manages the slide-down terminal panel.
+GlobalHotkeyMonitor.swift registers a system-wide CGEvent tap for the hotkey.
+DropdownPanel.swift is an NSPanel subclass for the floating terminal.
+
+The dropdown hotkey is currently hardcoded (Ctrl+backtick, keycode 50).
+Configurable hotkeys require Phase 4f-2 (global hotkey registration).
+
+DropdownController is held as @State on ContentView, same as other managers.
+
+## Copy Mode
+
+CopyModeManager.swift owns the NSEvent monitor for copy mode.
+CopyModeState (in Models/) tracks selection, cursor, and visual mode.
+Copy mode keybindings are in the `.copyMode` binding mode in KeybindingStore.
+
+Entry: `copy-mode` action (default Cmd+Shift+C).
+Exit: Esc or yank (y).
+Copy mode reads terminal text via ghostty_surface_read_text.
+
+## Window Mode
+
+WindowModeManager.swift owns the NSEvent monitor for window mode.
+Window mode keybindings are in the `.windowMode` binding mode in KeybindingStore.
+
+Entry: `window-mode` action (default Ctrl+W).
+Exit: Esc or any window action.
+Actions: swap, zoom, break-to-tab, join-pick, rotate, resize, preset layouts (1-5).
+
+## Key Sequences
+
+KeySequenceManager.swift handles multi-key sequences (e.g., `ctrl+a>h`).
+Sequences use a state machine with a configurable timeout (default 1s).
+SequenceIndicatorView shows pending leader keys with which-key integration after 500ms.
+Sequence triggers use `>` as the separator in config: `ctrl+a>h`.

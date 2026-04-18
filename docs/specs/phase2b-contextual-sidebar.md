@@ -42,6 +42,10 @@ Mytty combines cmux's sidebar metadata with Warp's structured command metadata i
 **Presupposition:** Tabs within a session usually share the same repo/directory.
 **Revisit when:** Daily use shows frequent tab-level divergence within sessions.
 
+> **Implementation note (2026-04-18):** D2 was overridden during implementation. The shipped sidebar uses glow dots (6px Circle with shadow) instead of SF Symbols, matching DESIGN.md Tenet 3 (pre-attentive signals over symbolic identification) and the sidebar-information-architecture.md recommendation.
+
+> **Implementation note (2026-04-18):** D3 (git branch + working directory on session rows) was built and reverted. Per-pane metadata does not belong at session level. The feature may return in a different form.
+
 ### D4: Event-driven git detection (not polling, not file watcher)
 
 **Chosen:** Run `git rev-parse` on OSC 7 (directory change) and COMMAND_FINISHED events.

@@ -58,11 +58,11 @@ Project renamed across all source, config, docs, and CI files. Bundle ID: `com.m
 
 ## Current
 
-ADR-008 Phase 2 (modal key dispatch rework) is complete. Document the two-layer architecture in the ADR.
+ADR-008 Phase 2 (modal key dispatch rework) is complete. The ADR Outcome section documents the two-layer architecture.
 
-Next: Phase 4f-3 (key tables and modal bindings), which depends on the completed dispatch rework.
+Next: Phase 3 (Ghostty config hot-reload via ghostty_app_update_config), then Phase 4f-3 (key tables and modal bindings).
 
-Other candidates: Phase 7a (Ghostty submodule upgrade), Phase 4f-2 (global hotkeys), Phase 5a-2 (dropdown polish).
+Other candidates: Phase 4 (dark/light mode sync), Phase 5 (option-as-alt), Phase 7a (Ghostty submodule upgrade), Phase 4f-2 (global hotkeys).
 
 ### Blockers
 
@@ -322,7 +322,7 @@ Completed:
   ADR-008 Phase 1 (surface-level key dispatch) ✓
 
 Current:
-  ADR-008 Phase 2 (modal key dispatch rework)
+  Phase 3 (Ghostty config hot-reload)
   Then: 4f-3 (key tables)
 
 Future:
