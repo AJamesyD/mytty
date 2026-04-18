@@ -16,9 +16,11 @@ final class FrecencyService {
   }
 
   private static func defaultStorageURL() -> URL {
-    let appSupport = FileManager.default.urls(
+    guard let appSupport = FileManager.default.urls(
       for: .applicationSupportDirectory, in: .userDomainMask
-    ).first!
+    ).first else {
+      return URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("frecency.json")
+    }
     let dir = appSupport.appendingPathComponent("com.mytty")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     return dir.appendingPathComponent("frecency.json")

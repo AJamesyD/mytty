@@ -65,10 +65,10 @@ class DropdownController: NSObject, NSWindowDelegate {
       guard let pane = s.activeTab?.activePane else { return }
       // Set the panel frame before creating the hosting view so the terminal
       // surface initializes with the correct size instead of zero.
-      let screen =
-        NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
+      guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) })
         ?? NSScreen.main
-        ?? NSScreen.screens.first!
+        ?? NSScreen.screens.first
+      else { return }
       let visibleFrame = screen.visibleFrame
       let height = visibleFrame.height * 0.4
       let width = visibleFrame.width
@@ -83,10 +83,10 @@ class DropdownController: NSObject, NSWindowDelegate {
       panel.contentView = hostingView
     }
 
-    let screen =
-      NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }
+    guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) })
       ?? NSScreen.main
-      ?? NSScreen.screens.first!
+      ?? NSScreen.screens.first
+    else { return }
     let visibleFrame = screen.visibleFrame
     let height = visibleFrame.height * 0.4
     let width = visibleFrame.width
@@ -143,7 +143,7 @@ class DropdownController: NSObject, NSWindowDelegate {
       }
     }
 
-    let screen = panel.screen ?? NSScreen.main ?? NSScreen.screens.first!
+    guard let screen = panel.screen ?? NSScreen.main ?? NSScreen.screens.first else { return }
     let visibleFrame = screen.visibleFrame
     let height = panel.frame.height
     let width = panel.frame.width

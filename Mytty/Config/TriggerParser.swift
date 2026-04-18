@@ -73,7 +73,8 @@ struct TriggerParser {
       key = "+"
       modParts = Array(parts.dropLast(2))
     } else {
-      key = parts.last!
+      guard let lastPart = parts.last else { throw TriggerParseError.empty }
+      key = lastPart
       modParts = Array(parts.dropLast())
     }
 

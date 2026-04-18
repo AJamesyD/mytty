@@ -286,12 +286,16 @@ struct KeybindingStore: Sendable, Equatable {
       node.children[first] = SequenceTrieNode()
     }
     if triggers.count == 1 {
-      node.children[first]!.action = action
-      node.children[first]!.isUnconsumed = isUnconsumed
+      guard var child = node.children[first] else { return }
+      child.action = action
+      child.isUnconsumed = isUnconsumed
+      node.children[first] = child
     } else {
+      guard var child = node.children[first] else { return }
       insertIntoTrie(
-        &node.children[first]!, triggers: Array(triggers.dropFirst()), action: action,
+        &child, triggers: Array(triggers.dropFirst()), action: action,
         isUnconsumed: isUnconsumed)
+      node.children[first] = child
     }
   }
 }
