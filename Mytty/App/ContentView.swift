@@ -12,7 +12,6 @@ struct ContentView: View {
   @State var copyModeManager = CopyModeManager()
   @State var whichKeyManager = WhichKeyManager()
   @State var keySequenceManager = KeySequenceManager()
-  @State var modalKeyDispatcher = ModalKeyDispatcher()
   @State var panelState = PanelState()
   @State var configWatcher = ConfigWatcher()
   @State var terminalCommands: TerminalCommands?
@@ -282,23 +281,17 @@ struct ContentView: View {
       DispatchQueue.main.async {
         if let window = NSApplication.shared.keyWindow {
           _ = store.registerWindow(window)
-          modalKeyDispatcher.window = window
         }
       }
-      modalKeyDispatcher.sessionManagerKeyHandler = { [self] event in
-        guard showingSessionManager, let vm = sessionManagerVM else { return event }
-        return handleSessionManagerKeyDown(event, vm: vm)
+      TerminalSurfaceView.modalKeyHandler = { [self] event in
+        if showingSessionManager, let vm = sessionManagerVM {
+          if handleSessionManagerKeyDown(event, vm: vm) == nil { return nil }
+        }
+        if whichKeyManager.handleKeyDown(event) == nil { return nil }
+        if copyModeManager.handleKeyDown(event) == nil { return nil }
+        if windowModeManager.handleKeyDown(event) == nil { return nil }
+        return event
       }
-      modalKeyDispatcher.whichKeyHandler = { [self] event in
-        whichKeyManager.handleKeyDown(event)
-      }
-      modalKeyDispatcher.copyModeHandler = { [self] event in
-        copyModeManager.handleKeyDown(event)
-      }
-      modalKeyDispatcher.windowModeHandler = { [self] event in
-        windowModeManager.handleKeyDown(event)
-      }
-      modalKeyDispatcher.activate()
     }
     .onDisappear {
       configWatcher.stop()
@@ -307,7 +300,7 @@ struct ContentView: View {
           store.unregisterWindow(tracked.window)
         }
       }
-      modalKeyDispatcher.deactivate()
+      TerminalSurfaceView.modalKeyHandler = nil
       windowModeManager.deactivate()
       copyModeManager.deactivate()
       store.activeSession?.activeTab?.windowModeState = .inactive
