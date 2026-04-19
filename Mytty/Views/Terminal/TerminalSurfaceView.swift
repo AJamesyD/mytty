@@ -12,15 +12,6 @@ final class TerminalSurfaceView: NSView {
   /// Back-reference to the owning pane (set by MyttyPane).
   weak var pane: MyttyPane?
 
-  /// Stores the working directory path string to keep it alive for the C pointer.
-  private var workingDirectoryPath: String?
-
-  /// Stores the command string to keep it alive for the C pointer.
-  private var commandString: String?
-
-  /// Stores the initial input string to keep it alive for the C pointer.
-  private var initialInputString: String?
-
   init(
     frame: NSRect, workingDirectory: URL? = nil, command: String? = nil, initialInput: String? = nil
   ) {
@@ -43,70 +34,24 @@ final class TerminalSurfaceView: NSView {
     cfg.scale_factor = Double(NSScreen.main?.backingScaleFactor ?? 2.0)
     cfg.context = GHOSTTY_SURFACE_CONTEXT_WINDOW
 
-    // Set working directory for the shell
-    if let dir = workingDirectory {
-      workingDirectoryPath = dir.path
-    }
-
-    // Store command string
-    self.commandString = command
-
+    // Use strdup to pin optional C strings for the config struct.
+    // The env vars already use this pattern a few lines below.
     // For popups that should close on exit, send the command as initial_input
     // instead of cfg.command. ghostty forces wait-after-command=true when
     // cfg.command is set, which shows "press any key to close". Using
     // initial_input runs the command in the shell naturally.
-    if let input = initialInput {
-      self.initialInputString = "exec \(input)\n"
+    let dirPtr = workingDirectory.flatMap { strdup($0.path) }
+    let cmdPtr = command.flatMap { strdup($0) }
+    let inputPtr = initialInput.flatMap { strdup("exec \($0)\n") }
+    defer {
+      if let p = dirPtr { free(p) }
+      if let p = cmdPtr { free(p) }
+      if let p = inputPtr { free(p) }
     }
 
-    // Both C pointers from withCString are only valid inside the closure,
-    // so we nest them to ensure they're alive when ghostty_surface_new is called.
-    func createSurface(_ cfg: inout ghostty_surface_config_s) {
-      if let path = workingDirectoryPath {
-        path.withCString { dirPtr in
-          cfg.working_directory = dirPtr
-          if let cmd = commandString {
-            cmd.withCString { cmdPtr in
-              cfg.command = cmdPtr
-              if let input = initialInputString {
-                input.withCString { inputPtr in
-                  cfg.initial_input = inputPtr
-                  surface = ghostty_surface_new(app, &cfg)
-                }
-              } else {
-                surface = ghostty_surface_new(app, &cfg)
-              }
-            }
-          } else if let input = initialInputString {
-            input.withCString { inputPtr in
-              cfg.initial_input = inputPtr
-              surface = ghostty_surface_new(app, &cfg)
-            }
-          } else {
-            surface = ghostty_surface_new(app, &cfg)
-          }
-        }
-      } else if let cmd = commandString {
-        cmd.withCString { cmdPtr in
-          cfg.command = cmdPtr
-          if let input = initialInputString {
-            input.withCString { inputPtr in
-              cfg.initial_input = inputPtr
-              surface = ghostty_surface_new(app, &cfg)
-            }
-          } else {
-            surface = ghostty_surface_new(app, &cfg)
-          }
-        }
-      } else if let input = initialInputString {
-        input.withCString { inputPtr in
-          cfg.initial_input = inputPtr
-          surface = ghostty_surface_new(app, &cfg)
-        }
-      } else {
-        surface = ghostty_surface_new(app, &cfg)
-      }
-    }
+    cfg.working_directory = UnsafePointer(dirPtr)
+    cfg.command = UnsafePointer(cmdPtr)
+    cfg.initial_input = UnsafePointer(inputPtr)
 
     var envVars = [
       ghostty_env_var_s(key: strdup("MYTTY_SOCKET"), value: strdup(MyttyIPC.socketPath)),
@@ -115,7 +60,7 @@ final class TerminalSurfaceView: NSView {
     envVars.withUnsafeMutableBufferPointer { buffer in
       cfg.env_vars = buffer.baseAddress
       cfg.env_var_count = buffer.count
-      createSurface(&cfg)
+      surface = ghostty_surface_new(app, &cfg)
     }
     for env in envVars {
       free(UnsafeMutablePointer(mutating: env.key))
