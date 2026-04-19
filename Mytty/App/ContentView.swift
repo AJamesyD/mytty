@@ -654,22 +654,18 @@ extension ContentView {
   }
 
   func handleSetTitle(_ notification: Notification) {
-    guard let p = notification.payload(SetTitlePayload.self), let paneID = p.paneID else { return }
+    guard let p = notification.payload(SetTitlePayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
     let title = p.title
-    for session in store.sessions {
-      for tab in session.tabs {
-        if let pane = tab.panes.first(where: { $0.id == paneID }) {
-          pane.processTitle = title
-          tab.titleDebounceTask?.cancel()
-          let task = DispatchWorkItem { [weak tab] in
-            tab?.title = title
-          }
-          tab.titleDebounceTask = task
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.075, execute: task)
-          return
-        }
-      }
+    match.pane.processTitle = title
+    match.tab.titleDebounceTask?.cancel()
+    let tab = match.tab
+    let task = DispatchWorkItem { [weak tab] in
+      tab?.title = title
     }
+    match.tab.titleDebounceTask = task
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.075, execute: task)
   }
 
   func handleRingBell(_ notification: Notification) {
@@ -702,38 +698,23 @@ extension ContentView {
       }
     }
     // Find and close the pane whose shell exited
-    for session in store.sessions {
-      for tab in session.tabs {
-        if let pane = tab.panes.first(where: { $0.id == paneID }) {
-          closePaneInTab(pane, tab: tab, session: session)
-          return
-        }
-      }
+    if let match = store.pane(byId: paneID) {
+      closePaneInTab(match.pane, tab: match.tab, session: match.session)
     }
   }
 
   func handlePwd(_ notification: Notification) {
-    guard let p = notification.payload(PwdPayload.self), let paneID = p.paneID else { return }
-    let pwd = p.pwd
-    for session in store.sessions {
-      for tab in session.tabs {
-        if let pane = tab.panes.first(where: { $0.id == paneID }) {
-          pane.workingDirectory = URL(fileURLWithPath: pwd)
-          return
-        }
-      }
-    }
+    guard let p = notification.payload(PwdPayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.pane.workingDirectory = URL(fileURLWithPath: p.pwd)
   }
 
   func handleSetTabTitle(_ notification: Notification) {
-    guard let p = notification.payload(SetTitlePayload.self), let paneID = p.paneID else { return }
-    let title = p.title
-    for session in store.sessions {
-      for tab in session.tabs where tab.panes.contains(where: { $0.id == paneID }) {
-        tab.tabTitle = title
-        return
-      }
-    }
+    guard let p = notification.payload(SetTitlePayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.tab.tabTitle = p.title
   }
 
   func handleDesktopNotification(_ notification: Notification) {
@@ -756,59 +737,46 @@ extension ContentView {
   }
 
   func handleCommandFinished(_ notification: Notification) {
-    guard let p = notification.payload(CommandFinishedPayload.self), let paneID = p.paneID
+    guard let p = notification.payload(CommandFinishedPayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
     else { return }
-    let exitCode = p.exitCode
-    let duration = p.duration
-    for session in store.sessions {
-      for tab in session.tabs {
-        if let pane = tab.panes.first(where: { $0.id == paneID }) {
-          pane.lastCommandResult = MyttyPane.CommandResult(
-            exitCode: exitCode, duration: duration)
-          if exitCode != 0,
-            !(store.activeSession?.id == session.id && session.activeTab?.id == tab.id) {
-            tab.hasFailedCommand = true
-          }
-          return
-        }
-      }
+    match.pane.lastCommandResult = MyttyPane.CommandResult(
+      exitCode: p.exitCode, duration: p.duration)
+    if p.exitCode != 0,
+      !(store.activeSession?.id == match.session.id && match.session.activeTab?.id == match.tab.id) {
+      match.tab.hasFailedCommand = true
     }
   }
 
   func handleProgressReport(_ notification: Notification) {
-    guard let p = notification.payload(ProgressReportPayload.self), let paneID = p.paneID
+    guard let p = notification.payload(ProgressReportPayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
     else { return }
     let stateRaw = p.state
     let progress = p.progress
-    for session in store.sessions {
-      for tab in session.tabs {
-        if let pane = tab.panes.first(where: { $0.id == paneID }) {
-          pane.progressExpiryTask?.cancel()
-          if stateRaw == GHOSTTY_PROGRESS_STATE_REMOVE.rawValue {
-            pane.progressState = nil
-            return
-          }
-          switch stateRaw {
-          case GHOSTTY_PROGRESS_STATE_SET.rawValue:
-            pane.progressState = .set(progress: progress)
-          case GHOSTTY_PROGRESS_STATE_ERROR.rawValue:
-            pane.progressState = .error
-          case GHOSTTY_PROGRESS_STATE_INDETERMINATE.rawValue:
-            pane.progressState = .indeterminate
-          case GHOSTTY_PROGRESS_STATE_PAUSE.rawValue:
-            pane.progressState = .pause
-          default:
-            return
-          }
-          let task = DispatchWorkItem { [weak pane] in
-            pane?.progressState = nil
-          }
-          pane.progressExpiryTask = task
-          DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: task)
-          return
-        }
-      }
+    let pane = match.pane
+    pane.progressExpiryTask?.cancel()
+    if stateRaw == GHOSTTY_PROGRESS_STATE_REMOVE.rawValue {
+      pane.progressState = nil
+      return
     }
+    switch stateRaw {
+    case GHOSTTY_PROGRESS_STATE_SET.rawValue:
+      pane.progressState = .set(progress: progress)
+    case GHOSTTY_PROGRESS_STATE_ERROR.rawValue:
+      pane.progressState = .error
+    case GHOSTTY_PROGRESS_STATE_INDETERMINATE.rawValue:
+      pane.progressState = .indeterminate
+    case GHOSTTY_PROGRESS_STATE_PAUSE.rawValue:
+      pane.progressState = .pause
+    default:
+      return
+    }
+    let task = DispatchWorkItem { [weak pane] in
+      pane?.progressState = nil
+    }
+    pane.progressExpiryTask = task
+    DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: task)
   }
 
   func handleColorChange(_ notification: Notification) {
