@@ -227,7 +227,8 @@ final class TerminalSurfaceView: NSView {
   // MARK: - Keyboard Input
 
   /// Accumulates text from interpretKeyEvents → insertText
-  private var keyTextAccumulator: [String] = []
+  private var keyTextAccumulator: [String]?
+  private var markedText = NSMutableAttributedString()
 
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     guard event.type == .keyDown else { return false }
@@ -299,19 +300,37 @@ final class TerminalSurfaceView: NSView {
 
     // Use interpretKeyEvents to get OS-resolved text (handles keyboard layouts, dead keys, IME)
     keyTextAccumulator = []
+    defer { keyTextAccumulator = nil }
+
+    let markedTextBefore = markedText.length > 0
+    let keyboardIdBefore: String? = if !markedTextBefore {
+      NSTextInputContext.current?.selectedKeyboardInputSource
+    } else {
+      nil
+    }
     interpretKeyEvents([translationEvent])
 
     if KeyEventDebug.enabled {
-      KeyEventDebug.print("Surface.interpret: text=\(keyTextAccumulator)")
+      KeyEventDebug.print("Surface.interpret: text=\(keyTextAccumulator ?? [])")
     }
 
-    if keyTextAccumulator.isEmpty {
+    if !markedTextBefore,
+       let idBefore = keyboardIdBefore,
+       idBefore != NSTextInputContext.current?.selectedKeyboardInputSource
+    {
+      return
+    }
+
+    syncPreedit(clearIfNeeded: markedTextBefore)
+
+    if keyTextAccumulator?.isEmpty != false {
       // No text produced (e.g. Escape, arrows, function keys) — send key event only
-      let keyEvent = event.ghosttyKeyEvent(action, translationMods: translationEvent.modifierFlags)
+      var keyEvent = event.ghosttyKeyEvent(action, translationMods: translationEvent.modifierFlags)
+      keyEvent.composing = markedText.length > 0 || markedTextBefore
       _ = ghostty_surface_key(surface, keyEvent)
     } else {
       // Send key event with accumulated text
-      for text in keyTextAccumulator {
+      for text in keyTextAccumulator ?? [] {
         var keyEvent = event.ghosttyKeyEvent(action, translationMods: translationEvent.modifierFlags)
         text.withCString { ptr in
           keyEvent.text = ptr
@@ -329,6 +348,7 @@ final class TerminalSurfaceView: NSView {
 
   override func flagsChanged(with event: NSEvent) {
     guard let surface else { return }
+    if hasMarkedText() { return }
 
     // Determine if this modifier key is being pressed or released
     let mod: UInt32
@@ -389,14 +409,28 @@ final class TerminalSurfaceView: NSView {
     // dispatches selectors (insertTab:, insertNewline:, etc.) that
     // have no handler in the responder chain.
   }
+
+  private func syncPreedit(clearIfNeeded: Bool = true) {
+    guard let surface else { return }
+    if markedText.length > 0 {
+      let str = markedText.string
+      let len = str.utf8CString.count
+      if len > 0 {
+        str.withCString { ptr in
+          ghostty_surface_preedit(surface, ptr, UInt(len - 1))
+        }
+      }
+    } else if clearIfNeeded {
+      ghostty_surface_preedit(surface, nil, 0)
+    }
+  }
 }
 
 // MARK: - NSTextInputClient
 
 extension TerminalSurfaceView: @preconcurrency NSTextInputClient {
   func insertText(_ string: Any, replacementRange: NSRange) {
-    // Accumulate text for keyDown to pass to ghostty_surface_key.
-    // Do NOT call ghostty_surface_text here — that would double-send.
+    guard NSApp.currentEvent != nil else { return }
     let str: String
     if let s = string as? String {
       str = s
@@ -405,24 +439,45 @@ extension TerminalSurfaceView: @preconcurrency NSTextInputClient {
     } else {
       str = String(describing: string)
     }
-    keyTextAccumulator.append(str)
+    unmarkText()
+    if var acc = keyTextAccumulator {
+      acc.append(str)
+      keyTextAccumulator = acc
+      return
+    }
   }
 
   func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
-    // IME composition stub
+    switch string {
+    case let v as NSAttributedString:
+      self.markedText = NSMutableAttributedString(attributedString: v)
+    case let v as String:
+      self.markedText = NSMutableAttributedString(string: v)
+    default:
+      return
+    }
+    if keyTextAccumulator == nil {
+      syncPreedit()
+    }
   }
 
-  func unmarkText() {}
+  func unmarkText() {
+    if markedText.length > 0 {
+      markedText.mutableString.setString("")
+      syncPreedit()
+    }
+  }
 
   func selectedRange() -> NSRange {
     NSRange(location: NSNotFound, length: 0)
   }
 
   func markedRange() -> NSRange {
-    NSRange(location: NSNotFound, length: 0)
+    guard markedText.length > 0 else { return NSRange(location: NSNotFound, length: 0) }
+    return NSRange(0...(markedText.length - 1))
   }
 
-  func hasMarkedText() -> Bool { false }
+  func hasMarkedText() -> Bool { markedText.length > 0 }
 
   func attributedSubstring(forProposedRange range: NSRange, actualRange: NSRangePointer?)
     -> NSAttributedString?
