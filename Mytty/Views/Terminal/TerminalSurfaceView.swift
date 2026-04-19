@@ -261,8 +261,7 @@ final class TerminalSurfaceView: NSView {
 
     if !markedTextBefore,
        let idBefore = keyboardIdBefore,
-       idBefore != NSTextInputContext.current?.selectedKeyboardInputSource
-    {
+       idBefore != NSTextInputContext.current?.selectedKeyboardInputSource {
       return
     }
 
@@ -425,8 +424,7 @@ extension TerminalSurfaceView: @preconcurrency NSTextInputClient {
   func hasMarkedText() -> Bool { markedText.length > 0 }
 
   func attributedSubstring(forProposedRange range: NSRange, actualRange: NSRangePointer?)
-    -> NSAttributedString?
-  {
+    -> NSAttributedString? {
     nil
   }
 

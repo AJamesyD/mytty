@@ -18,8 +18,7 @@ struct SearchHighlightView: View {
 
         var searchStart = line.startIndex
         while let range = line.range(
-          of: query, options: .caseInsensitive, range: searchStart..<line.endIndex)
-        {
+          of: query, options: .caseInsensitive, range: searchStart..<line.endIndex) {
           let col = line.distance(from: line.startIndex, to: range.lowerBound)
           let matchLen = line.distance(from: range.lowerBound, to: range.upperBound)
 

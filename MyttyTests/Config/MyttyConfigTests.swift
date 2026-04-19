@@ -54,10 +54,10 @@ final class MyttyConfigTests: XCTestCase {
     XCTAssertEqual(config.popups[0].shortcut, "cmd+shift+g")
     XCTAssertEqual(config.popups[0].width, 0.8)
     XCTAssertEqual(config.popups[0].height, 0.8)
-    XCTAssertEqual(config.popups[0].closeOnExit, true)
+    XCTAssertTrue(config.popups[0].closeOnExit)
     XCTAssertEqual(config.popups[1].name, "btop")
-    XCTAssertEqual(config.popups[1].shortcut, nil)
-    XCTAssertEqual(config.popups[1].closeOnExit, false)
+    XCTAssertNil(config.popups[1].shortcut)
+    XCTAssertFalse(config.popups[1].closeOnExit)
   }
 
   func test_noPopupsReturnsEmptyArray() throws {
@@ -74,8 +74,8 @@ final class MyttyConfigTests: XCTestCase {
     let config = try MyttyConfig.parse(toml)
     XCTAssertEqual(config.popups[0].width, 0.8)
     XCTAssertEqual(config.popups[0].height, 0.8)
-    XCTAssertEqual(config.popups[0].closeOnExit, true)
-    XCTAssertEqual(config.popups[0].shortcut, nil)
+    XCTAssertTrue(config.popups[0].closeOnExit)
+    XCTAssertNil(config.popups[0].shortcut)
   }
 
   func test_parsesSSHConfig() throws {

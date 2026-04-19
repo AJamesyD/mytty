@@ -186,7 +186,7 @@ final class SessionStoreTests: XCTestCase {
     let tracked = store.trackedWindow(byId: id)
     XCTAssertNotNil(tracked)
     XCTAssertEqual(tracked?.id, id)
-    XCTAssertTrue(tracked?.window === window)
+    XCTAssertIdentical(tracked?.window, window)
     XCTAssertNil(store.trackedWindow(byId: 999))
   }
 

@@ -23,8 +23,7 @@ struct LayoutEngine {
 
   /// Left-leaning chain of splits. Each level gives 1/N of the space to the left child.
   private static func evenSplit(_ direction: SplitDirection, _ panes: [MyttyPane])
-    -> PaneLayoutNode
-  {
+    -> PaneLayoutNode {
     assert(panes.count >= 2)
     if panes.count == 2 {
       return .split(direction, .leaf(panes[0]), .leaf(panes[1]), 0.5)
@@ -38,8 +37,7 @@ struct LayoutEngine {
 
   /// First pane gets 66% along the primary direction, rest are evenly split along the other.
   private static func mainSplit(_ direction: SplitDirection, _ panes: [MyttyPane])
-    -> PaneLayoutNode
-  {
+    -> PaneLayoutNode {
     assert(panes.count >= 2)
     let main = panes[0]
     let rest = Array(panes.dropFirst())
@@ -84,8 +82,7 @@ struct LayoutEngine {
 
   /// Even split of arbitrary PaneLayoutNodes (not just panes).
   private static func evenSplitNodes(_ direction: SplitDirection, _ nodes: [PaneLayoutNode])
-    -> PaneLayoutNode
-  {
+    -> PaneLayoutNode {
     assert(!nodes.isEmpty)
     if nodes.count == 1 { return nodes[0] }
     if nodes.count == 2 {

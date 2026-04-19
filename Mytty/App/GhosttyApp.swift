@@ -28,7 +28,7 @@ private nonisolated func withSurfaceView(
 }
 
 /// Called when ghostty wants the apprt to perform an action.
-private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
+private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
   switch action.tag {
   case GHOSTTY_ACTION_RENDER:
     return true
@@ -384,7 +384,7 @@ private let readClipboardCallback: ghostty_runtime_read_clipboard_cb = {
 
 /// Clipboard confirm read callback (auto-confirms).
 private let confirmReadClipboardCallback: ghostty_runtime_confirm_read_clipboard_cb = {
-  userdata, str, state, request in
+  userdata, str, state, _ in
   guard let userdata, let state, let str else { return }
   let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
   guard let surface = view.surface else { return }
@@ -393,7 +393,7 @@ private let confirmReadClipboardCallback: ghostty_runtime_confirm_read_clipboard
 
 /// Clipboard write callback.
 private let writeClipboardCallback: ghostty_runtime_write_clipboard_cb = {
-  userdata, clipboard, content, count, confirm in
+  _, _, content, count, _ in
   guard let content, count > 0 else { return }
   let pasteboard = NSPasteboard.general
   pasteboard.clearContents()
@@ -403,7 +403,7 @@ private let writeClipboardCallback: ghostty_runtime_write_clipboard_cb = {
 }
 
 /// Close surface callback: shell exited.
-private let closeSurfaceCallback: ghostty_runtime_close_surface_cb = { userdata, processAlive in
+private let closeSurfaceCallback: ghostty_runtime_close_surface_cb = { userdata, _ in
   guard let userdata else { return }
   let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
   DispatchQueue.main.async {
@@ -636,8 +636,7 @@ final class GhosttyAppManager {
       var decPtr: UnsafePointer<Int8>?
       let decKey = "window-decoration"
       if ghostty_config_get(cfg, &decPtr, decKey, UInt(decKey.lengthOfBytes(using: .utf8))),
-        let ptr = decPtr
-      {
+        let ptr = decPtr {
         let str = String(cString: ptr)
         self.decorations = (str != "none" && str != "false")
       } else {
@@ -647,8 +646,7 @@ final class GhosttyAppManager {
       var tsPtr: UnsafePointer<Int8>?
       let tsKey = "macos-titlebar-style"
       if ghostty_config_get(cfg, &tsPtr, tsKey, UInt(tsKey.lengthOfBytes(using: .utf8))),
-        let ptr = tsPtr
-      {
+        let ptr = tsPtr {
         self.titlebarStyle = String(cString: ptr)
       } else {
         self.titlebarStyle = "transparent"
@@ -657,8 +655,7 @@ final class GhosttyAppManager {
       var wbPtr: UnsafePointer<Int8>?
       let wbKey = "macos-window-buttons"
       if ghostty_config_get(cfg, &wbPtr, wbKey, UInt(wbKey.lengthOfBytes(using: .utf8))),
-        let ptr = wbPtr
-      {
+        let ptr = wbPtr {
         self.windowButtons = String(cString: ptr)
       } else {
         self.windowButtons = "visible"

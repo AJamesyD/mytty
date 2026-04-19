@@ -5,6 +5,7 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
   private var isApplyingChrome = false
   private var isInFullscreen = false
   private var chromeMode: ChromeMode = .default
+  private var observers: [any NSObjectProtocol] = []
 
   private enum ChromeMode {
     case `default`
@@ -26,7 +27,7 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
       guard let window = NSApplication.shared.windows.first else { return }
       applyWindowChrome(window)
 
-      NotificationCenter.default.addObserver(
+      self.observers.append(NotificationCenter.default.addObserver(
         forName: NSWindow.didUpdateNotification,
         object: window,
         queue: .main
@@ -54,9 +55,9 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
             break
           }
         }
-      }
+      })
 
-      NotificationCenter.default.addObserver(
+      self.observers.append(NotificationCenter.default.addObserver(
         forName: NSWindow.willEnterFullScreenNotification,
         object: window,
         queue: .main
@@ -64,9 +65,9 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
         MainActor.assumeIsolated {
           self?.isInFullscreen = true
         }
-      }
+      })
 
-      NotificationCenter.default.addObserver(
+      self.observers.append(NotificationCenter.default.addObserver(
         forName: NSWindow.didExitFullScreenNotification,
         object: window,
         queue: .main
@@ -77,7 +78,7 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
           self.isInFullscreen = false
           self.applyWindowChrome(window)
         }
-      }
+      })
     }
   }
 

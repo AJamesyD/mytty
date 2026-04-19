@@ -55,8 +55,7 @@ struct MyttyConfig: Sendable, Equatable {
     var config = MyttyConfig()
     if let sidebarTable = table["sidebar"]?.table {
       if let modeStr = sidebarTable["mode"]?.string,
-        let mode = PanelMode.fromConfig(modeStr)
-      {
+        let mode = PanelMode.fromConfig(modeStr) {
         config.sidebarMode = mode
       }
       if let posStr = sidebarTable["position"]?.string {
@@ -71,8 +70,7 @@ struct MyttyConfig: Sendable, Equatable {
     }
     if let tabBarTable = table["tab-bar"]?.table {
       if let modeStr = tabBarTable["mode"]?.string,
-        let mode = PanelMode.fromConfig(modeStr)
-      {
+        let mode = PanelMode.fromConfig(modeStr) {
         config.tabBarMode = mode
       }
       if let hide = tabBarTable["hide-when-single-tab"]?.bool {

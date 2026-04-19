@@ -37,8 +37,7 @@ extension NSEvent {
     key.unshifted_codepoint = 0
     if type == .keyDown || type == .keyUp {
       if let chars = characters(byApplyingModifiers: []),
-        let codepoint = chars.unicodeScalars.first
-      {
+        let codepoint = chars.unicodeScalars.first {
         key.unshifted_codepoint = codepoint.value
       }
     }

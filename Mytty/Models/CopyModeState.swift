@@ -47,7 +47,7 @@ struct CopyModeState {
   var isSearching: Bool { subMode == .searchForward || subMode == .searchReverse }
 
   var selectionRange: (start: (row: Int, col: Int), end: (row: Int, col: Int))? {
-    guard isSelecting, let anchor = anchor else { return nil }
+    guard isSelecting, let anchor else { return nil }
     return (anchor, (cursorRow, cursorCol))
   }
 
@@ -60,14 +60,14 @@ struct CopyModeState {
       cursorRow = 0
       // negative = scroll up
       return targetRow
-    } else if targetRow >= rows {
+    }
+    if targetRow >= rows {
       cursorRow = rows - 1
       // positive = scroll down
       return targetRow - (rows - 1)
-    } else {
-      cursorRow = targetRow
-      return 0
     }
+  cursorRow = targetRow
+  return 0
   }
 
   private mutating func moveLeft() { cursorCol = max(0, cursorCol - 1) }
@@ -394,20 +394,18 @@ struct CopyModeState {
       subMode = .normal
       anchor = nil
       return [.enterSubMode(.normal)]
-    } else {
-      if anchor == nil {
-        anchor = (cursorRow, cursorCol)
-      }
-      subMode = target
-      return [.enterSubMode(target), .updateSelection]
     }
+  if anchor == nil {
+    anchor = (cursorRow, cursorCol)
+  }
+  subMode = target
+  return [.enterSubMode(target), .updateSelection]
   }
 
   // MARK: - Find char
 
   private mutating func handleFindCharTarget(_ char: Character, lineReader: (Int) -> String?)
-    -> [CopyModeAction]
-  {
+    -> [CopyModeAction] {
     guard let kind = pendingFindChar else { return [] }
     pendingFindChar = nil
     desiredCol = nil
@@ -419,8 +417,7 @@ struct CopyModeState {
   }
 
   private mutating func repeatFindChar(count: Int, reverse: Bool, lineReader: (Int) -> String?)
-    -> [CopyModeAction]
-  {
+    -> [CopyModeAction] {
     guard let last = lastFind else { return [] }
     let kind = reverse ? last.kind.reversed : last.kind
     return executeFindChar(kind: kind, char: last.char, count: count, lineReader: lineReader)
@@ -465,8 +462,7 @@ struct CopyModeState {
   // MARK: - Movement helpers (private, used by handleKey)
 
   private mutating func repeatMotion(_ count: Int, _ motion: (inout CopyModeState) -> Void)
-    -> [CopyModeAction]
-  {
+    -> [CopyModeAction] {
     for _ in 0..<count { motion(&self) }
     return motionActions()
   }
@@ -615,11 +611,10 @@ struct CopyModeState {
         return wordMotion(
           count: continuation.remaining - 1, pendingMotionType: continuation.motion,
           lineReader: lineReader, motion: motionFn)
-      } else {
-        return wordMotionBackward(
-          count: continuation.remaining - 1, pendingMotionType: continuation.motion,
-          lineReader: lineReader, motion: motionFn)
       }
+    return wordMotionBackward(
+      count: continuation.remaining - 1, pendingMotionType: continuation.motion,
+      lineReader: lineReader, motion: motionFn)
     }
 
     clampCursorToLineContent(lineReader: lineReader)

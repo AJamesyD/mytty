@@ -33,14 +33,14 @@ enum SessionManagerItem {
         let hostname = query.drop(while: { $0 != " " }).dropFirst().trimmingCharacters(
           in: .whitespaces)
         return "New SSH session: \(hostname)"
-      } else if createDir {
-        return "New session + create directory: \(directory.path)"
-      } else {
-        let name =
-          query.contains("/") || query.hasPrefix("~")
-          ? directory.lastPathComponent : query
-        return "New session: \(name)"
       }
+      if createDir {
+        return "New session + create directory: \(directory.path)"
+      }
+    let name =
+      query.contains("/") || query.hasPrefix("~")
+      ? directory.lastPathComponent : query
+    return "New session: \(name)"
     }
   }
 

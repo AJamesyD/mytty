@@ -49,8 +49,7 @@ final class WindowModeManager {
         return nil
       }
       if let chars = event.characters(byApplyingModifiers: []),
-        let num = Int(chars), num >= 1, num <= 9
-      {
+        let num = Int(chars), num >= 1, num <= 9 {
         joinPaneToTab(targetIndex: num - 1, store: store)
         return nil
       }

@@ -1,3 +1,5 @@
+// swiftlint:disable:next blanket_disable_command
+// swiftlint:disable force_unwrapping
 import XCTest
 
 @testable import Mytty
@@ -52,8 +54,7 @@ final class KeySequenceManagerTests: XCTestCase {
   }
 
   private func keyEvent(key: String, code: UInt16, modifiers: NSEvent.ModifierFlags = [])
-    -> NSEvent
-  {
+    -> NSEvent {
     NSEvent.keyEvent(
       with: .keyDown, location: .zero, modifierFlags: modifiers,
       timestamp: 0, windowNumber: 0, context: nil,

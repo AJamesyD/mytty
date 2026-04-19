@@ -108,11 +108,9 @@ enum WordMotion {
 
     // Step 1: if we're mid-word (prev char same class as current), skip to word start then step back
     if col < chars.count && !chars[i].isWhitespace
-      && classify(chars[i], bigWord: bigWord) == classify(chars[col], bigWord: bigWord)
-    {
+      && classify(chars[i], bigWord: bigWord) == classify(chars[col], bigWord: bigWord) {
       while i > 0
-        && classify(chars[i - 1], bigWord: bigWord) == classify(chars[col], bigWord: bigWord)
-      {
+        && classify(chars[i - 1], bigWord: bigWord) == classify(chars[col], bigWord: bigWord) {
         i -= 1
       }
       // Now at start of current word. Move back one more to get past it.

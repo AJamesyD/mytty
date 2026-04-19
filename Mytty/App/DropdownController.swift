@@ -52,8 +52,7 @@ class DropdownController: NSObject, NSWindowDelegate {
 
     if !NSApp.isActive {
       if let front = NSWorkspace.shared.frontmostApplication,
-        front.bundleIdentifier != Bundle.main.bundleIdentifier
-      {
+        front.bundleIdentifier != Bundle.main.bundleIdentifier {
         previousApp = front
       }
     }

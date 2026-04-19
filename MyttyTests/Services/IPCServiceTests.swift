@@ -1,3 +1,5 @@
+// swiftlint:disable:next blanket_disable_command
+// swiftlint:disable force_unwrapping
 import XCTest
 
 @testable import Mytty
@@ -322,7 +324,8 @@ final class IPCServiceTests: XCTestCase {
     for dir in ["left", "right", "up", "down"] {
       let data = try await service.paneAtEdge(direction: dir, sessionId: 0)
       let result = try JSONDecoder().decode([String: Bool].self, from: data)
-      XCTAssertEqual(result["atEdge"], true, "Expected at edge for direction \(dir)")
+      let atEdge = try XCTUnwrap(result["atEdge"], "Expected atEdge key for direction \(dir)")
+      XCTAssertTrue(atEdge)
     }
   }
 

@@ -1,3 +1,5 @@
+// swiftlint:disable:next blanket_disable_command
+// swiftlint:disable force_unwrapping
 import AppKit
 import GhosttyKit
 import XCTest
@@ -266,7 +268,7 @@ final class ContentViewHandlerTests: XCTestCase {
   }
 
   func test_handler_unknownPaneID_doesNotCrash() {
-    let _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
     let view = ContentView(store: store)
     let unknownID = 999_999
     let handlers: [(ContentView, Notification) -> Void] = [

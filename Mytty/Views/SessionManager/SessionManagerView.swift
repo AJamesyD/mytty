@@ -159,8 +159,7 @@ struct FocusableTextField: NSViewRepresentable {
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector)
-      -> Bool
-    {
+      -> Bool {
       if commandSelector == #selector(NSResponder.insertTab(_:)) {
         onComplete?()
         return true

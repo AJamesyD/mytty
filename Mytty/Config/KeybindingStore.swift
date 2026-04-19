@@ -178,9 +178,8 @@ struct KeybindingStore: Sendable, Equatable {
       if resets.contains(mode) {
         result[mode] = userBindings
       } else {
-        if result[mode] == nil { result[mode] = [:] }
         for (action, trigger) in userBindings {
-          result[mode]![action] = trigger
+          result[mode, default: [:]][action] = trigger
         }
       }
     }

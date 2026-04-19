@@ -39,8 +39,7 @@ final class LayoutEngineTests: XCTestCase {
     let node = LayoutEngine.apply(.evenHorizontal, to: panes)
     if case .split(
       .horizontal, .leaf(let a), .split(.horizontal, .leaf(let b), .leaf(let c), let innerRatio),
-      let outerRatio) = node
-    {
+      let outerRatio) = node {
       XCTAssertEqual(a.id, panes[0].id)
       XCTAssertEqual(b.id, panes[1].id)
       XCTAssertEqual(c.id, panes[2].id)
@@ -167,8 +166,7 @@ final class LayoutEngineTests: XCTestCase {
       .vertical,
       .split(.horizontal, .leaf(let a), .leaf(let b), _),
       .split(.horizontal, .leaf(let c), .empty, _),
-      let ratio) = node
-    {
+      let ratio) = node {
       XCTAssertEqual(a.id, panes[0].id)
       XCTAssertEqual(b.id, panes[1].id)
       XCTAssertEqual(c.id, panes[2].id)
@@ -185,8 +183,7 @@ final class LayoutEngineTests: XCTestCase {
       .vertical,
       .split(.horizontal, .leaf(let a), .leaf(let b), _),
       .split(.horizontal, .leaf(let c), .leaf(let d), _),
-      _) = node
-    {
+      _) = node {
       XCTAssertEqual(a.id, panes[0].id)
       XCTAssertEqual(b.id, panes[1].id)
       XCTAssertEqual(c.id, panes[2].id)

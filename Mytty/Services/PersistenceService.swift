@@ -5,6 +5,7 @@ import Foundation
 final class PersistenceService {
   private let store: SessionStore
   private var debounceTask: DispatchWorkItem?
+  private var observers: [any NSObjectProtocol] = []
 
   private static let saveURL: URL = {
     let dir = FileManager.default.homeDirectoryForCurrentUser
@@ -59,7 +60,7 @@ final class PersistenceService {
   }
 
   func startObserving() {
-    NotificationCenter.default.addObserver(
+    observers.append(NotificationCenter.default.addObserver(
       forName: NSApplication.willTerminateNotification,
       object: nil, queue: .main
     ) { [weak self] _ in
@@ -67,14 +68,14 @@ final class PersistenceService {
         self?.debounceTask?.cancel()
         self?.save()
       }
-    }
-    NotificationCenter.default.addObserver(
+    })
+    observers.append(NotificationCenter.default.addObserver(
       forName: NSApplication.didResignActiveNotification,
       object: nil, queue: .main
     ) { [weak self] _ in
       MainActor.assumeIsolated {
         self?.scheduleSave(delay: 2)
       }
-    }
+    })
   }
 }

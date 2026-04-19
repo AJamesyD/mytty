@@ -68,6 +68,8 @@ actor EventBroker {
     var offset = 0
     while offset < data.count {
       let n = data.withUnsafeBytes { ptr in
+        // NOTE: baseAddress is guaranteed non-nil for non-empty buffers
+        // swiftlint:disable:next force_unwrapping
         Darwin.write(fd, ptr.baseAddress! + offset, data.count - offset)
       }
       if n < 0 && errno == EINTR { continue }

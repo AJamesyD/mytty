@@ -44,6 +44,8 @@ final class IPCListener {
     withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
       ptr.withMemoryRebound(to: CChar.self, capacity: pathBytes.count) { dest in
         pathBytes.withUnsafeBufferPointer { src in
+          // NOTE: baseAddress is guaranteed non-nil for non-empty buffers
+          // swiftlint:disable:next force_unwrapping
           _ = memcpy(dest, src.baseAddress!, src.count)
         }
       }
@@ -163,6 +165,7 @@ final class IPCListener {
       case "subscribe":
         let events: [String]
         if case .array(let arr) = request.params?["events"] {
+          // swiftlint:disable:next superfluous_else
           events = arr.compactMap { if case .string(let s) = $0 { return s } else { return nil } }
         } else {
           events = []
@@ -371,6 +374,8 @@ final class IPCListener {
     var offset = 0
     while offset < count {
       let n = buffer.withUnsafeMutableBytes { ptr in
+        // NOTE: baseAddress is guaranteed non-nil for non-empty buffers
+        // swiftlint:disable:next force_unwrapping
         Darwin.read(fd, ptr.baseAddress! + offset, count - offset)
       }
       if n < 0 && errno == EINTR { continue }
@@ -384,6 +389,8 @@ final class IPCListener {
     var offset = 0
     while offset < data.count {
       let n = data.withUnsafeBytes { ptr in
+        // NOTE: baseAddress is guaranteed non-nil for non-empty buffers
+        // swiftlint:disable:next force_unwrapping
         Darwin.write(fd, ptr.baseAddress! + offset, data.count - offset)
       }
       if n < 0 && errno == EINTR { continue }
