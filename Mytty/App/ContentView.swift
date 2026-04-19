@@ -4,6 +4,9 @@ import MyttyShared
 import SwiftUI
 import UserNotifications
 
+// TODO: extract @State properties into an @Observable ContentViewState model.
+// This would decouple view state from view composition and allow splitting
+// handlers back into a separate file with proper private access.
 struct ContentView: View {
   var store: SessionStore
   @SceneStorage("sidebarWidth") private var sidebarWidth: Double = 220
