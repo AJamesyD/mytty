@@ -1,3 +1,5 @@
+// Force-unwrap is idiomatic in tests (XCTUnwrap for failable, ! for known-good fixtures).
+// SwiftLint lacks per-directory rule exclusions, so blanket disable is the only option.
 // swiftlint:disable:next blanket_disable_command
 // swiftlint:disable force_unwrapping
 import AppKit

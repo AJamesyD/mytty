@@ -5,8 +5,10 @@ import SwiftUI
 import UserNotifications
 
 // TODO: extract @State properties into an @Observable ContentViewState model.
-// This would decouple view state from view composition and allow splitting
-// handlers back into a separate file with proper private access.
+// Handlers were consolidated from ContentView+Handlers.swift (see 4ffbf4b) to
+// enable private_swiftui_state. Extracting state into a model would allow
+// re-splitting handlers into a separate file with proper private access,
+// but it touches every handler method signature. Do as a standalone refactor.
 struct ContentView: View {
   var store: SessionStore
   @SceneStorage("sidebarWidth") private var sidebarWidth: Double = 220

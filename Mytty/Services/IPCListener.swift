@@ -165,6 +165,8 @@ final class IPCListener {
       case "subscribe":
         let events: [String]
         if case .array(let arr) = request.params?["events"] {
+          // NOTE: else is syntactically required in inline if/else expressions.
+          // The auto-fixer removes it, producing invalid Swift.
           // swiftlint:disable:next superfluous_else
           events = arr.compactMap { if case .string(let s) = $0 { return s } else { return nil } }
         } else {
