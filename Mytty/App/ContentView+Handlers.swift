@@ -288,9 +288,8 @@ extension ContentView {
   }
 
   func handleSetTitle(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let title = notification.userInfo?["title"] as? String
-    else { return }
+    guard let p = notification.payload(SetTitlePayload.self), let paneID = p.paneID else { return }
+    let title = p.title
     for session in store.sessions {
       for tab in session.tabs {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
@@ -308,7 +307,7 @@ extension ContentView {
   }
 
   func handleRingBell(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int else { return }
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID else { return }
     for session in store.sessions {
       for tab in session.tabs {
         if tab.panes.contains(where: { $0.id == paneID }),
@@ -321,7 +320,7 @@ extension ContentView {
   }
 
   func handleCloseSurface(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int else { return }
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID else { return }
     // Check if this is a popup pane
     for session in store.sessions {
       if let popup = session.popups.first(where: { $0.pane.id == paneID }) {
@@ -349,9 +348,8 @@ extension ContentView {
   }
 
   func handlePwd(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let pwd = notification.userInfo?["pwd"] as? String
-    else { return }
+    guard let p = notification.payload(PwdPayload.self), let paneID = p.paneID else { return }
+    let pwd = p.pwd
     for session in store.sessions {
       for tab in session.tabs {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
@@ -363,9 +361,8 @@ extension ContentView {
   }
 
   func handleSetTabTitle(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let title = notification.userInfo?["title"] as? String
-    else { return }
+    guard let p = notification.payload(SetTitlePayload.self), let paneID = p.paneID else { return }
+    let title = p.title
     for session in store.sessions {
       for tab in session.tabs where tab.panes.contains(where: { $0.id == paneID }) {
         tab.tabTitle = title
@@ -375,10 +372,10 @@ extension ContentView {
   }
 
   func handleDesktopNotification(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let title = notification.userInfo?["title"] as? String,
-      let body = notification.userInfo?["body"] as? String
+    guard let p = notification.payload(DesktopNotificationPayload.self), let paneID = p.paneID
     else { return }
+    let title = p.title
+    let body = p.body
     if store.activeSession?.activeTab?.activePane?.id == paneID { return }
     if !hasRequestedNotificationPermission {
       hasRequestedNotificationPermission = true
@@ -394,10 +391,10 @@ extension ContentView {
   }
 
   func handleCommandFinished(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let exitCode = notification.userInfo?["exitCode"] as? Int16,
-      let duration = notification.userInfo?["duration"] as? UInt64
+    guard let p = notification.payload(CommandFinishedPayload.self), let paneID = p.paneID
     else { return }
+    let exitCode = p.exitCode
+    let duration = p.duration
     for session in store.sessions {
       for tab in session.tabs {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
@@ -415,10 +412,10 @@ extension ContentView {
   }
 
   func handleProgressReport(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let stateRaw = notification.userInfo?["state"] as? UInt32,
-      let progress = notification.userInfo?["progress"] as? Int8
+    guard let p = notification.payload(ProgressReportPayload.self), let paneID = p.paneID
     else { return }
+    let stateRaw = p.state
+    let progress = p.progress
     for session in store.sessions {
       for tab in session.tabs {
         if let pane = tab.panes.first(where: { $0.id == paneID }) {
@@ -451,9 +448,9 @@ extension ContentView {
   }
 
   func handleColorChange(_ notification: Notification) {
-    guard let payload = notification.userInfo?["payload"] as? ColorChangePayload,
+    guard let payload = notification.payload(ColorChangePayload.self),
       payload.kind == .background,
-      let paneID = notification.userInfo?["paneID"] as? Int,
+      let paneID = payload.paneID,
       let match = store.pane(byId: paneID)
     else { return }
     match.pane.surfaceView.layer?.backgroundColor = NSColor(
@@ -464,17 +461,17 @@ extension ContentView {
   // MARK: - Ghostty Action Handlers
 
   func handleGhosttyNewTab(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
     match.session.addTab()
   }
 
   func handleGhosttyNewSplit(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let directionRaw = notification.userInfo?["direction"] as? UInt32,
+    guard let p = notification.payload(SplitDirectionPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
+    let directionRaw = p.direction
     let direction: SplitDirection =
       (directionRaw == GHOSTTY_SPLIT_DIRECTION_DOWN.rawValue
         || directionRaw == GHOSTTY_SPLIT_DIRECTION_UP.rawValue)
@@ -483,7 +480,7 @@ extension ContentView {
   }
 
   func handleGhosttyCloseTab(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
     match.session.closeTab(match.tab)
@@ -493,10 +490,10 @@ extension ContentView {
   }
 
   func handleGhosttyGotoSplit(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let directionRaw = notification.userInfo?["direction"] as? UInt32,
+    guard let p = notification.payload(SplitDirectionPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
+    let directionRaw = p.direction
     let target: MyttyPane
     switch directionRaw {
     case GHOSTTY_GOTO_SPLIT_PREVIOUS.rawValue, GHOSTTY_GOTO_SPLIT_NEXT.rawValue:
@@ -527,16 +524,16 @@ extension ContentView {
 
   func handleGhosttyResizeSplit(_ notification: Notification) {
     // TODO(phase-7): add split resize support to PaneLayout
-    guard notification.userInfo?["paneID"] is Int else { return }
+    guard notification.payload(ResizeSplitPayload.self)?.paneID != nil else { return }
   }
 
   func handleGhosttyEqualizeSplits(_ notification: Notification) {
     // TODO(phase-7): add equalize splits support to PaneLayout
-    guard notification.userInfo?["paneID"] is Int else { return }
+    guard notification.payload(PanePayload.self)?.paneID != nil else { return }
   }
 
   func handleGhosttyToggleSplitZoom(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
     if match.tab.zoomedPane != nil {
@@ -547,10 +544,10 @@ extension ContentView {
   }
 
   func handleGhosttyGotoTab(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int,
-      let tabRaw = notification.userInfo?["tab"] as? Int32,
+    guard let p = notification.payload(GotoTabPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
+    let tabRaw = p.tab
     let session = match.session
     switch tabRaw {
     case -1: session.prevTab()
@@ -567,7 +564,7 @@ extension ContentView {
 
   func handleGhosttyMoveTab(_ notification: Notification) {
     // TODO(phase-7): add tab reordering support to MyttySession
-    guard notification.userInfo?["paneID"] is Int else { return }
+    guard notification.payload(MoveTabPayload.self)?.paneID != nil else { return }
   }
 
   func handleGhosttyToggleQuickTerminal() {
@@ -578,7 +575,7 @@ extension ContentView {
   }
 
   func handleGhosttyChildExited(_ notification: Notification) {
-    guard let paneID = notification.userInfo?["paneID"] as? Int else { return }
+    guard let p = notification.payload(ChildExitedPayload.self), let paneID = p.paneID else { return }
     // TODO(phase-7): show child exited overlay on the pane
     _ = store.pane(byId: paneID)
   }

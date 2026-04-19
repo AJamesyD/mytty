@@ -215,7 +215,7 @@ class DropdownController: NSObject, NSWindowDelegate {
   }
 
   @objc private func surfaceDidClose(_ notification: Notification) {
-    guard let closedPaneID = notification.userInfo?["paneID"] as? Int else { return }
+    guard let p = notification.payload(PanePayload.self), let closedPaneID = p.paneID else { return }
     guard let pane = session?.activeTab?.activePane, pane.id == closedPaneID else { return }
     session = nil
     panel.contentView = nil

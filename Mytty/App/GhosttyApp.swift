@@ -40,7 +40,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         NotificationCenter.default.post(
           name: .ghosttySetTitle,
           object: nil,
-          userInfo: ["paneID": view.pane?.id as Any, "title": titleStr]
+          userInfo: [Notification.payloadKey: SetTitlePayload(paneID: view.pane?.id, title: titleStr)]
         )
       }
     }
@@ -62,7 +62,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
       NotificationCenter.default.post(
         name: .ghosttyRingBell,
         object: nil,
-        userInfo: ["paneID": view.pane?.id as Any]
+        userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
       )
     }
     return true
@@ -81,7 +81,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
       NotificationCenter.default.post(
         name: .ghosttyPwd,
         object: nil,
-        userInfo: ["paneID": view.pane?.id as Any, "pwd": pwdStr]
+        userInfo: [Notification.payloadKey: PwdPayload(paneID: view.pane?.id, pwd: pwdStr)]
       )
     }
     return true
@@ -93,7 +93,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
       NotificationCenter.default.post(
         name: .ghosttySetTabTitle,
         object: nil,
-        userInfo: ["paneID": view.pane?.id as Any, "title": titleStr]
+        userInfo: [Notification.payloadKey: SetTitlePayload(paneID: view.pane?.id, title: titleStr)]
       )
     }
     return true
@@ -109,7 +109,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyDesktopNotification,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any, "title": titleStr, "body": bodyStr,
+          Notification.payloadKey: DesktopNotificationPayload(paneID: view.pane?.id, title: titleStr, body: bodyStr),
         ]
       )
     }
@@ -123,7 +123,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyCommandFinished,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any, "exitCode": exitCode, "duration": duration,
+          Notification.payloadKey: CommandFinishedPayload(paneID: view.pane?.id, exitCode: exitCode, duration: duration),
         ]
       )
     }
@@ -137,7 +137,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyProgressReport,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any, "state": state, "progress": progress,
+          Notification.payloadKey: ProgressReportPayload(paneID: view.pane?.id, state: state, progress: progress),
         ]
       )
     }
@@ -151,19 +151,16 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
     case GHOSTTY_ACTION_COLOR_KIND_CURSOR: .cursor
     default: .palette
     }
-    let payload = ColorChangePayload(
-      kind: kind,
-      r: CGFloat(change.r) / 255.0,
-      g: CGFloat(change.g) / 255.0,
-      b: CGFloat(change.b) / 255.0
-    )
+    let r = CGFloat(change.r) / 255.0
+    let g = CGFloat(change.g) / 255.0
+    let b = CGFloat(change.b) / 255.0
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
         name: .ghosttyColorChange,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any,
-          "payload": payload,
+          Notification.payloadKey: ColorChangePayload(
+            paneID: view.pane?.id, kind: kind, r: r, g: g, b: b),
         ]
       )
     }
@@ -180,7 +177,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
       NotificationCenter.default.post(
         name: .ghosttyNewTab,
         object: nil,
-        userInfo: ["paneID": view.pane?.id as Any]
+        userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
       )
     }
     return true
@@ -192,8 +189,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyNewSplit,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any,
-          "direction": direction.rawValue,
+          Notification.payloadKey: SplitDirectionPayload(paneID: view.pane?.id, direction: direction.rawValue),
         ]
       )
     }
@@ -204,7 +200,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
       NotificationCenter.default.post(
         name: .ghosttyCloseTab,
         object: nil,
-        userInfo: ["paneID": view.pane?.id as Any]
+        userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
       )
     }
     return true
@@ -216,8 +212,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyGotoSplit,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any,
-          "direction": direction.rawValue,
+          Notification.payloadKey: SplitDirectionPayload(paneID: view.pane?.id, direction: direction.rawValue),
         ]
       )
     }
@@ -230,9 +225,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyResizeSplit,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any,
-          "amount": resize.amount,
-          "direction": resize.direction.rawValue,
+          Notification.payloadKey: ResizeSplitPayload(paneID: view.pane?.id, amount: resize.amount, direction: resize.direction.rawValue),
         ]
       )
     }
@@ -243,7 +236,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
       NotificationCenter.default.post(
         name: .ghosttyEqualizeSplits,
         object: nil,
-        userInfo: ["paneID": view.pane?.id as Any]
+        userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
       )
     }
     return true
@@ -253,7 +246,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
       NotificationCenter.default.post(
         name: .ghosttyToggleSplitZoom,
         object: nil,
-        userInfo: ["paneID": view.pane?.id as Any]
+        userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
       )
     }
     return true
@@ -265,8 +258,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyGotoTab,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any,
-          "tab": tab.rawValue,
+          Notification.payloadKey: GotoTabPayload(paneID: view.pane?.id, tab: tab.rawValue),
         ]
       )
     }
@@ -279,8 +271,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyMoveTab,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any,
-          "amount": amount,
+          Notification.payloadKey: MoveTabPayload(paneID: view.pane?.id, amount: amount),
         ]
       )
     }
@@ -320,8 +311,7 @@ private let actionCallback: ghostty_runtime_action_cb = { app, target, action in
         name: .ghosttyChildExited,
         object: nil,
         userInfo: [
-          "paneID": view.pane?.id as Any,
-          "exitCode": exitCode,
+          Notification.payloadKey: ChildExitedPayload(paneID: view.pane?.id, exitCode: exitCode),
         ]
       )
     }
@@ -420,7 +410,7 @@ private let closeSurfaceCallback: ghostty_runtime_close_surface_cb = { userdata,
     NotificationCenter.default.post(
       name: .ghosttyCloseSurface,
       object: nil,
-      userInfo: ["paneID": view.pane?.id as Any]
+      userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
     )
   }
 }
@@ -450,6 +440,74 @@ extension Notification.Name {
   static let ghosttyChildExited = Notification.Name("ghosttyChildExited")
 }
 
+// MARK: - Notification Payloads
+
+extension Notification {
+  static let payloadKey = "payload"
+
+  func payload<T>(_ type: T.Type) -> T? {
+    userInfo?[Self.payloadKey] as? T
+  }
+}
+
+struct PanePayload {
+  let paneID: Int?
+}
+
+struct SetTitlePayload {
+  let paneID: Int?
+  let title: String
+}
+
+struct PwdPayload {
+  let paneID: Int?
+  let pwd: String
+}
+
+struct DesktopNotificationPayload {
+  let paneID: Int?
+  let title: String
+  let body: String
+}
+
+struct CommandFinishedPayload {
+  let paneID: Int?
+  let exitCode: Int16
+  let duration: UInt64
+}
+
+struct ProgressReportPayload {
+  let paneID: Int?
+  let state: UInt32
+  let progress: Int8
+}
+
+struct SplitDirectionPayload {
+  let paneID: Int?
+  let direction: UInt32
+}
+
+struct ResizeSplitPayload {
+  let paneID: Int?
+  let amount: UInt16
+  let direction: UInt32
+}
+
+struct GotoTabPayload {
+  let paneID: Int?
+  let tab: Int32
+}
+
+struct MoveTabPayload {
+  let paneID: Int?
+  let amount: Int
+}
+
+struct ChildExitedPayload {
+  let paneID: Int?
+  let exitCode: UInt32
+}
+
 struct ColorChangePayload {
   enum Kind {
     case background
@@ -457,6 +515,7 @@ struct ColorChangePayload {
     case cursor
     case palette
   }
+  let paneID: Int?
   let kind: Kind
   let r: CGFloat
   let g: CGFloat
