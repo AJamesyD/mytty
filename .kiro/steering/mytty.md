@@ -139,3 +139,14 @@ KeySequenceManager.swift handles multi-key sequences (e.g., `ctrl+a>h`).
 Sequences use a state machine with a configurable timeout (default 1s).
 SequenceIndicatorView shows pending leader keys with which-key integration after 500ms.
 Sequence triggers use `>` as the separator in config: `ctrl+a>h`.
+
+## Bridge Code Patterns
+
+When adding or modifying NSTextInputClient methods, verify against the
+Ghostty reference (vendor/ghostty/macos/Sources/Ghostty/SurfaceView/SurfaceView_AppKit.swift).
+Every guard in Ghostty's version must have an equivalent in Mytty's.
+Document intentional divergences with a comment citing the reason.
+
+Divergence: Mytty uses NSTextInputContext.current (AppKit) instead of
+Ghostty's Carbon-based KeyboardLayout helper. Avoids adding Carbon as
+a framework dependency. Functionally equivalent.

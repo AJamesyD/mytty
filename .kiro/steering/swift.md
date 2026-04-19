@@ -51,3 +51,14 @@ Use `@Observable` (Observation framework). Do not use `@ObservableObject`
 or `@Published`. These are legacy patterns in this project.
 Use `@State` for view-local state. Use `@Environment` to pass the store.
 Do not use `@StateObject` or `@EnvironmentObject`.
+
+## Enforcement
+
+force_unwrapping, discarded_notification_center_observer, and
+private_swiftui_state are enforced by SwiftLint. Do not add
+swiftlint:disable for these without a comment explaining why the
+alternative is worse.
+
+Debug assertions (assert/precondition) are encouraged at trust
+boundaries: C callback entry points, IPC dispatch, notification
+handlers. These crash in debug builds and are stripped in release.
