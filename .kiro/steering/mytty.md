@@ -42,7 +42,7 @@ When libghostty adds a new action type:
 1. Handle in GhosttyApp.swift actionCallback (C function, no captures)
 2. Add a Notification.Name in the extension
 3. Add .onReceive in ContentView.contentWithNotifications
-4. Add handler method in ContentView+Handlers.swift
+4. Add handler method in ContentView.swift (Notifications & Handlers extension)
 5. Add test in MyttyTests/App/ContentViewHandlerTests.swift
 
 ## Testing
@@ -58,7 +58,7 @@ Do not mock SessionStore. Create a real instance for tests.
 Views: FooView.swift in Views/Category/
 Models: MyttyFoo.swift in Models/
 Services: FooService.swift in Services/
-Extensions: Type+Category.swift (e.g., ContentView+Handlers.swift)
+Extensions: Type+Category.swift (e.g., NSEvent+GhosttyKey.swift)
 Managers: FooManager.swift in App/ (owns NSEvent monitor lifecycle)
 
 ## Framework Dependencies

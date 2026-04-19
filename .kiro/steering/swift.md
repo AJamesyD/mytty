@@ -14,7 +14,8 @@ Do not use `DispatchQueue.main.async` in model code. Use `@MainActor` instead.
 
 ## View Decomposition
 
-ContentView is the root. Extensions split by concern (e.g., `+Handlers`).
+ContentView is the root. Handlers live in a same-file extension
+(MARK: Notifications & Handlers). All @State properties are private.
 Overlays compose via `.overlay { }` chains on the content body.
 Do not use separate windows or sheets for overlay UI.
 Manager classes (e.g., `CopyModeManager`, `WindowModeManager`) own NSEvent
@@ -31,7 +32,7 @@ Do not throw raw `NSError` from IPC methods.
 Import only what the file needs.
 Do not import `GhosttyKit` unless the file touches libghostty types directly.
 Files that import `GhosttyKit`: GhosttyApp.swift,
-ContentView+Handlers.swift, TerminalSurfaceView.swift, PaneView.swift,
+ContentView.swift, TerminalSurfaceView.swift, PaneView.swift,
 CopyModeManager.swift, KeySequenceManager.swift,
 NSEvent+GhosttyKey.swift, PaneNavigationManager.swift, IPCService.swift.
 Do not add new `GhosttyKit` imports without verifying the file needs
