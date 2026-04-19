@@ -240,4 +240,66 @@ final class ContentViewHandlerTests: XCTestCase {
 
     XCTAssertNil(pane.surfaceView.layer?.backgroundColor)
   }
+
+  // MARK: - Nil Safety
+
+  func test_handler_nilPaneID_doesNotCrash() {
+    let view = ContentView(store: store)
+    let handlers: [(ContentView, Notification) -> Void] = [
+      { $0.handleSetTitle($1) },
+      { $0.handleRingBell($1) },
+      { $0.handleCloseSurface($1) },
+      { $0.handlePwd($1) },
+      { $0.handleSetTabTitle($1) },
+      { $0.handleCommandFinished($1) },
+      { $0.handleProgressReport($1) },
+      { $0.handleGhosttyNewTab($1) },
+      { $0.handleGhosttyCloseTab($1) },
+      { $0.handleGhosttyToggleSplitZoom($1) },
+      { $0.handleGhosttyChildExited($1) },
+    ]
+    for handler in handlers {
+      handler(view, Notification(
+        name: .ghosttySetTitle, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: nil)]))
+    }
+  }
+
+  func test_handler_unknownPaneID_doesNotCrash() {
+    let _ = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let view = ContentView(store: store)
+    let unknownID = 999_999
+    let handlers: [(ContentView, Notification) -> Void] = [
+      { $0.handleSetTitle($1) },
+      { $0.handleRingBell($1) },
+      { $0.handleCloseSurface($1) },
+      { $0.handlePwd($1) },
+      { $0.handleSetTabTitle($1) },
+      { $0.handleCommandFinished($1) },
+      { $0.handleProgressReport($1) },
+      { $0.handleGhosttyNewTab($1) },
+      { $0.handleGhosttyCloseTab($1) },
+      { $0.handleGhosttyToggleSplitZoom($1) },
+      { $0.handleGhosttyChildExited($1) },
+    ]
+    for handler in handlers {
+      handler(view, Notification(
+        name: .ghosttySetTitle, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: unknownID)]))
+    }
+  }
+
+  func test_handler_missingPayload_doesNotCrash() {
+    let view = ContentView(store: store)
+    let names: [Notification.Name] = [
+      .ghosttySetTitle, .ghosttyRingBell, .ghosttyCloseSurface,
+      .ghosttyPwd, .ghosttySetTabTitle, .ghosttyCommandFinished,
+      .ghosttyProgressReport, .ghosttyNewTab, .ghosttyCloseTab,
+      .ghosttyToggleSplitZoom, .ghosttyChildExited,
+    ]
+    for name in names {
+      let notification = Notification(name: name, object: nil, userInfo: nil)
+      XCTAssertNil(notification.payload(PanePayload.self))
+    }
+  }
 }
