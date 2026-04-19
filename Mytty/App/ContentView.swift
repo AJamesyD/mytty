@@ -376,7 +376,7 @@ private var hasRequestedNotificationPermission = false
 // MARK: - Notifications & Handlers
 
 extension ContentView {
-  var isAnyModalActive: Bool {
+  private var isAnyModalActive: Bool {
     showingSessionManager
       || windowModeManager.isActive
       || copyModeManager.isActive

@@ -66,8 +66,8 @@ struct CopyModeState {
       // positive = scroll down
       return targetRow - (rows - 1)
     }
-  cursorRow = targetRow
-  return 0
+    cursorRow = targetRow
+    return 0
   }
 
   private mutating func moveLeft() { cursorCol = max(0, cursorCol - 1) }
@@ -395,11 +395,11 @@ struct CopyModeState {
       anchor = nil
       return [.enterSubMode(.normal)]
     }
-  if anchor == nil {
-    anchor = (cursorRow, cursorCol)
-  }
-  subMode = target
-  return [.enterSubMode(target), .updateSelection]
+    if anchor == nil {
+      anchor = (cursorRow, cursorCol)
+    }
+    subMode = target
+    return [.enterSubMode(target), .updateSelection]
   }
 
   // MARK: - Find char
@@ -612,9 +612,9 @@ struct CopyModeState {
           count: continuation.remaining - 1, pendingMotionType: continuation.motion,
           lineReader: lineReader, motion: motionFn)
       }
-    return wordMotionBackward(
-      count: continuation.remaining - 1, pendingMotionType: continuation.motion,
-      lineReader: lineReader, motion: motionFn)
+      return wordMotionBackward(
+        count: continuation.remaining - 1, pendingMotionType: continuation.motion,
+        lineReader: lineReader, motion: motionFn)
     }
 
     clampCursorToLineContent(lineReader: lineReader)

@@ -45,7 +45,7 @@ docs/               DESIGN.md, ROADMAP.md, plans/, research/, specs/
 | File | Role |
 |------|------|
 | `Mytty/App/GhosttyApp.swift` | C callbacks bridging libghostty to Swift |
-| `Mytty/App/ContentView+Handlers.swift` | Notification handlers for terminal events |
+| `Mytty/App/ContentView.swift (Notifications & Handlers extension)` | Notification handlers for terminal events |
 | `MyttyShared/MyttyServiceProtocol.swift` | IPC contract between app and CLI |
 | `Mytty/App/MyttyTheme.swift` | Single source for all color tokens |
 
