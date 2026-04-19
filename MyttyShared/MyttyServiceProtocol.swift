@@ -41,7 +41,6 @@ public protocol MyttyServiceProtocol {
 
   // MARK: - Windows
 
-  @MainActor func createWindow() async throws -> Data
   @MainActor func listWindows() async throws -> Data
   @MainActor func getWindow(id: Int) async throws -> Data
   @MainActor func closeWindow(id: Int) async throws -> Data

@@ -330,8 +330,6 @@ final class IPCListener {
       }
 
     // Windows
-    case "window.create":
-      return await callService(request) { try await service.createWindow() }
     case "window.list":
       return await callService(request) { try await service.listWindows() }
     case "window.get":

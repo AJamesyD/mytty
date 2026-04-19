@@ -435,12 +435,6 @@ import MyttyShared
 
   // MARK: - Windows
 
-  func createWindow() async throws -> Data {
-    throw MyttyIPC.error(
-      .operationFailed,
-      "Not supported: programmatic window creation is not available with SwiftUI WindowGroup")
-  }
-
   func listWindows() async throws -> Data {
     let responses = store.trackedWindows.map { tracked in
       WindowResponse(id: tracked.id, sessionCount: store.sessions.count)

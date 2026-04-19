@@ -7,52 +7,12 @@ struct WindowCommand: ParsableCommand {
     commandName: "window",
     abstract: "Manage windows",
     subcommands: [
-      Create.self,
       List.self,
       Get.self,
       Close.self,
       Focus.self,
     ]
   )
-
-  struct Create: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Create a new window")
-
-    @Flag(name: .long, help: "Output as JSON")
-    var json = false
-
-    @Flag(name: .long, help: "Output as human-readable text")
-    var human = false
-
-    func run() throws {
-      let format = OutputFormat.detect(forceJSON: json, forceHuman: human)
-      let formatter = OutputFormatter(format: format)
-      let client = IPCClient()
-      try client.connect()
-      try client.initialize()
-
-      let data: Data
-      do {
-        let result = try client.callJSONRPC("window.create")
-        data = try JSONEncoder().encode(result)
-      } catch {
-        OutputFormatter.printError(error.localizedDescription)
-        Foundation.exit(1)
-      }
-
-      switch format {
-      case .json:
-        formatter.printJSON(data)
-      case .human:
-        if let window = try? JSONDecoder().decode(WindowResponse.self, from: data) {
-          formatter.printSingle([
-            ("ID", "\(window.id)"),
-            ("Sessions", "\(window.sessionCount)"),
-          ])
-        }
-      }
-    }
-  }
 
   struct List: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "List all windows")
