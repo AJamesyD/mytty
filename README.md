@@ -31,15 +31,29 @@ Mytty puts sessions, tabs, split panes, and a fuzzy session switcher inside a na
 Requires macOS 14+, Xcode 16+, and [Nix](https://nixos.org/download/).
 Nix provides the dev toolchain (just, zig, swiftlint). On macOS 26, see [CONTRIBUTING.md](CONTRIBUTING.md) for the dual-Xcode setup.
 
+### Install from source
+
+```sh
+git clone --recurse-submodules https://github.com/AJamesyD/mytty.git
+cd mytty
+nix develop
+just build-libghostty
+just install-all
+```
+
+Installs a release build to `/Applications/Mytty.app` and the CLI to `/usr/local/bin/mytty-cli`. Re-run `just install-all` to update.
+
+### Development
+
 ```sh
 git clone --recurse-submodules https://github.com/AJamesyD/mytty.git
 cd mytty
 direnv allow            # or: nix develop
-just build-libghostty   # Nix provides Zig for the Ghostty build
-just build && just run
+just build-libghostty   # one-time
+just run                # build, bundle, install, launch (debug)
 ```
 
-For development setup, build commands, project structure, and macOS 26 notes, see [CONTRIBUTING.md](CONTRIBUTING.md).
+For build commands, project structure, and macOS 26 notes, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Configuration
 

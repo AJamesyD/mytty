@@ -12,10 +12,6 @@ default: build
 build:
     swift build
 
-# Build the app (debug with optimization, for responsive UI without full release cost)
-build-dev:
-    swift build -Xswiftc -O
-
 # Build the app (release)
 build-release: build-libghostty
     swift build -c release
@@ -31,6 +27,11 @@ build-cli-release:
 # Install CLI to /usr/local/bin
 install-cli: build-cli-release
     cp .build/release/MyttyCLI /usr/local/bin/mytty-cli
+
+# Install app (release) + CLI for daily use
+install-all: install-release install-cli
+    @echo "Installed: /Applications/Mytty.app + /usr/local/bin/mytty-cli"
+    @echo "Run with: open /Applications/Mytty.app"
 
 # Uninstall CLI
 uninstall-cli:
@@ -49,20 +50,6 @@ bundle: build
     cp Mytty/Resources/Info.plist "$APP/Contents/"
     codesign -s - -f "$APP"
     echo "Bundled: $APP"
-
-# Package as .app bundle (debug, optimized)
-bundle-dev: build-dev
-    #!/usr/bin/env bash
-    set -euo pipefail
-    APP="build/Mytty.app"
-    rm -rf "$APP"
-    mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-    cp .build/debug/Mytty "$APP/Contents/MacOS/Mytty"
-    swift build --target MyttyCLI -Xswiftc -O
-    cp .build/debug/MyttyCLI "$APP/Contents/MacOS/mytty-cli"
-    cp Mytty/Resources/Info.plist "$APP/Contents/"
-    codesign -s - -f "$APP"
-    echo "Bundled: $APP (optimized debug)"
 
 # Package as .app bundle (release)
 bundle-release: build-release
@@ -87,15 +74,6 @@ install: bundle
     cp -R build/Mytty.app /Applications/Mytty.app
     echo "Installed: /Applications/Mytty.app"
 
-# Install to /Applications (debug, optimized)
-install-dev: bundle-dev
-    #!/usr/bin/env bash
-    set -euo pipefail
-    osascript -e 'tell application "Mytty" to quit' 2>/dev/null || true
-    rm -rf /Applications/Mytty.app
-    cp -R build/Mytty.app /Applications/Mytty.app
-    echo "Installed: /Applications/Mytty.app (optimized debug)"
-
 # Install to /Applications (release)
 install-release: bundle-release
     #!/usr/bin/env bash
@@ -107,10 +85,6 @@ install-release: bundle-release
 
 # Run the app (debug)
 run: install
-    open /Applications/Mytty.app
-
-# Run the app (debug, optimized: ~10s build, near-release perf, degraded LLDB)
-run-dev: install-dev
     open /Applications/Mytty.app
 
 # Run the app (release)

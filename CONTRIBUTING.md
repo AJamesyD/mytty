@@ -56,6 +56,9 @@ direnv allow
 
 ## Development Commands
 
+**For daily use:** `just install-all` (release build, one command)  
+**For development:** `just run` (debug build, rebuilds each invocation)
+
 | Command | Description |
 |---|---|
 | `just build` | Build debug |
@@ -74,8 +77,8 @@ direnv allow
 | `just bundle` | Create Mytty.app bundle |
 | `just install` | Build, bundle, install to /Applications |
 | `just install-cli` | Build and install `mytty-cli` |
+| `just install-all` | Install release app + CLI for daily use |
 | `just test-filter PATTERN` | Run tests matching a filter |
-| `just run-dev` | Build and run (optimized debug) |
 | `just build-cli` | Build the CLI tool |
 
 ## Project Structure
