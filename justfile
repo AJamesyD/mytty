@@ -185,6 +185,10 @@ lint-fix:
 lint-strict:
     swiftlint lint --quiet --strict
 
+# Lint shell scripts
+shellcheck:
+    shellcheck scripts/*
+
 # Check nix formatting
 nix-fmt-check:
     nix fmt -- --check flake.nix
@@ -200,10 +204,10 @@ fmt-all: fmt-swift nix-fmt
 fmt: fmt-all
 
 # Pre-commit check: format, lint, test
-check: fmt-check lint verify-cli-ref test
+check: fmt-check lint shellcheck verify-cli-ref test
 
 # CI pipeline: format check, strict lint, build, test, typos
-ci: fmt-check nix-fmt-check lint-strict build verify-cli-ref test
+ci: fmt-check nix-fmt-check lint-strict shellcheck build verify-cli-ref test
     typos
 
 # Generate CLI reference from ArgumentParser dump-help

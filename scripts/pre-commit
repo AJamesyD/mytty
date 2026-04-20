@@ -10,6 +10,7 @@ if [ -z "$STAGED" ]; then
 fi
 
 # Format check (fast, no network)
+# shellcheck disable=SC2086 # intentional word-splitting for file list
 if ! swift format lint --strict --parallel $STAGED 2>/dev/null; then
   echo "error: swift-format check failed. Run 'just fmt' to fix."
   exit 1

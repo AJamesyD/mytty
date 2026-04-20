@@ -34,6 +34,7 @@
             pkgs.git
             pkgs.just
             pkgs.jq
+            pkgs.shellcheck
             pkgs.xcodes
             pkgs.aria2
             pkgs.zls
