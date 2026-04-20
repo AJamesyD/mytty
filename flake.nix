@@ -33,6 +33,7 @@
             zigPkg
             pkgs.git
             pkgs.just
+            pkgs.jq
             pkgs.xcodes
             pkgs.aria2
             pkgs.zls

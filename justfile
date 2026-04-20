@@ -200,11 +200,19 @@ fmt-all: fmt-swift nix-fmt
 fmt: fmt-all
 
 # Pre-commit check: format, lint, test
-check: fmt-check lint test
+check: fmt-check lint verify-cli-ref test
 
 # CI pipeline: format check, strict lint, build, test, typos
-ci: fmt-check nix-fmt-check lint-strict build test
+ci: fmt-check nix-fmt-check lint-strict build verify-cli-ref test
     typos
+
+# Generate CLI reference from ArgumentParser dump-help
+generate-cli-ref: build-cli
+    scripts/generate-cli-reference.sh
+
+# Verify CLI reference is up to date
+verify-cli-ref: generate-cli-ref
+    @git diff --exit-code docs/CLI-REFERENCE.md || (echo "error: docs/CLI-REFERENCE.md is stale. Run 'just generate-cli-ref' to update." && exit 1)
 
 # Generate changelog for a release
 changelog TAG:
