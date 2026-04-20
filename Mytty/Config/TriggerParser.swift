@@ -168,6 +168,35 @@ extension KeyboardTrigger {
     }
   }
 
+  var displayLabel: String {
+    var parts: [String] = []
+    if modifiers.contains(.ctrl) { parts.append("⌃") }
+    if modifiers.contains(.alt) { parts.append("⌥") }
+    if modifiers.contains(.shift) { parts.append("⇧") }
+    if modifiers.contains(.cmd) { parts.append("⌘") }
+    parts.append(Self.keySymbol(for: key))
+    return parts.joined()
+  }
+
+  private static func keySymbol(for key: String) -> String {
+    switch key {
+    case "escape": return "⎋"
+    case "return", "enter": return "↩"
+    case "tab": return "⇥"
+    case "space": return "␣"
+    case "delete", "backspace": return "⌫"
+    case "up": return "↑"
+    case "down": return "↓"
+    case "left": return "←"
+    case "right": return "→"
+    case "home": return "↖"
+    case "end": return "↘"
+    case "pageup": return "⇞"
+    case "pagedown": return "⇟"
+    default: return key.uppercased()
+    }
+  }
+
   private var eventModifiers: EventModifiers {
     var result: EventModifiers = []
     if modifiers.contains(.cmd) { result.insert(.command) }

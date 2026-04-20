@@ -7,8 +7,8 @@ final class MyttyPane: Identifiable {
   let id: Int
   var directory: URL?
   var command: String?
+  /// When true, run the command in the shell without `exec` (shell stays alive after the command exits).
   /// When false, prefix the command with `exec` so the shell exits when the command finishes.
-  /// When true, run the command in the shell without `exec` (shell stays alive after).
   var useCommandField: Bool = true
 
   var processTitle: String?

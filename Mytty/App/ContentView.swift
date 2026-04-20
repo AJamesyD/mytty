@@ -10,6 +10,11 @@ import UserNotifications
 // re-splitting handlers into a separate file with proper private access,
 // but it touches every handler method signature. Do as a standalone refactor.
 struct ContentView: View {
+  private static let sessionManagerShortcutLabel: String = {
+    let trigger = MyttyConfig.load().keybindingStore.trigger(for: "session-manager", in: .global)
+    return trigger?.displayLabel ?? "⌘N"
+  }()
+
   var store: SessionStore
   @SceneStorage("sidebarWidth") private var sidebarWidth: Double = 220
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -191,7 +196,7 @@ struct ContentView: View {
           Text("No active session")
             .font(.title2)
             .foregroundStyle(.secondary)
-          Text("Press ⌘J to open or create a session")
+          Text("Press \(Self.sessionManagerShortcutLabel) to open or create a session")
             .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1047,11 +1052,11 @@ extension ContentView {
     }
 
     if event.modifierFlags.contains(.control) {
-      if event.charactersIgnoringModifiers == "j" {
+      if event.keyName == "j" {
         vm.moveDown()
         return nil
       }
-      if event.charactersIgnoringModifiers == "k" {
+      if event.keyName == "k" {
         vm.moveUp()
         return nil
       }
