@@ -65,6 +65,13 @@ split-horizontal = "cmd+shift+d"
 
 # Apps that receive all keys directly (bypasses Mytty keybindings)
 passthrough-processes = ["nvim", "emacs", "htop"]
+
+# Remap copy mode keys (vi motions by default)
+[keybindings.copy-mode]
+move-left = "h"
+move-down = "j"
+move-up = "k"
+move-right = "l"
 ```
 
 ```ini
@@ -106,15 +113,19 @@ All keybindings except the dropdown hotkey can be remapped in `~/.config/mytty/c
 mytty-cli session list              # List sessions (JSON when piped)
 mytty-cli session create --name dev --directory ~/code
 mytty-cli tab create --session 1
+mytty-cli tab rotate                # Rotate pane positions
+mytty-cli tab layout even-horizontal
 mytty-cli pane focus --direction left
+mytty-cli pane swap --direction right
+mytty-cli pane zoom                 # Toggle zoom (or --state on/off)
+mytty-cli pane break-tab            # Move pane to new tab
+mytty-cli pane join --tab 3         # Move pane into existing tab
 mytty-cli pane send-keys "npm test"
 mytty-cli popup open --name scratch  # Open a named popup window
 mytty-cli popup toggle --name scratch
 mytty-cli window list                # List open windows
 mytty-cli window focus --id 1
 ```
-
-Window mode actions (swap, zoom, rotate, layouts) are keyboard-only via Ctrl+W. See the keybindings table above.
 
 Install with `just install-cli`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full command reference.
 
