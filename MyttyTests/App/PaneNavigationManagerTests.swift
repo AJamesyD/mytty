@@ -12,7 +12,18 @@ final class PaneNavigationManagerTests: XCTestCase {
     super.setUp()
     store = SessionStore()
     manager = PaneNavigationManager()
-    manager.activate(store: store)
+    // Inject default bindings directly to avoid reading ~/.config/mytty/config.toml.
+    // MyttyConfig.load() is non-deterministic across environments.
+    let bindings = KeybindingStore.build(
+      defaults: KeybindingStore.defaultBindings,
+      defaultWhichKey: KeybindingStore.defaultWhichKeyGroups,
+      userOverrides: [:],
+      userWhichKey: nil,
+      resets: [],
+      globalReset: false,
+      passthroughProcesses: nil
+    )
+    manager.activate(store: store, keybindingStore: bindings)
   }
 
   override func tearDown() {
@@ -106,7 +117,7 @@ final class PaneNavigationManagerTests: XCTestCase {
 
     // Real macOS events have control characters in both characters and
     // charactersIgnoringModifiers when Ctrl is held (Ctrl+H = \u{08}).
-    // The fix uses characters(byApplyingModifiers:) which returns "h".
+    // The fix uses keycodeNames which returns "h" for keyCode 4.
     guard
       let event = NSEvent.keyEvent(
         with: .keyDown, location: .zero, modifierFlags: .control,

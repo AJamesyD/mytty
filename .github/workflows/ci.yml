@@ -31,6 +31,9 @@ jobs:
         with:
           submodules: recursive
 
+      # Swift 6.1+ (Xcode 26+) required: XCTestCase @MainActor lifecycle inheritance.
+      # The default Xcode 16.4 ships Swift 6.0 which lacks this.
+      # libghostty still uses the 16.x SDK (auto-discovered via DEVELOPER_DIR).
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.3.app
 

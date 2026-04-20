@@ -20,12 +20,15 @@ final class PaneNavigationManager {
   private var passthroughProcesses: [String] = KeybindingStore.defaultPassthroughProcesses
   var sequenceManager: KeySequenceManager?
 
-  func activate(store: SessionStore) {
+  // NOTE: keybindingStore parameter exists for test injection. Without it,
+  // loadBindings reads ~/.config/mytty/config.toml, making tests dependent
+  // on the host filesystem and non-deterministic across environments.
+  func activate(store: SessionStore, keybindingStore: KeybindingStore? = nil) {
     guard !isActive else { return }
     self.store = store
     isActive = true
 
-    loadBindings()
+    loadBindings(from: keybindingStore)
 
     TerminalSurfaceView.keyDispatch = { [weak self] event in
       self?.handleKeyDown(event) ?? event
@@ -98,8 +101,8 @@ final class PaneNavigationManager {
     isActive = false
   }
 
-  private func loadBindings() {
-    let keybindingStore = MyttyConfig.load().keybindingStore
+  private func loadBindings(from override: KeybindingStore? = nil) {
+    let keybindingStore = override ?? MyttyConfig.load().keybindingStore
     passthroughProcesses = keybindingStore.passthroughProcesses
     navigationBindings = [:]
     let actionToDirection: [String: NavigationDirection] = [

@@ -62,18 +62,25 @@ extension NSEvent {
   }
 
   static let keycodeNames: [UInt16: String] = [
+    // NOTE: h/j/k/l are here because characters(byApplyingModifiers:) returns
+    // control characters (not letters) when Ctrl is held on some SDK versions.
+    // Keycode-based lookup is deterministic regardless of modifier state.
+    4: "h",
+    36: "return",
+    37: "l",
+    38: "j",
+    40: "k",
+    48: "tab",
+    49: "space",
+    51: "delete",
     53: "escape",
+    115: "home",
+    116: "pageup",
+    119: "end",
+    121: "pagedown",
     123: "left",
     124: "right",
     125: "down",
     126: "up",
-    36: "return",
-    48: "tab",
-    49: "space",
-    51: "delete",
-    115: "home",
-    119: "end",
-    116: "pageup",
-    121: "pagedown",
   ]
 }

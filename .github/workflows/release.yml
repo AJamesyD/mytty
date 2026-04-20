@@ -28,6 +28,8 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      # Swift 6.1+ (Xcode 26+) required for the Swift build.
+      # libghostty still uses the 16.x SDK (auto-discovered via DEVELOPER_DIR).
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.3.app
 
