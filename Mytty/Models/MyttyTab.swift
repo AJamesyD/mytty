@@ -86,6 +86,20 @@ final class MyttyTab: Identifiable {
     panes = layout.leaves
   }
 
+  func swapActivePane(direction: NavigationDirection) {
+    guard let pane = activePane else { return }
+    layout.swapPane(pane, direction: direction)
+  }
+
+  func toggleZoom() {
+    zoomedPane = zoomedPane != nil ? nil : activePane
+  }
+
+  func rotateActivePane() {
+    guard let pane = activePane else { return }
+    layout.rotateDirection(containing: pane)
+  }
+
   func replacePanes(_ newPanes: [MyttyPane]) {
     panes = newPanes
   }

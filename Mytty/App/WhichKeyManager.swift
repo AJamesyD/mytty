@@ -107,38 +107,23 @@ final class WhichKeyManager {
     var registry: [String: (label: String, action: @MainActor () -> Void)] = [
       "swap-left": (
         "Swap Left",
-        {
-          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-          tab.layout.swapPane(pane, direction: .left)
-        }
+        { store.activeSession?.activeTab?.swapActivePane(direction: .left) }
       ),
       "swap-down": (
         "Swap Down",
-        {
-          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-          tab.layout.swapPane(pane, direction: .down)
-        }
+        { store.activeSession?.activeTab?.swapActivePane(direction: .down) }
       ),
       "swap-up": (
         "Swap Up",
-        {
-          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-          tab.layout.swapPane(pane, direction: .up)
-        }
+        { store.activeSession?.activeTab?.swapActivePane(direction: .up) }
       ),
       "swap-right": (
         "Swap Right",
-        {
-          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-          tab.layout.swapPane(pane, direction: .right)
-        }
+        { store.activeSession?.activeTab?.swapActivePane(direction: .right) }
       ),
       "zoom": (
         "Zoom",
-        {
-          guard let tab = store.activeSession?.activeTab else { return }
-          tab.zoomedPane = tab.zoomedPane != nil ? nil : tab.activePane
-        }
+        { store.activeSession?.activeTab?.toggleZoom() }
       ),
       "break-to-tab": (
         "Break to Tab",
@@ -155,10 +140,7 @@ final class WhichKeyManager {
       ),
       "rotate": (
         "Rotate",
-        {
-          guard let tab = store.activeSession?.activeTab, let pane = tab.activePane else { return }
-          tab.layout.rotateDirection(containing: pane)
-        }
+        { store.activeSession?.activeTab?.rotateActivePane() }
       ),
       "even-layout": (
         "Even Layout",

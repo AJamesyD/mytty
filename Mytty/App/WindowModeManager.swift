@@ -148,26 +148,15 @@ final class WindowModeManager {
   }
 
   func toggleZoom(store: SessionStore) {
-    guard let tab = store.activeSession?.activeTab else { return }
-    if tab.zoomedPane != nil {
-      tab.zoomedPane = nil
-    } else {
-      tab.zoomedPane = tab.activePane
-    }
+    store.activeSession?.activeTab?.toggleZoom()
   }
 
   func swapActivePane(_ direction: NavigationDirection, store: SessionStore) {
-    guard let tab = store.activeSession?.activeTab,
-      let current = tab.activePane
-    else { return }
-    tab.layout.swapPane(current, direction: direction)
+    store.activeSession?.activeTab?.swapActivePane(direction: direction)
   }
 
   func rotateActivePane(store: SessionStore) {
-    guard let tab = store.activeSession?.activeTab,
-      let pane = tab.activePane
-    else { return }
-    tab.layout.rotateDirection(containing: pane)
+    store.activeSession?.activeTab?.rotateActivePane()
   }
 
   func resizeActivePane(delta: CGFloat, along direction: SplitDirection, store: SessionStore) {
