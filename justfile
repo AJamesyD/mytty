@@ -21,18 +21,24 @@ build-cli:
 build-cli-release:
     swift build --target MyttyCLI -c release
 
-# Install CLI to /usr/local/bin
-install-cli: build-cli-release
-    cp .build/release/MyttyCLI /usr/local/bin/mytty-cli
+# Install CLI symlink (no root required)
+install-cli: install-release
+    @mkdir -p ~/.local/bin
+    @rm -f /usr/local/bin/mytty-cli 2>/dev/null || true
+    @ln -sf /Applications/Mytty.app/Contents/MacOS/mytty-cli ~/.local/bin/mytty-cli
+    @echo "Installed: ~/.local/bin/mytty-cli -> /Applications/Mytty.app/Contents/MacOS/mytty-cli"
+    @if ! echo ":$PATH:" | grep -q ":$HOME/.local/bin:"; then \
+        echo "Add ~/.local/bin to your PATH:"; \
+        echo '  export PATH="$HOME/.local/bin:$PATH"'; \
+    fi
 
 # Install app (release) + CLI for daily use
-install-all: install-release install-cli
-    @echo "Installed: /Applications/Mytty.app + /usr/local/bin/mytty-cli"
+install-all: install-cli
     @echo "Run with: open /Applications/Mytty.app"
 
 # Uninstall CLI
 uninstall-cli:
-    rm -f /usr/local/bin/mytty-cli
+    rm -f ~/.local/bin/mytty-cli
 
 # Package as .app bundle (debug)
 bundle: build

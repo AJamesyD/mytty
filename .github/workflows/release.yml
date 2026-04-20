@@ -10,21 +10,21 @@ permissions:
   contents: read
 
 jobs:
-  ci:
+  check:
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
 
   release:
-    needs: ci
+    needs: check
     runs-on: macos-latest
     timeout-minutes: 45
     permissions:
       contents: write
 
     steps:
-      # TODO: actions/checkout and actions/cache pin Node.js 20, which GitHub
-      #   will deprecate on 2026-06-02. Update to SHAs that use Node.js 22.
+      # TODO: actions/checkout and actions/cache/* pin Node.js 20, which GitHub
+      #   will deprecate around 2026-06-02. Update to v5 SHAs (Node.js 22+).
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: recursive
@@ -63,10 +63,11 @@ jobs:
             spm-${{ runner.os }}-
 
       - name: Build and bundle
+        id: build-and-bundle
         run: nix develop --command just bundle-release
 
       - name: Save libghostty cache
-        if: always() && steps.cache-libghostty.outputs.cache-hit != 'true'
+        if: steps.build-and-bundle.outcome == 'success' && steps.cache-libghostty.outputs.cache-hit != 'true'
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |

@@ -127,7 +127,7 @@ mytty-cli session list | jq .
 mytty-cli session list --json
 ```
 
-Install with `just install-cli`.
+Install with `just install-cli` (builds the app first, then symlinks into `~/.local/bin/`).
 
 ## Troubleshooting
 
