@@ -103,7 +103,7 @@ struct SessionRowView: View {
               text: tab.displayTitle,
               placeholder: "Tab name",
               font: .system(size: 12),
-              onCommit: { newName in
+              onSubmit: { newName in
                 tab.customTitle = newName.isEmpty ? nil : newName
                 editingTabID = nil
               },
@@ -177,7 +177,7 @@ struct SessionRowView: View {
           text: session.name,
           placeholder: "Session name",
           font: .system(size: 13),
-          onCommit: { newName in
+          onSubmit: { newName in
             session.name = newName.isEmpty ? session.directory.lastPathComponent : newName
             isEditingSession = false
           },

@@ -4,7 +4,7 @@ struct InlineEditableTextField: View {
   let text: String
   let placeholder: String
   let font: Font
-  let onCommit: (String) -> Void
+  let onSubmit: (String) -> Void
   let onCancel: () -> Void
 
   @State private var editText: String = ""
@@ -15,7 +15,7 @@ struct InlineEditableTextField: View {
     TextField(placeholder, text: $editText)
       .onSubmit {
         didCommit = true
-        onCommit(editText)
+        onSubmit(editText)
       }
       .textFieldStyle(.plain)
       .font(font)

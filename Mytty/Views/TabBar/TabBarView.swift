@@ -66,7 +66,7 @@ struct TabBarItem: View {
           text: tab.displayTitle,
           placeholder: "Tab name",
           font: .system(size: 12),
-          onCommit: { newName in
+          onSubmit: { newName in
             tab.customTitle = newName.isEmpty ? nil : newName
             isEditing = false
           },
