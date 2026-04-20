@@ -64,12 +64,18 @@ bridge stubs wired (resize, equalize, move-tab). CI green.
 
 Next: Phase 4f-3 (key tables and modal bindings).
 
-IPC parity gap: window mode operations (swap, zoom, break-to-tab, join,
-rotate, layout presets) are GUI-only. Design finalized: `pane.swap`,
-`pane.zoom`, `pane.break-tab`, `pane.join`, `tab.rotate`, `tab.layout`.
-See `/tmp/ai-research-mytty-ipc-design.md` for full spec.
+IPC parity: window mode operations now scriptable via CLI and socket API
+(`pane.swap`, `pane.zoom`, `pane.break-tab`, `pane.join`, `tab.rotate`,
+`tab.layout`). Shipped in 2e7240b.
 
-Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown), Phase 7i-7k (enforcement infrastructure).
+Enforcement infrastructure (7i, 7k) shipped: SwiftLint custom rules for
+layer isolation and theme tokens, plus a naming convention test that
+validates all IPC methods at test time.
+
+Key table tracking (4f-3a) shipped: Ghostty key tables pass through to
+libghostty without Mytty intercepting navigation keys.
+
+Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown).
 
 ### Deferred from platform defaults (2026-04-17)
 
@@ -94,6 +100,7 @@ System-wide hotkey registration via `CGEvent` tap or `NSEvent.addGlobalMonitorFo
 Named binding sets activated/deactivated at runtime. Generalizes which-key into a single mechanism; copy mode adopts key tables for top-level dispatch but retains its internal state machine. Prefixes: `performable:` (only consume if action can execute), `all:` (broadcast to all surfaces). Chained actions.
 - Complexity: 3
 - Ghostty parity: `activate_key_table:<name>`, one-shot mode, `keybind=clear`
+- Phase A (key table tracking) shipped in 504816c. Phases B (copy mode remapping) and C (hints mode) remain.
 
 ### - [ ] 4f-4: Beyond Ghostty (stretch, no timeline)
 Ideas for future consideration, not planned work:
@@ -289,7 +296,7 @@ Periphery dead code detection on weekly cron. Pre-commit hooks for swift format 
 - Complexity: 1
 - Depends on: 7c
 
-### - [ ] 7i. Architecture Enforcement (SwiftLint Custom Rules)
+### - [x] 7i. Architecture Enforcement (SwiftLint Custom Rules)
 Custom SwiftLint rules that mechanically enforce steering doc constraints:
 - Ban `GHOSTTY_*` and `ghostty_*` symbols outside the 9 allowed bridge files
 - Ban `.opacity()` on `MyttyTheme.*` expressions (create a token instead)
@@ -309,7 +316,7 @@ Without this: documented CLI examples become phantom commands after renames or r
 - Depends on: 7b
 - Cost of not doing: ~3-7 phantom command references per CLI refactor, discovered only by users or manual audit
 
-### - [ ] 7k. IPC Naming Convention Test
+### - [x] 7k. IPC Naming Convention Test
 Unit test that reads IPCListener's dispatch table and asserts every method name matches `^[a-z]+\.[a-z]+(-[a-z]+)?$`. Catches camelCase violations at test time.
 
 Without this: new IPC methods default to Swift naming conventions (camelCase) instead of the wire protocol convention (noun.verb). 7 violations accumulated before this session's rename.
@@ -354,22 +361,21 @@ Completed:
   ADR-008 (surface-level key dispatch) ✓
 
 Current (parallelizable):
-  ┌─ 4f-3 (key tables)
-  ├─ IPC parity (pane.swap/zoom/break-tab/join, tab.rotate/layout)
-  ├─ 7i (SwiftLint custom rules)          ← no deps, immediate
-  ├─ 7j (CLI golden file tests)           ← depends on 7b ✓
-  └─ 7k (IPC naming test)                 ← no deps, immediate
+  ┌─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
+  ├─ IPC parity ✓                         ← shipped 2e7240b
+  ├─ 7i ✓ (SwiftLint custom rules)        ← shipped 6554df8
+  ├─ 7j (CLI golden file tests)           ← deferred, lighter alternative planned
+  └─ 7k ✓ (IPC naming test)               ← shipped ada25dc
 
 Near-term (unblocked after current):
-  ┌─ 4f-3a (key table actions)            ← depends on 4f-3
-  ├─ 4f-3b (copy mode key remapping)      ← depends on 4f-3
+  ┌─ 4f-3b (copy mode key remapping)      ← unblocked by 4f-3a ✓
   ├─ 7a (Ghostty submodule upgrade)       ← independent
   ├─ 7e (Periphery + pre-commit)          ← depends on 7c ✓
   └─ 7h (app icon)                        ← independent
 
 Feature phases (sequential gates):
-  4f-3 ──> 4f-3a ──> 4f-3b
-  IPC parity ──> 6d (automation API, future)
+  4f-3a ✓ ──> 4f-3b (copy mode remapping)
+  IPC parity ✓ ──> 6d (automation API, future)
 
   Phase 5 Essential (parallelizable within):
     ├─ 5a (dropdown) ──> 4f-2 (configurable global hotkey)
@@ -400,10 +406,9 @@ Infrastructure (trigger-gated, not dependency-gated):
 These items have zero dependencies on each other and can be done in any
 order or simultaneously:
 
-- 4f-3 (key tables): feature work, largest item
-- IPC parity: closes the scriptability gap (design done)
-- 7i + 7k: enforcement rules (15 min each, immediate value)
-- 7j: golden file tests (30 min, prevents doc drift)
+- 4f-3b (copy mode remapping): next feature work, unblocked by 4f-3a
+- 7a (Ghostty submodule upgrade): independent, trigger-gated
+- 7e (Periphery + pre-commit): tooling, low effort
 
 ---
 
