@@ -279,6 +279,14 @@ final class IPCListener {
       return await callService(request) {
         try await service.moveTab(id: int("id"), toIndex: int("toIndex"))
       }
+    case "tab.rotate":
+      return await callService(request) {
+        try await service.rotateTab(id: int("id"))
+      }
+    case "tab.layout":
+      return await callService(request) {
+        try await service.applyTabLayout(id: int("id"), name: str("name") ?? "")
+      }
 
     // Panes
     case "pane.create":
@@ -331,6 +339,22 @@ final class IPCListener {
     case "pane.get-var":
       return await callService(request) {
         try await service.paneGetVar(paneId: int("paneId"), key: str("key") ?? "")
+      }
+    case "pane.swap":
+      return await callService(request) {
+        try await service.swapPane(id: int("id"), direction: str("direction") ?? "")
+      }
+    case "pane.zoom":
+      return await callService(request) {
+        try await service.zoomPane(id: int("id"), state: str("state") ?? "toggle")
+      }
+    case "pane.break-tab":
+      return await callService(request) {
+        try await service.breakPaneToTab(id: int("id"))
+      }
+    case "pane.join":
+      return await callService(request) {
+        try await service.joinPane(id: int("id"), tabId: int("tabId"))
       }
 
     // Windows

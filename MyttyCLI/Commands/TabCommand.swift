@@ -13,6 +13,8 @@ struct TabCommand: ParsableCommand {
       Close.self,
       Rename.self,
       Move.self,
+      Rotate.self,
+      Layout.self,
     ]
   )
 
@@ -261,6 +263,86 @@ struct TabCommand: ParsableCommand {
       do {
         let result = try client.callJSONRPC(
           "tab.move", params: ["id": .int(id), "toIndex": .int(toIndex)])
+        data = try JSONEncoder().encode(result)
+      } catch {
+        OutputFormatter.printError(error.localizedDescription)
+        Foundation.exit(1)
+      }
+
+      switch format {
+      case .json:
+        formatter.printJSON(data)
+      case .human:
+        if let tab = try? JSONDecoder().decode(TabResponse.self, from: data) {
+          formatter.printSingle([
+            ("ID", "\(tab.id)"),
+            ("Title", tab.title),
+            ("Panes", "\(tab.paneCount)"),
+          ])
+        }
+      }
+    }
+  }
+
+  struct Rotate: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Rotate pane positions")
+
+    @Option(name: .long, help: "Tab ID (0 = active)") var id: Int = 0
+    @Flag(name: .long, help: "Output as JSON") var json = false
+    @Flag(name: .long, help: "Output as human-readable text") var human = false
+
+    func run() throws {
+      let format = OutputFormat.detect(forceJSON: json, forceHuman: human)
+      let formatter = OutputFormatter(format: format)
+      let client = IPCClient()
+      try client.connect()
+      try client.initialize()
+
+      let data: Data
+      do {
+        let result = try client.callJSONRPC("tab.rotate", params: ["id": .int(id)])
+        data = try JSONEncoder().encode(result)
+      } catch {
+        OutputFormatter.printError(error.localizedDescription)
+        Foundation.exit(1)
+      }
+
+      switch format {
+      case .json:
+        formatter.printJSON(data)
+      case .human:
+        if let tab = try? JSONDecoder().decode(TabResponse.self, from: data) {
+          formatter.printSingle([
+            ("ID", "\(tab.id)"),
+            ("Title", tab.title),
+            ("Panes", "\(tab.paneCount)"),
+          ])
+        }
+      }
+    }
+  }
+
+  struct Layout: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Apply a preset layout")
+
+    @Option(name: .long, help: "Tab ID (0 = active)") var id: Int = 0
+    @Argument(
+      help: "Layout name: even-horizontal, even-vertical, main-horizontal, main-vertical, tiled")
+    var name: String
+    @Flag(name: .long, help: "Output as JSON") var json = false
+    @Flag(name: .long, help: "Output as human-readable text") var human = false
+
+    func run() throws {
+      let format = OutputFormat.detect(forceJSON: json, forceHuman: human)
+      let formatter = OutputFormatter(format: format)
+      let client = IPCClient()
+      try client.connect()
+      try client.initialize()
+
+      let data: Data
+      do {
+        let result = try client.callJSONRPC(
+          "tab.layout", params: ["id": .int(id), "name": .string(name)])
         data = try JSONEncoder().encode(result)
       } catch {
         OutputFormatter.printError(error.localizedDescription)

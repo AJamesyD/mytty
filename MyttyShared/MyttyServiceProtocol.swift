@@ -18,6 +18,8 @@ public protocol MyttyServiceProtocol {
   @MainActor func closeTab(id: Int) async throws -> Data
   @MainActor func renameTab(id: Int, name: String) async throws -> Data
   @MainActor func moveTab(id: Int, toIndex: Int) async throws -> Data
+  @MainActor func rotateTab(id: Int) async throws -> Data
+  @MainActor func applyTabLayout(id: Int, name: String) async throws -> Data
 
   // MARK: - Panes
 
@@ -38,6 +40,10 @@ public protocol MyttyServiceProtocol {
   @MainActor func paneAtEdge(direction: String, sessionId: Int) async throws -> Data
   @MainActor func paneSetVar(paneId: Int, key: String, value: String?) async throws -> Data
   @MainActor func paneGetVar(paneId: Int, key: String) async throws -> Data
+  @MainActor func swapPane(id: Int, direction: String) async throws -> Data
+  @MainActor func zoomPane(id: Int, state: String) async throws -> Data
+  @MainActor func breakPaneToTab(id: Int) async throws -> Data
+  @MainActor func joinPane(id: Int, tabId: Int) async throws -> Data
 
   // MARK: - Windows
 

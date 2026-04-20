@@ -173,6 +173,40 @@ import MyttyShared
     return try encodeOrThrow(tabResponse(tab))
   }
 
+  func rotateTab(id: Int) async throws -> Data {
+    guard let (_, tab) = store.tab(byId: id) else {
+      throw MyttyIPC.error(.entityNotFound, "Tab \(id) not found")
+    }
+    tab.rotateActivePane()
+    Task { await broker.publish(event: "tab.rotated", params: ["tabId": .int(tab.id)]) }
+    return try encodeOrThrow(tabResponse(tab))
+  }
+
+  func applyTabLayout(id: Int, name: String) async throws -> Data {
+    guard let (_, tab) = store.tab(byId: id) else {
+      throw MyttyIPC.error(.entityNotFound, "Tab \(id) not found")
+    }
+    let standardLayout: StandardLayout
+    switch name {
+    case "even-horizontal": standardLayout = .evenHorizontal
+    case "even-vertical": standardLayout = .evenVertical
+    case "main-horizontal": standardLayout = .mainHorizontal
+    case "main-vertical": standardLayout = .mainVertical
+    case "tiled": standardLayout = .tiled
+    default:
+      throw MyttyIPC.error(
+        .invalidArgument,
+        "Unknown layout: \(name). Use even-horizontal, even-vertical, main-horizontal, main-vertical, or tiled"
+      )
+    }
+    tab.applyStandardLayout(standardLayout)
+    Task {
+      await broker.publish(
+        event: "tab.layout-applied", params: ["tabId": .int(tab.id), "layout": .string(name)])
+    }
+    return try encodeOrThrow(tabResponse(tab))
+  }
+
   // MARK: - Panes
 
   func createPane(tabId: Int, direction: String?) async throws -> Data {
@@ -433,6 +467,91 @@ import MyttyShared
       return try encodeOrThrow(["value": value])
     }
     return try encodeOrThrow(["value": nil as String?])
+  }
+
+  func swapPane(id: Int, direction: String) async throws -> Data {
+    guard let (_, tab, _) = store.pane(byId: id) else {
+      throw MyttyIPC.error(.entityNotFound, "Pane \(id) not found")
+    }
+    let navDirection: NavigationDirection
+    switch direction {
+    case "left": navDirection = .left
+    case "right": navDirection = .right
+    case "up": navDirection = .up
+    case "down": navDirection = .down
+    default:
+      throw MyttyIPC.error(
+        .invalidArgument, "Invalid direction: \(direction). Use left, right, up, or down")
+    }
+    tab.swapActivePane(direction: navDirection)
+    Task {
+      await broker.publish(
+        event: "pane.swapped", params: ["paneId": .int(id), "direction": .string(direction)])
+    }
+    return try encodeOrThrow(tabResponse(tab))
+  }
+
+  func zoomPane(id: Int, state: String) async throws -> Data {
+    guard let (_, tab, pane) = store.pane(byId: id) else {
+      throw MyttyIPC.error(.entityNotFound, "Pane \(id) not found")
+    }
+    switch state {
+    case "on": tab.zoomedPane = pane
+    case "off": tab.zoomedPane = nil
+    case "toggle": tab.toggleZoom()
+    default:
+      throw MyttyIPC.error(
+        .invalidArgument, "Invalid state: \(state). Use on, off, or toggle")
+    }
+    let isZoomed = tab.zoomedPane != nil
+    Task {
+      await broker.publish(
+        event: "pane.zoomed", params: ["paneId": .int(id), "zoomed": .bool(isZoomed)])
+    }
+    return try encodeOrThrow(paneResponse(pane, tab: tab))
+  }
+
+  func breakPaneToTab(id: Int) async throws -> Data {
+    guard let (session, tab, pane) = store.pane(byId: id) else {
+      throw MyttyIPC.error(.entityNotFound, "Pane \(id) not found")
+    }
+    guard tab.panes.count > 1 else {
+      throw MyttyIPC.error(.operationFailed, "Cannot break the only pane in a tab")
+    }
+    tab.closePane(pane)
+    session.addTabWithPane(pane)
+    guard let newTab = session.tabs.last else {
+      throw MyttyIPC.error(.operationFailed, "Failed to create tab")
+    }
+    Task {
+      await broker.publish(
+        event: "pane.broke-tab", params: ["paneId": .int(id), "newTabId": .int(newTab.id)])
+    }
+    return try encodeOrThrow(tabResponse(newTab))
+  }
+
+  func joinPane(id: Int, tabId: Int) async throws -> Data {
+    guard let (session, sourceTab, pane) = store.pane(byId: id) else {
+      throw MyttyIPC.error(.entityNotFound, "Pane \(id) not found")
+    }
+    guard let (_, targetTab) = store.tab(byId: tabId) else {
+      throw MyttyIPC.error(.entityNotFound, "Tab \(tabId) not found")
+    }
+    guard sourceTab.id != targetTab.id else {
+      throw MyttyIPC.error(.invalidArgument, "Pane is already in target tab")
+    }
+    sourceTab.closePane(pane)
+    targetTab.addExistingPane(pane, direction: .vertical)
+    if sourceTab.panes.isEmpty {
+      session.closeTab(sourceTab)
+    }
+    session.activeTab = targetTab
+    targetTab.activePane = pane
+    Task {
+      await broker.publish(
+        event: "pane.joined", params: ["paneId": .int(id), "tabId": .int(tabId)])
+    }
+    return try encodeOrThrow(tabResponse(targetTab))
   }
 
   // MARK: - Windows
