@@ -223,7 +223,7 @@ struct PaneCommand: ParsableCommand {
       do {
         if let direction {
           let result = try client.callJSONRPC(
-            "pane.focusByDirection",
+            "pane.navigate",
             params: ["direction": .string(direction), "sessionId": .int(session)])
           data = try JSONEncoder().encode(result)
         } else if let id {
@@ -358,7 +358,7 @@ struct PaneCommand: ParsableCommand {
 
       do {
         _ = try client.callJSONRPC(
-          "pane.sendKeys", params: ["paneId": .int(pane), "keys": .string(keys)])
+          "pane.write", params: ["paneId": .int(pane), "keys": .string(keys)])
       } catch {
         OutputFormatter.printError(error.localizedDescription)
         Foundation.exit(1)
@@ -395,7 +395,7 @@ struct PaneCommand: ParsableCommand {
 
       do {
         _ = try client.callJSONRPC(
-          "pane.runCommand", params: ["paneId": .int(pane), "command": .string(command)])
+          "pane.exec", params: ["paneId": .int(pane), "command": .string(command)])
       } catch {
         OutputFormatter.printError(error.localizedDescription)
         Foundation.exit(1)
@@ -429,7 +429,7 @@ struct PaneCommand: ParsableCommand {
 
       let data: Data
       do {
-        let result = try client.callJSONRPC("pane.getText", params: ["paneId": .int(pane)])
+        let result = try client.callJSONRPC("pane.read", params: ["paneId": .int(pane)])
         data = try JSONEncoder().encode(result)
       } catch {
         OutputFormatter.printError(error.localizedDescription)
@@ -468,7 +468,7 @@ struct PaneCommand: ParsableCommand {
       let data: Data
       do {
         let result = try client.callJSONRPC(
-          "pane.atEdge",
+          "pane.edge",
           params: ["direction": .string(direction), "sessionId": .int(session)])
         data = try JSONEncoder().encode(result)
       } catch {
@@ -508,7 +508,7 @@ struct PaneCommand: ParsableCommand {
       if let value { params["value"] = .string(value) }
 
       do {
-        _ = try client.callJSONRPC("pane.setVar", params: params)
+        _ = try client.callJSONRPC("pane.set-var", params: params)
       } catch {
         OutputFormatter.printError(error.localizedDescription)
         Foundation.exit(1)
@@ -537,7 +537,7 @@ struct PaneCommand: ParsableCommand {
       let data: Data
       do {
         let result = try client.callJSONRPC(
-          "pane.getVar",
+          "pane.get-var",
           params: ["paneId": .int(pane), "key": .string(key)])
         data = try JSONEncoder().encode(result)
       } catch {

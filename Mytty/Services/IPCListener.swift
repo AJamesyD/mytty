@@ -295,7 +295,7 @@ final class IPCListener {
       return await callService(request) { try await service.closePane(id: int("id")) }
     case "pane.focus":
       return await callService(request) { try await service.focusPane(id: int("id")) }
-    case "pane.focusByDirection":
+    case "pane.navigate":
       return await callService(request) {
         try await service.focusPaneByDirection(
           direction: str("direction") ?? "", sessionId: int("sessionId"))
@@ -307,28 +307,28 @@ final class IPCListener {
       }
     case "pane.active":
       return await callService(request) { try await service.activePane() }
-    case "pane.sendKeys":
+    case "pane.write":
       return await callService(request) {
         try await service.sendKeys(paneId: int("paneId"), keys: str("keys") ?? "")
       }
-    case "pane.runCommand":
+    case "pane.exec":
       return await callService(request) {
         try await service.runCommand(paneId: int("paneId"), command: str("command") ?? "")
       }
-    case "pane.getText":
+    case "pane.read":
       return await callService(request) {
         try await service.getText(paneId: int("paneId"))
       }
-    case "pane.atEdge":
+    case "pane.edge":
       return await callService(request) {
         try await service.paneAtEdge(direction: str("direction") ?? "", sessionId: int("sessionId"))
       }
-    case "pane.setVar":
+    case "pane.set-var":
       return await callService(request) {
         try await service.paneSetVar(
           paneId: int("paneId"), key: str("key") ?? "", value: str("value"))
       }
-    case "pane.getVar":
+    case "pane.get-var":
       return await callService(request) {
         try await service.paneGetVar(paneId: int("paneId"), key: str("key") ?? "")
       }
