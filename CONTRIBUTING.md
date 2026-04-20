@@ -127,7 +127,7 @@ mytty-cli session list | jq .
 mytty-cli session list --json
 ```
 
-Install with `just install-cli`.
+Install with `just install-cli`. Requires the app to be installed first (`just install-release`). Symlinks into `~/.local/bin/`.
 
 ## Troubleshooting
 

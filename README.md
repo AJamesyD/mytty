@@ -42,7 +42,7 @@ just build-libghostty
 just install-all
 ```
 
-Installs a release build to `/Applications/Mytty.app` and the CLI to `/usr/local/bin/mytty-cli`. Re-run `just install-all` to update.
+Installs a release build to `/Applications/Mytty.app` and symlinks the CLI to `~/.local/bin/mytty-cli`. Ensure `~/.local/bin` is in your `PATH`. Re-run `just install-all` to update.
 
 ### Development
 
