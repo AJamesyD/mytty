@@ -13,7 +13,7 @@ final class TerminalSurfaceView: NSView {
   weak var pane: MyttyPane?
 
   init(
-    frame: NSRect, workingDirectory: URL? = nil, command: String? = nil, initialInput: String? = nil
+    frame: NSRect, workingDirectory: URL? = nil, initialInput: String? = nil
   ) {
     super.init(frame: frame)
     wantsLayer = true
@@ -34,23 +34,17 @@ final class TerminalSurfaceView: NSView {
     cfg.scale_factor = Double(NSScreen.main?.backingScaleFactor ?? 2.0)
     cfg.context = GHOSTTY_SURFACE_CONTEXT_WINDOW
 
-    // Use strdup to pin optional C strings for the config struct.
-    // The env vars already use this pattern a few lines below.
-    // For popups that should close on exit, send the command as initial_input
-    // instead of cfg.command. ghostty forces wait-after-command=true when
-    // cfg.command is set, which shows "press any key to close". Using
-    // initial_input runs the command in the shell naturally.
+    // Commands are always sent via initial_input (not cfg.command) to avoid
+    // ghostty's macOS login shell wrapper which breaks non-shell programs.
+    // The caller (MyttyPane.buildInitialInput) handles any exec wrapping.
     let dirPtr = workingDirectory.flatMap { strdup($0.path) }
-    let cmdPtr = command.flatMap { strdup($0) }
-    let inputPtr = initialInput.flatMap { strdup("exec \($0)\n") }
+    let inputPtr = initialInput.flatMap { strdup("\($0)\n") }
     defer {
       if let p = dirPtr { free(p) }
-      if let p = cmdPtr { free(p) }
       if let p = inputPtr { free(p) }
     }
 
     cfg.working_directory = UnsafePointer(dirPtr)
-    cfg.command = UnsafePointer(cmdPtr)
     cfg.initial_input = UnsafePointer(inputPtr)
 
     var envVars = [

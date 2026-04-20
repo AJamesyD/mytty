@@ -7,8 +7,8 @@ final class MyttyPane: Identifiable {
   let id: Int
   var directory: URL?
   var command: String?
-  /// When true, use ghostty's command field (which forces wait-after-command).
-  /// When false, send the command as initial input so the shell exits naturally.
+  /// When false, prefix the command with `exec` so the shell exits when the command finishes.
+  /// When true, run the command in the shell without `exec` (shell stays alive after).
   var useCommandField: Bool = true
 
   var processTitle: String?
@@ -60,6 +60,11 @@ final class MyttyPane: Identifiable {
     self.id = id
   }
 
+  static func buildInitialInput(command: String?, useCommandField: Bool) -> String? {
+    guard let command, !command.isEmpty else { return nil }
+    return useCommandField ? command : "exec \(command)"
+  }
+
   /// The persistent terminal surface view for this pane.
   /// Created lazily on first access so the ghostty surface lives
   /// for the lifetime of the pane, surviving SwiftUI view rebuilds.
@@ -68,8 +73,7 @@ final class MyttyPane: Identifiable {
     let view = TerminalSurfaceView(
       frame: .zero,
       workingDirectory: directory,
-      command: useCommandField ? command : nil,
-      initialInput: useCommandField ? nil : command
+      initialInput: Self.buildInitialInput(command: command, useCommandField: useCommandField)
     )
     view.pane = self
     return view
