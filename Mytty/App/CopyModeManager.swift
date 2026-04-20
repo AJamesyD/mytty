@@ -10,6 +10,90 @@ final class CopyModeManager {
   private var store: SessionStore?
   var onNeedExitWindowMode: () -> Void = {}
 
+  private struct CopyModeKey: Hashable {
+    let key: String
+    let hasCtrl: Bool
+  }
+
+  private var triggerToAction: [CopyModeKey: String] = [:]
+
+  // Maps action name to the canonical (character, hasCtrl) that CopyModeState expects
+  private static let actionToCanonical: [String: (Character, Bool)] = [
+    "move-left": ("h", false),
+    "move-down": ("j", false),
+    "move-up": ("k", false),
+    "move-right": ("l", false),
+    "line-start": ("0", false),
+    "line-end": ("$", false),
+    "bottom": ("G", false),
+    "visual": ("v", false),
+    "visual-line": ("V", false),
+    "word-forward": ("w", false),
+    "word-forward-big": ("W", false),
+    "word-backward": ("b", false),
+    "word-backward-big": ("B", false),
+    "word-end": ("e", false),
+    "word-end-big": ("E", false),
+    "search-forward": ("/", false),
+    "search-backward": ("?", false),
+    "search-next": ("n", false),
+    "search-prev": ("N", false),
+    "find-char": ("f", false),
+    "find-char-back": ("F", false),
+    "find-till": ("t", false),
+    "find-till-back": ("T", false),
+    "repeat-find": (";", false),
+    "repeat-find-back": (",", false),
+    "half-page-down": ("d", true),
+    "half-page-up": ("u", true),
+    "page-down": ("f", true),
+    "page-up": ("b", true),
+    "yank": ("y", false),
+  ]
+
+  private func loadBindings() {
+    let keybindingStore = MyttyConfig.load().keybindingStore
+    triggerToAction = [:]
+    let reverseMap = keybindingStore.reverseLookup(in: .copyMode)
+    for (trigger, action) in reverseMap {
+      let cmKey = CopyModeKey(
+        key: trigger.key,
+        hasCtrl: trigger.modifiers.contains(.ctrl)
+      )
+      triggerToAction[cmKey] = action
+    }
+  }
+
+  private func shouldTranslate(_ state: CopyModeState, key: Character, keyCode: UInt16) -> Bool {
+    if state.showingHelp { return false }
+    if keyCode == 53 { return false }
+    if state.isSearching { return false }
+    if state.pendingFindChar != nil { return false }
+    if state.pendingG { return false }
+    if let digit = key.wholeNumberValue, digit != 0 || state.pendingCount != nil { return false }
+    return true
+  }
+
+  private func translateKey(
+    _ key: Character, modifiers: NSEvent.ModifierFlags, state: CopyModeState, keyCode: UInt16
+  ) -> (Character, NSEvent.ModifierFlags) {
+    guard shouldTranslate(state, key: key, keyCode: keyCode) else {
+      return (key, modifiers)
+    }
+    let cmKey = CopyModeKey(key: String(key), hasCtrl: modifiers.contains(.control))
+    guard let action = triggerToAction[cmKey],
+          let (canonicalKey, canonicalCtrl) = Self.actionToCanonical[action] else {
+      return (key, modifiers)
+    }
+    var newMods = modifiers
+    if canonicalCtrl {
+      newMods.insert(.control)
+    } else {
+      newMods.remove(.control)
+    }
+    return (canonicalKey, newMods)
+  }
+
   func enter(store: SessionStore) {
     guard !isActive else { return }
     guard let tab = store.activeSession?.activeTab else { return }
@@ -19,6 +103,7 @@ final class CopyModeManager {
 
     self.store = store
     isActive = true
+    loadBindings()
 
     var rows = 24
     var cols = 80
@@ -73,10 +158,13 @@ final class CopyModeManager {
       self.readTerminalLine(row: row)
     }
 
+    let (effectiveKey, effectiveModifiers) = translateKey(
+      key, modifiers: event.modifierFlags, state: state, keyCode: event.keyCode)
+
     let actions = state.handleKey(
-      key: key,
+      key: effectiveKey,
       keyCode: event.keyCode,
-      modifiers: event.modifierFlags,
+      modifiers: effectiveModifiers,
       lineReader: lineReader
     )
 
