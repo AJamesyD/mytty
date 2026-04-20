@@ -64,7 +64,12 @@ bridge stubs wired (resize, equalize, move-tab). CI green.
 
 Next: Phase 4f-3 (key tables and modal bindings).
 
-Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown).
+IPC parity gap: window mode operations (swap, zoom, break-to-tab, join,
+rotate, layout presets) are GUI-only. Design finalized: `pane.swap`,
+`pane.zoom`, `pane.break-tab`, `pane.join`, `tab.rotate`, `tab.layout`.
+See `/tmp/ai-research-mytty-ipc-design.md` for full spec.
+
+Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown), Phase 7i-7k (enforcement infrastructure).
 
 ### Deferred from platform defaults (2026-04-17)
 
@@ -283,6 +288,35 @@ Periphery dead code detection on weekly cron. Pre-commit hooks for swift format 
 
 - Complexity: 1
 - Depends on: 7c
+
+### - [ ] 7i. Architecture Enforcement (SwiftLint Custom Rules)
+Custom SwiftLint rules that mechanically enforce steering doc constraints:
+- Ban `GHOSTTY_*` and `ghostty_*` symbols outside the 9 allowed bridge files
+- Ban `.opacity()` on `MyttyTheme.*` expressions (create a token instead)
+
+Without this: layer violations enter silently (5 found in one review session), C constants leak into UI handlers, theme system erodes. Each violation is cheap to fix individually but expensive to find. The review session that caught these took hours; the lint rule takes minutes to add and catches violations instantly in the editor.
+
+- Complexity: 1
+- Depends on: nothing
+- Cost of not doing: ~5 layer violations per major feature addition, discovered only during manual review
+
+### - [ ] 7j. CLI Golden File Tests
+Run `mytty-cli <command> --help` for every subcommand, diff against committed golden files. Fails CI if help text changes without updating the reference. Optionally generate CLI.md from ArgumentParser's `--experimental-dump-help`.
+
+Without this: documented CLI examples become phantom commands after renames or removals (7 found in one review session). Users following README/CONTRIBUTING hit immediate errors. The drift is invisible until someone manually tries every documented example.
+
+- Complexity: 1
+- Depends on: 7b
+- Cost of not doing: ~3-7 phantom command references per CLI refactor, discovered only by users or manual audit
+
+### - [ ] 7k. IPC Naming Convention Test
+Unit test that reads IPCListener's dispatch table and asserts every method name matches `^[a-z]+\.[a-z]+(-[a-z]+)?$`. Catches camelCase violations at test time.
+
+Without this: new IPC methods default to Swift naming conventions (camelCase) instead of the wire protocol convention (noun.verb). 7 violations accumulated before this session's rename.
+
+- Complexity: 1
+- Depends on: nothing
+- Cost of not doing: naming drift accumulates until a breaking rename is needed pre-1.0
 
 ### - [ ] 7h. App Icon
 Design and add a custom app icon. Currently uses the default macOS app icon.

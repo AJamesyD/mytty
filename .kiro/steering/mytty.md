@@ -17,6 +17,8 @@ Do not modify vendor/ghostty/. Track upstream, don't fork.
 All model classes are @MainActor @Observable.
 Do not use ObservableObject or @Published (legacy patterns).
 Do not use Combine in model code.
+Pure state mutations belong on model classes (e.g., MyttyTab.swapActivePane).
+Managers own key dispatch, config loading, modal state, and cross-aggregate coordination.
 
 ## Colors and Theming
 
