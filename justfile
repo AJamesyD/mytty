@@ -159,6 +159,12 @@ setup:
     git submodule update --init --recursive
     @echo "Now run 'just build-libghostty' to build libghostty"
 
+# Install git hooks (format + lint on commit)
+install-hooks:
+    cp scripts/pre-commit .git/hooks/pre-commit
+    chmod +x .git/hooks/pre-commit
+    @echo "Pre-commit hook installed."
+
 # Format Swift code
 fmt-swift:
     swift format --in-place --recursive Mytty/ MyttyTests/ MyttyCLI/ MyttyShared/

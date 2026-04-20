@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Pre-commit hook: runs swift-format check and swiftlint on staged Swift files.
+# Install with: just install-hooks
+
+set -euo pipefail
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.swift')
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+# Format check (fast, no network)
+if ! swift format lint --strict --parallel $STAGED 2>/dev/null; then
+  echo "error: swift-format check failed. Run 'just fmt' to fix."
+  exit 1
+fi
+
+# Lint (uses .swiftlint.yml, checks only staged files)
+if ! echo "$STAGED" | xargs swiftlint lint --quiet --strict 2>/dev/null; then
+  echo "error: swiftlint found violations. Run 'just lint-fix' or fix manually."
+  exit 1
+fi
