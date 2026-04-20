@@ -23,6 +23,8 @@ jobs:
       contents: write
 
     steps:
+      # TODO: actions/checkout and actions/cache pin Node.js 20, which GitHub
+      #   will deprecate on 2026-06-02. Update to SHAs that use Node.js 22.
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: recursive
@@ -41,8 +43,9 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
 
-      - name: Cache libghostty
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      - name: Restore libghostty cache
+        id: cache-libghostty
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             vendor/ghostty/macos/GhosttyKit.xcframework
@@ -61,6 +64,15 @@ jobs:
 
       - name: Build and bundle
         run: nix develop --command just bundle-release
+
+      - name: Save libghostty cache
+        if: always() && steps.cache-libghostty.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            vendor/ghostty/macos/GhosttyKit.xcframework
+            vendor/ghostty/.zig-cache
+          key: ${{ steps.cache-libghostty.outputs.cache-primary-key }}
 
       - name: Create DMG
         env:
