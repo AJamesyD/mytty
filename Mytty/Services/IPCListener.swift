@@ -9,6 +9,8 @@ private struct ListenerState: Sendable {
 }
 
 @MainActor
+// Socket I/O + JSON-RPC dispatch in one class. Splitting would separate the read loop from its handler.
+// swiftlint:disable:next type_body_length
 final class IPCListener {
   private let service: MyttyIPCService
   private let state = OSAllocatedUnfairLock(initialState: ListenerState())
@@ -212,6 +214,8 @@ final class IPCListener {
     }
   }
 
+  // IPC method routing: one case per API method, grows linearly with the API surface.
+  // swiftlint:disable:next function_body_length
   private nonisolated static func dispatchJSONRPCMethod(
     _ request: JSONRPCMessage.Request, service: MyttyIPCService
   ) async -> JSONRPCMessage.Response {

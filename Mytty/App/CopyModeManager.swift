@@ -3,6 +3,8 @@ import GhosttyKit
 import SwiftUI
 
 @MainActor @Observable
+// Key handler + motion execution for copy mode. Splitting would separate key dispatch from its effects.
+// swiftlint:disable:next type_body_length
 final class CopyModeManager {
   private(set) var isActive = false
   private var store: SessionStore?

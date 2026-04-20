@@ -3,6 +3,8 @@ import Foundation
 import GhosttyKit
 import MyttyShared
 
+// One method per IPC endpoint. Size grows linearly with the API surface.
+// swiftlint:disable:next type_body_length
 @MainActor final class MyttyIPCService: MyttyServiceProtocol {
   private let store: SessionStore
   let broker = EventBroker()

@@ -19,19 +19,28 @@ identifier_name:
     - F
     - T
 
+# Tuned thresholds based on 2026-04-19 audit. Set just above current maximums
+# to catch future growth. Justified violations get swiftlint:disable:next with
+# a rationale comment.
+function_body_length:
+  warning: 80
+  error: 150
+
+type_body_length:
+  warning: 350
+  error: 550
+
+cyclomatic_complexity:
+  ignores_case_statements: true
+  warning: 15
+  error: 25
+
 # --- Disabled rules ---
 #
 # Each rule here was evaluated and disabled for a specific reason.
 # Before re-enabling, check the stated reason still applies.
 #
 # Rules that need per-function audit to set thresholds:
-#   cyclomatic_complexity  - dispatch switches (IPC, vi motions, action callbacks)
-#                            inflate complexity scores. Re-enable with
-#                            ignores_case_statements: true after auditing.
-#   function_body_length   - same dispatch functions span 100-150 lines.
-#                            Default 50/100 would flag ~14 functions.
-#   type_body_length       - IPCService (455 lines), CopyModeState (503 lines)
-#                            are structurally large. Default 250/350 flags 8 types.
 #   function_parameter_count - C bridge functions pass through libghostty params.
 #
 # Rules disabled for style consistency:
@@ -47,14 +56,11 @@ identifier_name:
 #   closure_parameter_position - fires on multi-line notification handlers.
 #
 disabled_rules:
-  - cyclomatic_complexity
-  - function_body_length
   - function_parameter_count
   - line_length
   - nesting
   - todo
   - trailing_comma
-  - type_body_length
   - multiple_closures_with_trailing_closure
   - closure_parameter_position
 

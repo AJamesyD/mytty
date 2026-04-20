@@ -50,6 +50,8 @@ struct MyttyConfig: Sendable, Equatable {
   // TODO: validate unknown keys. Currently unrecognized config keys (typos)
   // are silently ignored. Add a pass that collects unknown top-level and
   // section keys into keybindingStore.warnings.
+  // Config field extraction: sequential with fallback defaults, not genuinely complex branching.
+  // swiftlint:disable:next cyclomatic_complexity
   static func parse(_ toml: String) throws -> MyttyConfig {
     let table = try TOMLTable(string: toml)
     var config = MyttyConfig()

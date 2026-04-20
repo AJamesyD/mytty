@@ -1,0 +1,6 @@
+# Test classes grow linearly with feature coverage. Constraining them
+# forces artificial splitting that hurts discoverability.
+parent_config: ../.swiftlint.yml
+
+disabled_rules:
+  - type_body_length
