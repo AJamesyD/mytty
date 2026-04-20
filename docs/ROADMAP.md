@@ -351,36 +351,59 @@ Completed:
   Phase 4f-1 (key sequences) ✓
   Phase 5a-1 (core dropdown) ✓
   Phase 7b-7d (CI, releases) ✓
-  ADR-008 Phase 1 (surface-level key dispatch) ✓
+  ADR-008 (surface-level key dispatch) ✓
 
-Current:
-  4f-3 (key tables)
+Current (parallelizable):
+  ┌─ 4f-3 (key tables)
+  ├─ IPC parity (pane.swap/zoom/break-tab/join, tab.rotate/layout)
+  ├─ 7i (SwiftLint custom rules)          ← no deps, immediate
+  ├─ 7j (CLI golden file tests)           ← depends on 7b ✓
+  └─ 7k (IPC naming test)                 ← no deps, immediate
 
-Future:
-  Phase 5 Essential:
-    5a (dropdown, hardcoded hotkey first) ──> 4f-2 adds configurable global hotkey
-    5b (hints mode) pairs with 4f-3 for one-shot key table
-    5c (floating panes) no keybinding dependency
+Near-term (unblocked after current):
+  ┌─ 4f-3a (key table actions)            ← depends on 4f-3
+  ├─ 4f-3b (copy mode key remapping)      ← depends on 4f-3
+  ├─ 7a (Ghostty submodule upgrade)       ← independent
+  ├─ 7e (Periphery + pre-commit)          ← depends on 7c ✓
+  └─ 7h (app icon)                        ← independent
+
+Feature phases (sequential gates):
+  4f-3 ──> 4f-3a ──> 4f-3b
+  IPC parity ──> 6d (automation API, future)
+
+  Phase 5 Essential (parallelizable within):
+    ├─ 5a (dropdown) ──> 4f-2 (configurable global hotkey)
+    ├─ 5b (hints mode) ← depends on 4f-3
+    └─ 5c (floating panes) ← independent
   ──> VoiceOver audit gate
-    ──> Phase 5 Polish (Ghostty compat, layouts, palette, session manager, notifications)
-    ──> Phase 6 (moonshots)
+  ──> Phase 5 Polish:
+    ├─ 5d (Ghostty compat) ← depends on 4a ✓
+    ├─ 5e (layouts) ← depends on 4a ✓, 2c ✓
+    ├─ 5f (command palette) ← independent
+    ├─ 5g (session manager polish) ← independent
+    └─ 5h (notifications) ← independent
+  ──> Phase 6 (moonshots)
 
 Late dependencies:
-  2a ──> 6b (block-based output)
+  4f-3 ──> 5b (hints uses one-shot key table)
+  5b ──> 6c (inline previews)
   3a ──> 6d (automation API)
-  4a ──> 5d (Ghostty compat), 5e (layouts)
-  4f-3 ──> 5b (hints mode uses one-shot key table for label selection)
-  4f-2 ──> 5a configurable global hotkey (5a can ship with hardcoded hotkey first)
-  2c ──> 5e (layouts), 4c (advanced persistence)
-  5b (hints) ──> 6c (inline previews)
+  2a ──> 6b (block-based output)
 
-Infrastructure:
-  7a (Ghostty upgrade) ──> independent
-  7b-7d (CI, releases) ✓
-  7c ──> 7e (Periphery)
-  7f trigger: launch decision
-  7g trigger: established user base
+Infrastructure (trigger-gated, not dependency-gated):
+  7f (code signing) ← trigger: launch decision
+  7g (Sparkle) ← trigger: established user base, depends on 7f
 ```
+
+### Parallelization opportunities (current)
+
+These items have zero dependencies on each other and can be done in any
+order or simultaneously:
+
+- 4f-3 (key tables): feature work, largest item
+- IPC parity: closes the scriptability gap (design done)
+- 7i + 7k: enforcement rules (15 min each, immediate value)
+- 7j: golden file tests (30 min, prevents doc drift)
 
 ---
 
