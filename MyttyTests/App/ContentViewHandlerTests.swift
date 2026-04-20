@@ -179,7 +179,7 @@ final class ContentViewHandlerTests: XCTestCase {
         userInfo: [
           Notification.payloadKey: ProgressReportPayload(
             paneID: paneID,
-            state: GHOSTTY_PROGRESS_STATE_SET.rawValue,
+            state: .set,
             progress: Int8(75)),
         ]))
 
@@ -202,7 +202,7 @@ final class ContentViewHandlerTests: XCTestCase {
         userInfo: [
           Notification.payloadKey: ProgressReportPayload(
             paneID: pane.id,
-            state: GHOSTTY_PROGRESS_STATE_REMOVE.rawValue,
+            state: .remove,
             progress: Int8(0)),
         ]))
 

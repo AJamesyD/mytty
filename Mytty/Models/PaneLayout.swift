@@ -4,6 +4,11 @@ enum NavigationDirection {
   case left, right, up, down
 }
 
+enum GotoSplitDirection {
+  case previous, next
+  case spatial(NavigationDirection)
+}
+
 indirect enum PaneLayoutNode {
   case leaf(MyttyPane)
   case empty

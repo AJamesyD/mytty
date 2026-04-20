@@ -752,25 +752,23 @@ extension ContentView {
     guard let p = notification.payload(ProgressReportPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
-    let stateRaw = p.state
-    let progress = p.progress
     let pane = match.pane
     pane.progressExpiryTask?.cancel()
-    if stateRaw == GHOSTTY_PROGRESS_STATE_REMOVE.rawValue {
+    if case .remove = p.state {
       pane.progressState = nil
       return
     }
-    switch stateRaw {
-    case GHOSTTY_PROGRESS_STATE_SET.rawValue:
-      pane.progressState = .set(progress: progress)
-    case GHOSTTY_PROGRESS_STATE_ERROR.rawValue:
+    switch p.state {
+    case .set:
+      pane.progressState = .set(progress: p.progress)
+    case .error:
       pane.progressState = .error
-    case GHOSTTY_PROGRESS_STATE_INDETERMINATE.rawValue:
+    case .indeterminate:
       pane.progressState = .indeterminate
-    case GHOSTTY_PROGRESS_STATE_PAUSE.rawValue:
+    case .pause:
       pane.progressState = .pause
-    default:
-      return
+    case .remove:
+      break
     }
     let task = DispatchWorkItem { [weak pane] in
       pane?.progressState = nil
@@ -800,15 +798,10 @@ extension ContentView {
   }
 
   func handleGhosttyNewSplit(_ notification: Notification) {
-    guard let p = notification.payload(SplitDirectionPayload.self), let paneID = p.paneID,
+    guard let p = notification.payload(NewSplitPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
-    let directionRaw = p.direction
-    let direction: SplitDirection =
-      (directionRaw == GHOSTTY_SPLIT_DIRECTION_DOWN.rawValue
-        || directionRaw == GHOSTTY_SPLIT_DIRECTION_UP.rawValue)
-      ? .vertical : .horizontal
-    match.tab.splitActivePane(direction: direction)
+    match.tab.splitActivePane(direction: p.direction)
   }
 
   func handleGhosttyCloseTab(_ notification: Notification) {
@@ -822,28 +815,21 @@ extension ContentView {
   }
 
   func handleGhosttyGotoSplit(_ notification: Notification) {
-    guard let p = notification.payload(SplitDirectionPayload.self), let paneID = p.paneID,
+    guard let p = notification.payload(GotoSplitPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
-    let directionRaw = p.direction
     let target: MyttyPane
-    switch directionRaw {
-    case GHOSTTY_GOTO_SPLIT_PREVIOUS.rawValue, GHOSTTY_GOTO_SPLIT_NEXT.rawValue:
+    switch p.direction {
+    case .previous, .next:
       let panes = match.tab.layout.leaves
       guard let idx = panes.firstIndex(where: { $0.id == match.pane.id }) else { return }
-      let next = directionRaw == GHOSTTY_GOTO_SPLIT_NEXT.rawValue
-        ? panes.index(after: idx) % panes.count
-        : (idx - 1 + panes.count) % panes.count
-      target = panes[next]
-    default:
-      let navDirection: NavigationDirection
-      switch directionRaw {
-      case GHOSTTY_GOTO_SPLIT_UP.rawValue: navDirection = .up
-      case GHOSTTY_GOTO_SPLIT_DOWN.rawValue: navDirection = .down
-      case GHOSTTY_GOTO_SPLIT_LEFT.rawValue: navDirection = .left
-      case GHOSTTY_GOTO_SPLIT_RIGHT.rawValue: navDirection = .right
-      default: return
+      let next = if case .next = p.direction {
+        panes.index(after: idx) % panes.count
+      } else {
+        (idx - 1 + panes.count) % panes.count
       }
+      target = panes[next]
+    case .spatial(let navDirection):
       guard let adj = match.tab.layout.adjacentPane(from: match.pane, direction: navDirection)
       else { return }
       target = adj
@@ -858,22 +844,16 @@ extension ContentView {
     guard let p = notification.payload(ResizeSplitPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
-    let direction: SplitDirection?
+    let splitDir: SplitDirection
     let sign: CGFloat
     switch p.direction {
-    case GHOSTTY_RESIZE_SPLIT_UP.rawValue:
-      direction = .vertical; sign = -1
-    case GHOSTTY_RESIZE_SPLIT_DOWN.rawValue:
-      direction = .vertical; sign = 1
-    case GHOSTTY_RESIZE_SPLIT_LEFT.rawValue:
-      direction = .horizontal; sign = -1
-    case GHOSTTY_RESIZE_SPLIT_RIGHT.rawValue:
-      direction = .horizontal; sign = 1
-    default:
-      return
+    case .up: splitDir = .vertical; sign = -1
+    case .down: splitDir = .vertical; sign = 1
+    case .left: splitDir = .horizontal; sign = -1
+    case .right: splitDir = .horizontal; sign = 1
     }
     let delta = sign * CGFloat(p.amount) / 100.0
-    match.tab.layout.resizeSplit(containing: match.pane, delta: delta, along: direction)
+    match.tab.layout.resizeSplit(containing: match.pane, delta: delta, along: splitDir)
   }
 
   func handleGhosttyEqualizeSplits(_ notification: Notification) {

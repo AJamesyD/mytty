@@ -130,14 +130,22 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   case GHOSTTY_ACTION_PROGRESS_REPORT:
-    let state = action.action.progress_report.state.rawValue
-    let progress = action.action.progress_report.progress
+    let report = action.action.progress_report
+    let state: ProgressReportPayload.State
+    switch report.state {
+    case GHOSTTY_PROGRESS_STATE_SET: state = .set
+    case GHOSTTY_PROGRESS_STATE_ERROR: state = .error
+    case GHOSTTY_PROGRESS_STATE_INDETERMINATE: state = .indeterminate
+    case GHOSTTY_PROGRESS_STATE_PAUSE: state = .pause
+    case GHOSTTY_PROGRESS_STATE_REMOVE: state = .remove
+    default: return false
+    }
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
         name: .ghosttyProgressReport,
         object: nil,
         userInfo: [
-          Notification.payloadKey: ProgressReportPayload(paneID: view.pane?.id, state: state, progress: progress),
+          Notification.payloadKey: ProgressReportPayload(paneID: view.pane?.id, state: state, progress: report.progress),
         ]
       )
     }
@@ -183,13 +191,16 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   case GHOSTTY_ACTION_NEW_SPLIT:
-    let direction = action.action.new_split
+    let raw = action.action.new_split
+    let direction: SplitDirection =
+      (raw == GHOSTTY_SPLIT_DIRECTION_DOWN || raw == GHOSTTY_SPLIT_DIRECTION_UP)
+      ? .vertical : .horizontal
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
         name: .ghosttyNewSplit,
         object: nil,
         userInfo: [
-          Notification.payloadKey: SplitDirectionPayload(paneID: view.pane?.id, direction: direction.rawValue),
+          Notification.payloadKey: NewSplitPayload(paneID: view.pane?.id, direction: direction),
         ]
       )
     }
@@ -206,13 +217,23 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   case GHOSTTY_ACTION_GOTO_SPLIT:
-    let direction = action.action.goto_split
+    let raw = action.action.goto_split
+    let direction: GotoSplitDirection
+    switch raw {
+    case GHOSTTY_GOTO_SPLIT_PREVIOUS: direction = .previous
+    case GHOSTTY_GOTO_SPLIT_NEXT: direction = .next
+    case GHOSTTY_GOTO_SPLIT_UP: direction = .spatial(.up)
+    case GHOSTTY_GOTO_SPLIT_DOWN: direction = .spatial(.down)
+    case GHOSTTY_GOTO_SPLIT_LEFT: direction = .spatial(.left)
+    case GHOSTTY_GOTO_SPLIT_RIGHT: direction = .spatial(.right)
+    default: return false
+    }
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
         name: .ghosttyGotoSplit,
         object: nil,
         userInfo: [
-          Notification.payloadKey: SplitDirectionPayload(paneID: view.pane?.id, direction: direction.rawValue),
+          Notification.payloadKey: GotoSplitPayload(paneID: view.pane?.id, direction: direction),
         ]
       )
     }
@@ -220,12 +241,20 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
 
   case GHOSTTY_ACTION_RESIZE_SPLIT:
     let resize = action.action.resize_split
+    let direction: NavigationDirection
+    switch resize.direction {
+    case GHOSTTY_RESIZE_SPLIT_UP: direction = .up
+    case GHOSTTY_RESIZE_SPLIT_DOWN: direction = .down
+    case GHOSTTY_RESIZE_SPLIT_LEFT: direction = .left
+    case GHOSTTY_RESIZE_SPLIT_RIGHT: direction = .right
+    default: return false
+    }
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
         name: .ghosttyResizeSplit,
         object: nil,
         userInfo: [
-          Notification.payloadKey: ResizeSplitPayload(paneID: view.pane?.id, amount: resize.amount, direction: resize.direction.rawValue),
+          Notification.payloadKey: ResizeSplitPayload(paneID: view.pane?.id, amount: resize.amount, direction: direction),
         ]
       )
     }
@@ -477,20 +506,28 @@ struct CommandFinishedPayload {
 }
 
 struct ProgressReportPayload {
+  enum State {
+    case set, error, indeterminate, pause, remove
+  }
   let paneID: Int?
-  let state: UInt32
+  let state: State
   let progress: Int8
 }
 
-struct SplitDirectionPayload {
+struct NewSplitPayload {
   let paneID: Int?
-  let direction: UInt32
+  let direction: SplitDirection
+}
+
+struct GotoSplitPayload {
+  let paneID: Int?
+  let direction: GotoSplitDirection
 }
 
 struct ResizeSplitPayload {
   let paneID: Int?
   let amount: UInt16
-  let direction: UInt32
+  let direction: NavigationDirection
 }
 
 struct GotoTabPayload {
