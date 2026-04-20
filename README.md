@@ -9,7 +9,8 @@
 Mytty puts sessions, tabs, split panes, and a fuzzy session switcher inside a native macOS terminal. No tmux, no extra process.
 
 > [!NOTE]
-> Mytty is under active development. Core features work, but expect rough edges and breaking changes.
+> Mytty is alpha software. Core features work, but expect rough edges and breaking changes.
+> Most of the code is AI-generated (with human review and direction). That said, I use it as my daily terminal.
 
 ## Features
 
