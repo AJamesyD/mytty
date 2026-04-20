@@ -58,15 +58,13 @@ Project renamed across all source, config, docs, and CI files. Bundle ID: `com.m
 
 ## Current
 
-ADR-008 Phase 2 (modal key dispatch rework) is complete. The ADR Outcome section documents the two-layer architecture.
+ADR-008 complete (two-layer key dispatch). Ghostty config hot-reload
+shipped (`GhosttyConfigWatcher` + `ghostty_app_update_config`). Phase 7
+bridge stubs wired (resize, equalize, move-tab). CI green.
 
-Next: Phase 3 (Ghostty config hot-reload via ghostty_app_update_config), then Phase 4f-3 (key tables and modal bindings).
+Next: Phase 4f-3 (key tables and modal bindings).
 
-Other candidates: Phase 4 (dark/light mode sync), Phase 5 (option-as-alt), Phase 7a (Ghostty submodule upgrade), Phase 4f-2 (global hotkeys).
-
-### Blockers
-
-- **Fix CI**: GitHub Actions workflow failing. See [run 24593114276](https://github.com/AJamesyD/mytty/actions/runs/24593114276/job/71917903017).
+Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown).
 
 ### Deferred from platform defaults (2026-04-17)
 
@@ -322,11 +320,9 @@ Completed:
   ADR-008 Phase 1 (surface-level key dispatch) ✓
 
 Current:
-  Phase 3 (Ghostty config hot-reload)
-  Then: 4f-3 (key tables)
+  4f-3 (key tables)
 
 Future:
-  4f-3 (key tables) depends on ADR-008 Phase 2
   Phase 5 Essential:
     5a (dropdown, hardcoded hotkey first) ──> 4f-2 adds configurable global hotkey
     5b (hints mode) pairs with 4f-3 for one-shot key table
