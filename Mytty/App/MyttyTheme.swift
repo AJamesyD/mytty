@@ -51,6 +51,7 @@ enum MyttyTheme {
   // Sidebar
   static let sessionAccent = Color.accentColor
   static let tabCountBadge = Color.secondary.opacity(0.6)
+  static let tabCountBadgeFill = Color.secondary.opacity(0.09)
 
   // Bell glow (distinct from bellIndicator dot color)
   static let bellGlow = Color.red

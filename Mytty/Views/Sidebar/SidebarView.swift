@@ -202,7 +202,7 @@ struct SessionRowView: View {
           .padding(.vertical, 1)
           .background(
             Capsule()
-              .fill(MyttyTheme.tabCountBadge.opacity(0.15))
+              .fill(MyttyTheme.tabCountBadgeFill)
           )
           .accessibilityLabel("\(session.tabs.count) tabs")
       }
