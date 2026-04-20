@@ -37,6 +37,11 @@ final class PaneNavigationManager {
       KeyEventDebug.log("PaneNav.in", event)
     }
 
+    if let activePane = store?.activeSession?.activeTab?.activePane,
+       !activePane.activeKeyTables.isEmpty {
+      return event
+    }
+
     if let sequenceManager, sequenceManager.handleKeyDown(event) == nil {
       if KeyEventDebug.enabled { KeyEventDebug.print("PaneNav: consumed by sequenceManager") }
       return nil

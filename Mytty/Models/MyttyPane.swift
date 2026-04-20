@@ -16,6 +16,7 @@ final class MyttyPane: Identifiable {
   var lastCommandResult: CommandResult?
   var progressState: ProgressState?
   var vars: [String: String] = [:]
+  var activeKeyTables: [String] = []
 
   @ObservationIgnored
   var progressExpiryTask: DispatchWorkItem?

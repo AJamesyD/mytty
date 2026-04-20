@@ -352,6 +352,32 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     }
     return true
 
+  case GHOSTTY_ACTION_KEY_TABLE:
+    let raw = action.action.key_table
+    let keyAction: KeyTablePayload.Action
+    switch raw.tag {
+    case GHOSTTY_KEY_TABLE_ACTIVATE:
+      let name = String(
+        bytes: Data(bytes: raw.value.activate.name, count: raw.value.activate.len),
+        encoding: .utf8) ?? ""
+      keyAction = .activate(name: name)
+    case GHOSTTY_KEY_TABLE_DEACTIVATE:
+      keyAction = .deactivate
+    case GHOSTTY_KEY_TABLE_DEACTIVATE_ALL:
+      keyAction = .deactivateAll
+    default: return false
+    }
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyKeyTable,
+        object: nil,
+        userInfo: [
+          Notification.payloadKey: KeyTablePayload(paneID: view.pane?.id, action: keyAction),
+        ]
+      )
+    }
+    return true
+
   // Category C: acknowledged, no Mytty equivalent
   case GHOSTTY_ACTION_QUIT,
     GHOSTTY_ACTION_CHECK_FOR_UPDATES,
@@ -379,7 +405,6 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     GHOSTTY_ACTION_QUIT_TIMER,
     GHOSTTY_ACTION_SECURE_INPUT,
     GHOSTTY_ACTION_KEY_SEQUENCE,
-    GHOSTTY_ACTION_KEY_TABLE,
     GHOSTTY_ACTION_OPEN_CONFIG,
     GHOSTTY_ACTION_RENDERER_HEALTH,
     GHOSTTY_ACTION_MOUSE_OVER_LINK,
@@ -467,6 +492,7 @@ extension Notification.Name {
   static let ghosttyMoveTab = Notification.Name("ghosttyMoveTab")
   static let ghosttyToggleQuickTerminal = Notification.Name("ghosttyToggleQuickTerminal")
   static let ghosttyChildExited = Notification.Name("ghosttyChildExited")
+  static let ghosttyKeyTable = Notification.Name("ghosttyKeyTable")
 }
 
 // MARK: - Notification Payloads
@@ -543,6 +569,16 @@ struct MoveTabPayload {
 struct ChildExitedPayload {
   let paneID: Int?
   let exitCode: UInt32
+}
+
+struct KeyTablePayload {
+  enum Action {
+    case activate(name: String)
+    case deactivate
+    case deactivateAll
+  }
+  let paneID: Int?
+  let action: Action
 }
 
 struct ColorChangePayload {

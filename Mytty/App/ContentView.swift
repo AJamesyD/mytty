@@ -458,6 +458,9 @@ extension ContentView {
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyChildExited)) { notification in
         handleGhosttyChildExited(notification)
       }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyKeyTable)) { notification in
+        handleKeyTable(notification)
+      }
       .onReceive(NotificationCenter.default.publisher(for: .myttyConfigDidChange)) { _ in
         let newConfig = MyttyConfig.load()
         applyConfig(newConfig)
@@ -914,6 +917,21 @@ extension ContentView {
     guard let p = notification.payload(ChildExitedPayload.self), let paneID = p.paneID else { return }
     // TODO(phase-7): show child exited overlay on the pane
     _ = store.pane(byId: paneID)
+  }
+
+  func handleKeyTable(_ notification: Notification) {
+    guard let p = notification.payload(KeyTablePayload.self),
+          let paneID = p.paneID,
+          let match = store.pane(byId: paneID)
+    else { return }
+    switch p.action {
+    case .activate(let name):
+      match.pane.activeKeyTables.append(name)
+    case .deactivate:
+      _ = match.pane.activeKeyTables.popLast()
+    case .deactivateAll:
+      match.pane.activeKeyTables.removeAll()
+    }
   }
 
   // MARK: - Key Sequence
