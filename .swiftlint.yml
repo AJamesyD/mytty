@@ -106,3 +106,17 @@ opt_in_rules:
   - vertical_whitespace_closing_braces
   - xct_specific_matcher
   - yoda_condition
+
+# --- Custom rules (architectural constraints) ---
+
+custom_rules:
+  ghostty_symbols:
+    included: ".*\\.swift"
+    excluded: "GhosttyApp\\.swift|ContentView\\.swift|TerminalSurfaceView\\.swift|PaneView\\.swift|CopyModeManager\\.swift|KeySequenceManager\\.swift|NSEvent\\+GhosttyKey\\.swift|PaneNavigationManager\\.swift|IPCService\\.swift|KeyEventEncodingTests\\.swift"
+    regex: '\b(GHOSTTY_|ghostty_)'
+    message: "Raw ghostty symbols only allowed in bridge files. Use Swift wrapper types."
+    severity: error
+  opacity_on_theme_token:
+    regex: 'MyttyTheme\.[a-zA-Z]+\.opacity\('
+    message: "Do not use .opacity() on theme tokens. Create a new token in MyttyTheme instead."
+    severity: error
