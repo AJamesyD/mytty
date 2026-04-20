@@ -1,8 +1,7 @@
 import SwiftUI
 
 // Semantic color tokens for Mytty chrome and overlays.
-// Future: generative theme from base color, accent color, and contrast level
-// (see /tmp/ai-research-terminal-ui-ux-patterns.md recommendation #9).
+// Future: generative theme from base color, accent color, and contrast level.
 
 enum MyttyTheme {
   // Pane
@@ -66,4 +65,7 @@ enum MyttyTheme {
   // Auto-hide panels
   static let panelOverlayShadow = Color.black.opacity(0.1)
   static let autoHideHint = Color.primary.opacity(0.2)
+
+  // Transparent
+  static let transparent = Color.clear
 }

@@ -26,7 +26,7 @@ struct SidebarDragHandle: View {
   @GestureState private var dragStartWidth: CGFloat?
 
   var body: some View {
-    Color.clear
+    MyttyTheme.transparent
       .frame(width: 6)
       .contentShape(Rectangle())
       .gesture(
@@ -60,8 +60,6 @@ struct SessionRowView: View {
   @State private var isExpanded = true
   @State private var isEditingSession = false
   @State private var editingTabID: Int?
-  @State private var editText = ""
-  @FocusState private var editFocused: Bool
 
   var isActive: Bool { store.activeSession?.id == session.id }
 
@@ -77,7 +75,6 @@ struct SessionRowView: View {
     .padding(.top, 4)
     .onReceive(NotificationCenter.default.publisher(for: .myttyRenameSession)) { _ in
       if isActive {
-        editText = session.name
         isEditingSession = true
       }
     }
@@ -102,28 +99,22 @@ struct SessionRowView: View {
               .accessibilityLabel("Bell notification")
           }
           if editingTabID == tab.id {
-            TextField(
-              "Tab name", text: $editText,
-              onCommit: {
-                tab.customTitle = editText.isEmpty ? nil : editText
+            InlineEditableTextField(
+              text: tab.displayTitle,
+              placeholder: "Tab name",
+              font: .system(size: 12),
+              onCommit: { newName in
+                tab.customTitle = newName.isEmpty ? nil : newName
                 editingTabID = nil
-              }
+              },
+              onCancel: { editingTabID = nil }
             )
-            .textFieldStyle(.plain)
-            .font(.system(size: 12))
-            .focused($editFocused)
-            .onExitCommand { editingTabID = nil }
-            .onAppear { editFocused = true }
-            .onChange(of: editFocused) {
-              if !editFocused { editingTabID = nil }
-            }
           } else {
             Text(tab.displayTitle)
               .font(.system(size: 12))
               .lineLimit(1)
               .help(tab.displayTitle)
               .onTapGesture(count: 2) {
-                editText = tab.displayTitle
                 editingTabID = tab.id
               }
           }
@@ -156,13 +147,12 @@ struct SessionRowView: View {
         .background(
           isActiveTab
             ? MyttyTheme.selectedRowBackground
-            : Color.clear,
+            : MyttyTheme.transparent,
           in: RoundedRectangle(cornerRadius: 4)
         )
         .contentShape(Rectangle())
         .contextMenu {
           Button("Rename Tab") {
-            editText = tab.displayTitle
             editingTabID = tab.id
           }
           Button("Close Tab") {
@@ -183,21 +173,16 @@ struct SessionRowView: View {
   var sessionLabel: some View {
     HStack(spacing: 6) {
       if isEditingSession {
-        TextField(
-          "Session name", text: $editText,
-          onCommit: {
-            session.name = editText.isEmpty ? session.directory.lastPathComponent : editText
+        InlineEditableTextField(
+          text: session.name,
+          placeholder: "Session name",
+          font: .system(size: 13),
+          onCommit: { newName in
+            session.name = newName.isEmpty ? session.directory.lastPathComponent : newName
             isEditingSession = false
-          }
+          },
+          onCancel: { isEditingSession = false }
         )
-        .textFieldStyle(.plain)
-        .font(.system(size: 13))
-        .focused($editFocused)
-        .onExitCommand { isEditingSession = false }
-        .onAppear { editFocused = true }
-        .onChange(of: editFocused) {
-          if !editFocused { isEditingSession = false }
-        }
       } else {
         Text(session.name)
           .font(.system(size: 13))
@@ -206,7 +191,6 @@ struct SessionRowView: View {
           .lineLimit(1)
           .help(session.name)
           .onTapGesture(count: 2) {
-            editText = session.name
             isEditingSession = true
           }
       }
@@ -236,7 +220,6 @@ struct SessionRowView: View {
     .contentShape(Rectangle())
     .contextMenu {
       Button("Rename Session") {
-        editText = session.name
         isEditingSession = true
       }
       Button("Close Session") { store.closeSession(session) }
@@ -249,7 +232,7 @@ struct SessionRowView: View {
       MyttyTheme.sessionAccent
         .frame(width: 3)
         .opacity(isActive ? 1 : 0)
-      Color.clear
+      MyttyTheme.transparent
     }
   }
 }

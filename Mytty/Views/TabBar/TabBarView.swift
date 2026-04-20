@@ -45,9 +45,7 @@ struct TabBarItem: View {
   let onSelect: () -> Void
   let onClose: () -> Void
   @State private var isEditing = false
-  @State private var editText = ""
   @State private var isHovered = false
-  @FocusState private var editFocused: Bool
 
   var body: some View {
     HStack(spacing: 4) {
@@ -64,28 +62,22 @@ struct TabBarItem: View {
       }
 
       if isEditing {
-        TextField(
-          "Tab name", text: $editText,
-          onCommit: {
-            tab.customTitle = editText.isEmpty ? nil : editText
+        InlineEditableTextField(
+          text: tab.displayTitle,
+          placeholder: "Tab name",
+          font: .system(size: 12),
+          onCommit: { newName in
+            tab.customTitle = newName.isEmpty ? nil : newName
             isEditing = false
-          }
+          },
+          onCancel: { isEditing = false }
         )
-        .textFieldStyle(.plain)
-        .font(.system(size: 12))
-        .focused($editFocused)
         .frame(maxWidth: 120)
-        .onExitCommand { isEditing = false }
-        .onAppear { editFocused = true }
-        .onChange(of: editFocused) {
-          if !editFocused && isEditing { isEditing = false }
-        }
       } else {
         Text(tab.displayTitle)
           .font(.system(size: 12))
           .lineLimit(1)
           .onTapGesture(count: 2) {
-            editText = tab.displayTitle
             isEditing = true
           }
       }
@@ -123,7 +115,6 @@ struct TabBarItem: View {
     }
     .contextMenu {
       Button("Rename Tab") {
-        editText = tab.displayTitle
         isEditing = true
       }
       Button("Close Tab") { onClose() }
@@ -132,7 +123,6 @@ struct TabBarItem: View {
     .onHover { isHovered = $0 }
     .onReceive(NotificationCenter.default.publisher(for: .myttyRenameTab)) { _ in
       if isActive {
-        editText = tab.displayTitle
         isEditing = true
       }
     }
