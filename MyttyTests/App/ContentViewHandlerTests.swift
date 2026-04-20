@@ -310,7 +310,7 @@ final class ContentViewHandlerTests: XCTestCase {
   }
 
   func test_handler_missingPayload_doesNotCrash() {
-    let view = ContentView(store: store)
+    _ = ContentView(store: store)
     let names: [Notification.Name] = [
       .ghosttySetTitle, .ghosttyRingBell, .ghosttyCloseSurface,
       .ghosttyPwd, .ghosttySetTabTitle, .ghosttyCommandFinished,

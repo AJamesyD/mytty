@@ -96,7 +96,7 @@ final class WhichKeyManagerTests: XCTestCase {
   func test_breadcrumb_tracksPath() {
     manager.activate(bindings: makeBindings())
     XCTAssertTrue(manager.breadcrumb.isEmpty)
-    manager.handleKey("g")
+    _ = manager.handleKey("g")
     XCTAssertEqual(manager.breadcrumb, ["Group"])
   }
 }

@@ -36,8 +36,7 @@
             pkgs.jq
             pkgs.shellcheck
             pkgs.shfmt
-            pkgs.xcodes
-            pkgs.aria2
+
             pkgs.zls
             pkgs.swiftlint
             pkgs.typos
@@ -50,7 +49,6 @@
             ''
               # Use system Xcode SDK, not Nix-provided one
               export SDKROOT="$(/usr/bin/xcrun --show-sdk-path)"
-              unset DEVELOPER_DIR
               export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 !~ /xcrun/ || $0 == "/usr/bin" {print}' | sed 's/:$//')
 
               # Add Xcode toolchain to PATH for sourcekit-lsp and swift-format

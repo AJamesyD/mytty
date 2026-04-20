@@ -29,8 +29,8 @@ Mytty puts sessions, tabs, split panes, and a fuzzy session switcher inside a na
 
 ## Quick Start
 
-Requires macOS 14+, Xcode 16+, and [Nix](https://nixos.org/download/).
-Nix provides the dev toolchain (just, zig, swiftlint). On macOS 26, see [CONTRIBUTING.md](CONTRIBUTING.md) for the dual-Xcode setup.
+Requires an Apple Silicon Mac, macOS 14+, Xcode 16+, and [Nix](https://nixos.org/download/).
+Nix provides the dev toolchain (just, zig, swiftlint). See [CONTRIBUTING.md](CONTRIBUTING.md) for macOS 26 notes.
 
 ### Install from source
 

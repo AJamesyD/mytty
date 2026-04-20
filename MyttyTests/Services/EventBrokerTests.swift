@@ -74,7 +74,7 @@ final class EventBrokerTests: XCTestCase {
     _ = await broker.subscribe(fd: pipe.writeFD, events: ["tab.*"])
     await broker.publish(event: "session.created", params: [:])
 
-    fcntl(pipe.readFD, F_SETFL, O_NONBLOCK)
+    _ = fcntl(pipe.readFD, F_SETFL, O_NONBLOCK)
     let data = readFromPipe(pipe.readFD)
     XCTAssertTrue(data.isEmpty)
   }
@@ -150,7 +150,7 @@ final class EventBrokerTests: XCTestCase {
     _ = await broker.subscribe(fd: pipe.writeFD, events: ["session.*"])
     await broker.publish(event: "sessionExtra.created", params: [:])
 
-    fcntl(pipe.readFD, F_SETFL, O_NONBLOCK)
+    _ = fcntl(pipe.readFD, F_SETFL, O_NONBLOCK)
     let data = readFromPipe(pipe.readFD)
     XCTAssertTrue(data.isEmpty)
   }

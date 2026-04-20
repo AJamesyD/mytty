@@ -2,35 +2,10 @@
 
 ## Prerequisites
 
+- Apple Silicon Mac (arm64 only)
 - macOS 14 (Sonoma) or later
-- Xcode 16+ (16.3 minimum for libghostty; see macOS 26 notes below for dual-Xcode)
+- Xcode (latest version for your macOS; on macOS 26, also keep any Xcode 16.x installed for the libghostty build)
 - [Nix](https://nixos.org/download/) (provides zig, just, swiftlint, and other dev tools)
-
-### macOS 26 (Tahoe) notes
-
-Building on macOS 26 requires two Xcode versions:
-
-- **Xcode 16.3** for the zig/libghostty build (the macOS 15 SDK has arm64 tbd stubs that zig needs; the macOS 26 SDK only has arm64e stubs)
-- **Latest Xcode** (26.x) for the Swift build
-
-Install both via [xcodes](https://github.com/XcodesOrg/xcodes) (included in the nix devshell):
-
-```sh
-xcodes install 16.3
-xcodes install 26.4
-```
-
-The `just build-libghostty` recipe automatically selects Xcode 16.3 via `DEVELOPER_DIR`. Set your default Xcode to 26.x for Swift builds:
-
-```sh
-sudo xcode-select -s /Applications/Xcode-26.4.app/Contents/Developer
-```
-
-If the Metal Toolchain is not installed:
-
-```sh
-xcodebuild -downloadComponent MetalToolchain
-```
 
 ## Setup
 
@@ -160,9 +135,9 @@ Install with `just install-cli`.
 
 Make sure you're in the Nix dev shell (`just dev` or `nix develop`). System Zig will not work; the build requires the exact Zig version pinned in `flake.nix`.
 
-**Build fails on macOS 26 (Tahoe)**
+**`just build-libghostty` fails with `DarwinSdkNotFound` or undefined symbols**
 
-You need two Xcode versions. See the macOS 26 notes above. Make sure `just build-libghostty` uses Xcode 16.3 (it selects this automatically via `DEVELOPER_DIR`).
+The build needs an Xcode 16.x SDK (the macOS 26 SDK uses arm64e stubs that Zig can't link). The recipe auto-discovers Xcode 16.x in /Applications. If you only have Xcode 26.x installed, install any Xcode 16.x version alongside it.
 
 **`mytty-cli` can't connect**
 

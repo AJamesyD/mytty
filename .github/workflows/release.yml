@@ -28,6 +28,9 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app
+
       - name: Ghostty submodule revision
         id: ghostty
         run: echo "rev=$(git -C vendor/ghostty rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -36,16 +39,13 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
 
-      - name: Cache Zig build
+      - name: Cache libghostty
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
-            vendor/ghostty/zig-out
+            vendor/ghostty/macos/GhosttyKit.xcframework
             vendor/ghostty/.zig-cache
-            ~/.cache/zig
-          key: zig-${{ runner.os }}-${{ steps.ghostty.outputs.rev }}
-          restore-keys: |
-            zig-${{ runner.os }}-
+          key: libghostty-${{ runner.os }}-${{ steps.ghostty.outputs.rev }}
 
       - name: Cache SwiftPM
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
