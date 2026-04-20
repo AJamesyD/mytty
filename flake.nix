@@ -45,8 +45,8 @@
           shellHook =
             # bash
             ''
-              # Use system Xcode SDK, not Nix-provided one
-              export SDKROOT="$(/usr/bin/xcrun --show-sdk-path)"
+              # Use system Xcode SDK, not Nix-provided one (same as Ghostty's devShell)
+              unset SDKROOT
               unset DEVELOPER_DIR
               export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 !~ /xcrun/ || $0 == "/usr/bin" {print}' | sed 's/:$//')
 
