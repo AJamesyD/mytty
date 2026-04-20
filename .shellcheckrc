@@ -1,1 +1,4 @@
+# All checks enabled at all severities. No global disables.
+# Per-violation suppression only, with inline justification comment.
+# See: scripts/pre-commit for SC2086 examples.
 shell=bash

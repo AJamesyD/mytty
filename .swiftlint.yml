@@ -40,29 +40,37 @@ cyclomatic_complexity:
 # Each rule here was evaluated and disabled for a specific reason.
 # Before re-enabling, check the stated reason still applies.
 #
-# Rules that need per-function audit to set thresholds:
-#   function_parameter_count - C bridge functions pass through libghostty params.
-#
-# Rules disabled for style consistency:
-#   line_length            - long switch cases and C interop lines. Enforcing
-#                            120 chars would require wrapping that hurts readability
-#                            in bridge code.
-#   nesting                - pattern matching on libghostty enums nests deeply.
+# Rules disabled because swift-format is authoritative for code layout.
+# swift-format owns: whitespace, indentation, line breaks, brace placement.
+# SwiftLint owns: naming, complexity, architecture, code smells.
+# When the two tools disagree on layout, swift-format wins.
+#   opening_brace          - swift-format places the brace on a new line after
+#                            multi-line conditions. SwiftLint doesn't account for this.
+#   trailing_whitespace    - swift-format handles all trailing whitespace.
+#   trailing_newline       - swift-format handles EOF newlines.
+#   line_length            - swift-format wraps lines; enforcing a hard limit on top
+#                            creates unresolvable conflicts in C interop code.
 #   trailing_comma         - project follows no-trailing-comma to match Ghostty style.
+#   closure_parameter_position - swift-format controls closure parameter layout.
+#
+# Rules disabled for project-specific reasons:
+#   function_parameter_count - C bridge functions pass through libghostty params.
+#   nesting                - pattern matching on libghostty enums nests deeply.
 #   todo                   - TODOs are a deliberate workflow (see comment-tags skill).
-#                            Enabling this would flag every intentional deferral.
 #   multiple_closures_with_trailing_closure - fires on SwiftUI view builders and
 #                            .onReceive chains, which are idiomatic in this project.
-#   closure_parameter_position - fires on multi-line notification handlers.
 #
 disabled_rules:
-  - function_parameter_count
+  - opening_brace
+  - trailing_whitespace
+  - trailing_newline
   - line_length
+  - trailing_comma
+  - closure_parameter_position
+  - function_parameter_count
   - nesting
   - todo
-  - trailing_comma
   - multiple_closures_with_trailing_closure
-  - closure_parameter_position
 
 # Largest file is ContentView.swift (~1050 lines after consolidating handlers).
 # Threshold catches unbounded growth without flagging current files.
@@ -88,7 +96,6 @@ opt_in_rules:
   - private_swiftui_state
   - identical_operands
   # Style and consistency
-  - closure_spacing
   - collection_alignment
   - contains_over_first_not_nil
   - empty_count

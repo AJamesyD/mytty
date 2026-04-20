@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Generate docs/CLI-REFERENCE.md from ArgumentParser's --experimental-dump-help.
+# Called by: just generate-cli-ref (which depends on build-cli)
+# Checked by: just verify-cli-ref (regenerates + git diff --exit-code)
+# If this flag is renamed in a future ArgumentParser release, update the
+# invocation below. The script will fail loudly if the flag doesn't exist.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

@@ -166,6 +166,9 @@ install-hooks:
     @echo "Pre-commit hook installed."
 
 # Format all code (Swift + Nix + Shell)
+# swift-format: Xcode toolchain (authoritative for Swift layout)
+# nixfmt: nix-provided via `nix fmt` (authoritative for Nix)
+# shfmt: nix-provided (authoritative for shell)
 fmt:
     swift format --in-place --recursive Mytty/ MyttyTests/ MyttyCLI/ MyttyShared/
     nix fmt flake.nix
