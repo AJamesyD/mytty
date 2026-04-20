@@ -2,6 +2,11 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
+> **Note:** Method names in this spec reflect the original design. Several pane methods
+> were renamed post-implementation: `pane.sendKeys` -> `pane.write`, `pane.runCommand` -> `pane.exec`,
+> `pane.getText` -> `pane.read`, `pane.focusByDirection` -> `pane.navigate`, `pane.atEdge` -> `pane.edge`.
+> See `IPCListener.swift` for current names.
+
 **Goal:** Replace the IPC transport layer with JSON-RPC 2.0 over persistent Unix domain socket connections. The service protocol methods and business logic are preserved. The new transport adds protocol-level versioning, structured errors, and event streaming.
 
 **Date:** 2026-04-15

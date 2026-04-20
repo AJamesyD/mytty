@@ -6,10 +6,10 @@ This file encodes those constraints as actionable rules.
 ## Architecture Rules
 
 Do not add logic to the UI layer beyond view composition and event routing.
-Do not access ghostty_surface_t outside TerminalSurfaceView, GhosttyApp.swift, CopyModeManager.swift, KeySequenceManager.swift, and IPCService.swift.
+Do not access ghostty_surface_t outside TerminalSurfaceView, GhosttyApp.swift, CopyModeManager.swift, KeySequenceManager.swift, IPCService.swift, PaneView.swift, and PaneNavigationManager.swift.
 Do not parse raw escape sequences. libghostty handles all terminal protocol parsing.
 Do not reverse the state flow. Direction is: libghostty -> C callbacks -> NotificationCenter -> handlers -> model updates -> SwiftUI.
-Do not leak storage assumptions into views. Session/Tab/Pane are protocol-based; the backing store is swappable.
+Do not leak storage assumptions into views. Session/Tab/Pane are concrete @Observable classes; the IPC protocol provides the abstraction boundary.
 Do not modify vendor/ghostty/. Track upstream, don't fork.
 
 ## Model Classes
@@ -56,15 +56,16 @@ Do not mock SessionStore. Create a real instance for tests.
 ## File Naming
 
 Views: FooView.swift in Views/Category/
+Feature modules: Views/Category/ may colocate a ViewModel (FooViewModel.swift) with its view when the ViewModel exclusively serves that view.
 Models: MyttyFoo.swift in Models/
 Services: FooService.swift in Services/
 Extensions: Type+Category.swift (e.g., NSEvent+GhosttyKey.swift)
-Managers: FooManager.swift in App/ (owns NSEvent monitor lifecycle)
+Managers: FooManager.swift in App/ (modal key handling and state)
 
 ## Framework Dependencies
 
-Do not add Apple framework dependencies beyond AppKit, SwiftUI, and
-UserNotifications without discussion.
+Do not add Apple framework dependencies beyond AppKit, SwiftUI,
+UserNotifications, and Carbon (transitive via GhosttyKit) without discussion.
 
 ## Configuration
 
@@ -74,7 +75,7 @@ The Settings GUI (Cmd+,) is read-only. See ADR-006.
 Terminal rendering config (fonts, colors, themes, cursor) uses Ghostty's format:
 - `~/.config/ghostty/config` (base, shared with Ghostty.app)
 - `~/.config/mytty/ghostty.conf` (optional overrides)
-Both are loaded at launch by GhosttyApp.swift. Changes require restart.
+Both are loaded at launch and hot-reloaded on save via GhosttyConfigWatcher.
 
 Config types live in `Mytty/Config/`:
 - `MyttyConfig.swift`: TOML parser, `load()` entry point, `configFileURL` static
@@ -112,11 +113,11 @@ DropdownPanel.swift is an NSPanel subclass for the floating terminal.
 The dropdown hotkey is currently hardcoded (Ctrl+backtick, keycode 50).
 Configurable hotkeys require Phase 4f-2 (global hotkey registration).
 
-DropdownController is held as @State on ContentView, same as other managers.
+DropdownController is held as @State on MyttyApp, alongside GlobalHotkeyMonitor.
 
 ## Copy Mode
 
-CopyModeManager.swift owns the NSEvent monitor for copy mode.
+CopyModeManager.swift provides key handling methods called from TerminalSurfaceView.keyDown (see ADR-008).
 CopyModeState (in Models/) tracks selection, cursor, and visual mode.
 Copy mode keybindings are in the `.copyMode` binding mode in KeybindingStore.
 
@@ -126,7 +127,7 @@ Copy mode reads terminal text via ghostty_surface_read_text.
 
 ## Window Mode
 
-WindowModeManager.swift owns the NSEvent monitor for window mode.
+WindowModeManager.swift provides key handling methods called from TerminalSurfaceView.keyDown (see ADR-008).
 Window mode keybindings are in the `.windowMode` binding mode in KeybindingStore.
 
 Entry: `window-mode` action (default Ctrl+W).

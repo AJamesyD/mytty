@@ -37,7 +37,7 @@ MyttyShared/       IPC protocol, response models, constants
 MyttyCLI/          CLI commands and IPC client
 MyttyTests/        Unit tests (App/, Models/, Services/, Config/, Views/)
 vendor/ghostty/     Ghostty git submodule
-docs/               DESIGN.md, ROADMAP.md, plans/, research/, specs/
+docs/               DESIGN.md, ROADMAP.md, decisions/, research/, specs/
 ```
 
 ## Key Files
@@ -53,5 +53,5 @@ docs/               DESIGN.md, ROADMAP.md, plans/, research/, specs/
 
 - `vendor/ghostty/` is a git submodule. Do not modify it.
 - libghostty requires Zig from the nix devshell (`just dev`). System Zig will not work.
-- `MyttyCLI/XPCClient.swift` is misnamed. It is a Unix socket client, not XPC.
+- MyttyCLI uses a Unix domain socket for IPC, not XPC.
 - Release builds depend on `just build-libghostty`, which needs `nix develop`.

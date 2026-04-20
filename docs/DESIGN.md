@@ -54,7 +54,9 @@ Technical boundaries. Do not change without discussion.
 
 - **Three layers: UI (SwiftUI), Session (@Observable models), Terminal
   (libghostty).** Do not add business logic to the UI layer. Do not access
-  libghostty types outside TerminalSurfaceView and GhosttyApp.swift.
+  ghostty_surface_t outside TerminalSurfaceView, GhosttyApp.swift,
+  CopyModeManager.swift, KeySequenceManager.swift, IPCService.swift,
+  PaneView.swift, and PaneNavigationManager.swift.
 
 - **libghostty parses all escape sequences internally.** Mytty handles
   typed action callbacks (notification names route actions from C callbacks
@@ -65,10 +67,11 @@ Technical boundaries. Do not change without discussion.
   NotificationCenter -> handlers -> model updates -> SwiftUI reactivity.
   Do not reverse this flow.
 
-- **Session/Tab/Pane are protocol-based.** 5 Observable model classes
-  (SessionStore, MyttySession, MyttyTab, MyttyPane, PopupState) back the
-  protocol today. The backing store can be replaced with a daemon without
-  touching the UI layer. Do not leak storage assumptions into views.
+- **Session/Tab/Pane are concrete @Observable classes.** 5 model classes
+  (SessionStore, MyttySession, MyttyTab, MyttyPane, PopupState) form the
+  session hierarchy. The IPC protocol (MyttyServiceProtocol) provides the
+  abstraction boundary for external consumers. Do not leak storage
+  assumptions into views.
 
 - **IPC contract is the protocol.** MyttyServiceProtocol
   defines the boundary between transport and logic. Protocol, Service,
@@ -85,8 +88,8 @@ How we work. These govern the roadmap and development workflow.
 - Cleanup gates before major phases: tech debt addressed before it compounds.
 - Visual quality ships with features: if it looks unfinished, it is unfinished.
 - IPC parity: stable noun+verb operations get IPC in the same commit as GUI.
-- Do not add Apple framework dependencies beyond AppKit, SwiftUI, and
-  UserNotifications without discussion.
+- Do not add Apple framework dependencies beyond AppKit, SwiftUI,
+  UserNotifications, and Carbon (transitive via GhosttyKit) without discussion.
 
 ## Key Interfaces
 

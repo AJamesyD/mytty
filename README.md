@@ -28,11 +28,13 @@ Mytty puts sessions, tabs, split panes, and a fuzzy session switcher inside a na
 
 ## Quick Start
 
-Requires macOS 14+, Xcode 16.3, [Nix](https://nixos.org/download/), and [just](https://github.com/casey/just).
+Requires macOS 14+, Xcode 16+, and [Nix](https://nixos.org/download/).
+Nix provides the dev toolchain (just, zig, swiftlint). On macOS 26, see [CONTRIBUTING.md](CONTRIBUTING.md) for the dual-Xcode setup.
 
 ```sh
 git clone --recurse-submodules https://github.com/AJamesyD/mytty.git
 cd mytty
+direnv allow            # or: nix develop
 just build-libghostty   # Nix provides Zig for the Ghostty build
 just build && just run
 ```
@@ -108,8 +110,11 @@ mytty-cli pane focus --direction left
 mytty-cli pane send-keys "npm test"
 mytty-cli popup open --name scratch  # Open a named popup window
 mytty-cli popup toggle --name scratch
-mytty-cli window swap --direction right
+mytty-cli window list                # List open windows
+mytty-cli window focus --id 1
 ```
+
+Window mode actions (swap, zoom, rotate, layouts) are keyboard-only via Ctrl+W. See the keybindings table above.
 
 Install with `just install-cli`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full command reference.
 

@@ -3,9 +3,8 @@
 ## Prerequisites
 
 - macOS 14 (Sonoma) or later
-- Xcode 16.3 (for building libghostty via Zig)
-- [Nix](https://nixos.org/download/) (provides Zig 0.15.2 for the Ghostty build)
-- [just](https://github.com/casey/just) (command runner)
+- Xcode 16+ (16.3 minimum for libghostty; see macOS 26 notes below for dual-Xcode)
+- [Nix](https://nixos.org/download/) (provides zig, just, swiftlint, and other dev tools)
 
 ### macOS 26 (Tahoe) notes
 
@@ -72,7 +71,7 @@ direnv allow
 | `just lint-fix` | Lint and auto-fix |
 | `just lint-strict` | Lint (warnings are errors) |
 | `just check` | Format + lint + test |
-| `just ci` | Full CI (format + typos + strict lint + build + test) |
+| `just ci` | Full CI (Swift format + Nix format + typos + strict lint + build + test) |
 | `just bundle` | Create Mytty.app bundle |
 | `just install` | Build, bundle, install to /Applications |
 | `just install-cli` | Build and install `mytty-cli` |
@@ -120,7 +119,7 @@ mytty-cli tab create --session 1 --name "editor"
 mytty-cli tab list --session 1
 mytty-cli tab get --id 1
 mytty-cli tab rename --id 1 --name "editor"
-mytty-cli tab move --direction right
+mytty-cli tab move 1 0
 
 # Panes
 mytty-cli pane active
@@ -141,10 +140,10 @@ mytty-cli popup toggle --name scratch
 mytty-cli popup list
 
 # Windows
-mytty-cli window swap --direction right
-mytty-cli window zoom
-mytty-cli window break
-mytty-cli window rotate
+mytty-cli window list
+mytty-cli window get 1
+mytty-cli window close 1
+mytty-cli window focus 1
 
 # JSON output (auto-detected when piped, or force with --json)
 mytty-cli session list | jq .

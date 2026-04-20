@@ -258,7 +258,7 @@ Pin to a commit after the `ghostty_surface_free_text` memory leak fix (or v1.3.2
 - Trigger: v1.3.2 tag, or proactively before next Mytty release
 
 ### - [x] 7b. `just ci` Target
-Single justfile recipe that CI and local dev both call. Runs: swift-format check, SwiftLint (strict), swift build, swift test, typos. Prerequisite for CI parity.
+Single justfile recipe that CI and local dev both call. Runs: swift format check, SwiftLint (strict), swift build, swift test, typos. Prerequisite for CI parity.
 
 - Complexity: 1
 - Depends on: nothing
@@ -279,7 +279,7 @@ GitHub Actions workflow on `macos-15`. `DeterminateSystems/nix-installer-action`
 - Produces a release from whatever is on main. No feature-phase dependency.
 
 ### - [ ] 7e. Periphery + Pre-Commit Hooks
-Periphery dead code detection on weekly cron. Pre-commit hooks for swift-format and SwiftLint locally.
+Periphery dead code detection on weekly cron. Pre-commit hooks for swift format and SwiftLint locally.
 
 - Complexity: 1
 - Depends on: 7c
