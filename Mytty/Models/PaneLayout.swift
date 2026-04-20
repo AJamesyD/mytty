@@ -170,6 +170,21 @@ struct PaneLayout {
     }
   }
 
+  // MARK: - Equalize
+
+  mutating func equalize() {
+    root = Self.resetRatios(root)
+  }
+
+  private static func resetRatios(_ node: PaneLayoutNode) -> PaneLayoutNode {
+    switch node {
+    case .leaf, .empty:
+      return node
+    case .split(let dir, let a, let b, _):
+      return .split(dir, resetRatios(a), resetRatios(b), 0.5)
+    }
+  }
+
   // MARK: - Pane Navigation
 
   func adjacentPane(from pane: MyttyPane, direction: NavigationDirection) -> MyttyPane? {

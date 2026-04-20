@@ -855,13 +855,32 @@ extension ContentView {
   }
 
   func handleGhosttyResizeSplit(_ notification: Notification) {
-    // TODO(phase-7): add split resize support to PaneLayout
-    guard notification.payload(ResizeSplitPayload.self)?.paneID != nil else { return }
+    guard let p = notification.payload(ResizeSplitPayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    let direction: SplitDirection?
+    let sign: CGFloat
+    switch p.direction {
+    case GHOSTTY_RESIZE_SPLIT_UP.rawValue:
+      direction = .vertical; sign = -1
+    case GHOSTTY_RESIZE_SPLIT_DOWN.rawValue:
+      direction = .vertical; sign = 1
+    case GHOSTTY_RESIZE_SPLIT_LEFT.rawValue:
+      direction = .horizontal; sign = -1
+    case GHOSTTY_RESIZE_SPLIT_RIGHT.rawValue:
+      direction = .horizontal; sign = 1
+    default:
+      return
+    }
+    let delta = sign * CGFloat(p.amount) / 100.0
+    match.tab.layout.resizeSplit(containing: match.pane, delta: delta, along: direction)
   }
 
   func handleGhosttyEqualizeSplits(_ notification: Notification) {
-    // TODO(phase-7): add equalize splits support to PaneLayout
-    guard notification.payload(PanePayload.self)?.paneID != nil else { return }
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.tab.layout.equalize()
   }
 
   func handleGhosttyToggleSplitZoom(_ notification: Notification) {
@@ -895,8 +914,13 @@ extension ContentView {
   }
 
   func handleGhosttyMoveTab(_ notification: Notification) {
-    // TODO(phase-7): add tab reordering support to MyttySession
-    guard notification.payload(MoveTabPayload.self)?.paneID != nil else { return }
+    guard let p = notification.payload(MoveTabPayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    guard let currentIndex = match.session.tabs.firstIndex(where: { $0.id == match.tab.id }) else { return }
+    let destination = currentIndex + p.amount
+    guard destination >= 0, destination < match.session.tabs.count else { return }
+    match.session.moveTab(withID: match.tab.id, toIndex: destination)
   }
 
   func handleGhosttyToggleQuickTerminal() {
