@@ -179,7 +179,8 @@ struct MyttyApp: App {
 
         ForEach(Array(config.popups.enumerated()), id: \.offset) { _, popup in
           if let key = parseShortcutKey(popup.shortcut),
-            let modifiers = parseShortcutModifiers(popup.shortcut) {
+            let modifiers = parseShortcutModifiers(popup.shortcut)
+          {
             Button("Toggle \(popup.name)") {
               commands?.togglePopup(popup.name)
             }

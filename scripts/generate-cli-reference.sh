@@ -34,7 +34,7 @@ def fmt_args:
     ((.arguments // []) | fmt_args)
   ] | join("\n"))
 ] | join("\n"))
-' > "$tmp"
+' >"$tmp"
 
 mv "$tmp" docs/CLI-REFERENCE.md
 trap - EXIT

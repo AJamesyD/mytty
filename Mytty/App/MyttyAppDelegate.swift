@@ -27,58 +27,63 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
       guard let window = NSApplication.shared.windows.first else { return }
       applyWindowChrome(window)
 
-      self.observers.append(NotificationCenter.default.addObserver(
-        forName: NSWindow.didUpdateNotification,
-        object: window,
-        queue: .main
-      ) { [weak self] note in
-        let window = note.object as? NSWindow
-        MainActor.assumeIsolated {
-          guard let self, !self.isApplyingChrome, !self.isInFullscreen,
-                let window else { return }
-          switch self.chromeMode {
-          case .hidden:
-            if window.titleVisibility == .hidden,
-               window.titlebarAppearsTransparent,
-               window.standardWindowButton(.closeButton)?.isHidden == true {
-              return
+      self.observers.append(
+        NotificationCenter.default.addObserver(
+          forName: NSWindow.didUpdateNotification,
+          object: window,
+          queue: .main
+        ) { [weak self] note in
+          let window = note.object as? NSWindow
+          MainActor.assumeIsolated {
+            guard let self, !self.isApplyingChrome, !self.isInFullscreen,
+              let window
+            else { return }
+            switch self.chromeMode {
+            case .hidden:
+              if window.titleVisibility == .hidden,
+                window.titlebarAppearsTransparent,
+                window.standardWindowButton(.closeButton)?.isHidden == true
+              {
+                return
+              }
+              self.isApplyingChrome = true
+              self.applyWindowChrome(window)
+              self.isApplyingChrome = false
+            case .undecorated:
+              if !window.styleMask.contains(.titled) { return }
+              self.isApplyingChrome = true
+              self.applyWindowChrome(window)
+              self.isApplyingChrome = false
+            case .default:
+              break
             }
-            self.isApplyingChrome = true
-            self.applyWindowChrome(window)
-            self.isApplyingChrome = false
-          case .undecorated:
-            if !window.styleMask.contains(.titled) { return }
-            self.isApplyingChrome = true
-            self.applyWindowChrome(window)
-            self.isApplyingChrome = false
-          case .default:
-            break
           }
-        }
-      })
+        })
 
-      self.observers.append(NotificationCenter.default.addObserver(
-        forName: NSWindow.willEnterFullScreenNotification,
-        object: window,
-        queue: .main
-      ) { [weak self] _ in
-        MainActor.assumeIsolated {
-          self?.isInFullscreen = true
-        }
-      })
+      self.observers.append(
+        NotificationCenter.default.addObserver(
+          forName: NSWindow.willEnterFullScreenNotification,
+          object: window,
+          queue: .main
+        ) { [weak self] _ in
+          MainActor.assumeIsolated {
+            self?.isInFullscreen = true
+          }
+        })
 
-      self.observers.append(NotificationCenter.default.addObserver(
-        forName: NSWindow.didExitFullScreenNotification,
-        object: window,
-        queue: .main
-      ) { [weak self] note in
-        let window = note.object as? NSWindow
-        MainActor.assumeIsolated {
-          guard let self, let window else { return }
-          self.isInFullscreen = false
-          self.applyWindowChrome(window)
-        }
-      })
+      self.observers.append(
+        NotificationCenter.default.addObserver(
+          forName: NSWindow.didExitFullScreenNotification,
+          object: window,
+          queue: .main
+        ) { [weak self] note in
+          let window = note.object as? NSWindow
+          MainActor.assumeIsolated {
+            guard let self, let window else { return }
+            self.isInFullscreen = false
+            self.applyWindowChrome(window)
+          }
+        })
     }
   }
 

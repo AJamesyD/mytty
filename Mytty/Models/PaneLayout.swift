@@ -51,9 +51,9 @@ struct PaneLayout {
       root = newRoot
       return true
     }
-  // The entire tree was just this one pane — mark as empty
-  isEmpty = true
-  return true
+    // The entire tree was just this one pane — mark as empty
+    isEmpty = true
+    return true
   }
 
   private(set) var isEmpty = false
@@ -171,7 +171,7 @@ struct PaneLayout {
       if aContains {
         return .split(dir, adjustRatio(a, target: target, delta: delta, along: direction), b, ratio)
       }
-    return .split(dir, a, adjustRatio(b, target: target, delta: delta, along: direction), ratio)
+      return .split(dir, a, adjustRatio(b, target: target, delta: delta, along: direction), ratio)
     }
   }
 
@@ -270,7 +270,8 @@ struct PaneLayout {
   }
 
   private static func swapLeaves(_ node: PaneLayoutNode, pane1: MyttyPane, pane2: MyttyPane)
-    -> PaneLayoutNode {
+    -> PaneLayoutNode
+  {
     switch node {
     case .leaf(let p):
       if p.id == pane1.id { return .leaf(pane2) }

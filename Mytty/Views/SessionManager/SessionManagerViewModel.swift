@@ -37,10 +37,10 @@ enum SessionManagerItem {
       if createDir {
         return "New session + create directory: \(directory.path)"
       }
-    let name =
-      query.contains("/") || query.hasPrefix("~")
-      ? directory.lastPathComponent : query
-    return "New session: \(name)"
+      let name =
+        query.contains("/") || query.hasPrefix("~")
+        ? directory.lastPathComponent : query
+      return "New session: \(name)"
     }
   }
 

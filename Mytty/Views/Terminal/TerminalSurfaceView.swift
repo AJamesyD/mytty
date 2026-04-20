@@ -229,18 +229,19 @@ final class TerminalSurfaceView: NSView {
     if translationMods == event.modifierFlags {
       translationEvent = event
     } else {
-      translationEvent = NSEvent.keyEvent(
-        with: event.type,
-        location: event.locationInWindow,
-        modifierFlags: translationMods,
-        timestamp: event.timestamp,
-        windowNumber: event.windowNumber,
-        context: nil,
-        characters: event.characters(byApplyingModifiers: translationMods) ?? "",
-        charactersIgnoringModifiers: event.charactersIgnoringModifiers ?? "",
-        isARepeat: event.isARepeat,
-        keyCode: event.keyCode
-      ) ?? event
+      translationEvent =
+        NSEvent.keyEvent(
+          with: event.type,
+          location: event.locationInWindow,
+          modifierFlags: translationMods,
+          timestamp: event.timestamp,
+          windowNumber: event.windowNumber,
+          context: nil,
+          characters: event.characters(byApplyingModifiers: translationMods) ?? "",
+          charactersIgnoringModifiers: event.charactersIgnoringModifiers ?? "",
+          isARepeat: event.isARepeat,
+          keyCode: event.keyCode
+        ) ?? event
     }
 
     // Use interpretKeyEvents to get OS-resolved text (handles keyboard layouts, dead keys, IME)
@@ -248,11 +249,12 @@ final class TerminalSurfaceView: NSView {
     defer { keyTextAccumulator = nil }
 
     let markedTextBefore = markedText.length > 0
-    let keyboardIdBefore: String? = if !markedTextBefore {
-      NSTextInputContext.current?.selectedKeyboardInputSource
-    } else {
-      nil
-    }
+    let keyboardIdBefore: String? =
+      if !markedTextBefore {
+        NSTextInputContext.current?.selectedKeyboardInputSource
+      } else {
+        nil
+      }
     interpretKeyEvents([translationEvent])
 
     if KeyEventDebug.enabled {
@@ -260,8 +262,9 @@ final class TerminalSurfaceView: NSView {
     }
 
     if !markedTextBefore,
-       let idBefore = keyboardIdBefore,
-       idBefore != NSTextInputContext.current?.selectedKeyboardInputSource {
+      let idBefore = keyboardIdBefore,
+      idBefore != NSTextInputContext.current?.selectedKeyboardInputSource
+    {
       return
     }
 
@@ -275,7 +278,8 @@ final class TerminalSurfaceView: NSView {
     } else {
       // Send key event with accumulated text
       for text in keyTextAccumulator ?? [] {
-        var keyEvent = event.ghosttyKeyEvent(action, translationMods: translationEvent.modifierFlags)
+        var keyEvent = event.ghosttyKeyEvent(
+          action, translationMods: translationEvent.modifierFlags)
         text.withCString { ptr in
           keyEvent.text = ptr
           _ = ghostty_surface_key(surface, keyEvent)
@@ -424,7 +428,8 @@ extension TerminalSurfaceView: @preconcurrency NSTextInputClient {
   func hasMarkedText() -> Bool { markedText.length > 0 }
 
   func attributedSubstring(forProposedRange range: NSRange, actualRange: NSRangePointer?)
-    -> NSAttributedString? {
+    -> NSAttributedString?
+  {
     nil
   }
 

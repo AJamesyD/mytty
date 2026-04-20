@@ -35,7 +35,8 @@ struct FuzzyMatcher {
 
     // Try strict ordered match
     if let result = strictMatch(
-      query: queryLower, target: targetLower, targetLength: targetLower.count) {
+      query: queryLower, target: targetLower, targetLength: targetLower.count)
+    {
       return result
     }
 
@@ -48,7 +49,8 @@ struct FuzzyMatcher {
   /// Pass 2: scan right-to-left from the end of pass 1 to find the tightest window
   /// Then score the matched positions within that window
   private static func strictMatch(query: [Character], target: [Character], targetLength: Int)
-    -> FuzzyMatch? {
+    -> FuzzyMatch?
+  {
     let qLen = query.count
     let tLen = target.count
 
@@ -94,7 +96,8 @@ struct FuzzyMatcher {
 
     for sp in startPositions {
       if let (score, indices) = greedyMatch(
-        query: query, target: target, from: sp, targetLength: targetLength) {
+        query: query, target: target, from: sp, targetLength: targetLength)
+      {
         if score > bestScore {
           bestScore = score
           bestIndices = indices
@@ -154,7 +157,8 @@ struct FuzzyMatcher {
   }
 
   private static func typoMatch(query: [Character], target: [Character], targetLength: Int)
-    -> FuzzyMatch? {
+    -> FuzzyMatch?
+  {
     let maxEdits = maxAllowedEdits(queryLength: query.count)
     guard maxEdits > 0 else { return nil }
 

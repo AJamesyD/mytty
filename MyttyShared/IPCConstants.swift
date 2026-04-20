@@ -6,9 +6,11 @@ public enum MyttyIPC {
   public static let protocolVersion = "1.0"
 
   public static var socketPath: String {
-    guard let appSupport = FileManager.default.urls(
-      for: .applicationSupportDirectory, in: .userDomainMask
-    ).first else {
+    guard
+      let appSupport = FileManager.default.urls(
+        for: .applicationSupportDirectory, in: .userDomainMask
+      ).first
+    else {
       return "/tmp/mytty.sock"
     }
     return appSupport.appendingPathComponent("Mytty/mytty.sock").path

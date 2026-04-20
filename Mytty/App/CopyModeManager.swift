@@ -82,7 +82,8 @@ final class CopyModeManager {
     }
     let cmKey = CopyModeKey(key: String(key), hasCtrl: modifiers.contains(.control))
     guard let action = triggerToAction[cmKey],
-          let (canonicalKey, canonicalCtrl) = Self.actionToCanonical[action] else {
+      let (canonicalKey, canonicalCtrl) = Self.actionToCanonical[action]
+    else {
       return (key, modifiers)
     }
     var newMods = modifiers
@@ -128,7 +129,8 @@ final class CopyModeManager {
   func exit() {
     // Scroll back to bottom (active area) when leaving copy mode
     if let pane = store?.activeSession?.activeTab?.activePane,
-      let surface = pane.surfaceView.surface {
+      let surface = pane.surfaceView.surface
+    {
       let actionStr = "scroll_to_bottom"
       _ = ghostty_surface_binding_action(surface, actionStr, UInt(actionStr.utf8.count))
     }
@@ -309,7 +311,8 @@ final class CopyModeManager {
     var bestCol: Int?
     var searchStart = line.startIndex
     while let range = line.range(
-      of: query, options: .caseInsensitive, range: searchStart..<line.endIndex) {
+      of: query, options: .caseInsensitive, range: searchStart..<line.endIndex)
+    {
       let col = line.distance(from: line.startIndex, to: range.lowerBound)
       if forward {
         if col > cursorCol {
@@ -343,7 +346,8 @@ final class CopyModeManager {
       var searchStart = line.startIndex
       while let range = line.range(
         of: state.searchQuery, options: .caseInsensitive,
-        range: searchStart..<line.endIndex) {
+        range: searchStart..<line.endIndex)
+      {
         total += 1
         let matchCol = line.distance(from: line.startIndex, to: range.lowerBound)
         if row < cursorScreenRow || (row == cursorScreenRow && matchCol <= state.cursorCol) {

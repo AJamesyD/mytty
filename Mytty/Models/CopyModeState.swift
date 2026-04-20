@@ -409,7 +409,8 @@ struct CopyModeState {
   // MARK: - Find char
 
   private mutating func handleFindCharTarget(_ char: Character, lineReader: (Int) -> String?)
-    -> [CopyModeAction] {
+    -> [CopyModeAction]
+  {
     guard let kind = pendingFindChar else { return [] }
     pendingFindChar = nil
     desiredCol = nil
@@ -421,7 +422,8 @@ struct CopyModeState {
   }
 
   private mutating func repeatFindChar(count: Int, reverse: Bool, lineReader: (Int) -> String?)
-    -> [CopyModeAction] {
+    -> [CopyModeAction]
+  {
     guard let last = lastFind else { return [] }
     let kind = reverse ? last.kind.reversed : last.kind
     return executeFindChar(kind: kind, char: last.char, count: count, lineReader: lineReader)
@@ -466,7 +468,8 @@ struct CopyModeState {
   // MARK: - Movement helpers (private, used by handleKey)
 
   private mutating func repeatMotion(_ count: Int, _ motion: (inout CopyModeState) -> Void)
-    -> [CopyModeAction] {
+    -> [CopyModeAction]
+  {
     for _ in 0..<count { motion(&self) }
     return motionActions()
   }

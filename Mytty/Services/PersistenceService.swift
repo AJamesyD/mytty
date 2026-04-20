@@ -60,22 +60,24 @@ final class PersistenceService {
   }
 
   func startObserving() {
-    observers.append(NotificationCenter.default.addObserver(
-      forName: NSApplication.willTerminateNotification,
-      object: nil, queue: .main
-    ) { [weak self] _ in
-      MainActor.assumeIsolated {
-        self?.debounceTask?.cancel()
-        self?.save()
-      }
-    })
-    observers.append(NotificationCenter.default.addObserver(
-      forName: NSApplication.didResignActiveNotification,
-      object: nil, queue: .main
-    ) { [weak self] _ in
-      MainActor.assumeIsolated {
-        self?.scheduleSave(delay: 2)
-      }
-    })
+    observers.append(
+      NotificationCenter.default.addObserver(
+        forName: NSApplication.willTerminateNotification,
+        object: nil, queue: .main
+      ) { [weak self] _ in
+        MainActor.assumeIsolated {
+          self?.debounceTask?.cancel()
+          self?.save()
+        }
+      })
+    observers.append(
+      NotificationCenter.default.addObserver(
+        forName: NSApplication.didResignActiveNotification,
+        object: nil, queue: .main
+      ) { [weak self] _ in
+        MainActor.assumeIsolated {
+          self?.scheduleSave(delay: 2)
+        }
+      })
   }
 }

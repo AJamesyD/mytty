@@ -49,7 +49,10 @@ final class EventBrokerTests: XCTestCase {
   func testPublishWritesToMatchingSubscriber() async {
     let broker = EventBroker()
     let pipe = makePipe()
-    defer { close(pipe.readFD); close(pipe.writeFD) }
+    defer {
+      close(pipe.readFD)
+      close(pipe.writeFD)
+    }
 
     _ = await broker.subscribe(fd: pipe.writeFD, events: ["session.*"])
     await broker.publish(event: "session.created", params: ["name": .string("test")])
@@ -63,7 +66,10 @@ final class EventBrokerTests: XCTestCase {
   func testPublishDoesNotWriteToNonMatchingSubscriber() async {
     let broker = EventBroker()
     let pipe = makePipe()
-    defer { close(pipe.readFD); close(pipe.writeFD) }
+    defer {
+      close(pipe.readFD)
+      close(pipe.writeFD)
+    }
 
     _ = await broker.subscribe(fd: pipe.writeFD, events: ["tab.*"])
     await broker.publish(event: "session.created", params: [:])
@@ -76,7 +82,10 @@ final class EventBrokerTests: XCTestCase {
   func testPublishWildcardMatchesAll() async {
     let broker = EventBroker()
     let pipe = makePipe()
-    defer { close(pipe.readFD); close(pipe.writeFD) }
+    defer {
+      close(pipe.readFD)
+      close(pipe.writeFD)
+    }
 
     _ = await broker.subscribe(fd: pipe.writeFD, events: ["*"])
     await broker.publish(event: "anything.here", params: [:])
@@ -89,7 +98,10 @@ final class EventBrokerTests: XCTestCase {
   func testPublishExactMatchWorks() async {
     let broker = EventBroker()
     let pipe = makePipe()
-    defer { close(pipe.readFD); close(pipe.writeFD) }
+    defer {
+      close(pipe.readFD)
+      close(pipe.writeFD)
+    }
 
     _ = await broker.subscribe(fd: pipe.writeFD, events: ["session.created"])
     await broker.publish(event: "session.created", params: [:])
@@ -101,7 +113,10 @@ final class EventBrokerTests: XCTestCase {
   func testPublishIncludesSubscriptionId() async {
     let broker = EventBroker()
     let pipe = makePipe()
-    defer { close(pipe.readFD); close(pipe.writeFD) }
+    defer {
+      close(pipe.readFD)
+      close(pipe.writeFD)
+    }
 
     let subId = await broker.subscribe(fd: pipe.writeFD, events: ["*"])
     await broker.publish(event: "test.event", params: [:])
@@ -127,7 +142,10 @@ final class EventBrokerTests: XCTestCase {
   func testPublishPrefixGlobDoesNotMatchPartial() async {
     let broker = EventBroker()
     let pipe = makePipe()
-    defer { close(pipe.readFD); close(pipe.writeFD) }
+    defer {
+      close(pipe.readFD)
+      close(pipe.writeFD)
+    }
 
     _ = await broker.subscribe(fd: pipe.writeFD, events: ["session.*"])
     await broker.publish(event: "sessionExtra.created", params: [:])

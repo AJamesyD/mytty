@@ -10,6 +10,7 @@ enum CopySubMode: Equatable {
 }
 
 enum FindCharKind: Equatable {
+  // swift-format-ignore: AlwaysUseLowerCamelCase
   case f, F, t, T
 
   var reversed: FindCharKind {

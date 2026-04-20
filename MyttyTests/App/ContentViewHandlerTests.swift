@@ -119,7 +119,10 @@ final class ContentViewHandlerTests: XCTestCase {
     view.handleDesktopNotification(
       Notification(
         name: .ghosttyDesktopNotification, object: nil,
-        userInfo: [Notification.payloadKey: DesktopNotificationPayload(paneID: paneID, title: "done", body: "task finished")]))
+        userInfo: [
+          Notification.payloadKey: DesktopNotificationPayload(
+            paneID: paneID, title: "done", body: "task finished")
+        ]))
   }
 
   // MARK: - handleCommandFinished
@@ -132,7 +135,10 @@ final class ContentViewHandlerTests: XCTestCase {
     view.handleCommandFinished(
       Notification(
         name: .ghosttyCommandFinished, object: nil,
-        userInfo: [Notification.payloadKey: CommandFinishedPayload(paneID: paneID, exitCode: Int16(0), duration: UInt64(1_000_000))]))
+        userInfo: [
+          Notification.payloadKey: CommandFinishedPayload(
+            paneID: paneID, exitCode: Int16(0), duration: UInt64(1_000_000))
+        ]))
 
     XCTAssertEqual(session.tabs[0].panes[0].lastCommandResult?.exitCode, 0)
   }
@@ -147,7 +153,10 @@ final class ContentViewHandlerTests: XCTestCase {
     view.handleCommandFinished(
       Notification(
         name: .ghosttyCommandFinished, object: nil,
-        userInfo: [Notification.payloadKey: CommandFinishedPayload(paneID: paneID, exitCode: Int16(1), duration: UInt64(500))]))
+        userInfo: [
+          Notification.payloadKey: CommandFinishedPayload(
+            paneID: paneID, exitCode: Int16(1), duration: UInt64(500))
+        ]))
 
     XCTAssertTrue(backgroundTab.hasFailedCommand)
   }
@@ -161,7 +170,10 @@ final class ContentViewHandlerTests: XCTestCase {
     view.handleCommandFinished(
       Notification(
         name: .ghosttyCommandFinished, object: nil,
-        userInfo: [Notification.payloadKey: CommandFinishedPayload(paneID: paneID, exitCode: Int16(1), duration: UInt64(500))]))
+        userInfo: [
+          Notification.payloadKey: CommandFinishedPayload(
+            paneID: paneID, exitCode: Int16(1), duration: UInt64(500))
+        ]))
 
     XCTAssertFalse(activeTab.hasFailedCommand)
   }
@@ -180,7 +192,7 @@ final class ContentViewHandlerTests: XCTestCase {
           Notification.payloadKey: ProgressReportPayload(
             paneID: paneID,
             state: .set,
-            progress: Int8(75)),
+            progress: Int8(75))
         ]))
 
     if case .set(let progress) = session.tabs[0].panes[0].progressState {
@@ -203,7 +215,7 @@ final class ContentViewHandlerTests: XCTestCase {
           Notification.payloadKey: ProgressReportPayload(
             paneID: pane.id,
             state: .remove,
-            progress: Int8(0)),
+            progress: Int8(0))
         ]))
 
     XCTAssertNil(pane.progressState)
@@ -222,7 +234,7 @@ final class ContentViewHandlerTests: XCTestCase {
         name: .ghosttyColorChange, object: nil,
         userInfo: [
           Notification.payloadKey: ColorChangePayload(
-            paneID: pane.id, kind: .background, r: 0.2, g: 0.3, b: 0.4),
+            paneID: pane.id, kind: .background, r: 0.2, g: 0.3, b: 0.4)
         ]))
 
     XCTAssertNotNil(pane.surfaceView.layer?.backgroundColor)
@@ -239,7 +251,7 @@ final class ContentViewHandlerTests: XCTestCase {
         name: .ghosttyColorChange, object: nil,
         userInfo: [
           Notification.payloadKey: ColorChangePayload(
-            paneID: pane.id, kind: .foreground, r: 1.0, g: 1.0, b: 1.0),
+            paneID: pane.id, kind: .foreground, r: 1.0, g: 1.0, b: 1.0)
         ]))
 
     XCTAssertNil(pane.surfaceView.layer?.backgroundColor)
@@ -263,9 +275,11 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleGhosttyChildExited($1) },
     ]
     for handler in handlers {
-      handler(view, Notification(
-        name: .ghosttySetTitle, object: nil,
-        userInfo: [Notification.payloadKey: PanePayload(paneID: nil)]))
+      handler(
+        view,
+        Notification(
+          name: .ghosttySetTitle, object: nil,
+          userInfo: [Notification.payloadKey: PanePayload(paneID: nil)]))
     }
   }
 
@@ -287,9 +301,11 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleGhosttyChildExited($1) },
     ]
     for handler in handlers {
-      handler(view, Notification(
-        name: .ghosttySetTitle, object: nil,
-        userInfo: [Notification.payloadKey: PanePayload(paneID: unknownID)]))
+      handler(
+        view,
+        Notification(
+          name: .ghosttySetTitle, object: nil,
+          userInfo: [Notification.payloadKey: PanePayload(paneID: unknownID)]))
     }
   }
 

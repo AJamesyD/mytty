@@ -52,7 +52,8 @@ class DropdownController: NSObject, NSWindowDelegate {
 
     if !NSApp.isActive {
       if let front = NSWorkspace.shared.frontmostApplication,
-        front.bundleIdentifier != Bundle.main.bundleIdentifier {
+        front.bundleIdentifier != Bundle.main.bundleIdentifier
+      {
         previousApp = front
       }
     }
@@ -64,9 +65,10 @@ class DropdownController: NSObject, NSWindowDelegate {
       guard let pane = s.activeTab?.activePane else { return }
       // Set the panel frame before creating the hosting view so the terminal
       // surface initializes with the correct size instead of zero.
-      guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) })
-        ?? NSScreen.main
-        ?? NSScreen.screens.first
+      guard
+        let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) })
+          ?? NSScreen.main
+          ?? NSScreen.screens.first
       else { return }
       let visibleFrame = screen.visibleFrame
       let height = visibleFrame.height * 0.4
@@ -82,9 +84,10 @@ class DropdownController: NSObject, NSWindowDelegate {
       panel.contentView = hostingView
     }
 
-    guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) })
-      ?? NSScreen.main
-      ?? NSScreen.screens.first
+    guard
+      let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) })
+        ?? NSScreen.main
+        ?? NSScreen.screens.first
     else { return }
     let visibleFrame = screen.visibleFrame
     let height = visibleFrame.height * 0.4
@@ -214,7 +217,9 @@ class DropdownController: NSObject, NSWindowDelegate {
   }
 
   @objc private func surfaceDidClose(_ notification: Notification) {
-    guard let p = notification.payload(PanePayload.self), let closedPaneID = p.paneID else { return }
+    guard let p = notification.payload(PanePayload.self), let closedPaneID = p.paneID else {
+      return
+    }
     guard let pane = session?.activeTab?.activePane, pane.id == closedPaneID else { return }
     session = nil
     panel.contentView = nil

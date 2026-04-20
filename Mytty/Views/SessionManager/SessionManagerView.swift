@@ -83,7 +83,8 @@ struct SessionManagerView: View {
               .padding(.horizontal, 14)
               .padding(.vertical, 8)
               .background(
-                index == vm.selectedIndex ? MyttyTheme.selectedRowBackground : MyttyTheme.transparent
+                index == vm.selectedIndex
+                  ? MyttyTheme.selectedRowBackground : MyttyTheme.transparent
               )
               .id(index)
               .contentShape(Rectangle())
@@ -159,7 +160,8 @@ struct FocusableTextField: NSViewRepresentable {
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector)
-      -> Bool {
+      -> Bool
+    {
       if commandSelector == #selector(NSResponder.insertTab(_:)) {
         onComplete?()
         return true

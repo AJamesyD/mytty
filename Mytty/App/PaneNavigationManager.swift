@@ -38,7 +38,8 @@ final class PaneNavigationManager {
     }
 
     if let activePane = store?.activeSession?.activeTab?.activePane,
-       !activePane.activeKeyTables.isEmpty {
+      !activePane.activeKeyTables.isEmpty
+    {
       return event
     }
 
@@ -55,7 +56,8 @@ final class PaneNavigationManager {
     let direction = binding.direction
 
     if binding.isUnconsumed,
-      let surface = store?.activeSession?.activeTab?.activePane?.surfaceView.surface {
+      let surface = store?.activeSession?.activeTab?.activePane?.surfaceView.surface
+    {
       let keyEvent = event.ghosttyKeyEvent(GHOSTTY_ACTION_PRESS)
 
       var flags = ghostty_binding_flags_e(0)

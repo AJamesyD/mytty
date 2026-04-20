@@ -48,7 +48,8 @@ struct SSHConfigService {
       let trimmed = line.trimmingCharacters(in: .whitespaces)
       guard trimmed.lowercased().hasPrefix("include ") else { continue }
       let pattern = String(trimmed.dropFirst(8)).trimmingCharacters(in: .whitespaces)
-      let resolved = pattern.hasPrefix("/")
+      let resolved =
+        pattern.hasPrefix("/")
         ? pattern
         : baseDir.appendingPathComponent(pattern).path
       for path in expandGlob(resolved) {

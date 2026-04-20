@@ -49,7 +49,8 @@ final class WindowModeManager {
         return nil
       }
       if let chars = event.characters(byApplyingModifiers: []),
-        let num = Int(chars), num >= 1, num <= 9 {
+        let num = Int(chars), num >= 1, num <= 9
+      {
         joinPaneToTab(targetIndex: num - 1, store: store)
         return nil
       }
@@ -136,7 +137,7 @@ final class WindowModeManager {
       let tab = session.activeTab,
       let pane = tab.activePane,
       tab.panes.count > 1
-    // Don't break if it's the only pane
+      // Don't break if it's the only pane
     else { return }
 
     tab.windowModeState = .inactive

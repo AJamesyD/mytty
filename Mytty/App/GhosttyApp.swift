@@ -40,7 +40,9 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         NotificationCenter.default.post(
           name: .ghosttySetTitle,
           object: nil,
-          userInfo: [Notification.payloadKey: SetTitlePayload(paneID: view.pane?.id, title: titleStr)]
+          userInfo: [
+            Notification.payloadKey: SetTitlePayload(paneID: view.pane?.id, title: titleStr)
+          ]
         )
       }
     }
@@ -109,7 +111,8 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyDesktopNotification,
         object: nil,
         userInfo: [
-          Notification.payloadKey: DesktopNotificationPayload(paneID: view.pane?.id, title: titleStr, body: bodyStr),
+          Notification.payloadKey: DesktopNotificationPayload(
+            paneID: view.pane?.id, title: titleStr, body: bodyStr)
         ]
       )
     }
@@ -123,7 +126,8 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyCommandFinished,
         object: nil,
         userInfo: [
-          Notification.payloadKey: CommandFinishedPayload(paneID: view.pane?.id, exitCode: exitCode, duration: duration),
+          Notification.payloadKey: CommandFinishedPayload(
+            paneID: view.pane?.id, exitCode: exitCode, duration: duration)
         ]
       )
     }
@@ -145,7 +149,8 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyProgressReport,
         object: nil,
         userInfo: [
-          Notification.payloadKey: ProgressReportPayload(paneID: view.pane?.id, state: state, progress: report.progress),
+          Notification.payloadKey: ProgressReportPayload(
+            paneID: view.pane?.id, state: state, progress: report.progress)
         ]
       )
     }
@@ -153,12 +158,13 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
 
   case GHOSTTY_ACTION_COLOR_CHANGE:
     let change = action.action.color_change
-    let kind: ColorChangePayload.Kind = switch change.kind {
-    case GHOSTTY_ACTION_COLOR_KIND_BACKGROUND: .background
-    case GHOSTTY_ACTION_COLOR_KIND_FOREGROUND: .foreground
-    case GHOSTTY_ACTION_COLOR_KIND_CURSOR: .cursor
-    default: .palette
-    }
+    let kind: ColorChangePayload.Kind =
+      switch change.kind {
+      case GHOSTTY_ACTION_COLOR_KIND_BACKGROUND: .background
+      case GHOSTTY_ACTION_COLOR_KIND_FOREGROUND: .foreground
+      case GHOSTTY_ACTION_COLOR_KIND_CURSOR: .cursor
+      default: .palette
+      }
     let r = CGFloat(change.r) / 255.0
     let g = CGFloat(change.g) / 255.0
     let b = CGFloat(change.b) / 255.0
@@ -168,7 +174,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         object: nil,
         userInfo: [
           Notification.payloadKey: ColorChangePayload(
-            paneID: view.pane?.id, kind: kind, r: r, g: g, b: b),
+            paneID: view.pane?.id, kind: kind, r: r, g: g, b: b)
         ]
       )
     }
@@ -200,7 +206,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyNewSplit,
         object: nil,
         userInfo: [
-          Notification.payloadKey: NewSplitPayload(paneID: view.pane?.id, direction: direction),
+          Notification.payloadKey: NewSplitPayload(paneID: view.pane?.id, direction: direction)
         ]
       )
     }
@@ -233,7 +239,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyGotoSplit,
         object: nil,
         userInfo: [
-          Notification.payloadKey: GotoSplitPayload(paneID: view.pane?.id, direction: direction),
+          Notification.payloadKey: GotoSplitPayload(paneID: view.pane?.id, direction: direction)
         ]
       )
     }
@@ -254,7 +260,8 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyResizeSplit,
         object: nil,
         userInfo: [
-          Notification.payloadKey: ResizeSplitPayload(paneID: view.pane?.id, amount: resize.amount, direction: direction),
+          Notification.payloadKey: ResizeSplitPayload(
+            paneID: view.pane?.id, amount: resize.amount, direction: direction)
         ]
       )
     }
@@ -287,7 +294,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyGotoTab,
         object: nil,
         userInfo: [
-          Notification.payloadKey: GotoTabPayload(paneID: view.pane?.id, tab: tab.rawValue),
+          Notification.payloadKey: GotoTabPayload(paneID: view.pane?.id, tab: tab.rawValue)
         ]
       )
     }
@@ -300,7 +307,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyMoveTab,
         object: nil,
         userInfo: [
-          Notification.payloadKey: MoveTabPayload(paneID: view.pane?.id, amount: amount),
+          Notification.payloadKey: MoveTabPayload(paneID: view.pane?.id, amount: amount)
         ]
       )
     }
@@ -340,7 +347,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyChildExited,
         object: nil,
         userInfo: [
-          Notification.payloadKey: ChildExitedPayload(paneID: view.pane?.id, exitCode: exitCode),
+          Notification.payloadKey: ChildExitedPayload(paneID: view.pane?.id, exitCode: exitCode)
         ]
       )
     }
@@ -357,9 +364,10 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     let keyAction: KeyTablePayload.Action
     switch raw.tag {
     case GHOSTTY_KEY_TABLE_ACTIVATE:
-      let name = String(
-        bytes: Data(bytes: raw.value.activate.name, count: raw.value.activate.len),
-        encoding: .utf8) ?? ""
+      let name =
+        String(
+          bytes: Data(bytes: raw.value.activate.name, count: raw.value.activate.len),
+          encoding: .utf8) ?? ""
       keyAction = .activate(name: name)
     case GHOSTTY_KEY_TABLE_DEACTIVATE:
       keyAction = .deactivate
@@ -372,7 +380,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
         name: .ghosttyKeyTable,
         object: nil,
         userInfo: [
-          Notification.payloadKey: KeyTablePayload(paneID: view.pane?.id, action: keyAction),
+          Notification.payloadKey: KeyTablePayload(paneID: view.pane?.id, action: keyAction)
         ]
       )
     }
@@ -709,7 +717,8 @@ final class GhosttyAppManager {
       var decPtr: UnsafePointer<Int8>?
       let decKey = "window-decoration"
       if ghostty_config_get(cfg, &decPtr, decKey, UInt(decKey.lengthOfBytes(using: .utf8))),
-        let ptr = decPtr {
+        let ptr = decPtr
+      {
         let str = String(cString: ptr)
         self.decorations = (str != "none" && str != "false")
       } else {
@@ -719,7 +728,8 @@ final class GhosttyAppManager {
       var tsPtr: UnsafePointer<Int8>?
       let tsKey = "macos-titlebar-style"
       if ghostty_config_get(cfg, &tsPtr, tsKey, UInt(tsKey.lengthOfBytes(using: .utf8))),
-        let ptr = tsPtr {
+        let ptr = tsPtr
+      {
         self.titlebarStyle = String(cString: ptr)
       } else {
         self.titlebarStyle = "transparent"
@@ -728,7 +738,8 @@ final class GhosttyAppManager {
       var wbPtr: UnsafePointer<Int8>?
       let wbKey = "macos-window-buttons"
       if ghostty_config_get(cfg, &wbPtr, wbKey, UInt(wbKey.lengthOfBytes(using: .utf8))),
-        let ptr = wbPtr {
+        let ptr = wbPtr
+      {
         self.windowButtons = String(cString: ptr)
       } else {
         self.windowButtons = "visible"

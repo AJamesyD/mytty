@@ -28,7 +28,8 @@ struct ContentView: View {
     contentWithNotifications
       .ignoresSafeArea(
         .container,
-        edges: GhosttyAppManager.shared.windowConfig.titlebarStyle == "hidden" ? .top : [])
+        edges: GhosttyAppManager.shared.windowConfig.titlebarStyle == "hidden" ? .top : []
+      )
       .focusedSceneValue(\.terminalCommands, terminalCommands)
   }
 
@@ -75,7 +76,8 @@ struct ContentView: View {
   var terminalArea: some View {
     Group {
       if let session = store.activeSession,
-        let tab = session.activeTab {
+        let tab = session.activeTab
+      {
         ZStack(alignment: .top) {
           VStack(spacing: 0) {
             if panelState.tabBarIsPinned(tabCount: session.tabs.count) {
@@ -126,7 +128,8 @@ struct ContentView: View {
           }
 
           if !panelState.tabBarIsPinned(tabCount: session.tabs.count)
-            && panelState.shouldShowTabBar(tabCount: session.tabs.count) {
+            && panelState.shouldShowTabBar(tabCount: session.tabs.count)
+          {
             VStack(spacing: 0) {
               TabBarView(session: session)
                 .background(.ultraThinMaterial)
@@ -143,7 +146,8 @@ struct ContentView: View {
           }
 
           if panelState.tabBarMode == .autoHide
-            && (!panelState.hideTabBarWhenSingleTab || session.tabs.count > 1) {
+            && (!panelState.hideTabBarWhenSingleTab || session.tabs.count > 1)
+          {
             VStack {
               EdgeTriggerView(
                 dwellDuration: panelState.dwellDuration,
@@ -166,7 +170,8 @@ struct ContentView: View {
 
           if panelState.showHints && panelState.tabBarMode == .autoHide
             && !panelState.isTabBarRevealed
-            && (!panelState.hideTabBarWhenSingleTab || session.tabs.count > 1) {
+            && (!panelState.hideTabBarWhenSingleTab || session.tabs.count > 1)
+          {
             VStack {
               RoundedRectangle(cornerRadius: 1)
                 .fill(MyttyTheme.autoHideHint)
@@ -251,7 +256,8 @@ struct ContentView: View {
         }
 
         if panelState.showHints && panelState.sidebarMode == .autoHide
-          && !panelState.isSidebarRevealed {
+          && !panelState.isSidebarRevealed
+        {
           HStack(spacing: 0) {
             if isRight { Spacer() }
             RoundedRectangle(cornerRadius: 1)
@@ -331,7 +337,8 @@ struct ContentView: View {
   var popupOverlay: some View {
     if let session = store.activeSession,
       let popup = session.activePopup,
-      popup.isVisible {
+      popup.isVisible
+    {
       GeometryReader { geometry in
         PopupOverlayView(
           popup: popup,
@@ -512,7 +519,8 @@ extension ContentView {
       let tab = session.activeTab
     else { return }
     if let sshCommand = session.sshCommand,
-      !NSEvent.modifierFlags.contains(.option) {
+      !NSEvent.modifierFlags.contains(.option)
+    {
       let pane = MyttyPane(id: tab.paneIDGenerator())
       pane.directory = session.directory
       pane.command = sshCommand
@@ -565,7 +573,8 @@ extension ContentView {
   func handleClosePane() {
     if let session = store.activeSession,
       let popup = session.activePopup,
-      popup.isVisible {
+      popup.isVisible
+    {
       session.closePopup(popup)
       returnFocusToActivePane()
       return
@@ -676,7 +685,8 @@ extension ContentView {
     for session in store.sessions {
       for tab in session.tabs {
         if tab.panes.contains(where: { $0.id == paneID }),
-          !(store.activeSession?.id == session.id && session.activeTab?.id == tab.id) {
+          !(store.activeSession?.id == session.id && session.activeTab?.id == tab.id)
+        {
           tab.hasBell = true
         }
       }
@@ -746,7 +756,8 @@ extension ContentView {
     match.pane.lastCommandResult = MyttyPane.CommandResult(
       exitCode: p.exitCode, duration: p.duration)
     if p.exitCode != 0,
-      !(store.activeSession?.id == match.session.id && match.session.activeTab?.id == match.tab.id) {
+      !(store.activeSession?.id == match.session.id && match.session.activeTab?.id == match.tab.id)
+    {
       match.tab.hasFailedCommand = true
     }
   }
@@ -786,9 +797,10 @@ extension ContentView {
       let paneID = payload.paneID,
       let match = store.pane(byId: paneID)
     else { return }
-    match.pane.surfaceView.layer?.backgroundColor = NSColor(
-      red: payload.r, green: payload.g, blue: payload.b, alpha: 1.0
-    ).cgColor
+    match.pane.surfaceView.layer?.backgroundColor =
+      NSColor(
+        red: payload.r, green: payload.g, blue: payload.b, alpha: 1.0
+      ).cgColor
   }
 
   // MARK: - Ghostty Action Handlers
@@ -826,11 +838,12 @@ extension ContentView {
     case .previous, .next:
       let panes = match.tab.layout.leaves
       guard let idx = panes.firstIndex(where: { $0.id == match.pane.id }) else { return }
-      let next = if case .next = p.direction {
-        panes.index(after: idx) % panes.count
-      } else {
-        (idx - 1 + panes.count) % panes.count
-      }
+      let next =
+        if case .next = p.direction {
+          panes.index(after: idx) % panes.count
+        } else {
+          (idx - 1 + panes.count) % panes.count
+        }
       target = panes[next]
     case .spatial(let navDirection):
       guard let adj = match.tab.layout.adjacentPane(from: match.pane, direction: navDirection)
@@ -850,10 +863,18 @@ extension ContentView {
     let splitDir: SplitDirection
     let sign: CGFloat
     switch p.direction {
-    case .up: splitDir = .vertical; sign = -1
-    case .down: splitDir = .vertical; sign = 1
-    case .left: splitDir = .horizontal; sign = -1
-    case .right: splitDir = .horizontal; sign = 1
+    case .up:
+      splitDir = .vertical
+      sign = -1
+    case .down:
+      splitDir = .vertical
+      sign = 1
+    case .left:
+      splitDir = .horizontal
+      sign = -1
+    case .right:
+      splitDir = .horizontal
+      sign = 1
     }
     let delta = sign * CGFloat(p.amount) / 100.0
     match.tab.layout.resizeSplit(containing: match.pane, delta: delta, along: splitDir)
@@ -900,7 +921,9 @@ extension ContentView {
     guard let p = notification.payload(MoveTabPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
-    guard let currentIndex = match.session.tabs.firstIndex(where: { $0.id == match.tab.id }) else { return }
+    guard let currentIndex = match.session.tabs.firstIndex(where: { $0.id == match.tab.id }) else {
+      return
+    }
     let destination = currentIndex + p.amount
     guard destination >= 0, destination < match.session.tabs.count else { return }
     match.session.moveTab(withID: match.tab.id, toIndex: destination)
@@ -914,15 +937,17 @@ extension ContentView {
   }
 
   func handleGhosttyChildExited(_ notification: Notification) {
-    guard let p = notification.payload(ChildExitedPayload.self), let paneID = p.paneID else { return }
+    guard let p = notification.payload(ChildExitedPayload.self), let paneID = p.paneID else {
+      return
+    }
     // TODO(phase-7): show child exited overlay on the pane
     _ = store.pane(byId: paneID)
   }
 
   func handleKeyTable(_ notification: Notification) {
     guard let p = notification.payload(KeyTablePayload.self),
-          let paneID = p.paneID,
-          let match = store.pane(byId: paneID)
+      let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
     else { return }
     switch p.action {
     case .activate(let name):
@@ -982,7 +1007,8 @@ extension ContentView {
     case "navigate-right": handleNavigate(.right)
     default:
       if action.hasPrefix("focus-tab-"),
-        let n = Int(action.dropFirst("focus-tab-".count)) {
+        let n = Int(action.dropFirst("focus-tab-".count))
+      {
         commands.focusTab(n - 1)
       }
     }

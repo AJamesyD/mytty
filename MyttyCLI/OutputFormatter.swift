@@ -14,10 +14,6 @@ enum OutputFormat {
 struct OutputFormatter {
   let format: OutputFormat
 
-  init(format: OutputFormat) {
-    self.format = format
-  }
-
   func printJSON(_ data: Data) {
     // Pretty-print the JSON
     if let jsonObject = try? JSONSerialization.jsonObject(with: data),
