@@ -165,50 +165,33 @@ install-hooks:
     chmod +x .git/hooks/pre-commit
     @echo "Pre-commit hook installed."
 
-# Format Swift code
-fmt-swift:
+# Format all code (Swift + Nix + Shell)
+fmt:
     swift format --in-place --recursive Mytty/ MyttyTests/ MyttyCLI/ MyttyShared/
+    nix fmt flake.nix
+    shfmt -w scripts/
 
 # Check formatting without modifying
 fmt-check:
-    swift format --recursive Mytty/ MyttyTests/ MyttyCLI/ MyttyShared/
+    swift format lint --strict --parallel --recursive Mytty/ MyttyTests/ MyttyCLI/ MyttyShared/
+    nix fmt -- --check flake.nix
+    shfmt -d scripts/
 
-# Lint Swift code
+# Lint all code (strict: warnings are errors)
 lint:
-    swiftlint lint --quiet
+    swiftlint lint --quiet --strict
+    shellcheck scripts/*
+    typos
 
-# Lint and auto-fix Swift code
+# Auto-fix lint violations
 lint-fix:
     swiftlint lint --fix --quiet
 
-# Lint Swift code (strict: warnings are errors)
-lint-strict:
-    swiftlint lint --quiet --strict
+# Local check: format, lint, verify, test
+check: fmt-check lint verify-cli-ref test
 
-# Lint shell scripts
-shellcheck:
-    shellcheck scripts/*
-
-# Check nix formatting
-nix-fmt-check:
-    nix fmt -- --check flake.nix
-
-# Format nix files
-nix-fmt:
-    nix fmt flake.nix
-
-# Format all code (Swift + Nix)
-fmt-all: fmt-swift nix-fmt
-
-# Format all code
-fmt: fmt-all
-
-# Pre-commit check: format, lint, test
-check: fmt-check lint shellcheck verify-cli-ref test
-
-# CI pipeline: format check, strict lint, build, test, typos
-ci: fmt-check nix-fmt-check lint-strict shellcheck build verify-cli-ref test
-    typos
+# CI pipeline
+ci: fmt-check lint build verify-cli-ref test
 
 # Generate CLI reference from ArgumentParser dump-help
 generate-cli-ref: build-cli

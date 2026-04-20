@@ -65,13 +65,12 @@ direnv allow
 | `just clean` | Clean build artifacts |
 | `just build-libghostty` | Rebuild libghostty from vendored Ghostty |
 | `just dev` | Enter nix dev shell |
-| `just fmt` | Format all code |
-| `just fmt-all` | Format all code (Swift + Nix) |
-| `just lint` | SwiftLint |
+| `just fmt` | Format all code (Swift + Nix + Shell) |
+| `just lint` | Lint all code (strict: warnings are errors) |
 | `just lint-fix` | Lint and auto-fix |
-| `just lint-strict` | Lint (warnings are errors) |
 | `just check` | Format + lint + test |
-| `just ci` | Full CI (Swift format + Nix format + typos + strict lint + build + test) |
+| `just ci` | Full CI pipeline (format + lint + build + verify + test) |
+| `just verify-cli-ref` | Check CLI reference is up to date |
 | `just bundle` | Create Mytty.app bundle |
 | `just install` | Build, bundle, install to /Applications |
 | `just install-cli` | Build and install `mytty-cli` |

@@ -35,6 +35,7 @@
             pkgs.just
             pkgs.jq
             pkgs.shellcheck
+            pkgs.shfmt
             pkgs.xcodes
             pkgs.aria2
             pkgs.zls

@@ -1,23 +1,36 @@
 #!/usr/bin/env bash
-# Pre-commit hook: runs swift-format check and swiftlint on staged Swift files.
+# Pre-commit hook: format check + lint on staged files.
 # Install with: just install-hooks
 
 set -euo pipefail
 
-STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.swift')
-if [ -z "$STAGED" ]; then
+STAGED_SWIFT=$(git diff --cached --name-only --diff-filter=ACM -- '*.swift')
+STAGED_SH=$(git diff --cached --name-only --diff-filter=ACM -- '*.sh' 'scripts/*')
+
+if [ -z "$STAGED_SWIFT" ] && [ -z "$STAGED_SH" ]; then
   exit 0
 fi
 
-# Format check (fast, no network)
-# shellcheck disable=SC2086 # intentional word-splitting for file list
-if ! swift format lint --strict --parallel $STAGED 2>/dev/null; then
-  echo "error: swift-format check failed. Run 'just fmt' to fix."
-  exit 1
+# Shell formatting (fastest check)
+if [ -n "$STAGED_SH" ]; then
+  # shellcheck disable=SC2086 # intentional word-splitting for file list
+  if ! shfmt -d $STAGED_SH >/dev/null 2>&1; then
+    echo "error: shfmt check failed. Run 'just fmt' to fix."
+    exit 1
+  fi
 fi
 
-# Lint (uses .swiftlint.yml, checks only staged files)
-if ! echo "$STAGED" | xargs swiftlint lint --quiet --strict 2>/dev/null; then
-  echo "error: swiftlint found violations. Run 'just lint-fix' or fix manually."
-  exit 1
+# Swift formatting + lint
+if [ -n "$STAGED_SWIFT" ]; then
+  # shellcheck disable=SC2086 # intentional word-splitting for file list
+  if ! swift format lint --strict --parallel $STAGED_SWIFT 2>/dev/null; then
+    echo "error: swift-format check failed. Run 'just fmt' to fix."
+    exit 1
+  fi
+
+  # shellcheck disable=SC2086 # intentional word-splitting for file list
+  if ! echo "$STAGED_SWIFT" | xargs swiftlint lint --quiet --strict 2>/dev/null; then
+    echo "error: swiftlint found violations. Run 'just lint-fix' or fix manually."
+    exit 1
+  fi
 fi
