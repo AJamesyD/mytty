@@ -749,6 +749,36 @@ final class GhosttyAppManager {
 
   var windowConfig: WindowConfig { WindowConfig(config: config) }
 
+  var backgroundColor: NSColor {
+    guard let cfg = config else { return .black }
+    var color: ghostty_config_color_s = .init()
+    let key = "background"
+    guard ghostty_config_get(cfg, &color, key, UInt(key.lengthOfBytes(using: .utf8))) else {
+      return .black
+    }
+    return NSColor(
+      red: CGFloat(color.r) / 255,
+      green: CGFloat(color.g) / 255,
+      blue: CGFloat(color.b) / 255,
+      alpha: 1
+    )
+  }
+
+  var foregroundColor: NSColor {
+    guard let cfg = config else { return .white }
+    var color: ghostty_config_color_s = .init()
+    let key = "foreground"
+    guard ghostty_config_get(cfg, &color, key, UInt(key.lengthOfBytes(using: .utf8))) else {
+      return .white
+    }
+    return NSColor(
+      red: CGFloat(color.r) / 255,
+      green: CGFloat(color.g) / 255,
+      blue: CGFloat(color.b) / 255,
+      alpha: 1
+    )
+  }
+
   func reloadGhosttyConfig() {
     guard let app else { return }
     guard let cfg = ghostty_config_new() else { return }

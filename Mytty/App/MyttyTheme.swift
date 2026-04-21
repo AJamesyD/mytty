@@ -1,22 +1,27 @@
 import SwiftUI
 
 // Semantic color tokens for Mytty chrome and overlays.
-// Future: generative theme from base color, accent color, and contrast level.
+// Background and foreground tokens derive from the Ghostty terminal theme.
+// Accent colors (orange, blue, red, green) are fixed.
 
+@MainActor
 enum MyttyTheme {
+  private static let bg = Color(GhosttyAppManager.shared.backgroundColor)
+  private static let fg = Color(GhosttyAppManager.shared.foregroundColor)
+
   // Pane
-  static let paneDimOverlay = Color.black.opacity(0.2)
+  static let paneDimOverlay = bg.opacity(0.2)
 
   // Backdrops
-  static let modalBackdrop = Color.black.opacity(0.3)
-  static let popupBackdrop = Color.black.opacity(0.4)
+  static let modalBackdrop = bg.opacity(0.3)
+  static let popupBackdrop = bg.opacity(0.4)
 
   // Overlay HUDs (WhichKey, CopyModeHelp, etc.)
-  static let overlayBackground = Color.black.opacity(0.85)
+  static let overlayBackground = bg.opacity(0.85)
   static let overlayBorder = Color.orange.opacity(0.6)
-  static let overlayText = Color.white
-  static let overlayTextMuted = Color.white.opacity(0.8)
-  static let overlayKeyBadge = Color.white.opacity(0.2)
+  static let overlayText = fg
+  static let overlayTextMuted = fg.opacity(0.8)
+  static let overlayKeyBadge = fg.opacity(0.2)
 
   // Mode indicators
   static let modeIndicatorBackground = Color.orange.opacity(0.8)
@@ -38,15 +43,15 @@ enum MyttyTheme {
 
   // Tab bar
   static let activeTabBackground = Color.accentColor.opacity(0.3)
-  static let inactiveTabBackground = Color.white.opacity(0.05)
+  static let inactiveTabBackground = fg.opacity(0.05)
 
   // Selection
   static let selectedRowBackground = Color.accentColor.opacity(0.2)
 
   // Chrome
-  static let sidebarDivider = Color.white.opacity(0.08)
-  static let popupBorder = Color.white.opacity(0.1)
-  static let popupShadow = Color.black.opacity(0.5)
+  static let sidebarDivider = fg.opacity(0.08)
+  static let popupBorder = fg.opacity(0.1)
+  static let popupShadow = bg.opacity(0.5)
 
   // Sidebar
   static let sessionAccent = Color.accentColor
@@ -56,15 +61,15 @@ enum MyttyTheme {
   // Bell glow (distinct from bellIndicator dot color)
   static let bellGlow = Color.red
   static let commandSuccessIndicator = Color.green.opacity(0.5)
-  static let sessionManagerShadow = Color.black.opacity(0.3)
+  static let sessionManagerShadow = bg.opacity(0.3)
   static let windowModeHUD = Color.orange.opacity(0.85)
-  static let copyModeKeyBadge = Color.white.opacity(0.1)
+  static let copyModeKeyBadge = fg.opacity(0.1)
 
   // Destructive actions
   static let destructiveAction = Color.red
 
   // Auto-hide panels
-  static let panelOverlayShadow = Color.black.opacity(0.1)
+  static let panelOverlayShadow = bg.opacity(0.1)
   static let autoHideHint = Color.primary.opacity(0.2)
 
   // Transparent
