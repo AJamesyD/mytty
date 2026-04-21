@@ -389,6 +389,50 @@ final class TerminalSurfaceView: NSView {
     mouseMoved(with: event)
   }
 
+  override func rightMouseDown(with event: NSEvent) {
+    guard let surface else { return super.rightMouseDown(with: event) }
+    let point = convert(event.locationInWindow, from: nil)
+    let mods = ghosttyMods(event.modifierFlags)
+    ghostty_surface_mouse_pos(surface, Double(point.x), Double(frame.height - point.y), mods)
+    if !ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_RIGHT, mods) {
+      super.rightMouseDown(with: event)
+    }
+  }
+
+  override func rightMouseUp(with event: NSEvent) {
+    guard let surface else { return super.rightMouseUp(with: event) }
+    let point = convert(event.locationInWindow, from: nil)
+    let mods = ghosttyMods(event.modifierFlags)
+    ghostty_surface_mouse_pos(surface, Double(point.x), Double(frame.height - point.y), mods)
+    if !ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_RIGHT, mods) {
+      super.rightMouseUp(with: event)
+    }
+  }
+
+  override func otherMouseDown(with event: NSEvent) {
+    guard let surface else { return }
+    let point = convert(event.locationInWindow, from: nil)
+    let mods = ghosttyMods(event.modifierFlags)
+    ghostty_surface_mouse_pos(surface, Double(point.x), Double(frame.height - point.y), mods)
+    _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_MIDDLE, mods)
+  }
+
+  override func otherMouseUp(with event: NSEvent) {
+    guard let surface else { return }
+    let point = convert(event.locationInWindow, from: nil)
+    let mods = ghosttyMods(event.modifierFlags)
+    ghostty_surface_mouse_pos(surface, Double(point.x), Double(frame.height - point.y), mods)
+    _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_MIDDLE, mods)
+  }
+
+  override func rightMouseDragged(with event: NSEvent) {
+    mouseMoved(with: event)
+  }
+
+  override func otherMouseDragged(with event: NSEvent) {
+    mouseMoved(with: event)
+  }
+
   override func scrollWheel(with event: NSEvent) {
     guard let surface else { return }
 
@@ -401,15 +445,16 @@ final class TerminalSurfaceView: NSView {
       y *= 2
     }
 
-    let momentum: Int32 = switch event.momentumPhase {
-    case .began: 1
-    case .stationary: 2
-    case .changed: 3
-    case .ended: 4
-    case .cancelled: 5
-    case .mayBegin: 6
-    default: 0
-    }
+    let momentum: Int32 =
+      switch event.momentumPhase {
+      case .began: 1
+      case .stationary: 2
+      case .changed: 3
+      case .ended: 4
+      case .cancelled: 5
+      case .mayBegin: 6
+      default: 0
+      }
 
     let scrollMods: ghostty_input_scroll_mods_t = (precision ? 1 : 0) | (momentum << 1)
     ghostty_surface_mouse_scroll(surface, x, y, scrollMods)
