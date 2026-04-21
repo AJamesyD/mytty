@@ -8,6 +8,7 @@ struct ZoxideService: Sendable {
     let pipe = Pipe()
     process.standardOutput = pipe
     process.standardError = Pipe()
+    process.environment = await ShellEnvironment.resolvedEnvironment()
 
     do {
       try process.run()
