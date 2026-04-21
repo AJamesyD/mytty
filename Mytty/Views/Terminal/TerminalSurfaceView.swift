@@ -343,7 +343,28 @@ final class TerminalSurfaceView: NSView {
 
   override func scrollWheel(with event: NSEvent) {
     guard let surface else { return }
-    ghostty_surface_mouse_scroll(surface, event.scrollingDeltaX, event.scrollingDeltaY, 0)
+
+    let precision = event.hasPreciseScrollingDeltas
+    var x = event.scrollingDeltaX
+    var y = event.scrollingDeltaY
+    // Match Ghostty's 2x multiplier for trackpad deltas (SurfaceView_AppKit.swift)
+    if precision {
+      x *= 2
+      y *= 2
+    }
+
+    let momentum: Int32 = switch event.momentumPhase {
+    case .began: 1
+    case .stationary: 2
+    case .changed: 3
+    case .ended: 4
+    case .cancelled: 5
+    case .mayBegin: 6
+    default: 0
+    }
+
+    let scrollMods: ghostty_input_scroll_mods_t = (precision ? 1 : 0) | (momentum << 1)
+    ghostty_surface_mouse_scroll(surface, x, y, scrollMods)
   }
 
   override func doCommand(by selector: Selector) {
