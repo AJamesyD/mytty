@@ -49,6 +49,13 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   case GHOSTTY_ACTION_CLOSE_WINDOW:
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyCloseWindow,
+        object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
+      )
+    }
     return true
 
   // CELL_SIZE: read on-demand via ghostty_surface_size(); no cached property to update
@@ -314,8 +321,12 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   case GHOSTTY_ACTION_TOGGLE_FULLSCREEN:
-    DispatchQueue.main.async {
-      NSApp.keyWindow?.toggleFullScreen(nil)
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyToggleFullscreen,
+        object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
+      )
     }
     return true
 
@@ -386,9 +397,34 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     }
     return true
 
+  case GHOSTTY_ACTION_QUIT:
+    DispatchQueue.main.async { NSApp.terminate(nil) }
+    return true
+
+  case GHOSTTY_ACTION_TOGGLE_MAXIMIZE:
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyToggleMaximize,
+        object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
+      )
+    }
+    return true
+
+  case GHOSTTY_ACTION_OPEN_CONFIG:
+    DispatchQueue.main.async { NSWorkspace.shared.open(MyttyConfig.configFileURL) }
+    return true
+
+  case GHOSTTY_ACTION_COPY_TITLE_TO_CLIPBOARD:
+    withSurfaceView(target) { view in
+      let title = view.pane?.processTitle ?? ""
+      NSPasteboard.general.clearContents()
+      NSPasteboard.general.setString(title, forType: .string)
+    }
+    return true
+
   // Category C: acknowledged, no Mytty equivalent
-  case GHOSTTY_ACTION_QUIT,
-    GHOSTTY_ACTION_CHECK_FOR_UPDATES,
+  case GHOSTTY_ACTION_CHECK_FOR_UPDATES,
     GHOSTTY_ACTION_SHOW_GTK_INSPECTOR,
     GHOSTTY_ACTION_PRESENT_TERMINAL,
     GHOSTTY_ACTION_READONLY,
@@ -400,7 +436,6 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     GHOSTTY_ACTION_NEW_WINDOW,
     GHOSTTY_ACTION_GOTO_WINDOW,
     GHOSTTY_ACTION_FLOAT_WINDOW,
-    GHOSTTY_ACTION_TOGGLE_MAXIMIZE,
     GHOSTTY_ACTION_TOGGLE_TAB_OVERVIEW,
     GHOSTTY_ACTION_TOGGLE_VISIBILITY,
     GHOSTTY_ACTION_TOGGLE_WINDOW_DECORATIONS,
@@ -413,10 +448,8 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     GHOSTTY_ACTION_QUIT_TIMER,
     GHOSTTY_ACTION_SECURE_INPUT,
     GHOSTTY_ACTION_KEY_SEQUENCE,
-    GHOSTTY_ACTION_OPEN_CONFIG,
     GHOSTTY_ACTION_RENDERER_HEALTH,
     GHOSTTY_ACTION_MOUSE_OVER_LINK,
-    GHOSTTY_ACTION_COPY_TITLE_TO_CLIPBOARD,
     GHOSTTY_ACTION_SHOW_ON_SCREEN_KEYBOARD,
     GHOSTTY_ACTION_UNDO,
     GHOSTTY_ACTION_REDO:
@@ -492,6 +525,9 @@ extension Notification.Name {
   static let ghosttyNewTab = Notification.Name("ghosttyNewTab")
   static let ghosttyNewSplit = Notification.Name("ghosttyNewSplit")
   static let ghosttyCloseTab = Notification.Name("ghosttyCloseTab")
+  static let ghosttyCloseWindow = Notification.Name("ghosttyCloseWindow")
+  static let ghosttyToggleFullscreen = Notification.Name("ghosttyToggleFullscreen")
+  static let ghosttyToggleMaximize = Notification.Name("ghosttyToggleMaximize")
   static let ghosttyGotoSplit = Notification.Name("ghosttyGotoSplit")
   static let ghosttyResizeSplit = Notification.Name("ghosttyResizeSplit")
   static let ghosttyEqualizeSplits = Notification.Name("ghosttyEqualizeSplits")

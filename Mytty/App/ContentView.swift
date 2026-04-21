@@ -394,7 +394,7 @@ extension ContentView {
   }
 
   var contentWithNotifications: some View {
-    contentWithGhosttyActions
+    contentWithWindowActions
       .onReceive(NotificationCenter.default.publisher(for: .ghosttySetTitle)) { notification in
         handleSetTitle(notification)
       }
@@ -428,6 +428,41 @@ extension ContentView {
       }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyColorChange)) { notification in
         handleColorChange(notification)
+      }
+  }
+
+  var contentWithWindowActions: some View {
+    contentWithGhosttyActions
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyCloseWindow)) { notification in
+        handleGhosttyCloseWindow(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyToggleFullscreen)) {
+        notification in
+        handleGhosttyToggleFullscreen(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyToggleMaximize)) {
+        notification in
+        handleGhosttyToggleMaximize(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .myttyConfigDidChange)) { _ in
+        let newConfig = MyttyConfig.load()
+        applyConfig(newConfig)
+        if let error = newConfig.parseError {
+          print("[Mytty] Config parse error: \(error)")
+        }
+        for warning in newConfig.keybindingStore.warnings {
+          let msg = "[Mytty] Keybinding warning: \(warning)"
+          print(msg)
+        }
+        if windowModeManager.isActive {
+          windowModeManager.reloadConfig()
+        }
+      }
+      .onAppear {
+        activateKeySequenceManager()
+      }
+      .onChange(of: store.activeSession?.activeTab?.displayTitle) { _, newTitle in
+        NSApplication.shared.keyWindow?.title = newTitle ?? ""
       }
   }
 
@@ -470,22 +505,6 @@ extension ContentView {
       }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyKeyTable)) { notification in
         handleKeyTable(notification)
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .myttyConfigDidChange)) { _ in
-        let newConfig = MyttyConfig.load()
-        applyConfig(newConfig)
-        if let error = newConfig.parseError {
-          print("[Mytty] Config parse error: \(error)")
-        }
-        for warning in newConfig.keybindingStore.warnings {
-          print("[Mytty] Keybinding warning: \(warning)")
-        }
-        if windowModeManager.isActive {
-          windowModeManager.reloadConfig()
-        }
-      }
-      .onAppear {
-        activateKeySequenceManager()
       }
   }
 
@@ -681,6 +700,9 @@ extension ContentView {
     }
     match.tab.titleDebounceTask = task
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.075, execute: task)
+    if match.session.id == store.activeSession?.id && match.tab.id == match.session.activeTab?.id {
+      match.pane.surfaceView.window?.title = title
+    }
   }
 
   func handleRingBell(_ notification: Notification) {
@@ -830,6 +852,27 @@ extension ContentView {
     if match.session.tabs.isEmpty {
       store.closeSession(match.session)
     }
+  }
+
+  func handleGhosttyCloseWindow(_ notification: Notification) {
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    store.closeSession(match.session)
+  }
+
+  func handleGhosttyToggleFullscreen(_ notification: Notification) {
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.pane.surfaceView.window?.toggleFullScreen(nil)
+  }
+
+  func handleGhosttyToggleMaximize(_ notification: Notification) {
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.pane.surfaceView.window?.zoom(nil)
   }
 
   func handleGhosttyGotoSplit(_ notification: Notification) {
