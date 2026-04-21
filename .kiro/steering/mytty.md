@@ -40,12 +40,28 @@ For mutations, add a broker.publish call in IPCService for the corresponding eve
 
 ## Adding Action Callbacks
 
-When libghostty adds a new action type:
+When libghostty adds a new action type, first determine the Mytty target
+using the Ghostty Concept Mapping section in DESIGN.md (Ghostty Window ->
+Session, Tab -> Tab, Surface -> Pane, App -> App). Physical window actions
+(fullscreen, maximize) target the containing NSWindow. Actions with no
+natural equivalent go in the no-op case group in GhosttyApp.swift with a
+comment explaining the gap.
+
+Then follow the implementation steps:
+
 1. Handle in GhosttyApp.swift actionCallback (C function, no captures)
 2. Add a Notification.Name in the extension
 3. Add .onReceive in ContentView.contentWithNotifications
 4. Add handler method in ContentView.swift (Notifications & Handlers extension)
 5. Add test in MyttyTests/App/ContentViewHandlerTests.swift
+
+NSWindow-targeting actions (fullscreen, maximize) follow the same steps;
+the handler method calls NSWindow APIs.
+
+Actions that map to existing Mytty operations (e.g., SET_TITLE ->
+handleSetTitle) should reuse the existing handler path (post the same
+notification or call the same model method) rather than adding a parallel
+one.
 
 ## Testing
 

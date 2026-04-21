@@ -82,6 +82,43 @@ Technical boundaries. Do not change without discussion.
 - **Do not modify vendor/ghostty/.** Track upstream, don't fork. One
   ghostty_app_t per process, one ghostty_surface_t per pane.
 
+## Ghostty Concept Mapping
+
+Map Ghostty objects to Mytty objects as follows. Multiple sessions share
+one NSWindow, which has no Ghostty counterpart.
+
+| Ghostty | Mytty   | Notes |
+|---------|---------|-------|
+| App     | App     | 1:1. Single ghostty_app_t per process. |
+| Window  | Session | Ghostty's window is an independent container of tabs. Mytty's session serves the same role. |
+| Tab     | Tab     | 1:1. Mytty owns tab lifecycle; Ghostty tab actions route to Mytty's tab model. |
+| Surface | Pane    | 1:1. A single terminal instance owning one ghostty_surface_t. |
+
+**Action mapping rules:**
+
+- **Window-level actions target the session** containing the triggering
+  pane. Exception: actions controlling physical window geometry (fullscreen,
+  maximize, reset size) target the containing NSWindow.
+- **Surface-level actions target the pane.**
+- **App-level actions target the app.**
+- **Implement actions with a natural Mytty equivalent.** Do not leave them
+  as no-ops. Actions with no natural equivalent (GTK-specific, inspector,
+  search) are acknowledged as no-ops with a comment in GhosttyApp.swift
+  explaining the gap.
+
+**Target mappings:**
+
+Action names below omit the `GHOSTTY_ACTION_` prefix. These are the
+intended mappings. See GhosttyApp.swift for current implementation status.
+
+- `CLOSE_WINDOW` -> close the session containing the triggering pane
+- `NEW_WINDOW` -> create a new session
+- `GOTO_WINDOW` -> switch to a session by index
+- `CLOSE_ALL_WINDOWS` -> close all sessions
+- `CLOSE_TAB` -> close the tab containing the triggering pane
+- `TOGGLE_FULLSCREEN` -> toggle fullscreen on the containing NSWindow
+- `QUIT` -> terminate the app
+
 ## Process Commitments
 
 How we work. These govern the roadmap and development workflow.
