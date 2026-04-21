@@ -462,7 +462,11 @@ extension ContentView {
         activateKeySequenceManager()
       }
       .onChange(of: store.activeSession?.activeTab?.displayTitle) { _, newTitle in
-        NSApplication.shared.keyWindow?.title = newTitle ?? ""
+        store.activeSession?.activeTab?.activePane?.surfaceView.window?.title = newTitle ?? ""
+      }
+      .onChange(of: store.activeSession?.activeTab?.id) { _, _ in
+        let title = store.activeSession?.activeTab?.displayTitle ?? ""
+        store.activeSession?.activeTab?.activePane?.surfaceView.window?.title = title
       }
   }
 
@@ -701,6 +705,9 @@ extension ContentView {
     match.tab.titleDebounceTask = task
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.075, execute: task)
     if match.session.id == store.activeSession?.id && match.tab.id == match.session.activeTab?.id {
+      // Eager update: sets window title immediately without waiting for the
+      // 75ms debounce. The onChange(of: displayTitle) modifier handles tab
+      // and session switches; this path handles within-tab title changes.
       match.pane.surfaceView.window?.title = title
     }
   }

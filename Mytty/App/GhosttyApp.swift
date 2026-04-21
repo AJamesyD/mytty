@@ -321,6 +321,12 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   case GHOSTTY_ACTION_TOGGLE_FULLSCREEN:
+    let mode = action.action.toggle_fullscreen
+    // Mytty only supports native fullscreen. Non-native fullscreen
+    // (custom frame manipulation) is a Ghostty-specific feature.
+    if mode != GHOSTTY_FULLSCREEN_NATIVE {
+      return true
+    }
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
         name: .ghosttyToggleFullscreen,
@@ -397,6 +403,8 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     }
     return true
 
+  // TODO: Ghostty checks ghostty_app_needs_confirm_quit before terminating.
+  // Mytty skips this. Add confirmation when close-confirmation UX is built.
   case GHOSTTY_ACTION_QUIT:
     DispatchQueue.main.async { NSApp.terminate(nil) }
     return true
@@ -412,12 +420,21 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   case GHOSTTY_ACTION_OPEN_CONFIG:
-    DispatchQueue.main.async { NSWorkspace.shared.open(MyttyConfig.configFileURL) }
+    DispatchQueue.main.async {
+      let url = MyttyConfig.configFileURL
+      let fm = FileManager.default
+      if !fm.fileExists(atPath: url.path) {
+        let dir = url.deletingLastPathComponent()
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        fm.createFile(atPath: url.path, contents: nil)
+      }
+      NSWorkspace.shared.open(url)
+    }
     return true
 
   case GHOSTTY_ACTION_COPY_TITLE_TO_CLIPBOARD:
     withSurfaceView(target) { view in
-      let title = view.pane?.processTitle ?? ""
+      guard let title = view.pane?.processTitle, !title.isEmpty else { return }
       NSPasteboard.general.clearContents()
       NSPasteboard.general.setString(title, forType: .string)
     }

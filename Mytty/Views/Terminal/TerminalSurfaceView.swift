@@ -359,6 +359,9 @@ final class TerminalSurfaceView: NSView {
 
   // MARK: - Mouse Input
 
+  // Divergence: Mytty syncs mouse position before button events. Ghostty
+  // does not. This ensures libghostty has the correct cursor position when
+  // processing the button press, avoiding stale coordinates after fast moves.
   override func mouseDown(with event: NSEvent) {
     onSelect?()
     guard let surface else { return }
@@ -414,7 +417,8 @@ final class TerminalSurfaceView: NSView {
     let point = convert(event.locationInWindow, from: nil)
     let mods = ghosttyMods(event.modifierFlags)
     ghostty_surface_mouse_pos(surface, Double(point.x), Double(frame.height - point.y), mods)
-    _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_MIDDLE, mods)
+    let btn = ghosttyMouseButton(event.buttonNumber)
+    _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, btn, mods)
   }
 
   override func otherMouseUp(with event: NSEvent) {
@@ -422,7 +426,8 @@ final class TerminalSurfaceView: NSView {
     let point = convert(event.locationInWindow, from: nil)
     let mods = ghosttyMods(event.modifierFlags)
     ghostty_surface_mouse_pos(surface, Double(point.x), Double(frame.height - point.y), mods)
-    _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_MIDDLE, mods)
+    let btn = ghosttyMouseButton(event.buttonNumber)
+    _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_RELEASE, btn, mods)
   }
 
   override func rightMouseDragged(with event: NSEvent) {
@@ -478,6 +483,23 @@ final class TerminalSurfaceView: NSView {
       }
     } else if clearIfNeeded {
       ghostty_surface_preedit(surface, nil, 0)
+    }
+  }
+
+  private func ghosttyMouseButton(_ buttonNumber: Int) -> ghostty_input_mouse_button_e {
+    switch buttonNumber {
+    case 0: return GHOSTTY_MOUSE_LEFT
+    case 1: return GHOSTTY_MOUSE_RIGHT
+    case 2: return GHOSTTY_MOUSE_MIDDLE
+    case 3: return GHOSTTY_MOUSE_EIGHT
+    case 4: return GHOSTTY_MOUSE_NINE
+    case 5: return GHOSTTY_MOUSE_SIX
+    case 6: return GHOSTTY_MOUSE_SEVEN
+    case 7: return GHOSTTY_MOUSE_FOUR
+    case 8: return GHOSTTY_MOUSE_FIVE
+    case 9: return GHOSTTY_MOUSE_TEN
+    case 10: return GHOSTTY_MOUSE_ELEVEN
+    default: return GHOSTTY_MOUSE_UNKNOWN
     }
   }
 }
