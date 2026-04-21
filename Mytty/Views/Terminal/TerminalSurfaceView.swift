@@ -77,14 +77,18 @@ final class TerminalSurfaceView: NSView {
 
   override var acceptsFirstResponder: Bool { true }
 
+  // Match Ghostty's SurfaceView_AppKit.swift: respect super's result
+  // before notifying libghostty of focus changes.
   override func becomeFirstResponder() -> Bool {
-    if let surface { ghostty_surface_set_focus(surface, true) }
-    return true
+    let result = super.becomeFirstResponder()
+    if result, let surface { ghostty_surface_set_focus(surface, true) }
+    return result
   }
 
   override func resignFirstResponder() -> Bool {
-    if let surface { ghostty_surface_set_focus(surface, false) }
-    return true
+    let result = super.resignFirstResponder()
+    if result, let surface { ghostty_surface_set_focus(surface, false) }
+    return result
   }
 
   // MARK: - Grid Metrics
@@ -161,6 +165,25 @@ final class TerminalSurfaceView: NSView {
     guard window != nil else { return }
     setFrameSize(frame.size)
     window?.makeFirstResponder(self)
+  }
+
+  // Handle display DPI changes when moving between monitors.
+  // Matches Ghostty's SurfaceView_AppKit.swift viewDidChangeBackingProperties.
+  override func viewDidChangeBackingProperties() {
+    super.viewDidChangeBackingProperties()
+    if let window {
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      layer?.contentsScale = window.backingScaleFactor
+      CATransaction.commit()
+    }
+    guard let surface, let window else { return }
+    let fbFrame = convertToBacking(frame)
+    let xScale = fbFrame.size.width / frame.size.width
+    let yScale = fbFrame.size.height / frame.size.height
+    ghostty_surface_set_content_scale(surface, xScale, yScale)
+    let scaledSize = convertToBacking(frame.size)
+    ghostty_surface_set_size(surface, UInt32(scaledSize.width), UInt32(scaledSize.height))
   }
 
   // MARK: - Keyboard Input
@@ -270,12 +293,17 @@ final class TerminalSurfaceView: NSView {
       keyEvent.composing = markedText.length > 0 || markedTextBefore
       _ = ghostty_surface_key(surface, keyEvent)
     } else {
-      // Send key event with accumulated text
+      // Skip text for control characters (< 0x20); libghostty encodes
+      // them itself. Without this, ctrl+enter breaks (SurfaceView_AppKit.swift).
       for text in keyTextAccumulator ?? [] {
         var keyEvent = event.ghosttyKeyEvent(
           action, translationMods: translationEvent.modifierFlags)
-        text.withCString { ptr in
-          keyEvent.text = ptr
+        if let codepoint = text.utf8.first, codepoint >= 0x20 {
+          text.withCString { ptr in
+            keyEvent.text = ptr
+            _ = ghostty_surface_key(surface, keyEvent)
+          }
+        } else {
           _ = ghostty_surface_key(surface, keyEvent)
         }
       }
@@ -303,8 +331,28 @@ final class TerminalSurfaceView: NSView {
     default: return
     }
 
-    let pressed = ghosttyMods(event.modifierFlags).rawValue & mod != 0
-    let action: ghostty_input_action_e = pressed ? GHOSTTY_ACTION_PRESS : GHOSTTY_ACTION_RELEASE
+    // Right-side modifier keys (0x3C, 0x3E, 0x3D, 0x36) need side-specific
+    // checks to distinguish press from release when the opposite side is held.
+    // Matches Ghostty's SurfaceView_AppKit.swift flagsChanged.
+    var action: ghostty_input_action_e = GHOSTTY_ACTION_RELEASE
+    if ghosttyMods(event.modifierFlags).rawValue & mod != 0 {
+      let sidePressed: Bool
+      switch event.keyCode {
+      case 0x3C:
+        sidePressed = event.modifierFlags.rawValue & UInt(NX_DEVICERSHIFTKEYMASK) != 0
+      case 0x3E:
+        sidePressed = event.modifierFlags.rawValue & UInt(NX_DEVICERCTLKEYMASK) != 0
+      case 0x3D:
+        sidePressed = event.modifierFlags.rawValue & UInt(NX_DEVICERALTKEYMASK) != 0
+      case 0x36:
+        sidePressed = event.modifierFlags.rawValue & UInt(NX_DEVICERCMDKEYMASK) != 0
+      default:
+        sidePressed = true
+      }
+      if sidePressed {
+        action = GHOSTTY_ACTION_PRESS
+      }
+    }
     let keyEvent = event.ghosttyKeyEvent(action)
     _ = ghostty_surface_key(surface, keyEvent)
   }

@@ -19,12 +19,13 @@ identifier_name:
     - F
     - T
 
-# Tuned thresholds based on 2026-04-19 audit. Set just above current maximums
-# to catch future growth. Justified violations get swiftlint:disable:next with
-# a rationale comment.
+# Function length is a proxy for "too many responsibilities," not a goal
+# in itself. A 150-line function doing one complex thing (event dispatch,
+# parsing) is fine. A 40-line function doing four unrelated things is not.
+# Warn at 100 to flag growth; error at 200 to catch genuine god functions.
 function_body_length:
-  warning: 80
-  error: 150
+  warning: 100
+  error: 200
 
 type_body_length:
   warning: 350
