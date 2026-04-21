@@ -62,7 +62,31 @@ ADR-008 complete (two-layer key dispatch). Ghostty config hot-reload
 shipped (`GhosttyConfigWatcher` + `ghostty_app_update_config`). Phase 7
 bridge stubs wired (resize, equalize, move-tab). CI green.
 
-Next: Phase 4f-3 (key tables and modal bindings).
+Next: Bridge audit cleanup gate, then Phase 4f-3 (key tables and modal bindings), 7j (CLI golden file tests).
+
+### Bridge audit cleanup gate (before new features)
+
+Mytty replaced Ghostty's window chrome but didn't rebuild all bridges between libghostty and the OS.
+
+**Meta-problem:** When Mytty calls a libghostty API, it must pass the same information Ghostty does. Several bugs trace to missing parameters or skipped callbacks. The systematic fix: diff every `ghostty_surface_*` call site in Mytty against Ghostty's equivalent and verify parameter parity.
+
+**Correctness (class a):**
+- [x] `CELL_SIZE`: font zoom works (Cmd+/Cmd-/Cmd+0). On-demand read via `ghostty_surface_size()` is sufficient.
+- [x] `COLOR_CHANGE`: handled (8acc25e), notification + handler + tests
+- [ ] `CONFIG_CHANGE`: runtime config changes from escape sequences are dropped (acknowledged, deferred to Phase 6)
+- [ ] Scroll mods: `scrollWheel` passes `0` for mods instead of precision + momentum flags. Causes trackpad scrolling to feel too fast (libghostty treats all events as discrete wheel clicks).
+
+**OS integration:**
+- [ ] Window title: active tab's `displayTitle` not pushed to NSWindow (invisible in Mission Control, Dock, Cmd+Tab)
+- [ ] `SECURE_INPUT`: password fields don't activate macOS secure input
+
+**Mouse contract (tenet 1: mouse-unsurprising):**
+- [ ] `isMovableByWindowBackground`: hidden titlebar mode makes entire window draggable, preventing click-drag text selection. Vestigial since 3956dfa1 (was load-bearing in 7645cee when `.titled` was removed, but `.titled` was restored 32 min later). Ghostty uses `contentLayoutRect` override instead.
+- [ ] `MOUSE_OVER_LINK`: hovering a URL doesn't change cursor or store the URL
+- [ ] `MOUSE_SHAPE`: cursor shape changes from terminal state are no-op'd
+- [ ] `MOUSE_VISIBILITY`: cursor hide-while-typing is no-op'd
+
+Reference: `/tmp/ai-research-action-gap-audit.md` (full audit from 2026-04-18)
 
 IPC parity: window mode operations now scriptable via CLI and socket API
 (`pane.swap`, `pane.zoom`, `pane.break-tab`, `pane.join`, `tab.rotate`,
@@ -75,14 +99,14 @@ validates all IPC methods at test time.
 Key table tracking (4f-3a) shipped: Ghostty key tables pass through to
 libghostty without Mytty intercepting navigation keys.
 
-Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown).
+Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown), Phase 5g research (pluggable session sources, brief at `/tmp/ai-research-brief-session-sources.md`).
 
 ### Deferred from platform defaults (2026-04-17)
 
-- **Terminal search (Cmd+F)**: removing `.textEditing` removed the Find menu. Copy mode has `/` for search, but no Cmd+F equivalent. Needs a search overlay.
+- **Terminal search (Cmd+F)**: copy mode has `/` search with full-scrollback, match count, and highlighting. Missing: a Cmd+F overlay accessible outside copy mode.
 - **Config error UI**: parse errors go to stderr, invisible from Finder. Add a toast or status bar indicator.
 - **Config key validation**: unrecognized keys (typos) are silently ignored. Warn on unknown top-level and section keys.
-- **AppKit window and menu lifecycle**: SwiftUI `WindowGroup` creates a plain NSWindow that Mytty modifies after the fact. This causes: shortcut interception (`CommandGroup` eats keys before `keyDown`), window chrome hacks (`DispatchQueue.main.async` to modify styleMask), and fragile titlebar hiding (macOS can re-show the titlebar on state changes). Ghostty and cmux both use AppKit-owned windows with SwiftUI content via `NSHostingView`. Migration path: `NSWindowController` subclass hosts `ContentView`, window chrome applied at creation, `NSMenu` replaces `CommandGroup`. SwiftUI content, state management, and overlays stay unchanged.
+- **AppKit window migration (Track B)**: Track A (NSWindowDelegate enforcement) shipped in 7645cee/3956dfa1 and works. 4 known bugs have workarounds (menu shortcut interception, window registration timing, async first responder, chrome enforcement loop). Track B (~500 lines, NSWindowController + NSHostingView) carries disproportionate regression risk. Triggers for Track B: macOS 26 breaks enforcement loop, or a feature requires NSMenu beyond `CommandGroup`. Plan: `/tmp/ai-plan-appkit-window-migration.md`.
 - **Sidebar active session indicator**: when sidebar is on the right, the accent bar is on the wrong side. Consider a background pill instead of a side-anchored bar so the indicator works regardless of sidebar position.
 
 ## Phase 4f: Keybinding System Upgrade
@@ -140,22 +164,23 @@ Global hotkey summons a dropdown terminal (NSPanel). Also support floating termi
 NSPanel-based dropdown with Ctrl+` hotkey, slide animation, auto-hide on focus loss, persistent session.
 
 #### - [ ] 5a-2: Dropdown polish
-Configurable position (top/bottom/left/right), size (percentage of screen), per-monitor behavior. Not started.
+Configurable position (top/bottom/left/right), size (percentage of screen). Per-monitor detection exists (follows mouse cursor). Position (top-only) and size (40% height, full width) are hardcoded.
 
 ### - [ ] 5b. Hints Mode
 Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type the label to act (open, copy, insert).
 
 - Complexity: 2
 - `/spec` required: label assignment algorithm, action menu, visual overlay design.
-- Prior art: Kitty hints kitten. Ghostty has ~180 combined votes.
+- Prior art: Kitty hints kitten. Ghostty has ~180 combined votes (as of 2026-04-18).
 - Pairs with 6c (inline preview panes).
+- Soft dependency on 4f-3: key tables would be architecturally cleaner, but hints can use KeybindingStore like window mode and copy mode do today.
 
 ### - [ ] 5c. Floating Panes
 Persistent overlay panes above the terminal grid. Cmd+F toggles floating layer. Panes keep running when hidden.
 
 - Complexity: 3
 - `/spec` required: z-ordering, resize behavior, keyboard navigation between floating and tiled panes.
-- 201 votes on Ghostty. SwiftUI architecture makes this easier than renderer-level splits.
+- 201 votes on Ghostty (as of 2026-04-18). SwiftUI architecture makes this easier than renderer-level splits.
 
 ### Polish
 
@@ -171,7 +196,7 @@ Read `~/.config/ghostty/config` for themes, fonts, colors. Zero-friction migrati
 
 Base config loading and override file (`ghostty.conf`) shipped in Phase 4. Remaining:
 
-- [ ] Inherit Mytty UI element colors (sidebar, tab bar, overlays) from the active Ghostty theme
+- [x] Inherit Mytty UI element colors (sidebar, tab bar, overlays) from the active Ghostty theme (2591335: 14 tokens derive from bg/fg; 21 accent tokens stay fixed; no hot-reload yet)
 - [ ] Audit which of the 44 window/macos Ghostty keys Mytty should honor vs. ignore
 - [ ] Handle `macos-window-shadow` from Ghostty config
 
@@ -192,11 +217,34 @@ Fuzzy-searchable floating panel. All actions with shortcuts. Lower priority beca
 - Complexity: 2
 - `/spec` required: action registry, search ranking, visual design. Prior art: Raycast, Nova, Linear.
 
-### - [ ] 5g. Enhanced Session Manager
-Enhance existing Cmd+J session manager: frecency-ranked directories (zoxide integration exists), Nerd Font icons, preview pane showing recent output. Cmd+\` for instant last-workspace toggle.
+### - [ ] 5g. Pluggable Session Sources
+
+Redesign the session manager (Cmd+J) to support pluggable sources. Today, sources are hardcoded (running sessions, zoxide, SSH hosts). The new architecture defines a source interface that built-in and user-defined sources both conform to.
+
+Model: completion engines (nvim-cmp, blink.cmp). Each source provides candidates with a common shape. The picker merges, ranks, and groups them. Selection triggers a source-defined action (focus, create, connect).
+
+Built-in sources (zero config, current behavior preserved):
+- Running sessions (action: focus)
+- Zoxide directories (action: create session)
+- SSH hosts (action: create SSH session)
+
+User-defined sources via `[session-sources]` in config:
+- External commands returning JSON-line candidates
+- Per-source priority, category label, timeout
+- Example: sesh, project databases, Kubernetes contexts
+
+Design constraint: accommodate Ghostty's potential tmux control mode. Remote tmux sessions would be another source type; the session model (MyttySession/Tab/Pane) stays as the abstraction boundary.
 
 - Complexity: 2
-- `/spec` required: preview pane content, icon mapping, frecency algorithm tuning.
+- `/spec` required: source interface contract, candidate schema, config format, async merging, action dispatch, IPC surface.
+- Research brief: `/tmp/ai-research-brief-session-sources.md`
+- Depends on: 4a (config format)
+- Pairs with: 5e (layouts create sessions; source interface may inform directory resolution)
+
+Independent enhancements (can ship before or after source redesign):
+- Frecency tuning and scoring refinements
+- Process icons in sidebar
+- Preview pane showing recent output
 
 ### - [ ] 5h. System Notifications
 Optional macOS Notification Center integration for events when Mytty is not frontmost. Glow dots remain the primary in-app signal; system notifications supplement for the background case.
@@ -206,7 +254,7 @@ Optional macOS Notification Center integration for events when Mytty is not fron
 - Depends on: 2b (notification infrastructure)
 
 **Essential done when:** dropdown terminal works via global hotkey, hints mode selects visible targets, floating panes work.
-**Polish done when:** Ghostty themes import, project layouts load from `.mytty.toml`, command palette searches all actions, session manager shows frecency-ranked results, system notifications fire for background events.
+**Polish done when:** Ghostty themes import, project layouts load from `.mytty.toml`, command palette searches all actions, session manager supports pluggable sources, system notifications fire for background events.
 
 ---
 
@@ -361,7 +409,8 @@ Completed:
   ADR-008 (surface-level key dispatch) ✓
 
 Current (parallelizable):
-  ┌─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
+  ┌─ Bridge audit cleanup gate             ← correctness + OS integration + mouse contract
+  ├─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
   ├─ IPC parity ✓                         ← shipped 2e7240b
   ├─ 7i ✓ (SwiftLint custom rules)        ← shipped 6554df8
   ├─ 7j (CLI golden file tests)           ← deferred, lighter alternative planned
@@ -379,19 +428,19 @@ Feature phases (sequential gates):
 
   Phase 5 Essential (parallelizable within):
     ├─ 5a (dropdown) ──> 4f-2 (configurable global hotkey)
-    ├─ 5b (hints mode) ← depends on 4f-3
+    ├─ 5b (hints mode) ← soft dep on 4f-3 (can proceed without)
     └─ 5c (floating panes) ← independent
   ──> VoiceOver audit gate
   ──> Phase 5 Polish:
     ├─ 5d (Ghostty compat) ← depends on 4a ✓
     ├─ 5e (layouts) ← depends on 4a ✓, 2c ✓
     ├─ 5f (command palette) ← independent
-    ├─ 5g (session manager polish) ← independent
+    ├─ 5g (session sources) ← depends on 4a ✓
     └─ 5h (notifications) ← independent
   ──> Phase 6 (moonshots)
 
 Late dependencies:
-  4f-3 ──> 5b (hints uses one-shot key table)
+  4f-3 ~~> 5b (soft: hints can use KeybindingStore, key tables are nicer)
   5b ──> 6c (inline previews)
   3a ──> 6d (automation API)
   2a ──> 6b (block-based output)
@@ -401,13 +450,13 @@ Infrastructure (trigger-gated, not dependency-gated):
   7g (Sparkle) ← trigger: established user base, depends on 7f
 ```
 
-### Parallelization opportunities (current)
+### Parallelization opportunities (after bridge audit gate)
 
 These items have zero dependencies on each other and can be done in any
 order or simultaneously:
 
-- 4f-3b (copy mode remapping): next feature work, unblocked by 4f-3a
-- 7a (Ghostty submodule upgrade): independent, trigger-gated
+- 4f-3b (copy mode remapping): unblocked by 4f-3a
+- 7a (Ghostty submodule upgrade): waiting on upstream v1.3.2 tag
 - 7e (Periphery + pre-commit): tooling, low effort
 
 ---
@@ -424,10 +473,38 @@ order or simultaneously:
 
 ---
 
+## Backlog (unsorted, unprioritized)
+
+Items identified but not yet assigned to a phase. Promote to a phase when scoped.
+
+**Discoverability:**
+- Modifier-hold shortcut reveal: hold Cmd to show ⌘1-9 on tabs, hold Ctrl to show pane nav hints. Needs NSEvent `flagsChanged` monitor.
+- Richer hover tooltips: directory, shortcut key, running process (beyond current `.help()`)
+- Tab bar scroll edge gradients (fade indicating overflow)
+
+**Text display:**
+- Middle truncation for path-like names in sidebar and tab bar
+
+**Session manager** (independent of 5g source redesign):
+- Scoring refinements: subtitle penalty, running-session boost, recency sort
+
+**Config and CLI:**
+- Config reference: `docs/config-example.toml` with all options and defaults
+- Config CLI: `config show`, `config set`, `config path` subcommands
+
+**Quick fixes** (do when convenient, no spec needed):
+- `@MainActor` on TerminalCommands (one-line concurrency annotation)
+- Worktree recipes in justfile (`setup-worktree`, dev-variant bundle name)
+
+**Documentation:**
+- ADR-009: AppKit migration decision (Track A sufficient, Track B triggers)
+
+---
+
 ## Upstream Tracking (free wins if Ghostty ships them)
 
-- Cursor trail (347 votes), smooth pixel scrolling (112 votes, Kitty shipped in 0.46), RTL/BiDi text
-- Ghostty scripting API (planned, no timeline; 109+ comments on Discussion #2353)
+- Cursor trail (347 votes as of 2026-04-18), smooth pixel scrolling (112 votes, Kitty shipped in 0.46), RTL/BiDi text
+- Ghostty scripting API (planned, no timeline; 109+ comments on Discussion #2353 as of 2026-04-18)
 - Ghostty tmux control mode (in progress; DCS parser landed, Issue #1935)
 - OSC 133 C as apprt action: would enable explicit running-state detection in sidebar
 - Native git branch OSC sequence: would replace event-driven git rev-parse
@@ -447,9 +524,9 @@ Options:
 1. **Incremental**: consolidate five monitors into one with an explicit dispatch chain. Lower risk, partial fix.
 2. **Full rework**: move binding dispatch into the surface keyDown path (Ghostty model). Eliminates the bug class entirely but touches every manager.
 
-ADR-008 accepted (Option 2, full rework). Phase 1 complete: pane navigation and key sequence dispatch moved to surface keyDown. Phase 2 (modal dispatch) is next.
+ADR-008 complete (both phases). Two-layer key dispatch: TerminalSurfaceView.keyDown checks modal state, then falls through to libghostty.
 
-Rework in progress (ADR-008). Phase 1 complete, Phase 2 next.
+ADR-008 complete. ModalKeyDispatcher deleted in Phase 2.
 
 ### Testing gap: synthetic NSEvents
 

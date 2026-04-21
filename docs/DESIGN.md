@@ -21,10 +21,12 @@ What Mytty is not:
 Beliefs about how a terminal should work. They guide decisions we haven't
 made yet.
 
-1. **Keyboard-first, mouse-optional.**
-   Every function reachable by keyboard. Mouse enhances, never required.
-   The keyboard path is the primary design target, not an accessibility
-   afterthought.
+1. **Keyboard-fast, mouse-unsurprising.**
+   Every operation has a keyboard path, and that path should be the
+   fastest. When users reach for the mouse, standard macOS behaviors
+   work: click to focus, drag to select, right-click for context menus.
+   We don't build mouse-first features, but we don't break mouse
+   expectations either.
 
 2. **Background awareness over information density.**
    The sidebar is a peripheral awareness channel, not a dashboard.
