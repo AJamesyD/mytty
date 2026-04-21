@@ -299,9 +299,6 @@ struct ContentView: View {
         }
       }
       TerminalSurfaceView.modalKeyHandler = { [self] event in
-        if showingSessionManager, let vm = sessionManagerVM {
-          if handleSessionManagerKeyDown(event, vm: vm) == nil { return nil }
-        }
         if whichKeyManager.handleKeyDown(event) == nil { return nil }
         if copyModeManager.handleKeyDown(event) == nil { return nil }
         if windowModeManager.handleKeyDown(event) == nil { return nil }
@@ -1031,39 +1028,6 @@ extension ContentView {
   }
 
   // MARK: - Key Monitors
-
-  func handleSessionManagerKeyDown(_ event: NSEvent, vm: SessionManagerViewModel) -> NSEvent? {
-    switch event.keyName {
-    case "escape":
-      showingSessionManager = false
-      return nil
-    case "return":
-      vm.confirmSelection(modifierFlags: event.modifierFlags)
-      showingSessionManager = false
-      return nil
-    case "up":
-      vm.moveUp()
-      return nil
-    case "down":
-      vm.moveDown()
-      return nil
-    default:
-      break
-    }
-
-    if event.modifierFlags.contains(.control) {
-      if event.keyName == "j" {
-        vm.moveDown()
-        return nil
-      }
-      if event.keyName == "k" {
-        vm.moveUp()
-        return nil
-      }
-    }
-
-    return event
-  }
 
   func jumpToPrompt(direction: Int) {
     guard let surface = store.activeSession?.activeTab?.activePane?.surfaceView.surface else {

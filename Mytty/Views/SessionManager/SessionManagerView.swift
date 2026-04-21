@@ -33,7 +33,14 @@ struct SessionManagerView: View {
           if let value = vm.completionValue() {
             queryText = value
           }
-        }
+        },
+        onMoveUp: { vm.moveUp() },
+        onMoveDown: { vm.moveDown() },
+        onConfirm: { flags in
+          vm.confirmSelection(modifierFlags: flags)
+          isPresented = false
+        },
+        onCancel: { isPresented = false }
       )
       .font(.title3)
       .padding(14)
@@ -117,9 +124,15 @@ struct FocusableTextField: NSViewRepresentable {
   @Binding var text: String
   var placeholder: String
   var onComplete: (() -> Void)?
+  var onMoveUp: (() -> Void)?
+  var onMoveDown: (() -> Void)?
+  var onConfirm: ((NSEvent.ModifierFlags) -> Void)?
+  var onCancel: (() -> Void)?
 
   func makeNSView(context: Context) -> NSTextField {
-    let field = NSTextField()
+    let field = NavigableTextField()
+    field.onMoveUp = onMoveUp
+    field.onMoveDown = onMoveDown
     field.placeholderString = placeholder
     field.isBordered = false
     field.drawsBackground = false
@@ -139,19 +152,71 @@ struct FocusableTextField: NSViewRepresentable {
     if nsView.stringValue != text {
       nsView.stringValue = text
     }
+    if let navigable = nsView as? NavigableTextField {
+      navigable.onMoveUp = onMoveUp
+      navigable.onMoveDown = onMoveDown
+    }
+    context.coordinator.onComplete = onComplete
+    context.coordinator.onMoveUp = onMoveUp
+    context.coordinator.onMoveDown = onMoveDown
+    context.coordinator.onConfirm = onConfirm
+    context.coordinator.onCancel = onCancel
   }
 
   func makeCoordinator() -> Coordinator {
-    Coordinator(text: $text, onComplete: onComplete)
+    Coordinator(
+      text: $text,
+      onComplete: onComplete,
+      onMoveUp: onMoveUp,
+      onMoveDown: onMoveDown,
+      onConfirm: onConfirm,
+      onCancel: onCancel
+    )
+  }
+
+  private class NavigableTextField: NSTextField {
+    var onMoveUp: (() -> Void)?
+    var onMoveDown: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+      if event.modifierFlags.contains(.control) {
+        switch event.keyCode {
+        case 38:
+          onMoveDown?()
+          return
+        case 40:
+          onMoveUp?()
+          return
+        default:
+          break
+        }
+      }
+      super.keyDown(with: event)
+    }
   }
 
   class Coordinator: NSObject, NSTextFieldDelegate {
     var text: Binding<String>
     var onComplete: (() -> Void)?
+    var onMoveUp: (() -> Void)?
+    var onMoveDown: (() -> Void)?
+    var onConfirm: ((NSEvent.ModifierFlags) -> Void)?
+    var onCancel: (() -> Void)?
 
-    init(text: Binding<String>, onComplete: (() -> Void)?) {
+    init(
+      text: Binding<String>,
+      onComplete: (() -> Void)?,
+      onMoveUp: (() -> Void)?,
+      onMoveDown: (() -> Void)?,
+      onConfirm: ((NSEvent.ModifierFlags) -> Void)?,
+      onCancel: (() -> Void)?
+    ) {
       self.text = text
       self.onComplete = onComplete
+      self.onMoveUp = onMoveUp
+      self.onMoveDown = onMoveDown
+      self.onConfirm = onConfirm
+      self.onCancel = onCancel
     }
 
     func controlTextDidChange(_ obj: Notification) {
@@ -162,6 +227,22 @@ struct FocusableTextField: NSViewRepresentable {
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector)
       -> Bool
     {
+      if commandSelector == #selector(NSResponder.moveUp(_:)) {
+        onMoveUp?()
+        return true
+      }
+      if commandSelector == #selector(NSResponder.moveDown(_:)) {
+        onMoveDown?()
+        return true
+      }
+      if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+        onConfirm?(NSApp.currentEvent?.modifierFlags ?? [])
+        return true
+      }
+      if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+        onCancel?()
+        return true
+      }
       if commandSelector == #selector(NSResponder.insertTab(_:)) {
         onComplete?()
         return true
