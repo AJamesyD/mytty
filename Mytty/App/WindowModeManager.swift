@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor @Observable
 final class WindowModeManager {
   private(set) var isActive = false
+  private(set) var keybindingStore: KeybindingStore = .init()
   private var store: SessionStore?
   private var actionLookup: [KeyboardTrigger: String] = [:]
   var onNeedExitCopyMode: () -> Void = {}
@@ -12,6 +13,7 @@ final class WindowModeManager {
     guard !isActive else { return }
     self.store = store
     let keybindingStore = MyttyConfig.load().keybindingStore
+    self.keybindingStore = keybindingStore
     actionLookup = keybindingStore.reverseLookup(in: .windowMode)
     isActive = true
 
@@ -23,6 +25,7 @@ final class WindowModeManager {
   func reloadConfig() {
     guard isActive else { return }
     let keybindingStore = MyttyConfig.load().keybindingStore
+    self.keybindingStore = keybindingStore
     actionLookup = keybindingStore.reverseLookup(in: .windowMode)
   }
 

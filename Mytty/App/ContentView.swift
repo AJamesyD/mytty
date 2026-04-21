@@ -122,6 +122,7 @@ struct ContentView: View {
               }
               if tab.windowModeState != .inactive {
                 WindowModeHints(
+                  keybindingStore: windowModeManager.keybindingStore,
                   isJoinPick: tab.windowModeState == .joinPick,
                   tabNames: joinPickTabNames,
                   paneCount: tab.panes.count

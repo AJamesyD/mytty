@@ -1,27 +1,55 @@
 import SwiftUI
 
 struct WindowModeHints: View {
+  var keybindingStore: KeybindingStore
   var isJoinPick: Bool = false
   var tabNames: [String] = []
   var paneCount: Int = 1
 
-  private let normalHints: [(key: String, label: String)] = [
-    ("←↑↓→", "swap"),
-    ("⌘+arrows", "resize"),
-    ("z", "zoom"),
-    ("b", "break to tab"),
-    ("m", "join to tab"),
-    ("r", "rotate"),
-    ("esc", "exit"),
-  ]
+  private func label(for action: String) -> String? {
+    keybindingStore.trigger(for: action, in: .windowMode)?.displayLabel
+  }
 
-  private let layoutHints: [(key: String, label: String)] = [
-    ("1", "even-h"),
-    ("2", "even-v"),
-    ("3", "main-h"),
-    ("4", "main-v"),
-    ("5", "tiled"),
-  ]
+  private func directionalLabel(prefix: String) -> String? {
+    let directions = ["left", "up", "down", "right"]
+    let triggers = directions.compactMap {
+      keybindingStore.trigger(for: "\(prefix)-\($0)", in: .windowMode)
+    }
+    guard triggers.count == 4 else { return nil }
+    let modifiers = triggers[0].modifiers
+    guard triggers.allSatisfy({ $0.modifiers == modifiers }) else {
+      return triggers[0].displayLabel
+    }
+    var parts: [String] = []
+    if modifiers.contains(.ctrl) { parts.append("⌃") }
+    if modifiers.contains(.alt) { parts.append("⌥") }
+    if modifiers.contains(.shift) { parts.append("⇧") }
+    if modifiers.contains(.cmd) { parts.append("⌘") }
+    parts.append("←↑↓→")
+    return parts.joined()
+  }
+
+  private var normalHints: [(key: String, label: String)] {
+    var hints: [(key: String, label: String)] = []
+    if let key = directionalLabel(prefix: "swap") { hints.append((key, "swap")) }
+    if let key = directionalLabel(prefix: "resize") { hints.append((key, "resize")) }
+    if let key = label(for: "zoom") { hints.append((key, "zoom")) }
+    if let key = label(for: "break-to-tab") { hints.append((key, "break to tab")) }
+    if let key = label(for: "join-pick") { hints.append((key, "join to tab")) }
+    if let key = label(for: "rotate") { hints.append((key, "rotate")) }
+    if let key = label(for: "exit") { hints.append((key, "exit")) }
+    return hints
+  }
+
+  private var layoutHints: [(key: String, label: String)] {
+    var hints: [(key: String, label: String)] = []
+    if let key = label(for: "layout-even-horizontal") { hints.append((key, "even-h")) }
+    if let key = label(for: "layout-even-vertical") { hints.append((key, "even-v")) }
+    if let key = label(for: "layout-main-horizontal") { hints.append((key, "main-h")) }
+    if let key = label(for: "layout-main-vertical") { hints.append((key, "main-v")) }
+    if let key = label(for: "layout-tiled") { hints.append((key, "tiled")) }
+    return hints
+  }
 
   var body: some View {
     VStack(spacing: 4) {
