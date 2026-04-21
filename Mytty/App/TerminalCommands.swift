@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 class TerminalCommands {
   var newTab: () -> Void
   var closeTab: () -> Void

@@ -101,7 +101,6 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
       window.styleMask.insert(.fullSizeContentView)
       window.titleVisibility = .hidden
       window.titlebarAppearsTransparent = true
-      window.isMovableByWindowBackground = true
       window.tabbingMode = .disallowed
       window.standardWindowButton(.closeButton)?.isHidden = true
       window.standardWindowButton(.miniaturizeButton)?.isHidden = true
