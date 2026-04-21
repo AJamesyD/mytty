@@ -145,10 +145,12 @@ Sequence triggers use `>` as the separator in config: `ctrl+a>h`.
 
 ## Bridge Code Patterns
 
-When adding or modifying NSTextInputClient methods, verify against the
-Ghostty reference (vendor/ghostty/macos/Sources/Ghostty/SurfaceView/SurfaceView_AppKit.swift).
-Every guard in Ghostty's version must have an equivalent in Mytty's.
-Document intentional divergences with a comment citing the reason.
+When adding or modifying any `ghostty_surface_*` call site or NSTextInputClient
+method, verify against the Ghostty reference
+(vendor/ghostty/macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift).
+Every guard, modifier, and parameter in Ghostty's version must have an
+equivalent in Mytty's. Document intentional divergences with a comment
+citing the reason and the Ghostty source file.
 
 Divergence: Mytty uses NSTextInputContext.current (AppKit) instead of
 Ghostty's Carbon-based KeyboardLayout helper. Avoids adding Carbon as
