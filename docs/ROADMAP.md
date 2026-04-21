@@ -68,25 +68,41 @@ Next: Bridge audit cleanup gate, then Phase 4f-3 (key tables and modal bindings)
 
 Mytty replaced Ghostty's window chrome but didn't rebuild all bridges between libghostty and the OS.
 
-**Meta-problem:** When Mytty calls a libghostty API, it must pass the same information Ghostty does. Several bugs trace to missing parameters or skipped callbacks. The systematic fix: diff every `ghostty_surface_*` call site in Mytty against Ghostty's equivalent and verify parameter parity.
+**Meta-problem:** When Mytty calls a libghostty API, it must pass the same information Ghostty does. When libghostty fires an action callback, Mytty must route it to the correct target (see Ghostty Concept Mapping in DESIGN.md). Several bugs trace to missing parameters, skipped callbacks, or no-op'd actions that have natural Mytty equivalents.
 
 **Correctness (class a):**
 - [x] `CELL_SIZE`: font zoom works (Cmd+/Cmd-/Cmd+0). On-demand read via `ghostty_surface_size()` is sufficient.
 - [x] `COLOR_CHANGE`: handled (8acc25e), notification + handler + tests
 - [ ] `CONFIG_CHANGE`: runtime config changes from escape sequences are dropped (acknowledged, deferred to Phase 6)
-- [ ] Scroll mods: `scrollWheel` passes `0` for mods instead of precision + momentum flags. Causes trackpad scrolling to feel too fast (libghostty treats all events as discrete wheel clicks).
+- [x] Scroll mods: precision + momentum flags now passed to libghostty (ec67fd3).
 
 **OS integration:**
 - [ ] Window title: active tab's `displayTitle` not pushed to NSWindow (invisible in Mission Control, Dock, Cmd+Tab)
-- [ ] `SECURE_INPUT`: password fields don't activate macOS secure input
 
 **Mouse contract (tenet 1: mouse-unsurprising):**
-- [ ] `isMovableByWindowBackground`: hidden titlebar mode makes entire window draggable, preventing click-drag text selection. Vestigial since 3956dfa1 (was load-bearing in 7645cee when `.titled` was removed, but `.titled` was restored 32 min later). Ghostty uses `contentLayoutRect` override instead.
+- [x] `isMovableByWindowBackground`: removed (a2c6700). Was vestigial since 3956dfa1.
+- [ ] Right/middle mouse: `rightMouseDown/Up`, `otherMouseDown/Up`, `rightMouseDragged`, `otherMouseDragged` not forwarded to libghostty. Right-click fallthrough to system context menu missing.
 - [ ] `MOUSE_OVER_LINK`: hovering a URL doesn't change cursor or store the URL
 - [ ] `MOUSE_SHAPE`: cursor shape changes from terminal state are no-op'd
 - [ ] `MOUSE_VISIBILITY`: cursor hide-while-typing is no-op'd
 
 Reference: `/tmp/ai-research-action-gap-audit.md` (full audit from 2026-04-18)
+
+**Action parity (Ghostty Concept Mapping in DESIGN.md):**
+
+Trivial (one-liner handler, no design needed):
+- [ ] `CLOSE_WINDOW` -> close session containing the triggering pane
+- [ ] `TOGGLE_FULLSCREEN` -> `window.toggleFullScreen(nil)`
+- [ ] `QUIT` -> `NSApp.terminate(nil)`
+- [ ] `TOGGLE_MAXIMIZE` -> `window.zoom(nil)`
+- [ ] `OPEN_CONFIG` -> open `~/.config/mytty/config.toml`
+- [ ] `COPY_TITLE_TO_CLIPBOARD` -> copy pane title to pasteboard
+
+Deferred (needs design or has side effects):
+- [ ] `SECURE_INPUT` -> `EnableSecureEventInput()`/`DisableSecureEventInput()` (system-wide, needs toggle state)
+- [ ] `RESET_WINDOW_SIZE` -> reset to initial size (no initial-size config value yet)
+- [ ] `NEW_WINDOW` -> new session (semantic stretch in single-window model, revisit with multi-window)
+- [ ] `CLOSE_ALL_WINDOWS` -> close all sessions (destructive, needs confirmation UX)
 
 IPC parity: window mode operations now scriptable via CLI and socket API
 (`pane.swap`, `pane.zoom`, `pane.break-tab`, `pane.join`, `tab.rotate`,
