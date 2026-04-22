@@ -62,7 +62,18 @@ ADR-008 complete (two-layer key dispatch). Ghostty config hot-reload
 shipped (`GhosttyConfigWatcher` + `ghostty_app_update_config`). Phase 7
 bridge stubs wired (resize, equalize, move-tab). CI green.
 
-Next: Bridge audit cleanup gate, then Phase 4f-3 (key tables and modal bindings), 7j (CLI golden file tests).
+Bridge audit mostly complete: action parity (6 trivial actions), right/middle
+mouse forwarding, window title tracking, and TerminalSurfaceView reconciliation
+all shipped. Remaining: 3 mouse callbacks (MOUSE_OVER_LINK, MOUSE_SHAPE,
+MOUSE_VISIBILITY) and 4 deferred actions (SECURE_INPUT, RESET_WINDOW_SIZE,
+NEW_WINDOW, CLOSE_ALL_WINDOWS).
+
+Ambient identity (Layer 1) and session source protocol (Layer 2) shipped.
+Env vars in every pane, `[[session-source]]` config, runner, picker
+integration, `source.list` IPC, `mytty-cli source list`.
+
+Next: architecture improvements from backlog (back-references, runner
+simplification), then hints mode spec, mouse bridge remaining items.
 
 ### Bridge audit cleanup gate (before new features)
 
@@ -77,11 +88,12 @@ Mytty replaced Ghostty's window chrome but didn't rebuild all bridges between li
 - [x] Scroll mods: precision + momentum flags now passed to libghostty (ec67fd3).
 
 **OS integration:**
-- [ ] Window title: active tab's `displayTitle` not pushed to NSWindow (invisible in Mission Control, Dock, Cmd+Tab)
+- [x] Window title: active tab's `displayTitle` pushed to NSWindow (1ddce86)
 
 **Mouse contract (tenet 1: mouse-unsurprising):**
 - [x] `isMovableByWindowBackground`: removed (a2c6700). Was vestigial since 3956dfa1.
 - [ ] Right/middle mouse: `rightMouseDown/Up`, `otherMouseDown/Up`, `rightMouseDragged`, `otherMouseDragged` not forwarded to libghostty. Right-click fallthrough to system context menu missing.
+- [x] Right/middle mouse: forwarded to libghostty (6d35dea). Right-click fallthrough to system context menu working.
 - [ ] `MOUSE_OVER_LINK`: hovering a URL doesn't change cursor or store the URL
 - [ ] `MOUSE_SHAPE`: cursor shape changes from terminal state are no-op'd
 - [ ] `MOUSE_VISIBILITY`: cursor hide-while-typing is no-op'd
@@ -91,12 +103,12 @@ Reference: `/tmp/ai-research-action-gap-audit.md` (full audit from 2026-04-18)
 **Action parity (Ghostty Concept Mapping in DESIGN.md):**
 
 Trivial (one-liner handler, no design needed):
-- [ ] `CLOSE_WINDOW` -> close session containing the triggering pane
-- [ ] `TOGGLE_FULLSCREEN` -> `window.toggleFullScreen(nil)`
-- [ ] `QUIT` -> `NSApp.terminate(nil)`
-- [ ] `TOGGLE_MAXIMIZE` -> `window.zoom(nil)`
-- [ ] `OPEN_CONFIG` -> open `~/.config/mytty/config.toml`
-- [ ] `COPY_TITLE_TO_CLIPBOARD` -> copy pane title to pasteboard
+- [x] `CLOSE_WINDOW` -> close session containing the triggering pane (1ddce86)
+- [x] `TOGGLE_FULLSCREEN` -> `window.toggleFullScreen(nil)` (1ddce86)
+- [x] `QUIT` -> `NSApp.terminate(nil)` (1ddce86)
+- [x] `TOGGLE_MAXIMIZE` -> `window.zoom(nil)` (1ddce86)
+- [x] `OPEN_CONFIG` -> open `~/.config/mytty/config.toml` (1ddce86)
+- [x] `COPY_TITLE_TO_CLIPBOARD` -> copy pane title to pasteboard (1ddce86)
 
 Deferred (needs design or has side effects):
 - [ ] `SECURE_INPUT` -> `EnableSecureEventInput()`/`DisableSecureEventInput()` (system-wide, needs toggle state)
@@ -233,31 +245,25 @@ Fuzzy-searchable floating panel. All actions with shortcuts. Lower priority beca
 - Complexity: 2
 - `/spec` required: action registry, search ranking, visual design. Prior art: Raycast, Nova, Linear.
 
-### - [ ] 5g. Pluggable Session Sources
+### - [x] 5g. Pluggable Session Sources
 
-Redesign the session manager (Cmd+J) to support pluggable sources. Today, sources are hardcoded (running sessions, zoxide, SSH hosts). The new architecture defines a source interface that built-in and user-defined sources both conform to.
+User-defined sources via `[[session-source]]` in config.toml. External commands produce session candidates for the picker. Sources run as child processes when the picker opens, output JSON or plain text, and merge into the existing picker with dedup and priority ordering.
 
-Model: completion engines (nvim-cmp, blink.cmp). Each source provides candidates with a common shape. The picker merges, ranks, and groups them. Selection triggers a source-defined action (focus, create, connect).
+Shipped in 543e924 (Layer 2 of ambient identity + session sources spec).
 
-Built-in sources (zero config, current behavior preserved):
-- Running sessions (action: focus)
-- Zoxide directories (action: create session)
-- SSH hosts (action: create SSH session)
+- Spec: `docs/specs/ambient-identity-and-session-sources.md`
+- Config: `[[session-source]]` tables with name, command, action, priority, timeout-ms, max-items
+- Runner: `/bin/sh -c`, timeout with SIGTERM/SIGKILL, 1MB stdout cap, JSON/text parsing
+- Picker: `.sourceItem` case, concurrent loading via TaskGroup, dedup by dedupKey
+- IPC: `source.list` returns configured sources with last status
+- CLI: `mytty-cli source list` with `--json` flag
 
-User-defined sources via `[session-sources]` in config:
-- External commands returning JSON-line candidates
-- Per-source priority, category label, timeout
-- Example: sesh, project databases, Kubernetes contexts
+Known v1 limitations:
+- `last_status` always returns "not-run" from IPC (needs SessionSourceRegistry, tracked in backlog)
+- Await-all loading (progressive loading deferred)
+- No on-query re-execution (MYTTY_QUERY is set but static per picker open)
 
-Design constraint: accommodate Ghostty's potential tmux control mode. Remote tmux sessions would be another source type; the session model (MyttySession/Tab/Pane) stays as the abstraction boundary.
-
-- Complexity: 2
-- `/spec` required: source interface contract, candidate schema, config format, async merging, action dispatch, IPC surface.
-- Research brief: `/tmp/ai-research-brief-session-sources.md`
-- Depends on: 4a (config format)
-- Pairs with: 5e (layouts create sessions; source interface may inform directory resolution)
-
-Independent enhancements (can ship before or after source redesign):
+Independent enhancements (can ship separately):
 - Frecency tuning and scoring refinements
 - Process icons in sidebar
 - Preview pane showing recent output
@@ -270,7 +276,7 @@ Optional macOS Notification Center integration for events when Mytty is not fron
 - Depends on: 2b (notification infrastructure)
 
 **Essential done when:** dropdown terminal works via global hotkey, hints mode selects visible targets, floating panes work.
-**Polish done when:** Ghostty themes import, project layouts load from `.mytty.toml`, command palette searches all actions, session manager supports pluggable sources, system notifications fire for background events.
+**Polish done when:** Ghostty themes import, project layouts load from `.mytty.toml`, command palette searches all actions, system notifications fire for background events. Session sources: shipped.
 
 ---
 
@@ -421,16 +427,18 @@ Completed:
   Phase 4a-4e (config, live reload, sidebar config, auto-hide polish) ✓
   Phase 4f-1 (key sequences) ✓
   Phase 5a-1 (core dropdown) ✓
+  Phase 5g (session sources) ✓
   Phase 7b-7d (CI, releases) ✓
   ADR-008 (surface-level key dispatch) ✓
+  Bridge audit: action parity (6 trivial), mouse forwarding, window title ✓
+  Ambient identity (Layer 1): env vars in every pane ✓
 
 Current (parallelizable):
-  ┌─ Bridge audit cleanup gate             ← correctness + OS integration + mouse contract
+  ┌─ Architecture backlog                  ← back-references, runner simplification
+  ├─ Bridge audit remaining                ← MOUSE_OVER_LINK, MOUSE_SHAPE, MOUSE_VISIBILITY
   ├─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
-  ├─ IPC parity ✓                         ← shipped 2e7240b
-  ├─ 7i ✓ (SwiftLint custom rules)        ← shipped 6554df8
   ├─ 7j (CLI golden file tests)           ← deferred, lighter alternative planned
-  └─ 7k ✓ (IPC naming test)               ← shipped ada25dc
+  └─ 5g known limitations                 ← SessionSourceRegistry for lastStatus
 
 Near-term (unblocked after current):
   ┌─ 4f-3b (copy mode key remapping)      ← unblocked by 4f-3a ✓
@@ -451,7 +459,7 @@ Feature phases (sequential gates):
     ├─ 5d (Ghostty compat) ← depends on 4a ✓
     ├─ 5e (layouts) ← depends on 4a ✓, 2c ✓
     ├─ 5f (command palette) ← independent
-    ├─ 5g (session sources) ← depends on 4a ✓
+    ├─ 5g ✓ (session sources)             ← shipped 543e924
     └─ 5h (notifications) ← independent
   ──> Phase 6 (moonshots)
 
@@ -514,6 +522,13 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 
 **Documentation:**
 - ADR-009: AppKit migration decision (Track A sufficient, Track B triggers)
+
+**Architecture improvements** (from 2026-04-21 debate, `/tmp/ai-debate-mytty-improvements.md`):
+- Back-references on model hierarchy: add `weak var tab: MyttyTab?` to MyttyPane, `weak var session: MyttySession?` to MyttyTab. Replace stored identity properties (`sessionID`, `sessionName`, `tabID`) with computed ones that walk the hierarchy. Deletes `propagateIdentity()`, rename propagation in IPCService/SidebarView, and ~20 lines of manual wiring across 6 files. Migration window: only 1 commit depends on stored properties; cost grows with each feature built on top. Complexity: 1. Debate verdict: do before next feature.
+- Simplify SessionSourceRunner: replace OnceResume + terminationHandler + DispatchWorkItem + withTaskCancellationHandler (4 concurrency mechanisms, 30 lines of custom sync) with a 2-task race (detached process task vs. Task.sleep timeout). 9 existing tests validate behavior. Proven pain: 3 rewrites during implementation, bugs found in every reviewer round. Complexity: 1. Debate verdict: do before next feature.
+- Types-as-spec workflow: for future features, write Swift types/protocols first (compilable stubs), review the shape, then implement. Short prose section for non-obvious behavior only (error handling, security, edge cases). Skip the full spec format for features under ~500 lines. Zero tooling cost. Debate verdict: adopt for hints mode.
+- SessionSourceRegistry: `source.list` IPC always returns `last_status: "not-run"` because status is tracked on a local copy during picker load. Add a `@MainActor` registry (dictionary or small class) that persists status across picker opens. `IPCService.listSources` reads from the registry instead of `MyttyConfig.load()`. Complexity: 1.
+- Protocol-based picker items (deferred): SessionManagerItem enum has 5 cases with 8+ exhaustive switches (43 case-match lines). Adding `.sourceItem` required touching every switch. However, session sources are the extensibility mechanism for external item types, so the enum may not grow further. Revisit if a 6th built-in case is needed. Complexity: 2.
 
 ---
 
