@@ -91,6 +91,19 @@ final class PersistenceServiceTests: XCTestCase {
     XCTAssertEqual(newStore.sessions[0].activeTab?.id, newStore.sessions[0].tabs[1].id)
   }
 
+  func test_roundTrip_paneWorkingDirectory() {
+    let home = FileManager.default.homeDirectoryForCurrentUser
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    pane.workingDirectory = home
+
+    let state = store.toPersistentState()
+    let newStore = SessionStore()
+    newStore.restore(from: state)
+
+    XCTAssertEqual(newStore.sessions[0].tabs[0].panes[0].directory, home)
+  }
+
   // MARK: - JSON encoding/decoding
 
   func test_jsonRoundTrip() throws {

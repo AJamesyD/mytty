@@ -51,6 +51,10 @@ bundle: build
     swift build --target MyttyCLI
     cp .build/debug/MyttyCLI "$APP/Contents/MacOS/mytty-cli"
     cp Mytty/Resources/Info.plist "$APP/Contents/"
+    cp -R vendor/ghostty/zig-out/share/ghostty "$APP/Contents/Resources/ghostty"
+    cp -R vendor/ghostty/zig-out/share/terminfo "$APP/Contents/Resources/terminfo"
+    test -f "$APP/Contents/Resources/terminfo/78/xterm-ghostty" \
+      || { echo "error: ghostty resources missing from bundle (run build-libghostty first)"; exit 1; }
     codesign -s - -f "$APP"
     echo "Bundled: $APP"
 
@@ -65,6 +69,10 @@ bundle-release: build-release
     swift build --target MyttyCLI -c release
     cp .build/release/MyttyCLI "$APP/Contents/MacOS/mytty-cli"
     cp Mytty/Resources/Info.plist "$APP/Contents/"
+    cp -R vendor/ghostty/zig-out/share/ghostty "$APP/Contents/Resources/ghostty"
+    cp -R vendor/ghostty/zig-out/share/terminfo "$APP/Contents/Resources/terminfo"
+    test -f "$APP/Contents/Resources/terminfo/78/xterm-ghostty" \
+      || { echo "error: ghostty resources missing from bundle (run build-libghostty first)"; exit 1; }
     codesign -s - -f "$APP"
     echo "Bundled: $APP"
 
