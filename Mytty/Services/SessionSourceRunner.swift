@@ -19,13 +19,6 @@ enum SessionSourceRunner {
     process.standardOutput = pipe
     process.standardError = FileHandle.nullDevice
 
-    // Set terminationHandler BEFORE run() to avoid the race where the
-    // process exits before the handler is attached.
-    let once = OnceResume()
-    process.terminationHandler = { _ in
-      once.resume(returning: false)
-    }
-
     do {
       try process.run()
     } catch {
@@ -37,7 +30,6 @@ enum SessionSourceRunner {
     let readHandle = pipe.fileHandleForReading
 
     return await withTaskCancellationHandler {
-      // Read stdout on a detached task to avoid blocking the cooperative pool
       let readTask = Task.detached { () -> Data in
         var buffer = Data()
         while true {
@@ -51,21 +43,24 @@ enum SessionSourceRunner {
         return buffer
       }
 
-      // Schedule timeout
-      let timeoutWork = DispatchWorkItem {
-        guard process.isRunning else { return }
-        process.terminate()
-        DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500)) {
-          if process.isRunning { kill(pid, SIGKILL) }
+      let timedOut = await withTaskGroup(of: Bool.self) { group in
+        group.addTask {
+          await Task.detached { process.waitUntilExit() }.value
+          return false
         }
-        once.resume(returning: true)
+        group.addTask {
+          try? await Task.sleep(for: .milliseconds(source.timeoutMs))
+          guard !Task.isCancelled, process.isRunning else { return false }
+          process.terminate()
+          DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500)) {
+            if process.isRunning { kill(pid, SIGKILL) }
+          }
+          return true
+        }
+        let result = await group.next() ?? false
+        group.cancelAll()
+        return result
       }
-      DispatchQueue.global().asyncAfter(
-        deadline: .now() + .milliseconds(source.timeoutMs), execute: timeoutWork)
-
-      // Wait for process exit (or timeout)
-      let timedOut = await once.wait()
-      timeoutWork.cancel()
 
       let stdoutData = await readTask.value
       let items = parseOutput(stdoutData, maxItems: source.maxItems)
@@ -78,9 +73,7 @@ enum SessionSourceRunner {
       }
       return (items, process.terminationStatus == 0 ? .ok : .error)
     } onCancel: {
-      once.resume(returning: false)
       process.terminate()
-      // Close the read end to unblock the reader
       try? readHandle.close()
       DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500)) {
         if process.isRunning { kill(pid, SIGKILL) }
@@ -142,40 +135,6 @@ enum SessionSourceRunner {
         subtitle: subtitle,
         dedupKey: dedupKey ?? path ?? name
       )
-    }
-  }
-}
-
-// Ensures a continuation is resumed exactly once from multiple call sites.
-// Handles the case where resume() is called before wait().
-private final class OnceResume: @unchecked Sendable {
-  private var continuation: CheckedContinuation<Bool, Never>?
-  private var result: Bool?
-  private let lock = NSLock()
-
-  func resume(returning value: Bool) {
-    lock.lock()
-    guard result == nil else {
-      lock.unlock()
-      return
-    }
-    result = value
-    let cont = continuation
-    continuation = nil
-    lock.unlock()
-    cont?.resume(returning: value)
-  }
-
-  func wait() async -> Bool {
-    await withCheckedContinuation { cont in
-      lock.lock()
-      if let value = result {
-        lock.unlock()
-        cont.resume(returning: value)
-        return
-      }
-      continuation = cont
-      lock.unlock()
     }
   }
 }
