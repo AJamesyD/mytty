@@ -14,12 +14,17 @@ private let wakeupCallback: ghostty_runtime_wakeup_cb = { userdata in
 }
 
 /// Resolves the surface's TerminalSurfaceView on the main thread and calls the body.
+///
+/// Divergence: Ghostty dispatches on target.tag per-action and logs warnings
+/// for APP targets (Ghostty.App.swift). Mytty uses this shared helper that
+/// silently ignores non-surface targets. Also omits Ghostty's per-action
+/// assertionFailure() for unknown target tags.
 private nonisolated func withSurfaceView(
   _ target: ghostty_target_s,
   body: @escaping @MainActor (TerminalSurfaceView) -> Void
 ) {
   guard target.tag == GHOSTTY_TARGET_SURFACE else { return }
-  let surface = target.target.surface
+  guard let surface = target.target.surface else { return }
   DispatchQueue.main.async {
     guard let userdata = ghostty_surface_userdata(surface) else { return }
     let view = Unmanaged<TerminalSurfaceView>.fromOpaque(userdata).takeUnretainedValue()
@@ -88,6 +93,8 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
   case GHOSTTY_ACTION_MOUSE_OVER_LINK:
     let v = action.action.mouse_over_link
     let url: String?
+    // Divergence: Ghostty force-unwraps v.url! (Ghostty.App.swift line 1787).
+    // We use optional binding to avoid a crash on a null pointer with non-zero length.
     if v.len > 0, let ptr = v.url {
       url = String(data: Data(bytes: ptr, count: v.len), encoding: .utf8)
     } else {
@@ -510,6 +517,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   default:
+    print("[GhosttyApp] unhandled action tag: \(action.tag.rawValue)")
     return false
   }
 }

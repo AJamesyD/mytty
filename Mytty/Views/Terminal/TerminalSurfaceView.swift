@@ -179,70 +179,6 @@ final class TerminalSurfaceView: NSView {
     window?.makeFirstResponder(self)
   }
 
-  // Divergence: Ghostty uses NSScrollView.documentCursor (observed via Combine
-  // on SurfaceScrollView). Mytty has no scroll view wrapper, so we use
-  // resetCursorRects directly. See Ghostty SurfaceScrollView.swift line 149.
-  override func resetCursorRects() {
-    addCursorRect(bounds, cursor: cursorShape)
-  }
-
-  func setCursorShape(_ shape: ghostty_action_mouse_shape_e) {
-    switch shape {
-    case GHOSTTY_MOUSE_SHAPE_DEFAULT: cursorShape = .arrow
-    case GHOSTTY_MOUSE_SHAPE_TEXT: cursorShape = .iBeam
-    case GHOSTTY_MOUSE_SHAPE_GRAB: cursorShape = .openHand
-    case GHOSTTY_MOUSE_SHAPE_GRABBING: cursorShape = .closedHand
-    case GHOSTTY_MOUSE_SHAPE_POINTER: cursorShape = .pointingHand
-    case GHOSTTY_MOUSE_SHAPE_W_RESIZE:
-      if #available(macOS 15.0, *) {
-        cursorShape = .columnResize(directions: .left)
-      } else {
-        cursorShape = .resizeLeft
-      }
-    case GHOSTTY_MOUSE_SHAPE_E_RESIZE:
-      if #available(macOS 15.0, *) {
-        cursorShape = .columnResize(directions: .right)
-      } else {
-        cursorShape = .resizeRight
-      }
-    case GHOSTTY_MOUSE_SHAPE_N_RESIZE:
-      if #available(macOS 15.0, *) {
-        cursorShape = .rowResize(directions: .up)
-      } else {
-        cursorShape = .resizeUp
-      }
-    case GHOSTTY_MOUSE_SHAPE_S_RESIZE:
-      if #available(macOS 15.0, *) {
-        cursorShape = .rowResize(directions: .down)
-      } else {
-        cursorShape = .resizeDown
-      }
-    case GHOSTTY_MOUSE_SHAPE_NS_RESIZE:
-      if #available(macOS 15.0, *) {
-        cursorShape = .rowResize
-      } else {
-        cursorShape = .resizeUpDown
-      }
-    case GHOSTTY_MOUSE_SHAPE_EW_RESIZE:
-      if #available(macOS 15.0, *) {
-        cursorShape = .columnResize
-      } else {
-        cursorShape = .resizeLeftRight
-      }
-    case GHOSTTY_MOUSE_SHAPE_VERTICAL_TEXT: cursorShape = .iBeamCursorForVerticalLayout
-    case GHOSTTY_MOUSE_SHAPE_CONTEXT_MENU: cursorShape = .contextualMenu
-    case GHOSTTY_MOUSE_SHAPE_CROSSHAIR: cursorShape = .crosshair
-    case GHOSTTY_MOUSE_SHAPE_NOT_ALLOWED: cursorShape = .operationNotAllowed
-    default: return
-    }
-    window?.invalidateCursorRects(for: self)
-  }
-
-  func setCursorVisibility(_ visible: Bool) {
-    cursorVisible = visible
-    NSCursor.setHiddenUntilMouseMoves(!visible)
-  }
-
   // Handle display DPI changes when moving between monitors.
   // Matches Ghostty's SurfaceView_AppKit.swift viewDidChangeBackingProperties.
   override func viewDidChangeBackingProperties() {
@@ -458,6 +394,70 @@ final class TerminalSurfaceView: NSView {
 // MARK: - Mouse Input
 
 extension TerminalSurfaceView {
+  // Divergence: Ghostty uses NSScrollView.documentCursor (observed via Combine
+  // on SurfaceScrollView). Mytty has no scroll view wrapper, so we use
+  // resetCursorRects directly. See Ghostty SurfaceScrollView.swift line 149.
+  override func resetCursorRects() {
+    addCursorRect(bounds, cursor: cursorShape)
+  }
+
+  func setCursorShape(_ shape: ghostty_action_mouse_shape_e) {
+    switch shape {
+    case GHOSTTY_MOUSE_SHAPE_DEFAULT: cursorShape = .arrow
+    case GHOSTTY_MOUSE_SHAPE_TEXT: cursorShape = .iBeam
+    case GHOSTTY_MOUSE_SHAPE_GRAB: cursorShape = .openHand
+    case GHOSTTY_MOUSE_SHAPE_GRABBING: cursorShape = .closedHand
+    case GHOSTTY_MOUSE_SHAPE_POINTER: cursorShape = .pointingHand
+    case GHOSTTY_MOUSE_SHAPE_W_RESIZE:
+      if #available(macOS 15.0, *) {
+        cursorShape = .columnResize(directions: .left)
+      } else {
+        cursorShape = .resizeLeft
+      }
+    case GHOSTTY_MOUSE_SHAPE_E_RESIZE:
+      if #available(macOS 15.0, *) {
+        cursorShape = .columnResize(directions: .right)
+      } else {
+        cursorShape = .resizeRight
+      }
+    case GHOSTTY_MOUSE_SHAPE_N_RESIZE:
+      if #available(macOS 15.0, *) {
+        cursorShape = .rowResize(directions: .up)
+      } else {
+        cursorShape = .resizeUp
+      }
+    case GHOSTTY_MOUSE_SHAPE_S_RESIZE:
+      if #available(macOS 15.0, *) {
+        cursorShape = .rowResize(directions: .down)
+      } else {
+        cursorShape = .resizeDown
+      }
+    case GHOSTTY_MOUSE_SHAPE_NS_RESIZE:
+      if #available(macOS 15.0, *) {
+        cursorShape = .rowResize
+      } else {
+        cursorShape = .resizeUpDown
+      }
+    case GHOSTTY_MOUSE_SHAPE_EW_RESIZE:
+      if #available(macOS 15.0, *) {
+        cursorShape = .columnResize
+      } else {
+        cursorShape = .resizeLeftRight
+      }
+    case GHOSTTY_MOUSE_SHAPE_VERTICAL_TEXT: cursorShape = .iBeamCursorForVerticalLayout
+    case GHOSTTY_MOUSE_SHAPE_CONTEXT_MENU: cursorShape = .contextualMenu
+    case GHOSTTY_MOUSE_SHAPE_CROSSHAIR: cursorShape = .crosshair
+    case GHOSTTY_MOUSE_SHAPE_NOT_ALLOWED: cursorShape = .operationNotAllowed
+    default: return
+    }
+    window?.invalidateCursorRects(for: self)
+  }
+
+  func setCursorVisibility(_ visible: Bool) {
+    cursorVisible = visible
+    NSCursor.setHiddenUntilMouseMoves(!visible)
+  }
+
   // Divergence: Mytty syncs mouse position before button events. Ghostty
   // does not. This ensures libghostty has the correct cursor position when
   // processing the button press, avoiding stale coordinates after fast moves.
