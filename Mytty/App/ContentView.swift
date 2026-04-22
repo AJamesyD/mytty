@@ -429,6 +429,9 @@ extension ContentView {
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyColorChange)) { notification in
         handleColorChange(notification)
       }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyMouseOverLink)) { notification in
+        handleMouseOverLink(notification)
+      }
   }
 
   var contentWithWindowActions: some View {
@@ -833,6 +836,13 @@ extension ContentView {
       NSColor(
         red: payload.r, green: payload.g, blue: payload.b, alpha: 1.0
       ).cgColor
+  }
+
+  func handleMouseOverLink(_ notification: Notification) {
+    guard let p = notification.payload(MouseOverLinkPayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.pane.hoverUrl = p.url
   }
 
   // MARK: - Ghostty Action Handlers

@@ -100,5 +100,22 @@ struct PaneView: View {
       .onHover { hovering in
         isHovering = hovering
       }
+      // TODO: Ghostty renders the URL in both corners and swaps on hover
+      // (SurfaceView.swift lines 139-178). Add dual-position swap.
+      .overlay(alignment: .bottomTrailing) {
+        if let url = pane.hoverUrl {
+          Text(verbatim: url)
+            .font(.system(size: 12))
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(
+              UnevenRoundedRectangle(cornerRadii: .init(topLeading: 6))
+                .fill(.regularMaterial)
+            )
+            .allowsHitTesting(false)
+        }
+      }
   }
 }

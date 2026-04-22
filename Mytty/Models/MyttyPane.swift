@@ -23,6 +23,7 @@ final class MyttyPane: Identifiable {
   var progressState: ProgressState?
   var vars: [String: String] = [:]
   var activeKeyTables: [String] = []
+  var hoverUrl: String?
 
   @ObservationIgnored
   var progressExpiryTask: DispatchWorkItem?

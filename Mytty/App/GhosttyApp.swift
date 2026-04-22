@@ -61,9 +61,47 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
   // CELL_SIZE: read on-demand via ghostty_surface_size(); no cached property to update
   case GHOSTTY_ACTION_CELL_SIZE,
     GHOSTTY_ACTION_SIZE_LIMIT,
-    GHOSTTY_ACTION_INITIAL_SIZE,
-    GHOSTTY_ACTION_MOUSE_SHAPE,
-    GHOSTTY_ACTION_MOUSE_VISIBILITY:
+    GHOSTTY_ACTION_INITIAL_SIZE:
+    return true
+
+  case GHOSTTY_ACTION_MOUSE_SHAPE:
+    let shape = action.action.mouse_shape
+    withSurfaceView(target) { view in
+      view.setCursorShape(shape)
+    }
+    return true
+
+  case GHOSTTY_ACTION_MOUSE_VISIBILITY:
+    let v = action.action.mouse_visibility
+    withSurfaceView(target) { view in
+      switch v {
+      case GHOSTTY_MOUSE_VISIBLE:
+        view.setCursorVisibility(true)
+      case GHOSTTY_MOUSE_HIDDEN:
+        view.setCursorVisibility(false)
+      default:
+        break
+      }
+    }
+    return true
+
+  case GHOSTTY_ACTION_MOUSE_OVER_LINK:
+    let v = action.action.mouse_over_link
+    let url: String?
+    if v.len > 0, let ptr = v.url {
+      url = String(data: Data(bytes: ptr, count: v.len), encoding: .utf8)
+    } else {
+      url = nil
+    }
+    withSurfaceView(target) { view in
+      NotificationCenter.default.post(
+        name: .ghosttyMouseOverLink,
+        object: nil,
+        userInfo: [
+          Notification.payloadKey: MouseOverLinkPayload(paneID: view.pane?.id, url: url)
+        ]
+      )
+    }
     return true
 
   case GHOSTTY_ACTION_RING_BELL:
@@ -466,7 +504,6 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     GHOSTTY_ACTION_SECURE_INPUT,
     GHOSTTY_ACTION_KEY_SEQUENCE,
     GHOSTTY_ACTION_RENDERER_HEALTH,
-    GHOSTTY_ACTION_MOUSE_OVER_LINK,
     GHOSTTY_ACTION_SHOW_ON_SCREEN_KEYBOARD,
     GHOSTTY_ACTION_UNDO,
     GHOSTTY_ACTION_REDO:
@@ -554,6 +591,7 @@ extension Notification.Name {
   static let ghosttyToggleQuickTerminal = Notification.Name("ghosttyToggleQuickTerminal")
   static let ghosttyChildExited = Notification.Name("ghosttyChildExited")
   static let ghosttyKeyTable = Notification.Name("ghosttyKeyTable")
+  static let ghosttyMouseOverLink = Notification.Name("ghosttyMouseOverLink")
 }
 
 // MARK: - Notification Payloads
@@ -654,6 +692,11 @@ struct ColorChangePayload {
   let r: CGFloat
   let g: CGFloat
   let b: CGFloat
+}
+
+struct MouseOverLinkPayload {
+  let paneID: Int?
+  let url: String?
 }
 
 // MARK: - GhosttyAppManager

@@ -94,6 +94,37 @@ final class ContentViewHandlerTests: XCTestCase {
     XCTAssertEqual(session.tabs[0].panes[0].workingDirectory?.path, "/Users/test")
   }
 
+  // MARK: - handleMouseOverLink
+
+  func test_handleMouseOverLink_setsHoverUrl() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let paneID = session.tabs[0].panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleMouseOverLink(
+      Notification(
+        name: .ghosttyMouseOverLink, object: nil,
+        userInfo: [
+          Notification.payloadKey: MouseOverLinkPayload(paneID: paneID, url: "https://example.com")
+        ]))
+
+    XCTAssertEqual(session.tabs[0].panes[0].hoverUrl, "https://example.com")
+  }
+
+  func test_handleMouseOverLink_clearsHoverUrl() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    pane.hoverUrl = "https://example.com"
+    let view = ContentView(store: store)
+
+    view.handleMouseOverLink(
+      Notification(
+        name: .ghosttyMouseOverLink, object: nil,
+        userInfo: [Notification.payloadKey: MouseOverLinkPayload(paneID: pane.id, url: nil)]))
+
+    XCTAssertNil(pane.hoverUrl)
+  }
+
   // MARK: - handleSetTabTitle
 
   func test_handleSetTabTitle_setsTabTitle() {
