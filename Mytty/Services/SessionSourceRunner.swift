@@ -67,9 +67,6 @@ enum SessionSourceRunner {
       let timedOut = await once.wait()
       timeoutWork.cancel()
 
-      // Close the read end to unblock the reader if the process was killed
-      try? readHandle.close()
-
       let stdoutData = await readTask.value
       let items = parseOutput(stdoutData, maxItems: source.maxItems)
 
@@ -81,6 +78,7 @@ enum SessionSourceRunner {
       }
       return (items, process.terminationStatus == 0 ? .ok : .error)
     } onCancel: {
+      once.resume(returning: false)
       process.terminate()
       // Close the read end to unblock the reader
       try? readHandle.close()

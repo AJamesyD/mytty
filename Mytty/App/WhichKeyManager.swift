@@ -98,7 +98,6 @@ final class WhichKeyManager {
   }
 
   // Binding tree construction: sequential setup of all action categories.
-  // swiftlint:disable:next function_body_length
   static func buildBindings(
     store: SessionStore,
     commands: TerminalCommands,

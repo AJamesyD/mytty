@@ -178,7 +178,13 @@ struct SessionRowView: View {
           placeholder: "Session name",
           font: .system(size: 13),
           onSubmit: { newName in
-            session.name = newName.isEmpty ? session.directory.lastPathComponent : newName
+            let resolvedName = newName.isEmpty ? session.directory.lastPathComponent : newName
+            session.name = resolvedName
+            for tab in session.tabs {
+              tab.sessionName = resolvedName
+              for pane in tab.panes { pane.sessionName = resolvedName }
+            }
+            for popup in session.popups { popup.pane.sessionName = resolvedName }
             isEditingSession = false
           },
           onCancel: { isEditingSession = false }

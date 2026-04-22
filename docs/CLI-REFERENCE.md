@@ -420,3 +420,15 @@ List popup windows
 | --json | Output as JSON |  |
 | --human | Output as human-readable text |  |
 
+## mytty-cli source
+
+Manage session sources
+### mytty-cli source list
+
+List configured session sources
+
+| Option | Description | Default |
+| --- | --- | --- |
+| --json | Output as JSON |  |
+| --human | Output as human-readable text |  |
+

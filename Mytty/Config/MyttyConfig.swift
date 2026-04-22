@@ -122,9 +122,11 @@ struct MyttyConfig: Sendable, Equatable {
         guard let t = entry.table else { return nil }
         guard let name = t["name"]?.string, !name.isEmpty else { return nil }
         guard let command = t["command"]?.string,
-          !command.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+          !command.trimmingCharacters(in: .whitespaces).isEmpty
+        else { return nil }
         guard let actionStr = t["action"]?.string,
-          let action = MyttySessionSource.Action(rawValue: actionStr) else { return nil }
+          let action = MyttySessionSource.Action(rawValue: actionStr)
+        else { return nil }
         let priority = t["priority"]?.int ?? 5
         guard priority >= 1 else { return nil }
         return MyttySessionSource(

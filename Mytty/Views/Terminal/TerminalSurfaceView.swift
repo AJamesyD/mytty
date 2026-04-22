@@ -52,8 +52,10 @@ final class TerminalSurfaceView: NSView {
       ghostty_env_var_s(key: strdup("MYTTY_SOCKET"), value: strdup(MyttyIPC.socketPath)),
       ghostty_env_var_s(key: strdup("TERM_PROGRAM"), value: strdup("mytty")),
       ghostty_env_var_s(key: strdup("MYTTY"), value: strdup("1")),
-      ghostty_env_var_s(key: strdup("MYTTY_VERSION"), value: strdup(
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0")),
+      ghostty_env_var_s(
+        key: strdup("MYTTY_VERSION"),
+        value: strdup(
+          Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0")),
       ghostty_env_var_s(key: strdup("MYTTY_SESSION_ID"), value: strdup(String(sessionID))),
       ghostty_env_var_s(key: strdup("MYTTY_SESSION_NAME"), value: strdup(sessionName)),
       ghostty_env_var_s(key: strdup("MYTTY_TAB_ID"), value: strdup(String(tabID))),
@@ -185,7 +187,7 @@ final class TerminalSurfaceView: NSView {
       layer?.contentsScale = window.backingScaleFactor
       CATransaction.commit()
     }
-    guard let surface, let window else { return }
+    guard let surface, window != nil else { return }
     let fbFrame = convertToBacking(frame)
     let xScale = fbFrame.size.width / frame.size.width
     let yScale = fbFrame.size.height / frame.size.height
@@ -365,8 +367,31 @@ final class TerminalSurfaceView: NSView {
     _ = ghostty_surface_key(surface, keyEvent)
   }
 
-  // MARK: - Mouse Input
+  override func doCommand(by selector: Selector) {
+    // Intentionally empty: prevents NSBeep when interpretKeyEvents
+    // dispatches selectors (insertTab:, insertNewline:, etc.) that
+    // have no handler in the responder chain.
+  }
 
+  private func syncPreedit(clearIfNeeded: Bool = true) {
+    guard let surface else { return }
+    if markedText.length > 0 {
+      let str = markedText.string
+      let len = str.utf8CString.count
+      if len > 0 {
+        str.withCString { ptr in
+          ghostty_surface_preedit(surface, ptr, UInt(len - 1))
+        }
+      }
+    } else if clearIfNeeded {
+      ghostty_surface_preedit(surface, nil, 0)
+    }
+  }
+}
+
+// MARK: - Mouse Input
+
+extension TerminalSurfaceView {
   // Divergence: Mytty syncs mouse position before button events. Ghostty
   // does not. This ensures libghostty has the correct cursor position when
   // processing the button press, avoiding stale coordinates after fast moves.
@@ -471,27 +496,6 @@ final class TerminalSurfaceView: NSView {
 
     let scrollMods: ghostty_input_scroll_mods_t = (precision ? 1 : 0) | (momentum << 1)
     ghostty_surface_mouse_scroll(surface, x, y, scrollMods)
-  }
-
-  override func doCommand(by selector: Selector) {
-    // Intentionally empty: prevents NSBeep when interpretKeyEvents
-    // dispatches selectors (insertTab:, insertNewline:, etc.) that
-    // have no handler in the responder chain.
-  }
-
-  private func syncPreedit(clearIfNeeded: Bool = true) {
-    guard let surface else { return }
-    if markedText.length > 0 {
-      let str = markedText.string
-      let len = str.utf8CString.count
-      if len > 0 {
-        str.withCString { ptr in
-          ghostty_surface_preedit(surface, ptr, UInt(len - 1))
-        }
-      }
-    } else if clearIfNeeded {
-      ghostty_surface_preedit(surface, nil, 0)
-    }
   }
 
   private func ghosttyMouseButton(_ buttonNumber: Int) -> ghostty_input_mouse_button_e {

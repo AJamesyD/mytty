@@ -362,6 +362,20 @@ struct ContentView: View {
       }
     }
   }
+}
+
+@MainActor
+private var hasRequestedNotificationPermission = false
+
+// MARK: - Notifications & Handlers
+
+extension ContentView {
+  private var isAnyModalActive: Bool {
+    showingSessionManager
+      || windowModeManager.isActive
+      || copyModeManager.isActive
+      || whichKeyManager.isActive
+  }
 
   func applyConfig(_ config: MyttyConfig) {
     let positionChanged = panelState.sidebarPosition != config.sidebarPosition
@@ -377,20 +391,6 @@ struct ContentView: View {
       panelState.isSidebarRevealed = false
       panelState.isSidebarTempPinned = false
     }
-  }
-}
-
-@MainActor
-private var hasRequestedNotificationPermission = false
-
-// MARK: - Notifications & Handlers
-
-extension ContentView {
-  private var isAnyModalActive: Bool {
-    showingSessionManager
-      || windowModeManager.isActive
-      || copyModeManager.isActive
-      || whichKeyManager.isActive
   }
 
   var contentWithNotifications: some View {

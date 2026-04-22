@@ -113,7 +113,8 @@ final class SessionManagerViewModel {
       sourceResults = await withTaskGroup(
         of: (MyttySessionSource, [MyttySessionSourceItem]).self
       ) { group in
-        let cwd = store.activeSession?.activeTab?.activePane?.workingDirectory
+        let cwd =
+          store.activeSession?.activeTab?.activePane?.workingDirectory
           ?? store.activeSession?.directory
           ?? FileManager.default.homeDirectoryForCurrentUser
         let sourceEnv = ["MYTTY_QUERY": ""]
@@ -389,7 +390,8 @@ final class SessionManagerViewModel {
     case .sourceItem(let item, let source):
       switch source.action {
       case .createSession:
-        let dir = item.path.map { URL(fileURLWithPath: $0) }
+        let dir =
+          item.path.map { URL(fileURLWithPath: $0) }
           ?? FileManager.default.homeDirectoryForCurrentUser
         store.createSession(name: item.name, directory: dir)
       case .focusSession:

@@ -737,6 +737,9 @@ final class GhosttyAppManager {
 
     // 5. Sync dark/light mode to libghostty
     if let app = self.app {
+      // UnsafeMutableRawPointer is inherently Sendable; the type alias
+      // ghostty_app_t doesn't carry the conformance, so we rebind.
+      nonisolated(unsafe) let sendableApp = app
       appearanceObserver = NSApplication.shared.observe(
         \.effectiveAppearance, options: [.new, .initial]
       ) { _, change in
@@ -744,7 +747,7 @@ final class GhosttyAppManager {
         let scheme: ghostty_color_scheme_e =
           appearance.name.rawValue.lowercased().contains("dark")
           ? GHOSTTY_COLOR_SCHEME_DARK : GHOSTTY_COLOR_SCHEME_LIGHT
-        ghostty_app_set_color_scheme(app, scheme)
+        ghostty_app_set_color_scheme(sendableApp, scheme)
       }
     }
   }
