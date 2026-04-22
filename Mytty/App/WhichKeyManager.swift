@@ -169,8 +169,11 @@ final class WhichKeyManager {
       "new-tab": ("New Tab", { commands.newTab() }),
       "close-tab": ("Close Tab", { commands.closeTab() }),
     ]
-    for i in 1...9 {
-      registry["focus-tab-\(i)"] = ("Tab \(i)", { commands.focusTab(i - 1) })
+    let tabCount = min(store.activeSession?.tabs.count ?? 0, 9)
+    if tabCount > 0 {
+      for i in 1...tabCount {
+        registry["focus-tab-\(i)"] = ("Tab \(i)", { commands.focusTab(i - 1) })
+      }
     }
 
     return groups.compactMap { group -> WhichKeyBinding? in

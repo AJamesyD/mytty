@@ -82,10 +82,10 @@ SessionSourceRunner simplification (6aa9a24) both shipped.
 Next (priority order):
 1. Mouse bridge remaining (MOUSE_SHAPE, MOUSE_VISIBILITY, MOUSE_OVER_LINK)
 2. Handler tests (safety net, deferred from bridge polish)
-3. Which-key context filtering bug: shows `focus-tab-0` through `focus-tab-9` when only 3 tabs exist. Should only show actions that can currently execute. Manifests in WhichKeyManager.swift (action list generation).
+3. ~~Which-key context filtering bug~~: fixed (2ea3e51). Was showing `focus-tab-1` through `focus-tab-9` when only 3 tabs exist.
 4. Hints mode spec (types-as-spec workflow; include chrome target providers in design for vimium-style jump-to-session/tab/pane)
 5. Hints mode implementation
-6. Push (22 commits ahead)
+6. Push (24 commits ahead)
 
 Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
 - R20: window frame persistence (`NSWindow.setFrameAutosaveName`, ~5 LOC)
@@ -461,7 +461,7 @@ Completed:
 Current (parallelizable):
   ┌─ Bridge audit remaining                ← MOUSE_OVER_LINK, MOUSE_SHAPE, MOUSE_VISIBILITY
   ├─ Handler tests                         ← safety net, deferred from bridge polish
-  ├─ Which-key context filtering           ← bug: shows actions for nonexistent tabs
+  ├─ Which-key context filtering           ← fixed (2ea3e51)
   ├─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
   ├─ 7j (CLI golden file tests)           ← deferred, lighter alternative planned
   └─ 5g known limitations                 ← SessionSourceRegistry for lastStatus
@@ -532,6 +532,7 @@ order or simultaneously:
 Items identified but not yet assigned to a phase. Promote to a phase when scoped.
 
 **Discoverability:**
+- Which-key context filtering: hide actions that can't execute (close-tab with 1 tab, close-session with 1 session, break-to-tab with 1 pane). Extends the focus-tab fix (420bf50).
 - Modifier-hold shortcut reveal: hold Cmd to show ⌘1-9 on tabs, hold Ctrl to show pane nav hints. Needs NSEvent `flagsChanged` monitor.
 - Richer hover tooltips: directory, shortcut key, running process (beyond current `.help()`)
 - Tab bar scroll edge gradients (fade indicating overflow)
