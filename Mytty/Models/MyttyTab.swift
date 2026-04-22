@@ -15,6 +15,8 @@ final class MyttyTab: Identifiable {
     customTitle ?? tabTitle ?? title
   }
   let directory: URL?
+  var sessionID: Int = 0
+  var sessionName: String = ""
   private(set) var panes: [MyttyPane] = []
   var activePane: MyttyPane?
   var hasBell = false
@@ -56,10 +58,21 @@ final class MyttyTab: Identifiable {
     activePane = pane
   }
 
+  func propagateIdentity() {
+    for pane in panes {
+      pane.sessionID = sessionID
+      pane.sessionName = sessionName
+      pane.tabID = id
+    }
+  }
+
   func splitActivePane(direction: SplitDirection) {
     guard let activePane else { return }
     let newPane = MyttyPane(id: paneIDGenerator())
     newPane.directory = directory
+    newPane.sessionID = sessionID
+    newPane.sessionName = sessionName
+    newPane.tabID = id
     layout.split(pane: activePane, direction: direction, newPane: newPane)
     panes = layout.leaves
     self.activePane = layout.leaves.last
@@ -67,6 +80,9 @@ final class MyttyTab: Identifiable {
 
   func addExistingPane(_ pane: MyttyPane, direction: SplitDirection) {
     guard let activePane else { return }
+    pane.sessionID = sessionID
+    pane.sessionName = sessionName
+    pane.tabID = id
     layout.split(pane: activePane, direction: direction, newPane: pane)
     panes = layout.leaves
     self.activePane = pane

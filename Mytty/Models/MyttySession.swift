@@ -51,12 +51,18 @@ final class MyttySession: Identifiable {
   func addTab(exec: String? = nil) {
     let tab = MyttyTab(
       id: tabIDGenerator(), directory: directory, exec: exec, paneIDGenerator: paneIDGenerator)
+    tab.sessionID = id
+    tab.sessionName = name
+    tab.propagateIdentity()
     tabs.append(tab)
     activeTab = tab
   }
 
   func addTabWithPane(_ pane: MyttyPane) {
     let tab = MyttyTab(id: tabIDGenerator(), existingPane: pane, paneIDGenerator: paneIDGenerator)
+    tab.sessionID = id
+    tab.sessionName = name
+    tab.propagateIdentity()
     tabs.append(tab)
     activeTab = tab
   }
@@ -93,6 +99,10 @@ final class MyttySession: Identifiable {
     // Create new popup — use current pane's directory if available
     activePopup?.isVisible = false
     let pane = MyttyPane(id: paneIDGenerator())
+    pane.sessionID = id
+    pane.sessionName = name
+    // Popups are not associated with a tab
+    pane.tabID = -1
     pane.directory = activeTab?.activePane?.directory ?? directory
     pane.command = definition.command
     if definition.closeOnExit {
@@ -115,6 +125,10 @@ final class MyttySession: Identifiable {
     // Create new popup — use current pane's directory if available
     activePopup?.isVisible = false
     let pane = MyttyPane(id: paneIDGenerator())
+    pane.sessionID = id
+    pane.sessionName = name
+    // Popups are not associated with a tab
+    pane.tabID = -1
     pane.directory = activeTab?.activePane?.directory ?? directory
     pane.command = definition.command
     if definition.closeOnExit {

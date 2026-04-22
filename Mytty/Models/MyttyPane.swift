@@ -10,6 +10,9 @@ final class MyttyPane: Identifiable {
   /// When true, run the command in the shell without `exec` (shell stays alive after the command exits).
   /// When false, prefix the command with `exec` so the shell exits when the command finishes.
   var useCommandField: Bool = true
+  var sessionID: Int = 0
+  var sessionName: String = ""
+  var tabID: Int = 0
 
   var processTitle: String?
   var workingDirectory: URL?
@@ -73,7 +76,11 @@ final class MyttyPane: Identifiable {
     let view = TerminalSurfaceView(
       frame: .zero,
       workingDirectory: directory,
-      initialInput: Self.buildInitialInput(command: command, useCommandField: useCommandField)
+      initialInput: Self.buildInitialInput(command: command, useCommandField: useCommandField),
+      sessionID: sessionID,
+      sessionName: sessionName,
+      tabID: tabID,
+      paneID: id
     )
     view.pane = self
     return view

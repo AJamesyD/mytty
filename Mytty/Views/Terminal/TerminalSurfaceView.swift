@@ -13,7 +13,8 @@ final class TerminalSurfaceView: NSView {
   weak var pane: MyttyPane?
 
   init(
-    frame: NSRect, workingDirectory: URL? = nil, initialInput: String? = nil
+    frame: NSRect, workingDirectory: URL? = nil, initialInput: String? = nil,
+    sessionID: Int = 0, sessionName: String = "", tabID: Int = 0, paneID: Int = 0
   ) {
     super.init(frame: frame)
     wantsLayer = true
@@ -50,6 +51,13 @@ final class TerminalSurfaceView: NSView {
     var envVars = [
       ghostty_env_var_s(key: strdup("MYTTY_SOCKET"), value: strdup(MyttyIPC.socketPath)),
       ghostty_env_var_s(key: strdup("TERM_PROGRAM"), value: strdup("mytty")),
+      ghostty_env_var_s(key: strdup("MYTTY"), value: strdup("1")),
+      ghostty_env_var_s(key: strdup("MYTTY_VERSION"), value: strdup(
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0")),
+      ghostty_env_var_s(key: strdup("MYTTY_SESSION_ID"), value: strdup(String(sessionID))),
+      ghostty_env_var_s(key: strdup("MYTTY_SESSION_NAME"), value: strdup(sessionName)),
+      ghostty_env_var_s(key: strdup("MYTTY_TAB_ID"), value: strdup(String(tabID))),
+      ghostty_env_var_s(key: strdup("MYTTY_PANE_ID"), value: strdup(String(paneID))),
     ]
     envVars.withUnsafeMutableBufferPointer { buffer in
       cfg.env_vars = buffer.baseAddress
