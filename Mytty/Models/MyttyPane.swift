@@ -10,9 +10,12 @@ final class MyttyPane: Identifiable {
   /// When true, run the command in the shell without `exec` (shell stays alive after the command exits).
   /// When false, prefix the command with `exec` so the shell exits when the command finishes.
   var useCommandField: Bool = true
-  var sessionID: Int = 0
-  var sessionName: String = ""
-  var tabID: Int = 0
+  @ObservationIgnored weak var tab: MyttyTab?
+  @ObservationIgnored weak var session: MyttySession?
+
+  var sessionID: Int { session?.id ?? tab?.session?.id ?? 0 }
+  var sessionName: String { session?.name ?? tab?.session?.name ?? "" }
+  var tabID: Int { tab?.id ?? -1 }
 
   var processTitle: String?
   var workingDirectory: URL?

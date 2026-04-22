@@ -180,11 +180,6 @@ struct SessionRowView: View {
           onSubmit: { newName in
             let resolvedName = newName.isEmpty ? session.directory.lastPathComponent : newName
             session.name = resolvedName
-            for tab in session.tabs {
-              tab.sessionName = resolvedName
-              for pane in tab.panes { pane.sessionName = resolvedName }
-            }
-            for popup in session.popups { popup.pane.sessionName = resolvedName }
             isEditingSession = false
           },
           onCancel: { isEditingSession = false }

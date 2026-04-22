@@ -15,8 +15,10 @@ final class MyttyTab: Identifiable {
     customTitle ?? tabTitle ?? title
   }
   let directory: URL?
-  var sessionID: Int = 0
-  var sessionName: String = ""
+  @ObservationIgnored weak var session: MyttySession?
+
+  var sessionID: Int { session?.id ?? 0 }
+  var sessionName: String { session?.name ?? "" }
   private(set) var panes: [MyttyPane] = []
   var activePane: MyttyPane?
   var hasBell = false
@@ -47,6 +49,7 @@ final class MyttyTab: Identifiable {
     layout = PaneLayout(pane: pane)
     panes = [pane]
     activePane = pane
+    pane.tab = self
   }
 
   init(id: Int, existingPane pane: MyttyPane, paneIDGenerator: @escaping () -> Int) {
@@ -56,23 +59,14 @@ final class MyttyTab: Identifiable {
     layout = PaneLayout(pane: pane)
     panes = [pane]
     activePane = pane
-  }
-
-  func propagateIdentity() {
-    for pane in panes {
-      pane.sessionID = sessionID
-      pane.sessionName = sessionName
-      pane.tabID = id
-    }
+    pane.tab = self
   }
 
   func splitActivePane(direction: SplitDirection) {
     guard let activePane else { return }
     let newPane = MyttyPane(id: paneIDGenerator())
     newPane.directory = directory
-    newPane.sessionID = sessionID
-    newPane.sessionName = sessionName
-    newPane.tabID = id
+    newPane.tab = self
     layout.split(pane: activePane, direction: direction, newPane: newPane)
     panes = layout.leaves
     self.activePane = layout.leaves.last
@@ -80,9 +74,7 @@ final class MyttyTab: Identifiable {
 
   func addExistingPane(_ pane: MyttyPane, direction: SplitDirection) {
     guard let activePane else { return }
-    pane.sessionID = sessionID
-    pane.sessionName = sessionName
-    pane.tabID = id
+    pane.tab = self
     layout.split(pane: activePane, direction: direction, newPane: pane)
     panes = layout.leaves
     self.activePane = pane
@@ -117,6 +109,7 @@ final class MyttyTab: Identifiable {
   }
 
   func replacePanes(_ newPanes: [MyttyPane]) {
+    for pane in newPanes { pane.tab = self }
     panes = newPanes
   }
 }

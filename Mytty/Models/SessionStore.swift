@@ -257,9 +257,7 @@ final class SessionStore {
           let (rootNode, panes) = restoreLayoutNode(persistedTab.layout, home: home)
           tab.layout = PaneLayout(root: rootNode)
           tab.replacePanes(panes)
-          tab.sessionID = session.id
-          tab.sessionName = session.name
-          tab.propagateIdentity()
+          tab.session = session
           tab.activePane =
             persistedTab.activePaneIndex.flatMap { idx in
               idx < panes.count ? panes[idx] : nil

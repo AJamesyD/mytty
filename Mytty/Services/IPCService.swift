@@ -104,11 +104,6 @@ import MyttyShared
       throw MyttyIPC.error(.entityNotFound, "Session \(id) not found")
     }
     session.name = name
-    for tab in session.tabs {
-      tab.sessionName = name
-      for pane in tab.panes { pane.sessionName = name }
-    }
-    for popup in session.popups { popup.pane.sessionName = name }
     Task {
       await broker.publish(
         event: "session.renamed", params: ["sessionId": .int(id), "name": .string(name)])

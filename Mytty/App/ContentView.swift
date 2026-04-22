@@ -551,9 +551,6 @@ extension ContentView {
       pane.directory = session.directory
       pane.command = sshCommand
       pane.useCommandField = false
-      pane.sessionID = session.id
-      pane.sessionName = session.name
-      pane.tabID = tab.id
       tab.addExistingPane(pane, direction: direction)
     } else {
       tab.splitActivePane(direction: direction)
