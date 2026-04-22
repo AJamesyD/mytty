@@ -1,8 +1,8 @@
 # Mytty Roadmap
 
 Created: 2026-04-14
-Last updated: 2026-04-17
-Iteration: 24
+Last updated: 2026-04-22
+Iteration: 26
 
 ## Working Agreements
 
@@ -54,6 +54,10 @@ Moved pane navigation and key sequence dispatch from NSEvent monitor into `Termi
 ### Rename: Mistty to Mytty
 Project renamed across all source, config, docs, and CI files. Bundle ID: `com.mytty.app`, config path: `~/.config/mytty/`, CLI: `mytty-cli`.
 
+### Architecture Cleanup
+- Back-references on model hierarchy: `weak var tab` on MyttyPane, `weak var session` on MyttyTab. Replaced stored identity properties with computed ones, deleted `propagateIdentity()` and manual wiring across several files (ca4a653).
+- SessionSourceRunner simplification: replaced 4 concurrency mechanisms (OnceResume + terminationHandler + DispatchWorkItem + withTaskCancellationHandler) with a 2-task race (6aa9a24).
+
 ---
 
 ## Current
@@ -72,8 +76,20 @@ Ambient identity (Layer 1) and session source protocol (Layer 2) shipped.
 Env vars in every pane, `[[session-source]]` config, runner, picker
 integration, `source.list` IPC, `mytty-cli source list`.
 
-Next: architecture improvements from backlog (back-references, runner
-simplification), then hints mode spec, mouse bridge remaining items.
+Architecture backlog complete: back-references refactor (ca4a653) and
+SessionSourceRunner simplification (6aa9a24) both shipped.
+
+Next (priority order):
+1. Mouse bridge remaining (MOUSE_SHAPE, MOUSE_VISIBILITY, MOUSE_OVER_LINK)
+2. Handler tests (safety net, deferred from bridge polish)
+3. Which-key context filtering bug: shows `focus-tab-0` through `focus-tab-9` when only 3 tabs exist. Should only show actions that can currently execute. Manifests in WhichKeyManager.swift (action list generation).
+4. Hints mode spec (types-as-spec workflow; include chrome target providers in design for vimium-style jump-to-session/tab/pane)
+5. Hints mode implementation
+6. Push (22 commits ahead)
+
+Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
+- R20: window frame persistence (`NSWindow.setFrameAutosaveName`, ~5 LOC)
+- R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.
 
 ### Bridge audit cleanup gate (before new features)
 
@@ -92,11 +108,12 @@ Mytty replaced Ghostty's window chrome but didn't rebuild all bridges between li
 
 **Mouse contract (tenet 1: mouse-unsurprising):**
 - [x] `isMovableByWindowBackground`: removed (a2c6700). Was vestigial since 3956dfa1.
-- [ ] Right/middle mouse: `rightMouseDown/Up`, `otherMouseDown/Up`, `rightMouseDragged`, `otherMouseDragged` not forwarded to libghostty. Right-click fallthrough to system context menu missing.
 - [x] Right/middle mouse: forwarded to libghostty (6d35dea). Right-click fallthrough to system context menu working.
 - [ ] `MOUSE_OVER_LINK`: hovering a URL doesn't change cursor or store the URL
 - [ ] `MOUSE_SHAPE`: cursor shape changes from terminal state are no-op'd
 - [ ] `MOUSE_VISIBILITY`: cursor hide-while-typing is no-op'd
+
+Note: MOUSE_SHAPE and MOUSE_VISIBILITY are acknowledged in GhosttyApp.swift (no-op case group) but not functionally implemented. The cursor doesn't change shape or hide-while-typing. The RFC (v6) incorrectly classified these as "already implemented"; the no-op means the callback won't crash, not that the feature works.
 
 Reference: `/tmp/ai-research-action-gap-audit.md` (full audit from 2026-04-18)
 
@@ -132,8 +149,7 @@ Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Gho
 ### Deferred from platform defaults (2026-04-17)
 
 - **Terminal search (Cmd+F)**: copy mode has `/` search with full-scrollback, match count, and highlighting. Missing: a Cmd+F overlay accessible outside copy mode.
-- **Config error UI**: parse errors go to stderr, invisible from Finder. Add a toast or status bar indicator.
-- **Config key validation**: unrecognized keys (typos) are silently ignored. Warn on unknown top-level and section keys.
+- ~~Config error UI~~ and ~~config key validation~~: moved to Backlog (UX polish and Config and CLI, respectively).
 - **AppKit window migration (Track B)**: Track A (NSWindowDelegate enforcement) shipped in 7645cee/3956dfa1 and works. 4 known bugs have workarounds (menu shortcut interception, window registration timing, async first responder, chrome enforcement loop). Track B (~500 lines, NSWindowController + NSHostingView) carries disproportionate regression risk. Triggers for Track B: macOS 26 breaks enforcement loop, or a feature requires NSMenu beyond `CommandGroup`. Plan: `/tmp/ai-plan-appkit-window-migration.md`.
 - **Sidebar active session indicator**: when sidebar is on the right, the accent bar is on the wrong side. Consider a background pill instead of a side-anchored bar so the indicator works regardless of sidebar position.
 
@@ -195,10 +211,16 @@ NSPanel-based dropdown with Ctrl+` hotkey, slide animation, auto-hide on focus l
 Configurable position (top/bottom/left/right), size (percentage of screen). Per-monitor detection exists (follows mouse cursor). Position (top-only) and size (40% height, full width) are hardcoded.
 
 ### - [ ] 5b. Hints Mode
-Press a trigger key, all visible URLs/paths/hashes get short letter labels. Type the label to act (open, copy, insert).
+A general "label things, type to jump" system with pluggable target providers. Press a trigger key, visible targets get short letter labels. Type the label to act (open, copy, insert).
+
+Target providers:
+- **Terminal provider**: scans visible text for URLs, paths, hashes. Prior art: Kitty hints kitten.
+- **Chrome provider**: labels sidebar sessions, tabs, and panes for vimium-style keyboard navigation. Same label algorithm, same overlay, same key handling as the terminal provider.
+
+The pluggable provider design should be decided during the spec phase (types-as-spec workflow), not retrofitted after the terminal provider ships.
 
 - Complexity: 2
-- `/spec` required: label assignment algorithm, action menu, visual overlay design.
+- `/spec` required: label assignment algorithm, action menu, visual overlay design, provider protocol, chrome target types.
 - Prior art: Kitty hints kitten. Ghostty has ~180 combined votes (as of 2026-04-18).
 - Pairs with 6c (inline preview panes).
 - Soft dependency on 4f-3: key tables would be architecturally cleaner, but hints can use KeybindingStore like window mode and copy mode do today.
@@ -241,6 +263,8 @@ Base config loading and override file (`ghostty.conf`) shipped in Phase 4. Remai
 
 ### - [ ] 5f. Command Palette (Cmd+K)
 Fuzzy-searchable floating panel. All actions with shortcuts. Lower priority because which-key (1a) covers discoverability.
+
+Note: consider extending the session manager picker to include tabs before building a separate command palette. The session manager already has fuzzy matching, frecency, and multi-type item support. Adding tabs as a searchable item type may cover the "jump to anything" use case without a new UI.
 
 - Complexity: 2
 - `/spec` required: action registry, search ranking, visual design. Prior art: Raycast, Nova, Linear.
@@ -432,13 +456,19 @@ Completed:
   ADR-008 (surface-level key dispatch) ✓
   Bridge audit: action parity (6 trivial), mouse forwarding, window title ✓
   Ambient identity (Layer 1): env vars in every pane ✓
+  Architecture cleanup: back-references (ca4a653), runner simplification (6aa9a24) ✓
 
 Current (parallelizable):
-  ┌─ Architecture backlog                  ← back-references, runner simplification
-  ├─ Bridge audit remaining                ← MOUSE_OVER_LINK, MOUSE_SHAPE, MOUSE_VISIBILITY
+  ┌─ Bridge audit remaining                ← MOUSE_OVER_LINK, MOUSE_SHAPE, MOUSE_VISIBILITY
+  ├─ Handler tests                         ← safety net, deferred from bridge polish
+  ├─ Which-key context filtering           ← bug: shows actions for nonexistent tabs
   ├─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
   ├─ 7j (CLI golden file tests)           ← deferred, lighter alternative planned
   └─ 5g known limitations                 ← SessionSourceRegistry for lastStatus
+
+Opportunistic (no dependencies, land anytime):
+  ├─ R20 (window frame persistence)
+  └─ R14 (dock badge)
 
 Near-term (unblocked after current):
   ┌─ 4f-3b (copy mode key remapping)      ← unblocked by 4f-3a ✓
@@ -452,13 +482,13 @@ Feature phases (sequential gates):
 
   Phase 5 Essential (parallelizable within):
     ├─ 5a (dropdown) ──> 4f-2 (configurable global hotkey)
-    ├─ 5b (hints mode) ← soft dep on 4f-3 (can proceed without)
+    ├─ 5b (hints mode) ← soft dep on 4f-3; chrome provider labels sessions/tabs/panes
     └─ 5c (floating panes) ← independent
   ──> VoiceOver audit gate
   ──> Phase 5 Polish:
     ├─ 5d (Ghostty compat) ← depends on 4a ✓
     ├─ 5e (layouts) ← depends on 4a ✓, 2c ✓
-    ├─ 5f (command palette) ← independent
+    ├─ 5f (command palette) ← consider extending session manager picker first
     ├─ 5g ✓ (session sources)             ← shipped 543e924
     └─ 5h (notifications) ← independent
   ──> Phase 6 (moonshots)
@@ -515,6 +545,7 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 **Config and CLI:**
 - Config reference: `docs/config-example.toml` with all options and defaults
 - Config CLI: `config show`, `config set`, `config path` subcommands
+- Config key validation: warn on unrecognized keys (R32)
 
 **Quick fixes** (do when convenient, no spec needed):
 - `@MainActor` on TerminalCommands (one-line concurrency annotation)
@@ -524,11 +555,35 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 - ADR-009: AppKit migration decision (Track A sufficient, Track B triggers)
 
 **Architecture improvements** (from 2026-04-21 debate, `/tmp/ai-debate-mytty-improvements.md`):
-- Back-references on model hierarchy: add `weak var tab: MyttyTab?` to MyttyPane, `weak var session: MyttySession?` to MyttyTab. Replace stored identity properties (`sessionID`, `sessionName`, `tabID`) with computed ones that walk the hierarchy. Deletes `propagateIdentity()`, rename propagation in IPCService/SidebarView, and ~20 lines of manual wiring across 6 files. Migration window: only 1 commit depends on stored properties; cost grows with each feature built on top. Complexity: 1. Debate verdict: do before next feature.
-- Simplify SessionSourceRunner: replace OnceResume + terminationHandler + DispatchWorkItem + withTaskCancellationHandler (4 concurrency mechanisms, 30 lines of custom sync) with a 2-task race (detached process task vs. Task.sleep timeout). 9 existing tests validate behavior. Proven pain: 3 rewrites during implementation, bugs found in every reviewer round. Complexity: 1. Debate verdict: do before next feature.
 - Types-as-spec workflow: for future features, write Swift types/protocols first (compilable stubs), review the shape, then implement. Short prose section for non-obvious behavior only (error handling, security, edge cases). Skip the full spec format for features under ~500 lines. Zero tooling cost. Debate verdict: adopt for hints mode.
 - SessionSourceRegistry: `source.list` IPC always returns `last_status: "not-run"` because status is tracked on a local copy during picker load. Add a `@MainActor` registry (dictionary or small class) that persists status across picker opens. `IPCService.listSources` reads from the registry instead of `MyttyConfig.load()`. Complexity: 1.
 - Protocol-based picker items (deferred): SessionManagerItem enum has 5 cases with 8+ exhaustive switches (43 case-match lines). Adding `.sourceItem` required touching every switch. However, session sources are the extensibility mechanism for external item types, so the enum may not grow further. Revisit if a 6th built-in case is needed. Complexity: 2.
+
+**Sidebar enrichment (from cmux RFC analysis, `/tmp/ai-rfc-mytty-cmux-lessons-v6.md`):**
+- Tenet 2 revision: three-layer framework (signals / identity text / detail on demand). Update DESIGN.md. Unblocks git branch and working directory display.
+- Git branch + dirty on tab rows: fresh GitDetectionService (subprocess, `git rev-parse`), display at tab level not session level. Config: `sidebar.show-branch`. Addresses D3 revert (ef9301c) at correct aggregation level.
+- Notification read/unread lifecycle: `UnreadNotification` on MyttyTab, jump-to-unread shortcut. Dock badge upgrade to count unread notifications.
+- Progress state display in sidebar tab rows (data already on MyttyPane.ProgressState, just needs rendering).
+- Steering doc performance rules: no @Observable mutation from view body, no allocations on per-keystroke paths.
+
+**UX polish (from cmux RFC analysis):**
+- Window frame persistence (R20): `NSWindow.setFrameAutosaveName`. ~5 LOC.
+- Dock badge (R14): `NSApp.dockTile.badgeLabel` from aggregate notification count. ~15 LOC.
+- Config parse error dismissible banner (R70): MyttyConfig.parseError exists, needs UI.
+- Empty state views for sidebar and session manager (R69).
+- Sidebar toggle button (chevron at top of SidebarView).
+
+**Bridge correctness:**
+- Display ID tracking (R19): call `ghostty_surface_set_display_id` in `viewDidMoveToWindow` or screen-change notification. ~10 LOC. Tells libghostty which display the surface is on.
+
+---
+
+## Deferred (with revisit triggers)
+
+- **Config version field**: when first breaking config change ships.
+- **Working directory display in sidebar**: after git branch ships.
+- **Notification severity on UnreadNotification**: if/when hasBell/hasFailedCommand are removed.
+- **Sidebar snapshot pattern refactor**: if Instruments shows >2ms/row after sidebar enrichment.
 
 ---
 
