@@ -77,9 +77,6 @@ struct TabBarItem: View {
         Text(tab.displayTitle)
           .font(.system(size: 12))
           .lineLimit(1)
-          .onTapGesture(count: 2) {
-            isEditing = true
-          }
       }
 
       if let result = tab.activePane?.lastCommandResult {
