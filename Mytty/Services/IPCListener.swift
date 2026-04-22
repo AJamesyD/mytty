@@ -388,6 +388,10 @@ final class IPCListener {
         try await service.togglePopup(sessionId: int("sessionId"), name: str("name") ?? "")
       }
 
+    // Sources
+    case "source.list":
+      return await callService(request) { try await service.listSources() }
+
     default:
       return .error(
         id: request.id, code: MyttyIPC.JSONRPCErrorCode.methodNotFound,

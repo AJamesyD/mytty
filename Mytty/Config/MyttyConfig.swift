@@ -42,6 +42,7 @@ struct MyttyConfig: Sendable, Equatable {
   var autoHideShowHints: Bool = true
   var popups: [PopupDefinition] = []
   var ssh = SSHConfig()
+  var sessionSources: [MyttySessionSource] = []
   var keybindingStore: KeybindingStore = .init()
   var parseError: String?
 
@@ -114,6 +115,26 @@ struct MyttyConfig: Sendable, Equatable {
             command: t["command"]?.string ?? config.ssh.defaultCommand
           )
         }
+      }
+    }
+    if let sourceArray = table["session-source"]?.array {
+      config.sessionSources = sourceArray.compactMap { entry -> MyttySessionSource? in
+        guard let t = entry.table else { return nil }
+        guard let name = t["name"]?.string, !name.isEmpty else { return nil }
+        guard let command = t["command"]?.string,
+          !command.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        guard let actionStr = t["action"]?.string,
+          let action = MyttySessionSource.Action(rawValue: actionStr) else { return nil }
+        let priority = t["priority"]?.int ?? 5
+        guard priority >= 1 else { return nil }
+        return MyttySessionSource(
+          name: name,
+          command: command,
+          action: action,
+          priority: priority,
+          timeoutMs: t["timeout-ms"]?.int ?? 2000,
+          maxItems: t["max-items"]?.int ?? 200
+        )
       }
     }
     config.keybindingStore = Self.parseKeybindings(from: table)

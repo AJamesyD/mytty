@@ -635,4 +635,20 @@ import MyttyShared
     let responses = session.popups.map { popupResponse($0) }
     return try encodeOrThrow(responses)
   }
+
+  func listSources() async throws -> Data {
+    let config = MyttyConfig.load()
+    let responses = config.sessionSources.map { source in
+      SourceResponse(
+        name: source.name,
+        command: source.command,
+        action: source.action.rawValue,
+        priority: source.priority,
+        timeoutMs: source.timeoutMs,
+        maxItems: source.maxItems,
+        lastStatus: source.lastStatus.rawValue
+      )
+    }
+    return try encodeOrThrow(responses)
+  }
 }

@@ -65,4 +65,8 @@ public protocol MyttyServiceProtocol {
   @MainActor func closePopup(id: Int) async throws -> Data
   @MainActor func togglePopup(sessionId: Int, name: String) async throws -> Data
   @MainActor func listPopups(sessionId: Int) async throws -> Data
+
+  // MARK: - Sources
+
+  @MainActor func listSources() async throws -> Data
 }

@@ -12,6 +12,7 @@ enum SessionManagerItem {
   case runningSession(MyttySession)
   case directory(URL)
   case sshHost(SSHHost)
+  case sourceItem(MyttySessionSourceItem, source: MyttySessionSource)
   case newSession(query: String, directory: URL, createDirectory: Bool, sshCommand: String?)
 
   var id: String {
@@ -19,6 +20,7 @@ enum SessionManagerItem {
     case .runningSession(let s): return "session-\(s.id)"
     case .directory(let u): return "dir-\(u.path)"
     case .sshHost(let h): return "ssh-\(h.alias)"
+    case .sourceItem(let item, let source): return "source-\(source.name)-\(item.dedupKey)"
     case .newSession: return "new-session"
     }
   }
@@ -28,6 +30,7 @@ enum SessionManagerItem {
     case .runningSession(let s): return "▶ \(s.name)"
     case .directory(let u): return u.lastPathComponent
     case .sshHost(let h): return "⌁ \(h.alias)"
+    case .sourceItem(let item, _): return item.name
     case .newSession(let query, let directory, let createDir, let sshCommand):
       if sshCommand != nil {
         let hostname = query.drop(while: { $0 != " " }).dropFirst().trimmingCharacters(
@@ -49,6 +52,7 @@ enum SessionManagerItem {
     case .runningSession: return nil
     case .directory(let u): return u.path
     case .sshHost(let h): return h.hostname
+    case .sourceItem(let item, _): return item.subtitle ?? item.path
     case .newSession(_, let directory, _, let sshCommand):
       if sshCommand != nil {
         return sshCommand
@@ -62,6 +66,7 @@ enum SessionManagerItem {
     case .runningSession(let s): return "session:\(s.name)"
     case .directory(let u): return "dir:\(u.path)"
     case .sshHost(let h): return "ssh:\(h.alias)"
+    case .sourceItem(let item, _): return "source:\(item.dedupKey)"
     case .newSession: return nil
     }
   }
@@ -99,6 +104,35 @@ final class SessionManagerViewModel {
     let dirs = await zoxideProvider()
     let sshHosts = sshProvider()
 
+    let config = MyttyConfig.load()
+    let sources = config.sessionSources
+
+    // Run all sources concurrently
+    var sourceResults: [(MyttySessionSource, [MyttySessionSourceItem])] = []
+    if !sources.isEmpty {
+      sourceResults = await withTaskGroup(
+        of: (MyttySessionSource, [MyttySessionSourceItem]).self
+      ) { group in
+        let cwd = store.activeSession?.activeTab?.activePane?.workingDirectory
+          ?? store.activeSession?.directory
+          ?? FileManager.default.homeDirectoryForCurrentUser
+        let sourceEnv = ["MYTTY_QUERY": ""]
+        for var source in sources {
+          group.addTask {
+            let (items, status) = await SessionSourceRunner.run(
+              source: source, workingDirectory: cwd, environment: sourceEnv)
+            source.lastStatus = status
+            return (source, items)
+          }
+        }
+        var results: [(MyttySessionSource, [MyttySessionSourceItem])] = []
+        for await result in group {
+          results.append(result)
+        }
+        return results
+      }
+    }
+
     let activeDirectories = Set(store.sessions.map { $0.directory.standardizedFileURL })
 
     var items: [SessionManagerItem] = []
@@ -110,6 +144,16 @@ final class SessionManagerViewModel {
       .filter { !activeDirectories.contains($0.standardizedFileURL) }
       .map { .directory($0) }
     items += sshHosts.map { .sshHost($0) }
+
+    // Dedup source items: lower priority number wins, config order breaks ties
+    var seenDedupKeys = Set<String>()
+    for (source, sourceItems) in sourceResults.sorted(by: { $0.0.priority < $1.0.priority }) {
+      for item in sourceItems {
+        guard !seenDedupKeys.contains(item.dedupKey) else { continue }
+        seenDedupKeys.insert(item.dedupKey)
+        items.append(.sourceItem(item, source: source))
+      }
+    }
 
     allItems = items.sorted { a, b in
       let scoreA = a.frecencyKey.map { frecencyService.score(for: $0) } ?? 0
@@ -138,6 +182,8 @@ final class SessionManagerViewModel {
     case .sshHost(let h):
       // "⌁ " is 2 chars
       return (h.alias, h.hostname, 2)
+    case .sourceItem(let item, _):
+      return (item.name, item.subtitle ?? item.path, 0)
     case .newSession:
       return ("", nil, 0)
     }
@@ -246,6 +292,7 @@ final class SessionManagerViewModel {
     case .runningSession(let s): return s.name
     case .directory(let u): return u.path
     case .sshHost(let h): return h.alias
+    case .sourceItem(let item, _): return item.path ?? item.name
     }
   }
 
@@ -254,6 +301,7 @@ final class SessionManagerViewModel {
     case .runningSession: return 0
     case .directory: return 1
     case .sshHost: return 2
+    case .sourceItem: return 3
     case .newSession: return -1
     }
   }
@@ -337,6 +385,18 @@ final class SessionManagerViewModel {
         exec: fullCommand
       )
       session.sshCommand = fullCommand
+
+    case .sourceItem(let item, let source):
+      switch source.action {
+      case .createSession:
+        let dir = item.path.map { URL(fileURLWithPath: $0) }
+          ?? FileManager.default.homeDirectoryForCurrentUser
+        store.createSession(name: item.name, directory: dir)
+      case .focusSession:
+        if let session = store.sessions.first(where: { $0.name == item.name }) {
+          store.activeSession = session
+        }
+      }
 
     case .newSession(let query, var directory, let createDir, let sshCommand):
       let fm = FileManager.default
