@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Mytty",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v15)],
     dependencies: [
         .package(url: "https://github.com/LebJe/TOMLKit", from: "0.6.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),

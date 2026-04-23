@@ -37,7 +37,7 @@ struct SSHConfigService {
     let sshDir = FileManager.default.homeDirectoryForCurrentUser
       .appendingPathComponent(".ssh")
     let configURL = sshDir.appendingPathComponent("config")
-    guard let content = try? String(contentsOf: configURL) else { return [] }
+    guard let content = try? String(contentsOf: configURL, encoding: .utf8) else { return [] }
     return parseWithIncludes(content, baseDir: sshDir, depth: 0)
   }
 
@@ -53,7 +53,7 @@ struct SSHConfigService {
         ? pattern
         : baseDir.appendingPathComponent(pattern).path
       for path in expandGlob(resolved) {
-        guard let included = try? String(contentsOfFile: path) else { continue }
+        guard let included = try? String(contentsOfFile: path, encoding: .utf8) else { continue }
         let includeDir = URL(fileURLWithPath: path).deletingLastPathComponent()
         hosts.append(contentsOf: parseWithIncludes(included, baseDir: includeDir, depth: depth + 1))
       }
