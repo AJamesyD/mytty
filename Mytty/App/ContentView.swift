@@ -23,6 +23,7 @@ struct ContentView: View {
   @State private var windowModeManager = WindowModeManager()
   @State private var copyModeManager = CopyModeManager()
   @State private var whichKeyManager = WhichKeyManager()
+  @State private var hintsModeManager = HintsModeManager()
   @State private var keySequenceManager = KeySequenceManager()
   @State private var panelState = PanelState()
   @State private var configWatcher = ConfigWatcher()
@@ -63,7 +64,9 @@ struct ContentView: View {
       toggleSidebar: { handleToggleSidebar() },
       toggleTabBar: { handleToggleTabBar() },
       jumpToPreviousPrompt: { jumpToPrompt(direction: -1) },
-      jumpToNextPrompt: { jumpToPrompt(direction: 1) }
+      jumpToNextPrompt: { jumpToPrompt(direction: 1) },
+      hintsMode: { handleHintsMode() },
+      chromeHintsMode: { handleChromeHintsMode() }
     )
   }
 
@@ -103,6 +106,7 @@ struct ContentView: View {
                   windowModeState: tab.windowModeState,
                   joinPickTabNames: joinPickTabNames,
                   paneCount: tab.panes.count,
+                  hintsModeManager: hintsModeManager,
                   onClose: { closePane(zoomedPane) },
                   onSelect: {}
                 )
@@ -116,6 +120,7 @@ struct ContentView: View {
                   windowModeState: tab.windowModeState,
                   joinPickTabNames: joinPickTabNames,
                   paneCount: tab.panes.count,
+                  hintsModeManager: hintsModeManager,
                   onClosePane: { pane in closePane(pane) },
                   onSelectPane: { pane in tab.activePane = pane }
                 )
@@ -303,6 +308,7 @@ struct ContentView: View {
         if whichKeyManager.handleKeyDown(event) == nil { return nil }
         if copyModeManager.handleKeyDown(event) == nil { return nil }
         if windowModeManager.handleKeyDown(event) == nil { return nil }
+        if hintsModeManager.handleKeyDown(event) == nil { return nil }
         return event
       }
     }
@@ -317,6 +323,7 @@ struct ContentView: View {
       TerminalSurfaceView.modalKeyHandler = nil
       windowModeManager.deactivate()
       copyModeManager.deactivate()
+      hintsModeManager.deactivate()
       store.activeSession?.activeTab?.windowModeState = .inactive
       showingSessionManager = false
     }
@@ -375,6 +382,7 @@ extension ContentView {
       || windowModeManager.isActive
       || copyModeManager.isActive
       || whichKeyManager.isActive
+      || hintsModeManager.isActive
   }
 
   func applyConfig(_ config: MyttyConfig) {
@@ -620,6 +628,7 @@ extension ContentView {
       tab.windowModeState = .inactive
       windowModeManager.deactivate()
     } else {
+      hintsModeManager.deactivate()
       tab.windowModeState = .normal
       windowModeManager.activate(store: store)
     }
@@ -630,6 +639,7 @@ extension ContentView {
     if tab.isCopyModeActive {
       copyModeManager.exit()
     } else {
+      hintsModeManager.deactivate()
       copyModeManager.enter(store: store)
     }
   }
@@ -647,12 +657,73 @@ extension ContentView {
           copyModeManager.exit()
         }
       }
+      hintsModeManager.deactivate()
       let keybindingStore = MyttyConfig.load().keybindingStore
       guard let terminalCommands else { return }
       whichKeyManager.activate(
         bindings: WhichKeyManager.buildBindings(
           store: store, commands: terminalCommands,
           groups: keybindingStore.whichKeyGroups))
+    }
+  }
+
+  func handleHintsMode() {
+    if hintsModeManager.isActive {
+      hintsModeManager.deactivate()
+      return
+    }
+    if let tab = store.activeSession?.activeTab {
+      if tab.isWindowModeActive {
+        tab.windowModeState = .inactive
+        windowModeManager.deactivate()
+      }
+      if tab.isCopyModeActive {
+        copyModeManager.exit()
+      }
+    }
+    if whichKeyManager.isActive {
+      whichKeyManager.deactivate()
+    }
+    guard let pane = store.activeSession?.activeTab?.activePane,
+      let surface = pane.surfaceView.surface
+    else { return }
+    let metrics = pane.surfaceView.gridMetrics()
+    let size = ghostty_surface_size(surface)
+    let config = MyttyConfig.load()
+    let cellW = metrics?.cellWidth ?? 8
+    let cellH = metrics?.cellHeight ?? 16
+    let offX = metrics?.offsetX ?? 0
+    let offY = metrics?.offsetY ?? 0
+    let geometry = HintsGeometry.terminal(
+      rows: Int(size.rows), cols: Int(size.columns),
+      cellWidth: cellW, cellHeight: cellH,
+      offsetX: offX, offsetY: offY)
+    let lineReader: (Int) -> String? = { row in
+      var sel = ghostty_selection_s()
+      sel.top_left.tag = GHOSTTY_POINT_VIEWPORT
+      sel.top_left.coord = GHOSTTY_POINT_COORD_EXACT
+      sel.top_left.x = 0
+      sel.top_left.y = UInt32(row)
+      sel.bottom_right.tag = GHOSTTY_POINT_VIEWPORT
+      sel.bottom_right.coord = GHOSTTY_POINT_COORD_EXACT
+      sel.bottom_right.x = UInt32(size.columns - 1)
+      sel.bottom_right.y = UInt32(row)
+      sel.rectangle = false
+      var text = ghostty_text_s()
+      guard ghostty_surface_read_text(surface, sel, &text) else { return nil }
+      defer { ghostty_surface_free_text(surface, &text) }
+      guard let ptr = text.text else { return nil }
+      return String(cString: ptr)
+    }
+    let provider = TerminalHintTargetProvider(
+      lineReader: lineReader, enabledTypes: config.hints.types)
+    hintsModeManager.activate(
+      provider: provider, geometry: geometry, alphabet: config.hints.alphabet)
+  }
+
+  func handleChromeHintsMode() {
+    if hintsModeManager.isActive {
+      hintsModeManager.deactivate()
     }
   }
 
@@ -1059,6 +1130,8 @@ extension ContentView {
     case "window-mode": commands.windowMode()
     case "copy-mode": commands.copyMode()
     case "which-key": commands.whichKey()
+    case "hints-mode": commands.hintsMode()
+    case "chrome-hints-mode": commands.chromeHintsMode()
     case "session-manager": commands.sessionManager()
     case "toggle-sidebar": commands.toggleSidebar()
     case "toggle-tab-bar": commands.toggleTabBar()

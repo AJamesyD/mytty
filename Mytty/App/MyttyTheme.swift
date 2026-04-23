@@ -65,6 +65,11 @@ enum MyttyTheme {
   static let windowModeHUD = Color.orange.opacity(0.85)
   static let copyModeKeyBadge = fg.opacity(0.1)
 
+  // Hints mode
+  static let hintsBackdrop = bg.opacity(0.4)
+  static let hintLabelBackground = Color.orange
+  static let hintLabelForeground = Color.white
+
   // Destructive actions
   static let destructiveAction = Color.red
 

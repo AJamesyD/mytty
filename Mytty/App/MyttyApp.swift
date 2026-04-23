@@ -116,6 +116,17 @@ struct MyttyApp: App {
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "which-key", in: .global))
 
+        Button("Hints Mode") {
+          commands?.hintsMode()
+        }
+        .keyboardShortcut(from: config.keybindingStore.trigger(for: "hints-mode", in: .global))
+
+        Button("Chrome Hints") {
+          commands?.chromeHintsMode()
+        }
+        .keyboardShortcut(
+          from: config.keybindingStore.trigger(for: "chrome-hints-mode", in: .global))
+
         Divider()
 
         Button("Rename Tab") {

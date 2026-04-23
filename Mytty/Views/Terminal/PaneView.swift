@@ -10,6 +10,7 @@ struct PaneView: View {
   var windowModeState: MyttyTab.WindowModeState = .inactive
   var joinPickTabNames: [String] = []
   var paneCount: Int = 1
+  var hintsModeManager: HintsModeManager?
   var onClose: (() -> Void)?
   var onSelect: (() -> Void)?
   @State private var isHovering = false
@@ -94,6 +95,25 @@ struct PaneView: View {
               gridOffsetY: offY,
               lineReader: reader
             )
+          }
+        }
+      }
+      .overlay {
+        if let manager = hintsModeManager, manager.isActive {
+          let metrics = pane.surfaceView.gridMetrics()
+          switch manager.state {
+          case .active(let labels, let typed):
+            HintsOverlayView(
+              labels: labels, typed: typed,
+              cellWidth: metrics?.cellWidth ?? 8,
+              cellHeight: metrics?.cellHeight ?? 16)
+          case .filtering(_, let typed, let remaining):
+            HintsOverlayView(
+              labels: remaining, typed: typed,
+              cellWidth: metrics?.cellWidth ?? 8,
+              cellHeight: metrics?.cellHeight ?? 16)
+          default:
+            EmptyView()
           }
         }
       }

@@ -21,6 +21,8 @@ class TerminalCommands {
   var toggleTabBar: () -> Void
   var jumpToPreviousPrompt: () -> Void
   var jumpToNextPrompt: () -> Void
+  var hintsMode: () -> Void
+  var chromeHintsMode: () -> Void
 
   init(
     newTab: @escaping () -> Void,
@@ -41,7 +43,9 @@ class TerminalCommands {
     toggleSidebar: @escaping () -> Void,
     toggleTabBar: @escaping () -> Void,
     jumpToPreviousPrompt: @escaping () -> Void,
-    jumpToNextPrompt: @escaping () -> Void
+    jumpToNextPrompt: @escaping () -> Void,
+    hintsMode: @escaping () -> Void,
+    chromeHintsMode: @escaping () -> Void
   ) {
     self.newTab = newTab
     self.closeTab = closeTab
@@ -62,6 +66,8 @@ class TerminalCommands {
     self.toggleTabBar = toggleTabBar
     self.jumpToPreviousPrompt = jumpToPreviousPrompt
     self.jumpToNextPrompt = jumpToNextPrompt
+    self.hintsMode = hintsMode
+    self.chromeHintsMode = chromeHintsMode
   }
 }
 

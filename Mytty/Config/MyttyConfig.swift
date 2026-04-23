@@ -31,6 +31,11 @@ enum SidebarPosition: String, Sendable, Equatable {
   case left, right
 }
 
+struct HintsConfig: Sendable, Equatable {
+  var alphabet: String = "asdfghjkl"
+  var types: Set<TerminalMatchType> = Set(TerminalMatchType.allCases)
+}
+
 struct MyttyConfig: Sendable, Equatable {
   var sidebarMode: PanelMode = .pinned
   var sidebarPosition: SidebarPosition = .left
@@ -42,6 +47,7 @@ struct MyttyConfig: Sendable, Equatable {
   var autoHideShowHints: Bool = true
   var popups: [PopupDefinition] = []
   var ssh = SSHConfig()
+  var hints = HintsConfig()
   var sessionSources: [MyttySessionSource] = []
   var keybindingStore: KeybindingStore = .init()
   var parseError: String?
@@ -139,8 +145,36 @@ struct MyttyConfig: Sendable, Equatable {
         )
       }
     }
+    if let hintsTable = table["hints"]?.table {
+      config.hints = parseHints(from: hintsTable)
+    }
     config.keybindingStore = Self.parseKeybindings(from: table)
     return config
+  }
+
+  private static func parseHints(from hintsTable: TOMLTable) -> HintsConfig {
+    var hints = HintsConfig()
+    if let alpha = hintsTable["alphabet"]?.string {
+      let deduped = String(
+        alpha.reduce(into: [Character]()) { arr, c in
+          if !arr.contains(c) { arr.append(c) }
+        })
+      if deduped.count >= 2 { hints.alphabet = deduped }
+    }
+    if let typesArray = hintsTable["types"]?.array {
+      let parsed = typesArray.compactMap { $0.string }.compactMap { str -> TerminalMatchType? in
+        switch str {
+        case "url": return .url
+        case "path": return .path
+        case "hash": return .hash
+        case "ip": return .ip
+        case "linenum": return .linenum
+        default: return nil
+        }
+      }
+      if !parsed.isEmpty { hints.types = Set(parsed) }
+    }
+    return hints
   }
 
   private static func parseKeybindings(from table: TOMLTable) -> KeybindingStore {

@@ -5,3 +5,5 @@ extend-exclude = ["vendor/"]
 # Intentional misspellings in fuzzy match test data
 proejct = "proejct"
 fo = "fo"
+# Two-letter label values in LabelAssigner test data
+ba = "ba"

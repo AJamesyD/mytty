@@ -9,6 +9,7 @@ struct PaneLayoutView: View {
   var windowModeState: MyttyTab.WindowModeState = .inactive
   var joinPickTabNames: [String] = []
   var paneCount: Int = 1
+  var hintsModeManager: HintsModeManager?
   var onClosePane: ((MyttyPane) -> Void)?
   var onSelectPane: ((MyttyPane) -> Void)?
 
@@ -25,6 +26,7 @@ struct PaneLayoutView: View {
         windowModeState: windowModeState,
         joinPickTabNames: joinPickTabNames,
         paneCount: paneCount,
+        hintsModeManager: (pane.id == activePane?.id) ? hintsModeManager : nil,
         onClose: { onClosePane?(pane) },
         onSelect: { onSelectPane?(pane) }
       )
@@ -36,7 +38,8 @@ struct PaneLayoutView: View {
               node: a, activePane: activePane, isWindowModeActive: isWindowModeActive,
               copyModeState: copyModeState, copyModePaneID: copyModePaneID,
               windowModeState: windowModeState, joinPickTabNames: joinPickTabNames,
-              paneCount: paneCount, onClosePane: onClosePane, onSelectPane: onSelectPane
+              paneCount: paneCount, hintsModeManager: hintsModeManager,
+              onClosePane: onClosePane, onSelectPane: onSelectPane
             )
             .frame(width: geo.size.width * ratio)
             Divider()
@@ -44,7 +47,8 @@ struct PaneLayoutView: View {
               node: b, activePane: activePane, isWindowModeActive: isWindowModeActive,
               copyModeState: copyModeState, copyModePaneID: copyModePaneID,
               windowModeState: windowModeState, joinPickTabNames: joinPickTabNames,
-              paneCount: paneCount, onClosePane: onClosePane, onSelectPane: onSelectPane)
+              paneCount: paneCount, hintsModeManager: hintsModeManager,
+              onClosePane: onClosePane, onSelectPane: onSelectPane)
           }
         } else {
           VStack(spacing: 1) {
@@ -52,7 +56,8 @@ struct PaneLayoutView: View {
               node: a, activePane: activePane, isWindowModeActive: isWindowModeActive,
               copyModeState: copyModeState, copyModePaneID: copyModePaneID,
               windowModeState: windowModeState, joinPickTabNames: joinPickTabNames,
-              paneCount: paneCount, onClosePane: onClosePane, onSelectPane: onSelectPane
+              paneCount: paneCount, hintsModeManager: hintsModeManager,
+              onClosePane: onClosePane, onSelectPane: onSelectPane
             )
             .frame(height: geo.size.height * ratio)
             Divider()
@@ -60,7 +65,8 @@ struct PaneLayoutView: View {
               node: b, activePane: activePane, isWindowModeActive: isWindowModeActive,
               copyModeState: copyModeState, copyModePaneID: copyModePaneID,
               windowModeState: windowModeState, joinPickTabNames: joinPickTabNames,
-              paneCount: paneCount, onClosePane: onClosePane, onSelectPane: onSelectPane)
+              paneCount: paneCount, hintsModeManager: hintsModeManager,
+              onClosePane: onClosePane, onSelectPane: onSelectPane)
           }
         }
       }

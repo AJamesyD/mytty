@@ -68,6 +68,8 @@ struct KeybindingStore: Sendable, Equatable {
       "navigate-up": KeyboardTrigger(prefix: .unconsumed, modifiers: [.ctrl], key: "k"),
       "navigate-right": KeyboardTrigger(prefix: .unconsumed, modifiers: [.ctrl], key: "l"),
       "session-manager": KeyboardTrigger(prefix: nil, modifiers: [.cmd], key: "n"),
+      "hints-mode": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "h"),
+      "chrome-hints-mode": KeyboardTrigger(prefix: nil, modifiers: [.cmd, .shift], key: "g"),
     ],
     .windowMode: [
       "exit": KeyboardTrigger(prefix: nil, modifiers: [], key: "escape"),

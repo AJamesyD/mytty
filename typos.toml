@@ -1,6 +1,8 @@
 [default.extend-words]
 # POSIX glob_t struct field
 pathc = "pathc"
+# Two-letter label values in LabelAssigner test data
+ba = "ba"
 
 [default.extend-identifiers]
 # Test data: intentional misspellings/partial strings
