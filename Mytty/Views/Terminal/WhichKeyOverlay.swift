@@ -20,7 +20,7 @@ struct WhichKeyOverlay: View {
           }
         }
       }
-      .font(.system(size: 12, design: .monospaced))
+      .font(.system(size: 15, design: .monospaced))
       .foregroundStyle(MyttyTheme.overlayText)
       .padding(12)
       .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))

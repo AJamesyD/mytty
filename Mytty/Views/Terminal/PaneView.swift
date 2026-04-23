@@ -51,7 +51,7 @@ struct PaneView: View {
       .overlay(alignment: .topLeading) {
         if isZoomed {
           Text("⊕ ZOOMED")
-            .font(.system(size: 11, weight: .bold, design: .monospaced))
+            .font(.system(size: 15, weight: .bold, design: .monospaced))
             .foregroundStyle(MyttyTheme.overlayText)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)

@@ -6,7 +6,7 @@ struct SequenceIndicatorView: View {
   var body: some View {
     if !text.isEmpty {
       Text(text)
-        .font(.system(size: 13, weight: .medium, design: .monospaced))
+        .font(.system(size: 15, weight: .medium, design: .monospaced))
         .foregroundStyle(MyttyTheme.overlayText)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)

@@ -470,7 +470,12 @@ Current (parallelizable):
 Opportunistic (no dependencies, land anytime):
   ├─ R20 (window frame persistence)
   ├─ R14 (dock badge)
-  └─ Replace FuzzyMatcher.swift with ordo-one/FuzzyMatch
+  ├─ Replace FuzzyMatcher.swift with ordo-one/FuzzyMatch
+  └─ Dynamic overlay font scaling: derive terminal overlay font sizes from
+     the active pane's cell height instead of the current fixed 15pt.
+     Affects: WindowModeHints, WhichKeyOverlay, HintsOverlayView,
+     SequenceIndicatorView, CopyModeHelpOverlay, CopyModeOverlay, PaneView
+     ZOOMED badge. Pattern: max(cellHeight * 0.8, 12).
 
 Near-term (unblocked after current):
   ┌─ 4f-3b (copy mode key remapping)      ← unblocked by 4f-3a ✓

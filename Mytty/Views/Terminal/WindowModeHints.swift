@@ -89,7 +89,7 @@ struct WindowModeHints: View {
     HStack(spacing: 12) {
       content()
     }
-    .font(.system(size: 11, design: .monospaced))
+    .font(.system(size: 15, design: .monospaced))
     .foregroundStyle(MyttyTheme.overlayText)
     .padding(.horizontal, 10)
     .padding(.vertical, 5)
