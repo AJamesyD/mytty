@@ -288,6 +288,296 @@ final class ContentViewHandlerTests: XCTestCase {
     XCTAssertNil(pane.surfaceView.layer?.backgroundColor)
   }
 
+  // MARK: - handleGhosttyNewTab
+
+  func test_handleGhosttyNewTab_addsTab() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let paneID = session.tabs[0].panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyNewTab(
+      Notification(
+        name: .ghosttyNewTab, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: paneID)]))
+
+    XCTAssertEqual(session.tabs.count, 2)
+  }
+
+  // MARK: - handleGhosttyNewSplit
+
+  func test_handleGhosttyNewSplit_splitsPaneHorizontally() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let paneID = session.tabs[0].panes[0].id
+    let tab = session.tabs[0]
+    let view = ContentView(store: store)
+
+    view.handleGhosttyNewSplit(
+      Notification(
+        name: .ghosttyNewSplit, object: nil,
+        userInfo: [
+          Notification.payloadKey: NewSplitPayload(paneID: paneID, direction: .horizontal)
+        ]))
+
+    XCTAssertEqual(tab.panes.count, 2)
+  }
+
+  // MARK: - handleGhosttyCloseTab
+
+  func test_handleGhosttyCloseTab_singleTab_closesSession() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let paneID = session.tabs[0].panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyCloseTab(
+      Notification(
+        name: .ghosttyCloseTab, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: paneID)]))
+
+    XCTAssertTrue(store.sessions.isEmpty)
+  }
+
+  func test_handleGhosttyCloseTab_multipleTabs_removesTab() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    session.addTab()
+    let paneID = session.tabs[0].panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyCloseTab(
+      Notification(
+        name: .ghosttyCloseTab, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: paneID)]))
+
+    XCTAssertEqual(session.tabs.count, 1)
+  }
+
+  // MARK: - handleGhosttyCloseWindow
+
+  func test_handleGhosttyCloseWindow_closesSession() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let paneID = session.tabs[0].panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyCloseWindow(
+      Notification(
+        name: .ghosttyCloseWindow, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: paneID)]))
+
+    XCTAssertTrue(store.sessions.isEmpty)
+  }
+
+  // MARK: - handleGhosttyGotoSplit
+
+  func test_handleGhosttyGotoSplit_next_activatesNextPane() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.tabs[0]
+    tab.splitActivePane(direction: .horizontal)
+    let firstPaneID = tab.panes[0].id
+    let secondPane = tab.panes[1]
+    let view = ContentView(store: store)
+
+    view.handleGhosttyGotoSplit(
+      Notification(
+        name: .ghosttyGotoSplit, object: nil,
+        userInfo: [
+          Notification.payloadKey: GotoSplitPayload(paneID: firstPaneID, direction: .next)
+        ]))
+
+    XCTAssertEqual(tab.activePane?.id, secondPane.id)
+  }
+
+  func test_handleGhosttyGotoSplit_previous_activatesPreviousPane() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.tabs[0]
+    tab.splitActivePane(direction: .horizontal)
+    let firstPane = tab.panes[0]
+    let secondPaneID = tab.panes[1].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyGotoSplit(
+      Notification(
+        name: .ghosttyGotoSplit, object: nil,
+        userInfo: [
+          Notification.payloadKey: GotoSplitPayload(paneID: secondPaneID, direction: .previous)
+        ]))
+
+    XCTAssertEqual(tab.activePane?.id, firstPane.id)
+  }
+
+  // MARK: - handleGhosttyResizeSplit
+
+  func test_handleGhosttyResizeSplit_doesNotCrash() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.tabs[0]
+    tab.splitActivePane(direction: .horizontal)
+    let paneID = tab.panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyResizeSplit(
+      Notification(
+        name: .ghosttyResizeSplit, object: nil,
+        userInfo: [
+          Notification.payloadKey: ResizeSplitPayload(paneID: paneID, amount: 10, direction: .right)
+        ]))
+  }
+
+  // MARK: - handleGhosttyEqualizeSplits
+
+  func test_handleGhosttyEqualizeSplits_doesNotCrash() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.tabs[0]
+    tab.splitActivePane(direction: .horizontal)
+    let paneID = tab.panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyEqualizeSplits(
+      Notification(
+        name: .ghosttyEqualizeSplits, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: paneID)]))
+  }
+
+  // MARK: - handleGhosttyToggleSplitZoom
+
+  func test_handleGhosttyToggleSplitZoom_zoomOn() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.tabs[0]
+    let paneID = tab.panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyToggleSplitZoom(
+      Notification(
+        name: .ghosttyToggleSplitZoom, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: paneID)]))
+
+    XCTAssertEqual(tab.zoomedPane?.id, paneID)
+  }
+
+  func test_handleGhosttyToggleSplitZoom_zoomOff() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let tab = session.tabs[0]
+    let pane = tab.panes[0]
+    tab.zoomedPane = pane
+    let view = ContentView(store: store)
+
+    view.handleGhosttyToggleSplitZoom(
+      Notification(
+        name: .ghosttyToggleSplitZoom, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: pane.id)]))
+
+    XCTAssertNil(tab.zoomedPane)
+  }
+
+  // MARK: - handleGhosttyGotoTab
+
+  func test_handleGhosttyGotoTab_byIndex_activatesTab() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    session.addTab()
+    let paneID = session.tabs[1].panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyGotoTab(
+      Notification(
+        name: .ghosttyGotoTab, object: nil,
+        userInfo: [Notification.payloadKey: GotoTabPayload(paneID: paneID, tab: 0)]))
+
+    XCTAssertEqual(session.activeTab?.id, session.tabs[0].id)
+  }
+
+  func test_handleGhosttyGotoTab_previous_activatesPreviousTab() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    session.addTab()
+    let paneID = session.tabs[1].panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyGotoTab(
+      Notification(
+        name: .ghosttyGotoTab, object: nil,
+        userInfo: [Notification.payloadKey: GotoTabPayload(paneID: paneID, tab: -1)]))
+
+    XCTAssertEqual(session.activeTab?.id, session.tabs[0].id)
+  }
+
+  func test_handleGhosttyGotoTab_next_activatesNextTab() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    session.addTab()
+    session.activeTab = session.tabs[0]
+    let paneID = session.tabs[0].panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyGotoTab(
+      Notification(
+        name: .ghosttyGotoTab, object: nil,
+        userInfo: [Notification.payloadKey: GotoTabPayload(paneID: paneID, tab: -2)]))
+
+    XCTAssertEqual(session.activeTab?.id, session.tabs[1].id)
+  }
+
+  // MARK: - handleGhosttyMoveTab
+
+  func test_handleGhosttyMoveTab_movesTabForward() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    session.addTab()
+    let firstTab = session.tabs[0]
+    let paneID = firstTab.panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyMoveTab(
+      Notification(
+        name: .ghosttyMoveTab, object: nil,
+        userInfo: [Notification.payloadKey: MoveTabPayload(paneID: paneID, amount: 1)]))
+
+    XCTAssertEqual(session.tabs[1].id, firstTab.id)
+  }
+
+  // MARK: - handleKeyTable
+
+  func test_handleKeyTable_activate_addsKeyTable() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    let view = ContentView(store: store)
+
+    view.handleKeyTable(
+      Notification(
+        name: .ghosttyKeyTable, object: nil,
+        userInfo: [
+          Notification.payloadKey: KeyTablePayload(
+            paneID: pane.id, action: .activate(name: "leader"))
+        ]))
+
+    XCTAssertEqual(pane.activeKeyTables, ["leader"])
+  }
+
+  func test_handleKeyTable_deactivate_removesLastKeyTable() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    pane.activeKeyTables = ["leader"]
+    let view = ContentView(store: store)
+
+    view.handleKeyTable(
+      Notification(
+        name: .ghosttyKeyTable, object: nil,
+        userInfo: [
+          Notification.payloadKey: KeyTablePayload(paneID: pane.id, action: .deactivate)
+        ]))
+
+    XCTAssertTrue(pane.activeKeyTables.isEmpty)
+  }
+
+  func test_handleKeyTable_deactivateAll_clearsAllKeyTables() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let pane = session.tabs[0].panes[0]
+    pane.activeKeyTables = ["a", "b"]
+    let view = ContentView(store: store)
+
+    view.handleKeyTable(
+      Notification(
+        name: .ghosttyKeyTable, object: nil,
+        userInfo: [
+          Notification.payloadKey: KeyTablePayload(paneID: pane.id, action: .deactivateAll)
+        ]))
+
+    XCTAssertTrue(pane.activeKeyTables.isEmpty)
+  }
+
   // MARK: - Nil Safety
 
   func test_handler_nilPaneID_doesNotCrash() {
@@ -301,8 +591,16 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleCommandFinished($1) },
       { $0.handleProgressReport($1) },
       { $0.handleGhosttyNewTab($1) },
+      { $0.handleGhosttyNewSplit($1) },
       { $0.handleGhosttyCloseTab($1) },
+      { $0.handleGhosttyCloseWindow($1) },
+      { $0.handleGhosttyGotoSplit($1) },
+      { $0.handleGhosttyResizeSplit($1) },
+      { $0.handleGhosttyEqualizeSplits($1) },
       { $0.handleGhosttyToggleSplitZoom($1) },
+      { $0.handleGhosttyGotoTab($1) },
+      { $0.handleGhosttyMoveTab($1) },
+      { $0.handleKeyTable($1) },
       { $0.handleGhosttyChildExited($1) },
     ]
     for handler in handlers {
@@ -327,8 +625,16 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleCommandFinished($1) },
       { $0.handleProgressReport($1) },
       { $0.handleGhosttyNewTab($1) },
+      { $0.handleGhosttyNewSplit($1) },
       { $0.handleGhosttyCloseTab($1) },
+      { $0.handleGhosttyCloseWindow($1) },
+      { $0.handleGhosttyGotoSplit($1) },
+      { $0.handleGhosttyResizeSplit($1) },
+      { $0.handleGhosttyEqualizeSplits($1) },
       { $0.handleGhosttyToggleSplitZoom($1) },
+      { $0.handleGhosttyGotoTab($1) },
+      { $0.handleGhosttyMoveTab($1) },
+      { $0.handleKeyTable($1) },
       { $0.handleGhosttyChildExited($1) },
     ]
     for handler in handlers {
@@ -345,8 +651,11 @@ final class ContentViewHandlerTests: XCTestCase {
     let names: [Notification.Name] = [
       .ghosttySetTitle, .ghosttyRingBell, .ghosttyCloseSurface,
       .ghosttyPwd, .ghosttySetTabTitle, .ghosttyCommandFinished,
-      .ghosttyProgressReport, .ghosttyNewTab, .ghosttyCloseTab,
-      .ghosttyToggleSplitZoom, .ghosttyChildExited,
+      .ghosttyProgressReport, .ghosttyNewTab, .ghosttyNewSplit,
+      .ghosttyCloseTab, .ghosttyCloseWindow, .ghosttyGotoSplit,
+      .ghosttyResizeSplit, .ghosttyEqualizeSplits, .ghosttyToggleSplitZoom,
+      .ghosttyGotoTab, .ghosttyMoveTab, .ghosttyKeyTable,
+      .ghosttyChildExited,
     ]
     for name in names {
       let notification = Notification(name: name, object: nil, userInfo: nil)
