@@ -90,6 +90,7 @@ Next (priority order):
 Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
 - R20: window frame persistence (`NSWindow.setFrameAutosaveName`, ~5 LOC)
 - R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.
+- Replace `FuzzyMatcher.swift` with [ordo-one/FuzzyMatch](https://github.com/ordo-one/FuzzyMatch) (Apache-2.0). Gains typo tolerance, abbreviation matching, and `attributedHighlight()` for SwiftUI. Deletes 227 lines. Research: `/tmp/ai-research-swift-packages-mytty.md`.
 
 ### Bridge audit cleanup gate (before new features)
 
@@ -468,7 +469,8 @@ Current (parallelizable):
 
 Opportunistic (no dependencies, land anytime):
   ├─ R20 (window frame persistence)
-  └─ R14 (dock badge)
+  ├─ R14 (dock badge)
+  └─ Replace FuzzyMatcher.swift with ordo-one/FuzzyMatch
 
 Near-term (unblocked after current):
   ┌─ 4f-3b (copy mode key remapping)      ← unblocked by 4f-3a ✓
