@@ -10,6 +10,7 @@ import UserNotifications
 // re-splitting handlers into a separate file with proper private access,
 // but it touches every handler method signature. Do as a standalone refactor.
 struct ContentView: View {
+  private static let overlayEdgeInset: CGFloat = 8
   private static let sessionManagerShortcutLabel: String = {
     let trigger = MyttyConfig.load().keybindingStore.trigger(for: "session-manager", in: .global)
     return trigger?.displayLabel ?? "⌘N"
@@ -95,7 +96,6 @@ struct ContentView: View {
             let joinPickTabNames = session.tabs
               .filter { $0.id != tab.id }
               .map { $0.displayTitle }
-            ZStack(alignment: .bottom) {
               if let zoomedPane = tab.zoomedPane {
                 PaneView(
                   pane: zoomedPane,
@@ -125,17 +125,6 @@ struct ContentView: View {
                   onSelectPane: { pane in tab.activePane = pane }
                 )
               }
-              if tab.windowModeState != .inactive {
-                WindowModeHints(
-                  keybindingStore: windowModeManager.keybindingStore,
-                  isJoinPick: tab.windowModeState == .joinPick,
-                  tabNames: joinPickTabNames,
-                  paneCount: tab.panes.count
-                )
-                .padding(6)
-                .allowsHitTesting(false)
-              }
-            }
           }
 
           if !panelState.tabBarIsPinned(tabCount: session.tabs.count)
@@ -529,14 +518,33 @@ extension ContentView {
       .overlay { popupOverlay }
       .overlay(alignment: .bottom) {
         SequenceIndicatorView(text: keySequenceManager.pendingDisplay)
-          .padding(.bottom, 40)
+          .padding(.bottom, Self.overlayEdgeInset)
       }
-      .overlay {
+      .overlay(alignment: .bottom) {
         WhichKeyOverlay(
           bindings: whichKeyManager.currentBindings,
           breadcrumb: whichKeyManager.breadcrumb,
           isActive: whichKeyManager.isActive
         )
+        .padding(.bottom, Self.overlayEdgeInset)
+      }
+      .overlay(alignment: .bottom) {
+        if let session = store.activeSession,
+          let tab = session.activeTab,
+          tab.windowModeState != .inactive
+        {
+          WindowModeHints(
+            keybindingStore: windowModeManager.keybindingStore,
+            isJoinPick: tab.windowModeState == .joinPick,
+            tabNames: session.tabs
+              .filter { $0.id != tab.id }
+              .map { $0.displayTitle },
+            paneCount: tab.panes.count
+          )
+          .padding(.bottom, Self.overlayEdgeInset)
+          .transition(.opacity)
+          .allowsHitTesting(false)
+        }
       }
       .onChange(of: showingSessionManager) { _, isShowing in
         if isShowing {

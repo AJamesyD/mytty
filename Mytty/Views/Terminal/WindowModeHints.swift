@@ -93,7 +93,7 @@ struct WindowModeHints: View {
     .foregroundStyle(MyttyTheme.overlayText)
     .padding(.horizontal, 10)
     .padding(.vertical, 5)
-    .background(MyttyTheme.windowModeHUD, in: RoundedRectangle(cornerRadius: 6))
+    .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))
   }
 
   private func hintBadge(key: String, label: String) -> some View {

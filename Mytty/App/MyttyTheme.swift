@@ -62,7 +62,6 @@ enum MyttyTheme {
   static let bellGlow = Color.red
   static let commandSuccessIndicator = Color.green.opacity(0.5)
   static let sessionManagerShadow = bg.opacity(0.3)
-  static let windowModeHUD = Color.orange.opacity(0.85)
   static let copyModeKeyBadge = fg.opacity(0.1)
 
   // Hints mode

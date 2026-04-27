@@ -20,6 +20,7 @@ struct WhichKeyOverlay: View {
           }
         }
       }
+      // TODO(font-scaling): replace 15pt with max(cellHeight * 0.8, 12)
       .font(.system(size: 15, design: .monospaced))
       .foregroundStyle(MyttyTheme.overlayText)
       .padding(12)
