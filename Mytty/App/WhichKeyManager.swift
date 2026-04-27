@@ -18,6 +18,7 @@ final class WhichKeyManager {
   private(set) var currentBindings: [WhichKeyBinding] = []
   private(set) var breadcrumb: [String] = []
   private var rootBindings: [WhichKeyBinding] = []
+  private var bindingStack: [[WhichKeyBinding]] = []
   private var dismissTask: Task<Void, Never>?
 
   func activate(bindings: [WhichKeyBinding]) {
@@ -25,6 +26,7 @@ final class WhichKeyManager {
     rootBindings = bindings
     currentBindings = bindings
     breadcrumb = []
+    bindingStack = []
     isActive = true
     resetTimeout()
   }
@@ -35,6 +37,7 @@ final class WhichKeyManager {
     currentBindings = []
     rootBindings = []
     breadcrumb = []
+    bindingStack = []
     dismissTask?.cancel()
     dismissTask = nil
   }
@@ -42,6 +45,7 @@ final class WhichKeyManager {
   func showContinuations(_ bindings: [WhichKeyBinding]) {
     currentBindings = bindings
     breadcrumb = []
+    bindingStack = []
     isActive = true
   }
 
@@ -49,6 +53,7 @@ final class WhichKeyManager {
     isActive = false
     currentBindings = []
     breadcrumb = []
+    bindingStack = []
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
@@ -69,6 +74,15 @@ final class WhichKeyManager {
       return true
     }
 
+    if key == "\u{7F}" {
+      if !breadcrumb.isEmpty {
+        breadcrumb.removeLast()
+        currentBindings = bindingStack.removeLast()
+      }
+      resetTimeout()
+      return true
+    }
+
     resetTimeout()
 
     guard let binding = currentBindings.first(where: { $0.key == key }) else {
@@ -80,6 +94,7 @@ final class WhichKeyManager {
       deactivate()
       action()
     case .group(let label, let children):
+      bindingStack.append(currentBindings)
       breadcrumb.append(label)
       currentBindings = children
     }

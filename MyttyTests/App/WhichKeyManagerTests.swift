@@ -99,4 +99,56 @@ final class WhichKeyManagerTests: XCTestCase {
     _ = manager.handleKey("g")
     XCTAssertEqual(manager.breadcrumb, ["Group"])
   }
+
+  func test_backspace_atRoot_consumesKey() {
+    manager.activate(bindings: makeBindings())
+    XCTAssertTrue(manager.handleKey("\u{7F}"))
+    XCTAssertTrue(manager.isActive)
+    XCTAssertEqual(manager.currentBindings.count, 2)
+    XCTAssertTrue(manager.breadcrumb.isEmpty)
+  }
+
+  func test_backspace_whenNested_navigatesUp() {
+    manager.activate(bindings: makeBindings())
+    _ = manager.handleKey("g")
+    _ = manager.handleKey("\u{7F}")
+    XCTAssertTrue(manager.isActive)
+    XCTAssertTrue(manager.breadcrumb.isEmpty)
+    XCTAssertEqual(manager.currentBindings.count, 2)
+  }
+
+  func test_backspace_multiLevel_navigatesOneLevel() {
+    let deepBindings: [WhichKeyBinding] = [
+      WhichKeyBinding(
+        key: "g",
+        action: .group(
+          label: "Group",
+          children: [
+            WhichKeyBinding(
+              key: "h",
+              action: .group(
+                label: "SubGroup",
+                children: [
+                  WhichKeyBinding(key: "x", action: .command(label: "Leaf") {})
+                ]))
+          ]))
+    ]
+    manager.activate(bindings: deepBindings)
+    _ = manager.handleKey("g")
+    _ = manager.handleKey("h")
+    XCTAssertEqual(manager.breadcrumb, ["Group", "SubGroup"])
+    _ = manager.handleKey("\u{7F}")
+    XCTAssertEqual(manager.breadcrumb, ["Group"])
+    XCTAssertEqual(manager.currentBindings.count, 1)
+    XCTAssertEqual(manager.currentBindings.first?.key, "h")
+  }
+
+  func test_backspace_afterNavigateUp_canReenter() {
+    manager.activate(bindings: makeBindings())
+    _ = manager.handleKey("g")
+    _ = manager.handleKey("\u{7F}")
+    _ = manager.handleKey("g")
+    XCTAssertEqual(manager.breadcrumb, ["Group"])
+    XCTAssertEqual(manager.currentBindings.count, 1)
+  }
 }
