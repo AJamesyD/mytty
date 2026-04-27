@@ -227,5 +227,4 @@ Everything has its own position. Nothing conflicts.
 
 ## Sources
 
-- /tmp/ai-research-sidebar-notification-ui-patterns.md (2026-04-15)
-- /tmp/ai-design-phase2b-contextual-sidebar.md (Phase 2b spec)
+Ephemeral research files (not persisted).

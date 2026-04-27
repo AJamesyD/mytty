@@ -2,7 +2,7 @@
 
 Created: 2026-04-14
 Status: Implemented (Phase 1b)
-Prior art: /tmp/ai-research-sidebar-patterns.md
+Prior art: (ephemeral, not persisted)
 
 ## Goal
 

@@ -439,3 +439,7 @@ Viewport-change cancellation is signaled via an injected closure (not by observi
 **Prefix-free tree algorithm.** See section 3.
 
 **Mixed single/two-char labels.** The initial design assigned single-char labels to the first N targets and two-char to the rest. This creates prefix ambiguity: typing `a` could select target `a` or begin the two-char label `as`. Rejected in favor of uniform-length labels per activation.
+
+## Related
+
+- [Hint Bar](hint-bar.md): hint bar hides when hints mode is active

@@ -8,7 +8,8 @@ Mytty macOS terminal emulator, libghostty backend.
 
 **Date:** 2026-04-21
 
-**Research:** `/tmp/ai-research-session-sources.md`, `/tmp/ai-research-session-sources-gaps.md`, `/tmp/ai-debate-session-sources-protocol.md`, `/tmp/ai-research-tool-env-vars.md`
+**Research:** (ephemeral, not persisted)
+**Related:** [Phase 3a: Socket API](phase3a-socket-api.md) (transport layer for the IPC socket)
 
 ---
 

@@ -8,7 +8,7 @@ Mytty macOS terminal emulator, libghostty backend.
 
 **Date:** 2026-04-16
 
-**Research:** `/tmp/ai-research-dropdown-terminal.md`
+**Research:** (ephemeral, not persisted)
 
 ---
 

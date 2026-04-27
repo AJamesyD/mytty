@@ -8,7 +8,8 @@ Mytty macOS terminal emulator, libghostty backend.
 
 **Date:** 2026-04-16
 
-**Research:** `/tmp/ai-research-key-sequences.md`
+**Research:** (ephemeral, not persisted)
+**Related:** [Phase 4a: Configurable Keybindings](phase4a-config-keybindings.md) (trigger syntax)
 
 ---
 

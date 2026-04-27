@@ -273,11 +273,4 @@ Visual highlight on navigation: deferred (requires renderer-level changes). The 
 
 ## Sources
 
-- /tmp/ai-research-phase2b-inputs.md
-- /tmp/ai-research-phase2b-notification-patterns.md
-- /tmp/ai-research-command-state-indicators.md (command state patterns across terminals)
-- /tmp/ai-brainstorm-phase2b-sidebar.md
-- /tmp/ai-debate-phase2b-sidebar.md
-- /tmp/ai-research-ghostty-osc-handling.md
-- /tmp/ai-research-sidebar-patterns.md
-- /tmp/ai-research-terminal-ui-ux-patterns.md
+Ephemeral research files (not persisted).
