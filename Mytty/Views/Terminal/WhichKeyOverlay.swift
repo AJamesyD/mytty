@@ -5,21 +5,41 @@ struct WhichKeyOverlay: View {
   var breadcrumb: [String]
   var isActive: Bool
 
+  @State private var availableWidth: CGFloat = 0
+
   var body: some View {
     if isActive {
       VStack(alignment: .leading, spacing: 6) {
         if !breadcrumb.isEmpty {
           Text(breadcrumb.joined(separator: " > ") + " >")
             .fontWeight(.bold)
+          Text("⌫ back")
+            .font(.system(size: 12, design: .monospaced))
+            .foregroundStyle(MyttyTheme.overlayTextMuted)
         }
-        ForEach(Array(chunked(bindings, size: 4).enumerated()), id: \.offset) { _, row in
-          HStack(spacing: 14) {
-            ForEach(row) { binding in
-              hintBadge(binding: binding)
+        // availableWidth already excludes outer .padding(12)
+        // 174 = 160pt min column width + 14pt inter-column gap
+        let columns = max(1, min(6, Int((availableWidth + 14) / 174)))
+        let rowsPerColumn =
+          bindings.isEmpty ? 0 : Int((Double(bindings.count) / Double(columns)).rounded(.up))
+        HStack(alignment: .top, spacing: 14) {
+          ForEach(0..<columns, id: \.self) { col in
+            VStack(alignment: .leading, spacing: 6) {
+              ForEach(0..<rowsPerColumn, id: \.self) { row in
+                let index = col * rowsPerColumn + row
+                if index < bindings.count {
+                  hintBadge(binding: bindings[index])
+                }
+              }
             }
           }
         }
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(
+        GeometryReader { geo in Color.clear.preference(key: WidthKey.self, value: geo.size.width) }
+      )
+      .onPreferenceChange(WidthKey.self) { availableWidth = $0 }
       // TODO(font-scaling): replace 15pt with max(cellHeight * 0.8, 12)
       .font(.system(size: 15, design: .monospaced))
       .foregroundStyle(MyttyTheme.overlayText)
@@ -38,6 +58,9 @@ struct WhichKeyOverlay: View {
         .padding(.vertical, 2)
         .background(MyttyTheme.overlayKeyBadge, in: RoundedRectangle(cornerRadius: 3))
       Text(label + (isGroup ? " >" : ""))
+        .foregroundStyle(isGroup ? MyttyTheme.overlayGroupLabel : MyttyTheme.overlayLeafLabel)
+        .lineLimit(1)
+        .truncationMode(.tail)
     }
   }
 
@@ -47,10 +70,11 @@ struct WhichKeyOverlay: View {
     case .command(let label, _): (label, false)
     }
   }
+}
 
-  private func chunked(_ array: [WhichKeyBinding], size: Int) -> [[WhichKeyBinding]] {
-    stride(from: 0, to: array.count, by: size).map {
-      Array(array[$0..<min($0 + size, array.count)])
-    }
+private struct WidthKey: PreferenceKey {
+  static let defaultValue: CGFloat = 0
+  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    value = max(value, nextValue())
   }
 }

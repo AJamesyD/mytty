@@ -22,6 +22,8 @@ enum MyttyTheme {
   static let overlayText = fg
   static let overlayTextMuted = fg.opacity(0.8)
   static let overlayKeyBadge = fg.opacity(0.2)
+  static let overlayGroupLabel = Color.orange.opacity(0.9)
+  static let overlayLeafLabel = fg
 
   // Mode indicators
   static let modeIndicatorBackground = Color.orange.opacity(0.8)
