@@ -76,9 +76,9 @@ final class WhichKeyManagerTests: XCTestCase {
     XCTAssertEqual(manager.breadcrumb, ["Group"])
   }
 
-  func test_unknownKey_ignored() {
+  func test_unknownKey_consumed() {
     manager.activate(bindings: makeBindings())
-    XCTAssertFalse(manager.handleKey("z"))
+    XCTAssertTrue(manager.handleKey("z"))
     XCTAssertTrue(manager.isActive)
     XCTAssertEqual(manager.currentBindings.count, 2)
   }

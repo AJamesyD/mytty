@@ -89,7 +89,7 @@ final class WhichKeyManager {
     resetTimeout()
 
     guard let binding = currentBindings.first(where: { $0.key == key }) else {
-      return false
+      return true
     }
 
     switch binding.action {
