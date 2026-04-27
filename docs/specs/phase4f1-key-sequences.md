@@ -2,6 +2,8 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
+**Status:** Implemented
+
 **Goal:** Support multi-key bindings (e.g., `ctrl+a>h`) in config. Parse `>` as a sequence separator in `TriggerParser`. Add a sequence state machine that tracks pending leaders and dispatches the final action. Timeout after 1s (configurable). Visual indicator for pending sequences.
 
 **Date:** 2026-04-16

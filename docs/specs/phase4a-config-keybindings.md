@@ -2,6 +2,8 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
+**Status:** Implemented
+
 **Goal:** Make all keybindings configurable via `~/.config/mytty/config.toml`. Users override only the bindings they want to change; unspecified bindings keep their defaults. The trigger string syntax is compatible with Ghostty's modifier format.
 
 **Date:** 2026-04-15

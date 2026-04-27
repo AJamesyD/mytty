@@ -1,6 +1,7 @@
 # Phase 2b: Contextual Sidebar
 
 **Date:** 2026-04-14 (updated 2026-04-14)
+**Status:** Partially implemented
 **Depends on:** Phase 2a (OSC Foundation, done)
 **Scope:** Three features that make the sidebar show what's happening without mode-switching: notification badges, rich metadata, and shell integration display.
 

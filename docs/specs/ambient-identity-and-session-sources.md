@@ -2,6 +2,8 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
+**Status:** Proposed
+
 **Goal:** Give every Mytty-spawned shell a discoverable identity via environment variables (Layer 1), then let users configure external commands as pluggable session sources for the picker (Layer 2).
 
 **Date:** 2026-04-21

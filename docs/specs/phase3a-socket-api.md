@@ -2,6 +2,8 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
+**Status:** Implemented
+
 > **Note:** Method names in this spec reflect the original design. Several pane methods
 > were renamed post-implementation: `pane.sendKeys` -> `pane.write`, `pane.runCommand` -> `pane.exec`,
 > `pane.getText` -> `pane.read`, `pane.focusByDirection` -> `pane.navigate`, `pane.atEdge` -> `pane.edge`.

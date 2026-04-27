@@ -2,6 +2,8 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
+**Status:** Proposed
+
 **Goal:** A general label-and-act system with pluggable target providers. Two providers at launch: terminal (URLs, paths, hashes) and chrome (sessions, tabs, panes).
 
 **Date:** 2026-04-22

@@ -2,6 +2,8 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
+**Status:** Implemented
+
 **Goal:** Handle the remaining OSC action callbacks from libghostty, storing state on the model layer. Visual rendering of most new state is deferred to Phase 2b.
 
 **Date:** 2026-04-14

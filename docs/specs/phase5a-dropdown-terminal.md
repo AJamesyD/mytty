@@ -2,6 +2,8 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
+**Status:** Implemented
+
 **Goal:** Add a quake-style dropdown terminal that slides in from the top of the screen on a global hotkey. The dropdown is a single-pane terminal that persists across show/hide cycles, independent of the main window.
 
 **Date:** 2026-04-16
