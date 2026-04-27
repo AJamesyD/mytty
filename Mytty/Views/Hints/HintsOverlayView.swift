@@ -43,7 +43,7 @@ struct HintsOverlayView: View {
           Text("⌃ paste")
             .foregroundStyle(MyttyTheme.overlayTextMuted)
         }
-        .font(.system(size: 15, weight: .medium, design: .monospaced))
+        .font(.system(size: max(cellHeight * 0.8, 12), weight: .medium, design: .monospaced))
         .padding(.vertical, 6)
         .padding(.horizontal, 12)
         .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 6))

@@ -4,6 +4,7 @@ struct WhichKeyOverlay: View {
   var bindings: [WhichKeyBinding]
   var breadcrumb: [String]
   var isActive: Bool
+  var cellHeight: CGFloat
 
   @State private var availableWidth: CGFloat = 0
 
@@ -14,7 +15,7 @@ struct WhichKeyOverlay: View {
           Text(breadcrumb.joined(separator: " > ") + " >")
             .fontWeight(.bold)
           Text("⌫ back")
-            .font(.system(size: 12, design: .monospaced))
+            .font(.system(size: max(cellHeight * 0.6, 10), design: .monospaced))
             .foregroundStyle(MyttyTheme.overlayTextMuted)
         }
         // availableWidth already excludes outer .padding(12)
@@ -40,8 +41,7 @@ struct WhichKeyOverlay: View {
         GeometryReader { geo in Color.clear.preference(key: WidthKey.self, value: geo.size.width) }
       )
       .onPreferenceChange(WidthKey.self) { availableWidth = $0 }
-      // TODO(font-scaling): replace 15pt with max(cellHeight * 0.8, 12)
-      .font(.system(size: 15, design: .monospaced))
+      .font(.system(size: max(cellHeight * 0.8, 12), design: .monospaced))
       .foregroundStyle(MyttyTheme.overlayText)
       .padding(12)
       .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))

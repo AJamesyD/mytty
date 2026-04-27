@@ -5,6 +5,7 @@ struct WindowModeHints: View {
   var isJoinPick: Bool = false
   var tabNames: [String] = []
   var paneCount: Int = 1
+  var cellHeight: CGFloat
 
   private func label(for action: String) -> String? {
     keybindingStore.trigger(for: action, in: .windowMode)?.displayLabel
@@ -89,7 +90,7 @@ struct WindowModeHints: View {
     HStack(spacing: 12) {
       content()
     }
-    .font(.system(size: 15, design: .monospaced))
+    .font(.system(size: max(cellHeight * 0.8, 12), design: .monospaced))
     .foregroundStyle(MyttyTheme.overlayText)
     .padding(.horizontal, 10)
     .padding(.vertical, 5)

@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct CopyModeHelpOverlay: View {
+  var cellHeight: CGFloat
+
   private let navHints: [(key: String, label: String)] = [
     ("h/j/k/l", "move cursor"),
     ("w/b/e", "word fwd/back/end"),
@@ -48,7 +50,7 @@ struct CopyModeHelpOverlay: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       Text("COPY MODE HELP")
-        .font(.system(size: 15, weight: .bold, design: .monospaced))
+        .font(.system(size: max(cellHeight * 0.8, 12), weight: .bold, design: .monospaced))
 
       HStack(alignment: .top, spacing: 20) {
         hintColumn(title: "Navigation", hints: navHints)
@@ -59,7 +61,7 @@ struct CopyModeHelpOverlay: View {
         hintColumn(title: "Actions", hints: actionHints)
       }
     }
-    .font(.system(size: 15, design: .monospaced))
+    .font(.system(size: max(cellHeight * 0.8, 12), design: .monospaced))
     .foregroundStyle(MyttyTheme.overlayText)
     .padding(12)
     .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))

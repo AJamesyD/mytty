@@ -50,8 +50,9 @@ struct PaneView: View {
       }
       .overlay(alignment: .topLeading) {
         if isZoomed {
+          let cellH = pane.surfaceView.gridMetrics()?.cellHeight ?? 16
           Text("⊕ ZOOMED")
-            .font(.system(size: 15, weight: .bold, design: .monospaced))
+            .font(.system(size: max(cellH * 0.8, 12), weight: .bold, design: .monospaced))
             .foregroundStyle(MyttyTheme.overlayText)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)

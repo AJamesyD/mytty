@@ -514,18 +514,22 @@ extension ContentView {
   }
 
   var contentWithOverlays: some View {
-    mainContent
+    let cellHeight =
+      store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellHeight ?? 16
+    return
+      mainContent
       .overlay { sessionManagerOverlay }
       .overlay { popupOverlay }
       .overlay(alignment: .bottom) {
-        SequenceIndicatorView(text: keySequenceManager.pendingDisplay)
+        SequenceIndicatorView(text: keySequenceManager.pendingDisplay, cellHeight: cellHeight)
           .padding(.bottom, Self.overlayEdgeInset)
       }
       .overlay(alignment: .bottom) {
         WhichKeyOverlay(
           bindings: whichKeyManager.currentBindings,
           breadcrumb: whichKeyManager.breadcrumb,
-          isActive: whichKeyManager.isActive
+          isActive: whichKeyManager.isActive,
+          cellHeight: cellHeight
         )
         .padding(.bottom, Self.overlayEdgeInset)
       }
@@ -540,7 +544,8 @@ extension ContentView {
             tabNames: session.tabs
               .filter { $0.id != tab.id }
               .map { $0.displayTitle },
-            paneCount: tab.panes.count
+            paneCount: tab.panes.count,
+            cellHeight: cellHeight
           )
           .padding(.bottom, Self.overlayEdgeInset)
           .transition(.opacity)
