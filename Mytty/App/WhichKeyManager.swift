@@ -47,6 +47,7 @@ final class WhichKeyManager {
     breadcrumb = []
     bindingStack = []
     isActive = true
+    resetTimeout()
   }
 
   func hideContinuations() {
@@ -54,6 +55,8 @@ final class WhichKeyManager {
     currentBindings = []
     breadcrumb = []
     bindingStack = []
+    dismissTask?.cancel()
+    dismissTask = nil
   }
 
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {

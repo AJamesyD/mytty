@@ -151,4 +151,15 @@ final class WhichKeyManagerTests: XCTestCase {
     XCTAssertEqual(manager.breadcrumb, ["Group"])
     XCTAssertEqual(manager.currentBindings.count, 1)
   }
+
+  func test_showContinuations_activatesAndSetsBindings() {
+    let bindings: [WhichKeyBinding] = [
+      WhichKeyBinding(key: "a", action: .command(label: "Cont") {})
+    ]
+    manager.showContinuations(bindings)
+    XCTAssertTrue(manager.isActive)
+    XCTAssertEqual(manager.currentBindings.count, 1)
+    XCTAssertEqual(manager.currentBindings.first?.key, "a")
+    XCTAssertTrue(manager.breadcrumb.isEmpty)
+  }
 }
