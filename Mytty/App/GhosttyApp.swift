@@ -388,15 +388,43 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     }
     return true
 
+  // Matches Ghostty's openURL logic.
+  // Ref: vendor/ghostty/macos/Sources/Ghostty/Ghostty.App.swift
   case GHOSTTY_ACTION_OPEN_URL:
     let openUrl = action.action.open_url
-    if let urlPtr = openUrl.url {
-      let urlStr = String(cString: urlPtr)
-      DispatchQueue.main.async {
-        if let url = URL(string: urlStr) {
-          NSWorkspace.shared.open(url)
-        }
+    guard let urlPtr = openUrl.url else { return true }
+    let data = Data(bytes: urlPtr, count: Int(openUrl.len))
+    guard let urlStr = String(data: data, encoding: .utf8), !urlStr.isEmpty else { return true }
+    let kind = openUrl.kind
+    DispatchQueue.main.async {
+      // If the URL has no scheme, treat it as a file path with tilde expansion.
+      // See: https://github.com/ghostty-org/ghostty/issues/8763
+      let url: URL
+      if let candidate = URL(string: urlStr), candidate.scheme != nil {
+        url = candidate
+      } else {
+        let expandedPath = NSString(string: urlStr).standardizingPath
+        url = URL(filePath: expandedPath)
       }
+
+      switch kind {
+      case GHOSTTY_ACTION_OPEN_URL_KIND_TEXT:
+        let editor = NSWorkspace.shared.defaultApplicationURL(
+          forExtension: url.pathExtension) ?? NSWorkspace.shared.defaultTextEditor
+        if let textEditor = editor {
+          NSWorkspace.shared.open(
+            [url], withApplicationAt: textEditor,
+            configuration: NSWorkspace.OpenConfiguration())
+          return
+        }
+      case GHOSTTY_ACTION_OPEN_URL_KIND_HTML,
+           GHOSTTY_ACTION_OPEN_URL_KIND_UNKNOWN:
+        break
+      default:
+        break
+      }
+
+      NSWorkspace.shared.open(url)
     }
     return true
 
