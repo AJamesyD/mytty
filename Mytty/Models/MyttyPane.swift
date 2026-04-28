@@ -25,7 +25,6 @@ final class MyttyPane: Identifiable {
   var activeKeyTables: [String] = []
   var hoverUrl: String?
 
-  // TODO: cancel progressExpiryTask and resultClearTask on pane teardown
   @ObservationIgnored
   var progressExpiryTask: DispatchWorkItem?
 

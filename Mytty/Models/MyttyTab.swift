@@ -81,6 +81,8 @@ final class MyttyTab: Identifiable {
   }
 
   func closePane(_ pane: MyttyPane) {
+    pane.progressExpiryTask?.cancel()
+    pane.resultClearTask?.cancel()
     layout.remove(pane: pane)
     panes = layout.leaves
     if activePane?.id == pane.id { activePane = panes.last }
