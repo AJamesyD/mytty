@@ -64,6 +64,7 @@ final class MyttySession: Identifiable {
   }
 
   func closeTab(_ tab: MyttyTab) {
+    tab.titleDebounceTask?.cancel()
     tabs.removeAll { $0.id == tab.id }
     if activeTab?.id == tab.id { activeTab = tabs.last }
   }
