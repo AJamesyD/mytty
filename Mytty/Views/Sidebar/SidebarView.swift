@@ -164,6 +164,11 @@ struct SessionRowView: View {
           store.activeSession = session
           session.activeTab = tab
         }
+        .onReceive(NotificationCenter.default.publisher(for: .myttyRenameTab)) { _ in
+          if isActiveTab {
+            editingTabID = tab.id
+          }
+        }
       }
     } label: {
       sessionLabel
