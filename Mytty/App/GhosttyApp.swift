@@ -397,15 +397,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     guard let urlStr = String(data: data, encoding: .utf8), !urlStr.isEmpty else { return true }
     let kind = openUrl.kind
     DispatchQueue.main.async {
-      // If the URL has no scheme, treat it as a file path with tilde expansion.
-      // See: https://github.com/ghostty-org/ghostty/issues/8763
-      let url: URL
-      if let candidate = URL(string: urlStr), candidate.scheme != nil {
-        url = candidate
-      } else {
-        let expandedPath = NSString(string: urlStr).standardizingPath
-        url = URL(filePath: expandedPath)
-      }
+      let url = resolveOpenURL(urlStr)
 
       switch kind {
       case GHOSTTY_ACTION_OPEN_URL_KIND_TEXT:
