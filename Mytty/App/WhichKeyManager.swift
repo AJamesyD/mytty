@@ -64,6 +64,12 @@ final class WhichKeyManager {
     if event.modifierFlags.isDisjoint(with: [.command, .option]) == false {
       return event
     }
+    // keyCode 51 = delete key. characters(byApplyingModifiers: []) doesn't
+    // produce \u{7F} for delete, so check keyCode directly (matches
+    // HintsModeManager and CopyModeState).
+    if event.keyCode == 51 {
+      return handleKey("\u{7F}") ? nil : event
+    }
     guard let chars = event.characters(byApplyingModifiers: []),
       let key = chars.first
     else { return event }
