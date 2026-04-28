@@ -62,6 +62,40 @@ final class MyttySessionTests: XCTestCase {
     XCTAssertEqual(session.activeTab?.id, second.id)
   }
 
+  func test_closeOtherTabs_keepsOnlySpecifiedTab() {
+    let session = makeSession()
+    session.addTab()
+    session.addTab()
+    let middle = session.tabs[1]
+    session.closeOtherTabs(keeping: middle)
+    XCTAssertEqual(session.tabs.count, 1)
+    XCTAssertEqual(session.tabs[0].id, middle.id)
+    XCTAssertEqual(session.activeTab?.id, middle.id)
+  }
+
+  func test_closeTabsOnTheRight_removesTabsAfterSpecified() {
+    let session = makeSession()
+    session.addTab()
+    session.addTab()
+    let first = session.tabs[0]
+    session.activeTab = session.tabs[2]
+    session.closeTabsOnTheRight(of: first)
+    XCTAssertEqual(session.tabs.count, 1)
+    XCTAssertEqual(session.tabs[0].id, first.id)
+    XCTAssertEqual(session.activeTab?.id, first.id)
+  }
+
+  func test_closeTabsOnTheRight_activeTabPreservedIfNotRemoved() {
+    let session = makeSession()
+    session.addTab()
+    session.addTab()
+    let second = session.tabs[1]
+    session.activeTab = second
+    session.closeTabsOnTheRight(of: second)
+    XCTAssertEqual(session.tabs.count, 2)
+    XCTAssertEqual(session.activeTab?.id, second.id)
+  }
+
   func test_moveTab() {
     let session = makeSession()
     session.addTab()

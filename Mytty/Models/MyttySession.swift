@@ -69,6 +69,22 @@ final class MyttySession: Identifiable {
     if activeTab?.id == tab.id { activeTab = tabs.last }
   }
 
+  func closeOtherTabs(keeping tab: MyttyTab) {
+    tabs.forEach { if $0.id != tab.id { $0.titleDebounceTask?.cancel() } }
+    tabs.removeAll { $0.id != tab.id }
+    activeTab = tab
+  }
+
+  func closeTabsOnTheRight(of tab: MyttyTab) {
+    guard let index = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
+    let rightTabs = tabs[(index + 1)...]
+    rightTabs.forEach { $0.titleDebounceTask?.cancel() }
+    tabs.removeSubrange((index + 1)...)
+    if activeTab.map({ active in tabs.contains(where: { $0.id == active.id }) }) != true {
+      activeTab = tab
+    }
+  }
+
   func moveTab(withID id: Int, toIndex destination: Int) {
     guard let sourceIndex = tabs.firstIndex(where: { $0.id == id }),
       sourceIndex != destination

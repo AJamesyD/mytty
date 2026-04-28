@@ -485,6 +485,14 @@ extension ContentView {
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyCloseTab)) { notification in
         handleGhosttyCloseTab(notification)
       }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyCloseOtherTabs)) {
+        notification in
+        handleGhosttyCloseOtherTabs(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .ghosttyCloseTabsOnTheRight)) {
+        notification in
+        handleGhosttyCloseTabsOnTheRight(notification)
+      }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyGotoSplit)) { notification in
         handleGhosttyGotoSplit(notification)
       }
@@ -966,6 +974,20 @@ extension ContentView {
     if match.session.tabs.isEmpty {
       store.closeSession(match.session)
     }
+  }
+
+  func handleGhosttyCloseOtherTabs(_ notification: Notification) {
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.session.closeOtherTabs(keeping: match.tab)
+  }
+
+  func handleGhosttyCloseTabsOnTheRight(_ notification: Notification) {
+    guard let p = notification.payload(PanePayload.self), let paneID = p.paneID,
+      let match = store.pane(byId: paneID)
+    else { return }
+    match.session.closeTabsOnTheRight(of: match.tab)
   }
 
   func handleGhosttyCloseWindow(_ notification: Notification) {

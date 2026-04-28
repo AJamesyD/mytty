@@ -350,6 +350,44 @@ final class ContentViewHandlerTests: XCTestCase {
     XCTAssertEqual(session.tabs.count, 1)
   }
 
+  // MARK: - handleGhosttyCloseOtherTabs
+
+  func test_handleGhosttyCloseOtherTabs_keepsOnlyMatchingTab() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    session.addTab()
+    session.addTab()
+    let middleTab = session.tabs[1]
+    let paneID = middleTab.panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyCloseOtherTabs(
+      Notification(
+        name: .ghosttyCloseOtherTabs, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: paneID)]))
+
+    XCTAssertEqual(session.tabs.count, 1)
+    XCTAssertEqual(session.tabs[0].id, middleTab.id)
+  }
+
+  // MARK: - handleGhosttyCloseTabsOnTheRight
+
+  func test_handleGhosttyCloseTabsOnTheRight_removesRightTabs() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    session.addTab()
+    session.addTab()
+    let firstTab = session.tabs[0]
+    let paneID = firstTab.panes[0].id
+    let view = ContentView(store: store)
+
+    view.handleGhosttyCloseTabsOnTheRight(
+      Notification(
+        name: .ghosttyCloseTabsOnTheRight, object: nil,
+        userInfo: [Notification.payloadKey: PanePayload(paneID: paneID)]))
+
+    XCTAssertEqual(session.tabs.count, 1)
+    XCTAssertEqual(session.tabs[0].id, firstTab.id)
+  }
+
   // MARK: - handleGhosttyCloseWindow
 
   func test_handleGhosttyCloseWindow_closesSession() {
@@ -594,6 +632,8 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleGhosttyNewTab($1) },
       { $0.handleGhosttyNewSplit($1) },
       { $0.handleGhosttyCloseTab($1) },
+      { $0.handleGhosttyCloseOtherTabs($1) },
+      { $0.handleGhosttyCloseTabsOnTheRight($1) },
       { $0.handleGhosttyCloseWindow($1) },
       { $0.handleGhosttyGotoSplit($1) },
       { $0.handleGhosttyResizeSplit($1) },
@@ -633,6 +673,8 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleGhosttyNewTab($1) },
       { $0.handleGhosttyNewSplit($1) },
       { $0.handleGhosttyCloseTab($1) },
+      { $0.handleGhosttyCloseOtherTabs($1) },
+      { $0.handleGhosttyCloseTabsOnTheRight($1) },
       { $0.handleGhosttyCloseWindow($1) },
       { $0.handleGhosttyGotoSplit($1) },
       { $0.handleGhosttyResizeSplit($1) },
@@ -662,7 +704,8 @@ final class ContentViewHandlerTests: XCTestCase {
       .ghosttySetTitle, .ghosttyRingBell, .ghosttyCloseSurface,
       .ghosttyPwd, .ghosttySetTabTitle, .ghosttyCommandFinished,
       .ghosttyProgressReport, .ghosttyDesktopNotification, .ghosttyNewTab, .ghosttyNewSplit,
-      .ghosttyCloseTab, .ghosttyCloseWindow, .ghosttyGotoSplit,
+      .ghosttyCloseTab, .ghosttyCloseOtherTabs, .ghosttyCloseTabsOnTheRight,
+      .ghosttyCloseWindow, .ghosttyGotoSplit,
       .ghosttyResizeSplit, .ghosttyEqualizeSplits, .ghosttyToggleSplitZoom,
       .ghosttyGotoTab, .ghosttyMoveTab, .ghosttyKeyTable,
       .ghosttyChildExited,

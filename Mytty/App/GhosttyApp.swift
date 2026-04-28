@@ -265,9 +265,16 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     return true
 
   case GHOSTTY_ACTION_CLOSE_TAB:
+    let mode = action.action.close_tab_mode
+    let notificationName: Notification.Name
+    switch mode {
+    case GHOSTTY_ACTION_CLOSE_TAB_MODE_OTHER: notificationName = .ghosttyCloseOtherTabs
+    case GHOSTTY_ACTION_CLOSE_TAB_MODE_RIGHT: notificationName = .ghosttyCloseTabsOnTheRight
+    default: notificationName = .ghosttyCloseTab
+    }
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
-        name: .ghosttyCloseTab,
+        name: notificationName,
         object: nil,
         userInfo: [Notification.payloadKey: PanePayload(paneID: view.pane?.id)]
       )
@@ -587,6 +594,8 @@ extension Notification.Name {
   static let ghosttyNewTab = Notification.Name("ghosttyNewTab")
   static let ghosttyNewSplit = Notification.Name("ghosttyNewSplit")
   static let ghosttyCloseTab = Notification.Name("ghosttyCloseTab")
+  static let ghosttyCloseOtherTabs = Notification.Name("ghosttyCloseOtherTabs")
+  static let ghosttyCloseTabsOnTheRight = Notification.Name("ghosttyCloseTabsOnTheRight")
   static let ghosttyCloseWindow = Notification.Name("ghosttyCloseWindow")
   static let ghosttyToggleFullscreen = Notification.Name("ghosttyToggleFullscreen")
   static let ghosttyToggleMaximize = Notification.Name("ghosttyToggleMaximize")
