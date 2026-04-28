@@ -31,12 +31,12 @@ final class HintsModeManager {
   func handleKeyDown(_ event: NSEvent) -> NSEvent? {
     guard isActive else { return event }
 
-    if event.keyCode == 53 {
+    if event.keyName == "escape" {
       deactivate()
       return nil
     }
 
-    if event.keyCode == 51 {
+    if event.keyName == "delete" {
       if case .filtering(let labels, _, _) = state {
         state = .active(labels: labels, typed: "")
       }

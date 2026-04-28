@@ -64,15 +64,22 @@ final class WhichKeyManager {
     if event.modifierFlags.isDisjoint(with: [.command, .option]) == false {
       return event
     }
-    // keyCode 51 = delete key. characters(byApplyingModifiers: []) doesn't
-    // produce \u{7F} for delete, so check keyCode directly (matches
-    // HintsModeManager and CopyModeState).
-    if event.keyCode == 51 {
-      return handleKey("\u{7F}") ? nil : event
+    guard let name = event.keyName else { return event }
+    if name == "escape" {
+      deactivate()
+      return nil
     }
-    guard let chars = event.characters(byApplyingModifiers: []),
-      let key = chars.first
-    else { return event }
+    if name == "delete" {
+      if !breadcrumb.isEmpty {
+        breadcrumb.removeLast()
+        currentBindings = bindingStack.removeLast()
+      }
+      resetTimeout()
+      return nil
+    }
+    // Multi-character keyName values (return, tab, space, arrows, etc.)
+    // are not which-key bindings. Consume and ignore.
+    guard name.count == 1, let key = name.first else { return nil }
     return handleKey(key) ? nil : event
   }
 
