@@ -590,6 +590,7 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleSetTabTitle($1) },
       { $0.handleCommandFinished($1) },
       { $0.handleProgressReport($1) },
+      { $0.handleDesktopNotification($1) },
       { $0.handleGhosttyNewTab($1) },
       { $0.handleGhosttyNewSplit($1) },
       { $0.handleGhosttyCloseTab($1) },
@@ -602,6 +603,10 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleGhosttyMoveTab($1) },
       { $0.handleKeyTable($1) },
       { $0.handleGhosttyChildExited($1) },
+      { $0.handleMouseOverLink($1) },
+      { $0.handleColorChange($1) },
+      { $0.handleGhosttyToggleFullscreen($1) },
+      { $0.handleGhosttyToggleMaximize($1) },
     ]
     for handler in handlers {
       handler(
@@ -624,6 +629,7 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleSetTabTitle($1) },
       { $0.handleCommandFinished($1) },
       { $0.handleProgressReport($1) },
+      { $0.handleDesktopNotification($1) },
       { $0.handleGhosttyNewTab($1) },
       { $0.handleGhosttyNewSplit($1) },
       { $0.handleGhosttyCloseTab($1) },
@@ -636,6 +642,10 @@ final class ContentViewHandlerTests: XCTestCase {
       { $0.handleGhosttyMoveTab($1) },
       { $0.handleKeyTable($1) },
       { $0.handleGhosttyChildExited($1) },
+      { $0.handleMouseOverLink($1) },
+      { $0.handleColorChange($1) },
+      { $0.handleGhosttyToggleFullscreen($1) },
+      { $0.handleGhosttyToggleMaximize($1) },
     ]
     for handler in handlers {
       handler(
@@ -651,11 +661,13 @@ final class ContentViewHandlerTests: XCTestCase {
     let names: [Notification.Name] = [
       .ghosttySetTitle, .ghosttyRingBell, .ghosttyCloseSurface,
       .ghosttyPwd, .ghosttySetTabTitle, .ghosttyCommandFinished,
-      .ghosttyProgressReport, .ghosttyNewTab, .ghosttyNewSplit,
+      .ghosttyProgressReport, .ghosttyDesktopNotification, .ghosttyNewTab, .ghosttyNewSplit,
       .ghosttyCloseTab, .ghosttyCloseWindow, .ghosttyGotoSplit,
       .ghosttyResizeSplit, .ghosttyEqualizeSplits, .ghosttyToggleSplitZoom,
       .ghosttyGotoTab, .ghosttyMoveTab, .ghosttyKeyTable,
       .ghosttyChildExited,
+      .ghosttyMouseOverLink, .ghosttyColorChange,
+      .ghosttyToggleFullscreen, .ghosttyToggleMaximize,
     ]
     for name in names {
       let notification = Notification(name: name, object: nil, userInfo: nil)
