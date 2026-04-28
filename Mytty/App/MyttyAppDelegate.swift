@@ -25,6 +25,7 @@ class MyttyAppDelegate: NSObject, NSApplicationDelegate {
 
     DispatchQueue.main.async { [self] in
       guard let window = NSApplication.shared.windows.first else { return }
+      window.setFrameAutosaveName("MyttyMainWindow")
       applyWindowChrome(window)
 
       self.observers.append(
