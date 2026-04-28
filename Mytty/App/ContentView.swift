@@ -875,6 +875,15 @@ extension ContentView {
     else { return }
     match.pane.lastCommandResult = MyttyPane.CommandResult(
       exitCode: p.exitCode, duration: p.duration)
+    match.pane.resultClearTask?.cancel()
+    if store.activeSession?.activeTab?.id == match.tab.id {
+      let pane = match.pane
+      match.pane.resultClearTask = Task {
+        try? await Task.sleep(for: .seconds(3))
+        guard !Task.isCancelled else { return }
+        pane.lastCommandResult = nil
+      }
+    }
     if p.exitCode != 0,
       !(store.activeSession?.id == match.session.id && match.session.activeTab?.id == match.tab.id)
     {
