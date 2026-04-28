@@ -53,7 +53,7 @@ active.
 - Visible when no modal overlay is active
 - Hidden when any modal overlay is active (which-key, window mode, copy mode, hints)
 - Reads keybindings from KeybindingStore at config load time
-- Togglable via `show-hint-bar` config key, default `true`
+- Toggleable via `show-hint-bar` config key, default `true`
 
 ## Implementation sketch
 
