@@ -254,6 +254,28 @@ final class PaneLayoutTests: XCTestCase {
     XCTAssertNil(target)
   }
 
+  // MARK: - Split ordering
+
+  func test_splitBeforePlacesNewPaneFirst() {
+    let original = makePane()
+    var layout = PaneLayout(pane: original)
+    let newPane = makePane()
+    layout.split(pane: original, direction: .horizontal, newPane: newPane, before: true)
+    // New pane should be first leaf (left side)
+    XCTAssertEqual(layout.leaves[0].id, newPane.id)
+    XCTAssertEqual(layout.leaves[1].id, original.id)
+  }
+
+  func test_splitDefaultPlacesNewPaneSecond() {
+    let original = makePane()
+    var layout = PaneLayout(pane: original)
+    let newPane = makePane()
+    layout.split(pane: original, direction: .horizontal, newPane: newPane)
+    // New pane should be second leaf (right side) -- default behavior
+    XCTAssertEqual(layout.leaves[0].id, original.id)
+    XCTAssertEqual(layout.leaves[1].id, newPane.id)
+  }
+
   // MARK: - Tab integration
 
   func test_tabIntegration_splitUpdatesLayout() {

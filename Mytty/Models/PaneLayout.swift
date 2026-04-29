@@ -84,18 +84,25 @@ struct PaneLayout {
     }
   }
 
-  mutating func split(pane: MyttyPane, direction: SplitDirection, newPane: MyttyPane) {
-    root = Self.insertSplit(root, target: pane.id, direction: direction, newPane: newPane)
+  mutating func split(
+    pane: MyttyPane, direction: SplitDirection, newPane: MyttyPane, before: Bool = false
+  ) {
+    root = Self.insertSplit(
+      root, target: pane.id, direction: direction, newPane: newPane, before: before)
   }
 
   private static func insertSplit(
     _ node: PaneLayoutNode,
     target: Int,
     direction: SplitDirection,
-    newPane: MyttyPane
+    newPane: MyttyPane,
+    before: Bool = false
   ) -> PaneLayoutNode {
     switch node {
     case .leaf(let p) where p.id == target:
+      if before {
+        return .split(direction, .leaf(newPane), .leaf(p), 0.5)
+      }
       return .split(direction, .leaf(p), .leaf(newPane), 0.5)
     case .leaf:
       return node
@@ -104,8 +111,8 @@ struct PaneLayout {
     case .split(let dir, let a, let b, let ratio):
       return .split(
         dir,
-        insertSplit(a, target: target, direction: direction, newPane: newPane),
-        insertSplit(b, target: target, direction: direction, newPane: newPane),
+        insertSplit(a, target: target, direction: direction, newPane: newPane, before: before),
+        insertSplit(b, target: target, direction: direction, newPane: newPane, before: before),
         ratio
       )
     }

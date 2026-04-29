@@ -253,12 +253,15 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     let direction: SplitDirection =
       (raw == GHOSTTY_SPLIT_DIRECTION_DOWN || raw == GHOSTTY_SPLIT_DIRECTION_UP)
       ? .vertical : .horizontal
+    // UP/LEFT place the new pane before the existing one.
+    let before = (raw == GHOSTTY_SPLIT_DIRECTION_UP || raw == GHOSTTY_SPLIT_DIRECTION_LEFT)
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
         name: .ghosttyNewSplit,
         object: nil,
         userInfo: [
-          Notification.payloadKey: NewSplitPayload(paneID: view.pane?.id, direction: direction)
+          Notification.payloadKey: NewSplitPayload(
+            paneID: view.pane?.id, direction: direction, before: before)
         ]
       )
     }
@@ -401,8 +404,9 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
 
       switch kind {
       case GHOSTTY_ACTION_OPEN_URL_KIND_TEXT:
-        let editor = NSWorkspace.shared.defaultApplicationURL(
-          forExtension: url.pathExtension) ?? NSWorkspace.shared.defaultTextEditor
+        let editor =
+          NSWorkspace.shared.defaultApplicationURL(
+            forExtension: url.pathExtension) ?? NSWorkspace.shared.defaultTextEditor
         if let textEditor = editor {
           NSWorkspace.shared.open(
             [url], withApplicationAt: textEditor,
@@ -410,7 +414,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
           return
         }
       case GHOSTTY_ACTION_OPEN_URL_KIND_HTML,
-           GHOSTTY_ACTION_OPEN_URL_KIND_UNKNOWN:
+        GHOSTTY_ACTION_OPEN_URL_KIND_UNKNOWN:
         break
       default:
         break
@@ -679,6 +683,7 @@ struct ProgressReportPayload {
 struct NewSplitPayload {
   let paneID: Int?
   let direction: SplitDirection
+  var before: Bool = false
 }
 
 struct GotoSplitPayload {

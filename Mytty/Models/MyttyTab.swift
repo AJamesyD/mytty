@@ -62,20 +62,20 @@ final class MyttyTab: Identifiable {
     pane.tab = self
   }
 
-  func splitActivePane(direction: SplitDirection) {
+  func splitActivePane(direction: SplitDirection, before: Bool = false) {
     guard let activePane else { return }
     let newPane = MyttyPane(id: paneIDGenerator())
     newPane.directory = directory
     newPane.tab = self
-    layout.split(pane: activePane, direction: direction, newPane: newPane)
+    layout.split(pane: activePane, direction: direction, newPane: newPane, before: before)
     panes = layout.leaves
-    self.activePane = layout.leaves.last
+    self.activePane = newPane
   }
 
-  func addExistingPane(_ pane: MyttyPane, direction: SplitDirection) {
+  func addExistingPane(_ pane: MyttyPane, direction: SplitDirection, before: Bool = false) {
     guard let activePane else { return }
     pane.tab = self
-    layout.split(pane: activePane, direction: direction, newPane: pane)
+    layout.split(pane: activePane, direction: direction, newPane: pane, before: before)
     panes = layout.leaves
     self.activePane = pane
   }

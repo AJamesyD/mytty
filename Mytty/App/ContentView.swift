@@ -963,7 +963,7 @@ extension ContentView {
     guard let p = notification.payload(NewSplitPayload.self), let paneID = p.paneID,
       let match = store.pane(byId: paneID)
     else { return }
-    match.tab.splitActivePane(direction: p.direction)
+    match.tab.splitActivePane(direction: p.direction, before: p.before)
   }
 
   func handleGhosttyCloseTab(_ notification: Notification) {

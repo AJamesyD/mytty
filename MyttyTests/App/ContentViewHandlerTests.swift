@@ -321,6 +321,26 @@ final class ContentViewHandlerTests: XCTestCase {
     XCTAssertEqual(tab.panes.count, 2)
   }
 
+  func test_handleGhosttyNewSplit_beforePlacesNewPaneFirst() {
+    let session = store.createSession(name: "test", directory: URL(fileURLWithPath: "/tmp"))
+    let paneID = session.tabs[0].panes[0].id
+    let originalPaneID = paneID
+    let tab = session.tabs[0]
+    let view = ContentView(store: store)
+
+    view.handleGhosttyNewSplit(
+      Notification(
+        name: .ghosttyNewSplit, object: nil,
+        userInfo: [
+          Notification.payloadKey: NewSplitPayload(
+            paneID: paneID, direction: .horizontal, before: true)
+        ]))
+
+    XCTAssertEqual(tab.panes.count, 2)
+    // Original pane should be second (right side) since new pane was inserted before
+    XCTAssertEqual(tab.panes[1].id, originalPaneID)
+  }
+
   // MARK: - handleGhosttyCloseTab
 
   func test_handleGhosttyCloseTab_singleTab_closesSession() {
