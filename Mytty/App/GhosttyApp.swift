@@ -380,7 +380,7 @@ private let actionCallback: ghostty_runtime_action_cb = { _, target, action in
     // Mytty only supports native fullscreen. Non-native fullscreen
     // (custom frame manipulation) is a Ghostty-specific feature.
     if mode != GHOSTTY_FULLSCREEN_NATIVE {
-      return true
+      return false
     }
     withSurfaceView(target) { view in
       NotificationCenter.default.post(
