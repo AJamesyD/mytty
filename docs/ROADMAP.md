@@ -66,11 +66,11 @@ ADR-008 complete (two-layer key dispatch). Ghostty config hot-reload
 shipped (`GhosttyConfigWatcher` + `ghostty_app_update_config`). Phase 7
 bridge stubs wired (resize, equalize, move-tab). CI green.
 
-Bridge audit mostly complete: action parity (6 trivial actions), right/middle
-mouse forwarding, window title tracking, and TerminalSurfaceView reconciliation
-all shipped. Remaining: 3 mouse callbacks (MOUSE_OVER_LINK, MOUSE_SHAPE,
-MOUSE_VISIBILITY) and 4 deferred actions (SECURE_INPUT, RESET_WINDOW_SIZE,
-NEW_WINDOW, CLOSE_ALL_WINDOWS).
+Bridge audit complete: action parity (6 trivial actions), right/middle
+mouse forwarding, window title tracking, TerminalSurfaceView reconciliation,
+mouse callbacks (shape, visibility, hover URL), split direction, fullscreen
+return value, and display ID tracking all shipped. Remaining deferred:
+SECURE_INPUT, RESET_WINDOW_SIZE, NEW_WINDOW, CLOSE_ALL_WINDOWS, CONFIG_CHANGE.
 
 Ambient identity (Layer 1) and session source protocol (Layer 2) shipped.
 Env vars in every pane, `[[session-source]]` config, runner, picker
@@ -80,15 +80,11 @@ Architecture backlog complete: back-references refactor (ca4a653) and
 SessionSourceRunner simplification (6aa9a24) both shipped.
 
 Next (priority order):
-1. Mouse bridge remaining (MOUSE_SHAPE, MOUSE_VISIBILITY, MOUSE_OVER_LINK)
-2. Handler tests (safety net, deferred from bridge polish)
-3. ~~Which-key context filtering bug~~: fixed (2ea3e51). Was showing `focus-tab-1` through `focus-tab-9` when only 3 tabs exist.
-4. Hints mode spec (types-as-spec workflow; include chrome target providers in design for vimium-style jump-to-session/tab/pane)
-5. Hints mode implementation
-6. Push (24 commits ahead)
+1. Hints mode spec (types-as-spec workflow; include chrome target providers in design for vimium-style jump-to-session/tab/pane)
+2. Hints mode implementation
+3. 7a: Ghostty submodule upgrade (memory leak fix)
 
 Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
-- R20: window frame persistence (`NSWindow.setFrameAutosaveName`, ~5 LOC)
 - R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.
 - Replace `FuzzyMatcher.swift` with [ordo-one/FuzzyMatch](https://github.com/ordo-one/FuzzyMatch) (Apache-2.0). Gains typo tolerance, abbreviation matching, and `attributedHighlight()` for SwiftUI. Deletes 227 lines. Research: `/tmp/ai-research-swift-packages-mytty.md`.
 
@@ -106,17 +102,19 @@ Mytty replaced Ghostty's window chrome but didn't rebuild all bridges between li
 
 **OS integration:**
 - [x] Window title: active tab's `displayTitle` pushed to NSWindow (1ddce86)
+- [x] Display ID tracking: `ghostty_surface_set_display_id` called on screen change for multi-monitor vsync
 
 **Mouse contract (tenet 1: mouse-unsurprising):**
 - [x] `isMovableByWindowBackground`: removed (a2c6700). Was vestigial since 3956dfa1.
 - [x] Right/middle mouse: forwarded to libghostty (6d35dea). Right-click fallthrough to system context menu working.
-- [ ] `MOUSE_OVER_LINK`: hovering a URL doesn't change cursor or store the URL
-- [ ] `MOUSE_SHAPE`: cursor shape changes from terminal state are no-op'd
-- [ ] `MOUSE_VISIBILITY`: cursor hide-while-typing is no-op'd
+- [x] `MOUSE_OVER_LINK`: URL stored on pane model, cursor change on hover
+- [x] `MOUSE_SHAPE`: cursor shape changes from terminal state
+- [x] `MOUSE_VISIBILITY`: cursor hide-while-typing
 
-Note: MOUSE_SHAPE and MOUSE_VISIBILITY are acknowledged in GhosttyApp.swift (no-op case group) but not functionally implemented. The cursor doesn't change shape or hide-while-typing. The RFC (v6) incorrectly classified these as "already implemented"; the no-op means the callback won't crash, not that the feature works.
+Note: MOUSE_SHAPE, MOUSE_VISIBILITY, and MOUSE_OVER_LINK were implemented earlier but the roadmap incorrectly listed them as no-ops. The RFC (v6) classification was wrong; the implementations are functional.
 
 Reference: `/tmp/ai-research-action-gap-audit.md` (full audit from 2026-04-18)
+Handler nil-safety tests: completed for all 24 notification-driven handlers (74b7d4b).
 
 **Action parity (Ghostty Concept Mapping in DESIGN.md):**
 
@@ -127,6 +125,12 @@ Trivial (one-liner handler, no design needed):
 - [x] `TOGGLE_MAXIMIZE` -> `window.zoom(nil)` (1ddce86)
 - [x] `OPEN_CONFIG` -> open `~/.config/mytty/config.toml` (1ddce86)
 - [x] `COPY_TITLE_TO_CLIPBOARD` -> copy pane title to pasteboard (1ddce86)
+
+Bridge divergence fixes:
+- [x] `CLOSE_TAB` modes: dispatch by mode (this/other/right) instead of always closing current (5108270)
+- [x] `OPEN_URL` kind handling: dispatch by kind (text/html/unknown), tilde expansion, Data+len parsing (57c6730)
+- [x] `NEW_SPLIT` direction: preserve UP/DOWN/LEFT/RIGHT placement via `before` parameter
+- [x] `TOGGLE_FULLSCREEN` non-native: returns false (unperformed) instead of true
 
 Deferred (needs design or has side effects):
 - [ ] `SECURE_INPUT` -> `EnableSecureEventInput()`/`DisableSecureEventInput()` (system-wide, needs toggle state)
@@ -145,7 +149,7 @@ validates all IPC methods at test time.
 Key table tracking (4f-3a) shipped: Ghostty key tables pass through to
 libghostty without Mytty intercepting navigation keys.
 
-Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown), Phase 5g research (pluggable session sources, brief at `/tmp/ai-research-brief-session-sources.md`).
+Other candidates: Phase 5d (inherit Ghostty theme colors into UI), Phase 7a (Ghostty submodule upgrade to v1.3.2), Phase 4f-2 (global hotkeys for configurable dropdown).
 
 ### Deferred from platform defaults (2026-04-17)
 
@@ -460,15 +464,12 @@ Completed:
   Architecture cleanup: back-references (ca4a653), runner simplification (6aa9a24) ✓
 
 Current (parallelizable):
-  ┌─ Bridge audit remaining                ← MOUSE_OVER_LINK, MOUSE_SHAPE, MOUSE_VISIBILITY
-  ├─ Handler tests                         ← safety net, deferred from bridge polish
-  ├─ Which-key context filtering           ← fixed (2ea3e51)
-  ├─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
+  ┌─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
   ├─ 7j (CLI golden file tests)           ← deferred, lighter alternative planned
   └─ 5g known limitations                 ← SessionSourceRegistry for lastStatus
 
 Opportunistic (no dependencies, land anytime):
-  ├─ R20 (window frame persistence)
+  ├─ ~~R20 (window frame persistence)~~: shipped (17be2d9)
   ├─ R14 (dock badge)
   ├─ Replace FuzzyMatcher.swift with ordo-one/FuzzyMatch
   └─ Dynamic overlay font scaling: derive terminal overlay font sizes from
@@ -576,14 +577,14 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 - Steering doc performance rules: no @Observable mutation from view body, no allocations on per-keystroke paths.
 
 **UX polish (from cmux RFC analysis):**
-- Window frame persistence (R20): `NSWindow.setFrameAutosaveName`. ~5 LOC.
+- ~~Window frame persistence (R20)~~: shipped (17be2d9)
 - Dock badge (R14): `NSApp.dockTile.badgeLabel` from aggregate notification count. ~15 LOC.
 - Config parse error dismissible banner (R70): MyttyConfig.parseError exists, needs UI.
 - Empty state views for sidebar and session manager (R69).
 - Sidebar toggle button (chevron at top of SidebarView).
 
 **Bridge correctness:**
-- Display ID tracking (R19): call `ghostty_surface_set_display_id` in `viewDidMoveToWindow` or screen-change notification. ~10 LOC. Tells libghostty which display the surface is on.
+- ~~Display ID tracking (R19)~~: `ghostty_surface_set_display_id` in `viewDidMoveToWindow` and screen-change notification. Shipped.
 
 ---
 
