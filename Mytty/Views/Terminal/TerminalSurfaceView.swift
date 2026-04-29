@@ -82,6 +82,7 @@ final class TerminalSurfaceView: NSView {
   required init?(coder: NSCoder) { fatalError("Not implemented") }
 
   deinit {
+    NotificationCenter.default.removeObserver(self)
     if let surface { ghostty_surface_free(surface) }
   }
 
@@ -177,6 +178,31 @@ final class TerminalSurfaceView: NSView {
     guard window != nil else { return }
     setFrameSize(frame.size)
     window?.makeFirstResponder(self)
+
+    // Remove first to avoid duplicate registrations if the view moves between windows.
+    NotificationCenter.default.removeObserver(
+      self, name: NSWindow.didChangeScreenNotification, object: nil)
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(windowDidChangeScreen(_:)),
+      name: NSWindow.didChangeScreenNotification,
+      object: nil)
+
+    if let surface, let displayID = window?.screen?.displayID {
+      ghostty_surface_set_display_id(surface, displayID)
+    }
+  }
+
+  // Matches Ghostty's SurfaceView_AppKit.swift screen-change handling.
+  @objc private func windowDidChangeScreen(_ notification: Notification) {
+    guard let window = self.window else { return }
+    guard let object = notification.object as? NSWindow, window == object else { return }
+    guard let screen = window.screen else { return }
+    guard let surface = self.surface else { return }
+    ghostty_surface_set_display_id(surface, screen.displayID ?? 0)
+    // DispatchQueue (not Task) to match Ghostty's run-loop timing for backing property updates.
+    // Ref: vendor/ghostty/macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift
+    DispatchQueue.main.async { [weak self] in self?.viewDidChangeBackingProperties() }
   }
 
   // Handle display DPI changes when moving between monitors.
