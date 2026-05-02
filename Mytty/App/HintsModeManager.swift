@@ -79,7 +79,7 @@ final class HintsModeManager {
     return nil
   }
 
-  private func resolveAction(
+  func resolveAction(
     for label: HintLabel,
     modifiers: NSEvent.ModifierFlags
   ) -> HintAction {

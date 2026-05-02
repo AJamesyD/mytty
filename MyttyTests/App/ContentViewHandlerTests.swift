@@ -636,6 +636,18 @@ final class ContentViewHandlerTests: XCTestCase {
     XCTAssertTrue(pane.activeKeyTables.isEmpty)
   }
 
+  // MARK: - handleHintsMode
+
+  func test_handleHintsMode_noSession_doesNotCrash() {
+    let view = ContentView(store: store)
+    view.handleHintsMode()
+  }
+
+  func test_handleChromeHintsMode_doesNotCrash() {
+    let view = ContentView(store: store)
+    view.handleChromeHintsMode()
+  }
+
   // MARK: - Nil Safety
 
   func test_handler_nilPaneID_doesNotCrash() {
