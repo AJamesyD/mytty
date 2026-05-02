@@ -401,9 +401,9 @@ extension ContentView {
       .onChange(of: store.activeSession?.activeTab?.id) { _, _ in
         store.activeSession?.activeTab?.hasBell = false
         store.activeSession?.activeTab?.hasFailedCommand = false
-        store.activeSession?.activeTab?.panes.forEach {
-          $0.resultClearTask?.cancel()
-          $0.lastCommandResult = nil
+        for pane in store.activeSession?.activeTab?.panes ?? [] {
+          pane.resultClearTask?.cancel()
+          pane.lastCommandResult = nil
         }
       }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyCloseSurface)) { notification in

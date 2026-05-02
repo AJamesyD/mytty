@@ -70,7 +70,7 @@ final class MyttySession: Identifiable {
   }
 
   func closeOtherTabs(keeping tab: MyttyTab) {
-    tabs.forEach { if $0.id != tab.id { $0.titleDebounceTask?.cancel() } }
+    for other in tabs where other.id != tab.id { other.titleDebounceTask?.cancel() }
     tabs.removeAll { $0.id != tab.id }
     activeTab = tab
   }
@@ -78,7 +78,7 @@ final class MyttySession: Identifiable {
   func closeTabsOnTheRight(of tab: MyttyTab) {
     guard let index = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
     let rightTabs = tabs[(index + 1)...]
-    rightTabs.forEach { $0.titleDebounceTask?.cancel() }
+    for t in rightTabs { t.titleDebounceTask?.cancel() }
     tabs.removeSubrange((index + 1)...)
     if activeTab.map({ active in tabs.contains(where: { $0.id == active.id }) }) != true {
       activeTab = tab
