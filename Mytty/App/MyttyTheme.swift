@@ -55,6 +55,9 @@ enum MyttyTheme {
   static let popupBorder = fg.opacity(0.1)
   static let popupShadow = bg.opacity(0.5)
 
+  // Hint bar
+  static let hintBarBackground = bg.opacity(0.4)
+
   // Sidebar
   static let sessionAccent = Color.accentColor
   static let tabCountBadge = Color.secondary.opacity(0.6)

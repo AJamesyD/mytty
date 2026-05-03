@@ -29,6 +29,7 @@ struct ContentView: View {
   @State private var panelState = PanelState()
   @State private var configWatcher = ConfigWatcher()
   @State private var ghosttyConfigWatcher = GhosttyConfigWatcher()
+  @State private var hintBarItems: [(trigger: String, label: String)] = []
   @State private var terminalCommands: TerminalCommands?
 
   var body: some View {
@@ -124,6 +125,12 @@ struct ContentView: View {
                 onClosePane: { pane in closePane(pane) },
                 onSelectPane: { pane in tab.activePane = pane }
               )
+            }
+
+            if panelState.showHintBar && !isAnyModalActive
+              && keySequenceManager.pendingDisplay.isEmpty && !hintBarItems.isEmpty
+            {
+              HintBarView(items: hintBarItems)
             }
           }
 
@@ -374,6 +381,25 @@ extension ContentView {
       || hintsModeManager.isActive
   }
 
+  private static func buildHintBarItems(from store: KeybindingStore) -> [(trigger: String, label: String)] {
+    var items: [(trigger: String, label: String)] = []
+    if let leader = store.sequenceTrie.children.keys.sorted(by: { $0.displayLabel < $1.displayLabel }).first {
+      items.append((leader.displayLabel, "leader"))
+    }
+    let actions: [(String, String)] = [
+      ("which-key", "keys"),
+      ("window-mode", "window"),
+      ("copy-mode", "copy"),
+      ("hints-mode", "hints"),
+    ]
+    for (action, label) in actions {
+      if let trigger = store.trigger(for: action, in: .global) {
+        items.append((trigger.displayLabel, label))
+      }
+    }
+    return items
+  }
+
   func applyConfig(_ config: MyttyConfig) {
     let positionChanged = panelState.sidebarPosition != config.sidebarPosition
     panelState.sidebarMode = config.sidebarMode
@@ -388,6 +414,8 @@ extension ContentView {
       panelState.isSidebarRevealed = false
       panelState.isSidebarTempPinned = false
     }
+    panelState.showHintBar = config.showHintBar
+    hintBarItems = Self.buildHintBarItems(from: config.keybindingStore)
   }
 
   var contentWithNotifications: some View {

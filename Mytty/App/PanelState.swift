@@ -33,6 +33,7 @@ final class PanelState {
   var dwellDuration: TimeInterval = 0.15
   var dismissDelay: TimeInterval = 0.3
   var showHints: Bool = true
+  var showHintBar: Bool = true
 
   var isSidebarRevealed: Bool = false
   var isTabBarRevealed: Bool = false
