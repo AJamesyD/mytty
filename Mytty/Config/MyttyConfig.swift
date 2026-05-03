@@ -45,6 +45,7 @@ struct MyttyConfig: Sendable, Equatable {
   var autoHideDwellMs: Int = 150
   var autoHideDismissDelayMs: Int = 300
   var autoHideShowHints: Bool = true
+  var showHintBar: Bool = true
   var popups: [PopupDefinition] = []
   var ssh = SSHConfig()
   var hints = HintsConfig()
@@ -147,6 +148,9 @@ struct MyttyConfig: Sendable, Equatable {
     }
     if let hintsTable = table["hints"]?.table {
       config.hints = parseHints(from: hintsTable)
+    }
+    if let showHintBar = table["show-hint-bar"]?.bool {
+      config.showHintBar = showHintBar
     }
     config.keybindingStore = Self.parseKeybindings(from: table)
     return config

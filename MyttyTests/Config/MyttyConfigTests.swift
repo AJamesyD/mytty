@@ -233,4 +233,17 @@ final class MyttyConfigTests: XCTestCase {
     XCTAssertEqual(config.keybindingStore.whichKeyGroups[0].name, "window")
     XCTAssertEqual(config.keybindingStore.passthroughProcesses, ["nvim", "kakoune"])
   }
+
+  func test_showHintBarDefaultsToTrue() throws {
+    let config = try MyttyConfig.parse("")
+    XCTAssertTrue(config.showHintBar)
+  }
+
+  func test_parsesShowHintBar() throws {
+    let toml = """
+      show-hint-bar = false
+      """
+    let config = try MyttyConfig.parse(toml)
+    XCTAssertFalse(config.showHintBar)
+  }
 }
