@@ -228,6 +228,23 @@ final class HintsModeManagerTests: XCTestCase {
     XCTAssertTrue(manager.isActive, "State should not change")
   }
 
+  func test_multiCharInput_usesFirstCharOnly() {
+    let provider = MockHintTargetProvider(mockTargets: makeTargets(count: 3))
+    manager.activate(provider: provider, geometry: defaultGeometry, alphabet: "asd")
+
+    // Simulate IME producing multi-char string
+    let event = NSEvent.keyEvent(
+      with: .keyDown, location: .zero, modifierFlags: [],
+      timestamp: 0, windowNumber: 0, context: nil,
+      characters: "as", charactersIgnoringModifiers: "as",
+      isARepeat: false, keyCode: 0
+    )!
+    _ = manager.handleKeyDown(event)
+
+    // Should select target with label "a" (first char), not match "as" as substring
+    XCTAssertFalse(manager.isActive, "Should select single-char label 'a' using first char")
+  }
+
   // MARK: - Modifier resolution
 
   func test_shiftModifier_resolvesOpenAction() {

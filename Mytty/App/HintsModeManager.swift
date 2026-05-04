@@ -107,9 +107,14 @@ final class HintsModeManager {
       NSPasteboard.general.clearContents()
       NSPasteboard.general.setString(label.target.displayText, forType: .string)
     case .open:
-      if let url = URL(string: label.target.displayText) {
-        NSWorkspace.shared.open(url)
+      let text = label.target.displayText
+      let url: URL?
+      if text.hasPrefix("/") || text.hasPrefix("./") || text.hasPrefix("../") {
+        url = URL(fileURLWithPath: text)
+      } else {
+        url = URL(string: text)
       }
+      if let url { NSWorkspace.shared.open(url) }
     case .paste, .focus, .close:
       break
     }
