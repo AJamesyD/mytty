@@ -121,6 +121,8 @@ struct TerminalHintTargetProvider: HintTargetProvider {
   private static let ipRegex = try! NSRegularExpression(
     pattern: #"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"#
   )
+  // TODO: matches host:port patterns (e.g., example.com:8080) as false positives.
+  // Overlap resolution suppresses this when a URL regex also matches.
   // swiftlint:disable:next force_try
   private static let linenumRegex = try! NSRegularExpression(
     pattern: #"[\w./+-]+:\d+"#

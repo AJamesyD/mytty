@@ -118,6 +118,17 @@ struct PaneView: View {
           }
         }
       }
+      .onChange(of: pane.surfaceView.scrollbarState) { _, _ in
+        hintsModeManager?.deactivate()
+      }
+      .background {
+        GeometryReader { geo in
+          Color.clear
+            .onChange(of: geo.size) { _, _ in
+              hintsModeManager?.deactivate()
+            }
+        }
+      }
       .onHover { hovering in
         isHovering = hovering
       }

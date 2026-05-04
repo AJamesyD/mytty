@@ -246,4 +246,50 @@ final class MyttyConfigTests: XCTestCase {
     let config = try MyttyConfig.parse(toml)
     XCTAssertFalse(config.showHintBar)
   }
+
+  func test_hintsAlphabetDefault() throws {
+    let config = try MyttyConfig.parse("")
+    XCTAssertEqual(config.hints.alphabet, "asdfghjkl")
+  }
+
+  func test_hintsAlphabetCustom() throws {
+    let toml = """
+      [hints]
+      alphabet = "qwerty"
+      """
+    let config = try MyttyConfig.parse(toml)
+    XCTAssertEqual(config.hints.alphabet, "qwerty")
+  }
+
+  func test_hintsAlphabetDeduplicates() throws {
+    let toml = """
+      [hints]
+      alphabet = "aabbc"
+      """
+    let config = try MyttyConfig.parse(toml)
+    XCTAssertEqual(config.hints.alphabet, "abc")
+  }
+
+  func test_hintsAlphabetTooShortFallsBackToDefault() throws {
+    let toml = """
+      [hints]
+      alphabet = "a"
+      """
+    let config = try MyttyConfig.parse(toml)
+    XCTAssertEqual(config.hints.alphabet, "asdfghjkl")
+  }
+
+  func test_hintsTypesCustom() throws {
+    let toml = """
+      [hints]
+      types = ["url", "path"]
+      """
+    let config = try MyttyConfig.parse(toml)
+    XCTAssertEqual(config.hints.types, [.url, .path])
+  }
+
+  func test_hintsTypesDefault() throws {
+    let config = try MyttyConfig.parse("")
+    XCTAssertEqual(config.hints.types, Set(TerminalMatchType.allCases))
+  }
 }

@@ -53,7 +53,8 @@ final class HintsModeManager {
       !chars.isEmpty
     else { return nil }
 
-    let char = chars
+    guard let firstChar = chars.first else { return nil }
+    let char = String(firstChar)
     guard alphabet.contains(char) else { return nil }
 
     let allLabels: [HintLabel]
