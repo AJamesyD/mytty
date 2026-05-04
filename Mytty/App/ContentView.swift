@@ -427,6 +427,7 @@ extension ContentView {
         handleRingBell(notification)
       }
       .onChange(of: store.activeSession?.activeTab?.id) { _, _ in
+        hintsModeManager.deactivate()
         store.activeSession?.activeTab?.hasBell = false
         store.activeSession?.activeTab?.hasFailedCommand = false
         for pane in store.activeSession?.activeTab?.panes ?? [] {
@@ -740,7 +741,8 @@ extension ContentView {
     guard let pane = store.activeSession?.activeTab?.activePane,
       let surface = pane.surfaceView.surface
     else { return }
-    let metrics = pane.surfaceView.gridMetrics()
+    let surfaceView = pane.surfaceView
+    let metrics = surfaceView.gridMetrics()
     let size = ghostty_surface_size(surface)
     let config = MyttyConfig.load()
     let cellW = metrics?.cellWidth ?? 8
@@ -751,7 +753,8 @@ extension ContentView {
       rows: Int(size.rows), cols: Int(size.columns),
       cellWidth: cellW, cellHeight: cellH,
       offsetX: offX, offsetY: offY)
-    let lineReader: (Int) -> String? = { row in
+    let lineReader: (Int) -> String? = { [weak surfaceView] row in
+      guard let surface = surfaceView?.surface else { return nil }
       var sel = ghostty_selection_s()
       sel.top_left.tag = GHOSTTY_POINT_VIEWPORT
       sel.top_left.coord = GHOSTTY_POINT_COORD_EXACT

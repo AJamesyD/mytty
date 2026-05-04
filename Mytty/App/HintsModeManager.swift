@@ -37,8 +37,14 @@ final class HintsModeManager {
     }
 
     if event.keyName == "delete" {
-      if case .filtering(let labels, _, _) = state {
-        state = .active(labels: labels, typed: "")
+      if case .filtering(let labels, let typed, _) = state {
+        let newTyped = String(typed.dropLast())
+        if newTyped.isEmpty {
+          state = .active(labels: labels, typed: "")
+        } else {
+          let remaining = labels.filter { $0.label.hasPrefix(newTyped) }
+          state = .filtering(labels: labels, typed: newTyped, remaining: remaining)
+        }
       }
       return nil
     }
