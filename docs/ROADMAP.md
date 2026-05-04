@@ -79,10 +79,18 @@ integration, `source.list` IPC, `mytty-cli source list`.
 Architecture backlog complete: back-references refactor (ca4a653) and
 SessionSourceRunner simplification (6aa9a24) both shipped.
 
+Hints mode 5b-1 shipped: core types, label algorithm, terminal provider
+(5 regex patterns), HintsModeManager state machine, HintsOverlayView,
+config parsing, ContentView/PaneView wiring, keybinding defaults. Three
+review rounds hardened: weak-capture lineReader, tab-switch deactivation,
+incremental backspace, IME first-char extraction, scroll/resize
+deactivation, file path open action. Hint bar shipped (persistent
+keybinding discovery bar, `show-hint-bar` config toggle).
+
 Next (priority order):
-1. Hints mode spec (types-as-spec workflow; include chrome target providers in design for vimium-style jump-to-session/tab/pane)
-2. Hints mode implementation
-3. 7a: Ghostty submodule upgrade (memory leak fix)
+1. 7a: Ghostty submodule upgrade (memory leak fix, gate before 5b-2)
+2. 5b-2: Chrome provider (labels sessions, tabs, panes)
+3. 5b-3: IPC methods and CLI commands
 
 Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
 - R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.
@@ -215,7 +223,7 @@ NSPanel-based dropdown with Ctrl+` hotkey, slide animation, auto-hide on focus l
 #### - [ ] 5a-2: Dropdown polish
 Configurable position (top/bottom/left/right), size (percentage of screen). Per-monitor detection exists (follows mouse cursor). Position (top-only) and size (40% height, full width) are hardcoded.
 
-### - [ ] 5b. Hints Mode
+### - [ ] 5b. Hints Mode (5b-1 shipped)
 A general "label things, type to jump" system with pluggable target providers. Press a trigger key, visible targets get short letter labels. Type the label to act (open, copy, insert).
 
 Target providers:
