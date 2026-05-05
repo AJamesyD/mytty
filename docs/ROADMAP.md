@@ -84,8 +84,8 @@ Hints mode 5b-1 shipped: core types, label algorithm, terminal provider
 config parsing, ContentView/PaneView wiring, keybinding defaults. Three
 review rounds hardened: weak-capture lineReader, tab-switch deactivation,
 incremental backspace, IME first-char extraction, scroll/resize
-deactivation, file path open action. Hint bar shipped (persistent
-keybinding discovery bar, `show-hint-bar` config toggle).
+deactivation, file path open action. Hint bar shipped (persistent keybinding discovery bar, `show-hint-bar`
+config toggle; PanelMode upgrade tracked as opportunistic item).
 
 Next (priority order):
 1. 7a: Ghostty submodule upgrade (memory leak fix, gate before 5b-2)
@@ -480,11 +480,16 @@ Opportunistic (no dependencies, land anytime):
   ├─ ~~R20 (window frame persistence)~~: shipped (17be2d9)
   ├─ R14 (dock badge)
   ├─ Replace FuzzyMatcher.swift with ordo-one/FuzzyMatch
-  └─ Dynamic overlay font scaling: derive terminal overlay font sizes from
+  ├─ Dynamic overlay font scaling: derive terminal overlay font sizes from
      the active pane's cell height instead of the current fixed 15pt.
      Affects: WindowModeHints, WhichKeyOverlay, HintsOverlayView,
      SequenceIndicatorView, CopyModeHelpOverlay, CopyModeOverlay, PaneView
      ZOOMED badge. Pattern: max(cellHeight * 0.8, 12).
+  └─ Hint bar PanelMode: convert `show-hint-bar` boolean to PanelMode
+     tri-state (pinned/auto-hide/hidden). Reuses existing PanelState
+     auto-hide machinery (dwell, dismiss, hover). Default: auto-hide.
+     Config: `hint-bar-mode = "auto-hide"`. Fixes Cmd+Shift+H conflict
+     (macOS 'Hide Others') by changing default binding.
 
 Near-term (unblocked after current):
   ┌─ 4f-3b (copy mode key remapping)      ← unblocked by 4f-3a ✓
