@@ -87,10 +87,17 @@ incremental backspace, IME first-char extraction, scroll/resize
 deactivation, file path open action. Hint bar shipped (persistent keybinding discovery bar, `show-hint-bar`
 config toggle; PanelMode upgrade tracked as opportunistic item).
 
+Ghostty submodule upgraded to 563b085a4 (0d43cc3): memory leak fix,
+grapheme rendering fix, libc++ removal. Full clean rebuild verified.
+
+Overlay unification shipped (0aaecf1): shared KeyBadge view, unified
+transient modal styling (white labels, no border, standard badge opacity,
+centered over terminal content). HintBarView dynamic font. 4 dead theme
+tokens removed. Spec: `/tmp/ai-spec-overlay-visual-unification.md`.
+
 Next (priority order):
-1. 7a: Ghostty submodule upgrade (memory leak fix, gate before 5b-2)
-2. 5b-2: Chrome provider (labels sessions, tabs, panes)
-3. 5b-3: IPC methods and CLI commands
+1. 5b-2: Chrome provider (labels sessions, tabs, panes)
+2. 5b-3: IPC methods and CLI commands
 
 Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
 - R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.
