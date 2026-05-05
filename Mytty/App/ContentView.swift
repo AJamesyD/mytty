@@ -131,7 +131,7 @@ struct ContentView: View {
             if panelState.hintBarIsPinned && !isAnyModalActive
               && keySequenceManager.pendingDisplay.isEmpty && !hintBarItems.isEmpty
             {
-              HintBarView(items: hintBarItems)
+              HintBarView(items: hintBarItems, cellHeight: currentCellHeight)
                 .padding(.vertical, 2)
             }
           }
@@ -143,7 +143,7 @@ struct ContentView: View {
           {
             VStack(spacing: 0) {
               Spacer()
-              HintBarView(items: hintBarItems)
+              HintBarView(items: hintBarItems, cellHeight: currentCellHeight)
                 .padding(.vertical, 2)
                 .background(.ultraThinMaterial)
                 .shadow(color: MyttyTheme.panelOverlayShadow, radius: 0, x: 0, y: -1)
@@ -255,6 +255,35 @@ struct ContentView: View {
           reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.25, dampingFraction: 1.0),
           value: panelState.isHintBarRevealed
         )
+        .overlay(alignment: .bottom) {
+          SequenceIndicatorView(text: keySequenceManager.pendingDisplay, cellHeight: currentCellHeight)
+            .padding(.bottom, Self.overlayEdgeInset)
+        }
+        .overlay(alignment: .bottom) {
+          WhichKeyOverlay(
+            bindings: whichKeyManager.currentBindings,
+            breadcrumb: whichKeyManager.breadcrumb,
+            isActive: whichKeyManager.isActive,
+            cellHeight: currentCellHeight
+          )
+          .padding(.bottom, Self.overlayEdgeInset)
+        }
+        .overlay(alignment: .bottom) {
+          if tab.windowModeState != .inactive {
+            WindowModeHints(
+              keybindingStore: windowModeManager.keybindingStore,
+              isJoinPick: tab.windowModeState == .joinPick,
+              tabNames: session.tabs
+                .filter { $0.id != tab.id }
+                .map { $0.displayTitle },
+              paneCount: tab.panes.count,
+              cellHeight: currentCellHeight
+            )
+            .padding(.bottom, Self.overlayEdgeInset)
+            .transition(.opacity)
+            .allowsHitTesting(false)
+          }
+        }
       } else {
         VStack(spacing: 12) {
           Text("No active session")
@@ -443,6 +472,10 @@ extension ContentView {
       || hintsModeManager.isActive
   }
 
+  private var currentCellHeight: CGFloat {
+    store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellHeight ?? 16
+  }
+
   private static func buildHintBarItems(from store: KeybindingStore) -> [(trigger: String, label: String)] {
     var items: [(trigger: String, label: String)] = []
     if let leader = store.sequenceTrie.children.keys.sorted(by: { $0.displayLabel < $1.displayLabel }).first {
@@ -616,44 +649,10 @@ extension ContentView {
   }
 
   var contentWithOverlays: some View {
-    let cellHeight =
-      store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellHeight ?? 16
     return
       mainContent
       .overlay { sessionManagerOverlay }
       .overlay { popupOverlay }
-      .overlay(alignment: .bottom) {
-        SequenceIndicatorView(text: keySequenceManager.pendingDisplay, cellHeight: cellHeight)
-          .padding(.bottom, Self.overlayEdgeInset)
-      }
-      .overlay(alignment: .bottom) {
-        WhichKeyOverlay(
-          bindings: whichKeyManager.currentBindings,
-          breadcrumb: whichKeyManager.breadcrumb,
-          isActive: whichKeyManager.isActive,
-          cellHeight: cellHeight
-        )
-        .padding(.bottom, Self.overlayEdgeInset)
-      }
-      .overlay(alignment: .bottom) {
-        if let session = store.activeSession,
-          let tab = session.activeTab,
-          tab.windowModeState != .inactive
-        {
-          WindowModeHints(
-            keybindingStore: windowModeManager.keybindingStore,
-            isJoinPick: tab.windowModeState == .joinPick,
-            tabNames: session.tabs
-              .filter { $0.id != tab.id }
-              .map { $0.displayTitle },
-            paneCount: tab.panes.count,
-            cellHeight: cellHeight
-          )
-          .padding(.bottom, Self.overlayEdgeInset)
-          .transition(.opacity)
-          .allowsHitTesting(false)
-        }
-      }
       .onChange(of: showingSessionManager) { _, isShowing in
         if isShowing {
           let vm = SessionManagerViewModel(store: store)

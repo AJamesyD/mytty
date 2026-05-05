@@ -18,12 +18,9 @@ enum MyttyTheme {
 
   // Overlay HUDs (WhichKey, CopyModeHelp, etc.)
   static let overlayBackground = bg.opacity(0.85)
-  static let overlayBorder = Color.orange.opacity(0.6)
   static let overlayText = fg
   static let overlayTextMuted = fg.opacity(0.8)
   static let overlayKeyBadge = fg.opacity(0.2)
-  static let overlayGroupLabel = Color.orange.opacity(0.9)
-  static let overlayLeafLabel = fg
 
   // Mode indicators
   static let modeIndicatorBackground = Color.orange.opacity(0.8)
@@ -67,7 +64,6 @@ enum MyttyTheme {
   static let bellGlow = Color.red
   static let commandSuccessIndicator = Color.green.opacity(0.5)
   static let sessionManagerShadow = bg.opacity(0.3)
-  static let copyModeKeyBadge = fg.opacity(0.1)
 
   // Hints mode
   static let hintsBackdrop = bg.opacity(0.4)

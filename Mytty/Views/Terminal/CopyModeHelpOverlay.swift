@@ -50,7 +50,7 @@ struct CopyModeHelpOverlay: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       Text("COPY MODE HELP")
-        .font(.system(size: max(cellHeight * 0.8, 12), weight: .bold, design: .monospaced))
+        .fontWeight(.bold)
 
       HStack(alignment: .top, spacing: 20) {
         hintColumn(title: "Navigation", hints: navHints)
@@ -65,10 +65,6 @@ struct CopyModeHelpOverlay: View {
     .foregroundStyle(MyttyTheme.overlayText)
     .padding(12)
     .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))
-    .overlay(
-      RoundedRectangle(cornerRadius: 8)
-        .stroke(MyttyTheme.overlayBorder, lineWidth: 1)
-    )
   }
 
   private func hintColumn(title: String, hints: [(key: String, label: String)]) -> some View {
@@ -77,14 +73,13 @@ struct CopyModeHelpOverlay: View {
         .fontWeight(.bold)
         .padding(.bottom, 2)
       ForEach(hints, id: \.key) { hint in
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
           Text(hint.key)
             .frame(minWidth: 60, alignment: .trailing)
-            .padding(.horizontal, 3)
-            .padding(.vertical, 1)
-            .background(MyttyTheme.copyModeKeyBadge, in: RoundedRectangle(cornerRadius: 2))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(MyttyTheme.overlayKeyBadge, in: RoundedRectangle(cornerRadius: 3))
           Text(hint.label)
-            .foregroundStyle(MyttyTheme.overlayTextMuted)
         }
       }
     }

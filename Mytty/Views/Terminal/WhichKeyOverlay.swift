@@ -11,14 +11,17 @@ struct WhichKeyOverlay: View {
   var body: some View {
     if isActive {
       VStack(alignment: .leading, spacing: 6) {
-        if !breadcrumb.isEmpty {
+        if breadcrumb.isEmpty {
+          Text("SHORTCUTS")
+            .fontWeight(.bold)
+        } else {
           Text(breadcrumb.joined(separator: " > ") + " >")
             .fontWeight(.bold)
-          Text("⌫ back")
+          Text("\u{232B} back")
             .font(.system(size: max(cellHeight * 0.6, 10), design: .monospaced))
             .foregroundStyle(MyttyTheme.overlayTextMuted)
         }
-        // availableWidth already excludes outer .padding(12)
+        // availableWidth measures the full overlay frame (includes padding).
         // 174 = 160pt min column width + 14pt inter-column gap
         let columns = max(1, min(6, Int((availableWidth + 14) / 174)))
         let rowsPerColumn =
@@ -36,15 +39,19 @@ struct WhichKeyOverlay: View {
           }
         }
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .background(
-        GeometryReader { geo in Color.clear.preference(key: WidthKey.self, value: geo.size.width) }
-      )
-      .onPreferenceChange(WidthKey.self) { availableWidth = $0 }
       .font(.system(size: max(cellHeight * 0.8, 12), design: .monospaced))
       .foregroundStyle(MyttyTheme.overlayText)
       .padding(12)
       .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))
+      // Expand frame for width measurement but center the visible panel.
+      // Column count depends on available width; without .infinity the
+      // GeometryReader would only see the content's intrinsic size.
+      // If centering looks too wide on ultrawides, cap with .frame(maxWidth: N).
+      .frame(maxWidth: .infinity)
+      .background(
+        GeometryReader { geo in Color.clear.preference(key: WidthKey.self, value: geo.size.width) }
+      )
+      .onPreferenceChange(WidthKey.self) { availableWidth = $0 }
       .transition(.opacity)
       .animation(.easeInOut(duration: 0.15), value: isActive)
     }
@@ -52,16 +59,10 @@ struct WhichKeyOverlay: View {
 
   private func hintBadge(binding: WhichKeyBinding) -> some View {
     let (label, isGroup) = bindingLabel(binding.action)
-    return HStack(spacing: 4) {
-      Text(String(binding.key))
-        .padding(.horizontal, 5)
-        .padding(.vertical, 2)
-        .background(MyttyTheme.overlayKeyBadge, in: RoundedRectangle(cornerRadius: 3))
-      Text(label + (isGroup ? " >" : ""))
-        .foregroundStyle(isGroup ? MyttyTheme.overlayGroupLabel : MyttyTheme.overlayLeafLabel)
-        .lineLimit(1)
-        .truncationMode(.tail)
-    }
+    return KeyBadge(
+      key: String(binding.key),
+      label: label + (isGroup ? " >" : "")
+    )
   }
 
   private func bindingLabel(_ action: WhichKeyAction) -> (String, Bool) {

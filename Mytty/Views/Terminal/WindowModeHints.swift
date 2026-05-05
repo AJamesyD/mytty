@@ -92,18 +92,12 @@ struct WindowModeHints: View {
     }
     .font(.system(size: max(cellHeight * 0.8, 12), design: .monospaced))
     .foregroundStyle(MyttyTheme.overlayText)
-    .padding(.horizontal, 10)
-    .padding(.vertical, 5)
+    .padding(.horizontal, 12)
+    .padding(.vertical, 6)
     .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))
   }
 
   private func hintBadge(key: String, label: String) -> some View {
-    HStack(spacing: 3) {
-      Text(key)
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1)
-        .background(MyttyTheme.overlayKeyBadge, in: RoundedRectangle(cornerRadius: 3))
-      Text(label)
-    }
+    KeyBadge(key: key, label: label)
   }
 }

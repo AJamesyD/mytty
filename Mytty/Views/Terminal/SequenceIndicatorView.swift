@@ -9,9 +9,9 @@ struct SequenceIndicatorView: View {
       Text(text)
         .font(.system(size: max(cellHeight * 0.8, 12), weight: .medium, design: .monospaced))
         .foregroundStyle(MyttyTheme.overlayText)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 6))
+        .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))
         .transition(.opacity.combined(with: .scale(scale: 0.95)))
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: text)
     }

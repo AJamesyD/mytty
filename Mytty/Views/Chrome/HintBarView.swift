@@ -2,24 +2,18 @@ import SwiftUI
 
 struct HintBarView: View {
   let items: [(trigger: String, label: String)]
+  var cellHeight: CGFloat
 
   var body: some View {
     HStack(spacing: 12) {
       ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-        HStack(spacing: 3) {
-          Text(item.trigger)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 1)
-            .background(MyttyTheme.overlayKeyBadge, in: RoundedRectangle(cornerRadius: 3))
-          Text(item.label)
-            .foregroundStyle(MyttyTheme.overlayTextMuted)
-        }
+        KeyBadge(key: item.trigger, label: item.label, labelStyle: MyttyTheme.overlayTextMuted)
       }
     }
-    .font(.system(size: 12, design: .monospaced))
+    .font(.system(size: max(cellHeight * 0.8, 12), design: .monospaced))
     .foregroundStyle(MyttyTheme.overlayText)
-    .padding(.horizontal, 10)
-    .padding(.vertical, 5)
-    .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 6))
+    .padding(.horizontal, 12)
+    .padding(.vertical, 6)
+    .background(MyttyTheme.hintBarBackground, in: RoundedRectangle(cornerRadius: 8))
   }
 }
