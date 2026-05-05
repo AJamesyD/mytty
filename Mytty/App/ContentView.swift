@@ -127,10 +127,68 @@ struct ContentView: View {
               )
             }
 
-            if panelState.showHintBar && !isAnyModalActive
+            // Hint bar: pinned mode (in VStack, takes space)
+            if panelState.hintBarIsPinned && !isAnyModalActive
               && keySequenceManager.pendingDisplay.isEmpty && !hintBarItems.isEmpty
             {
               HintBarView(items: hintBarItems)
+                .padding(.vertical, 2)
+            }
+          }
+
+          // Hint bar: auto-hide mode (overlay, doesn't take space)
+          if !panelState.hintBarIsPinned && panelState.shouldShowHintBar
+            && !isAnyModalActive
+            && keySequenceManager.pendingDisplay.isEmpty && !hintBarItems.isEmpty
+          {
+            VStack(spacing: 0) {
+              Spacer()
+              HintBarView(items: hintBarItems)
+                .padding(.vertical, 2)
+                .background(.ultraThinMaterial)
+                .shadow(color: MyttyTheme.panelOverlayShadow, radius: 0, x: 0, y: -1)
+                .onHover { hovering in
+                  panelState.isHintBarHovered = hovering
+                  if !hovering {
+                    panelState.isHintBarRevealed = false
+                  }
+                }
+            }
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom))
+          }
+
+          // Hint bar: auto-hide edge trigger
+          if panelState.hintBarMode == .autoHide {
+            VStack {
+              Spacer()
+              EdgeTriggerView(
+                dwellDuration: panelState.dwellDuration,
+                dismissDelay: panelState.dismissDelay,
+                onReveal: {
+                  guard !isAnyModalActive else { return }
+                  panelState.isHintBarRevealed = true
+                },
+                onDismiss: {
+                  guard !panelState.isHintBarHovered else { return }
+                  panelState.isHintBarRevealed = false
+                }
+              )
+              .frame(height: 20)
+              .frame(maxWidth: .infinity)
+            }
+          }
+
+          // Hint bar: auto-hide visual hint
+          if panelState.showHints && panelState.hintBarMode == .autoHide
+            && !panelState.isHintBarRevealed && !hintBarItems.isEmpty
+          {
+            VStack {
+              Spacer()
+              RoundedRectangle(cornerRadius: 1)
+                .fill(MyttyTheme.autoHideHint)
+                .frame(width: 28, height: 3)
+                .frame(maxWidth: .infinity)
+                .allowsHitTesting(false)
             }
           }
 
@@ -192,6 +250,10 @@ struct ContentView: View {
         .animation(
           reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.25, dampingFraction: 1.0),
           value: panelState.isTabBarRevealed
+        )
+        .animation(
+          reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.25, dampingFraction: 1.0),
+          value: panelState.isHintBarRevealed
         )
       } else {
         VStack(spacing: 12) {
@@ -414,7 +476,7 @@ extension ContentView {
       panelState.isSidebarRevealed = false
       panelState.isSidebarTempPinned = false
     }
-    panelState.showHintBar = config.showHintBar
+    panelState.hintBarMode = config.hintBarMode
     hintBarItems = Self.buildHintBarItems(from: config.keybindingStore)
   }
 

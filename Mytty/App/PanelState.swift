@@ -33,7 +33,9 @@ final class PanelState {
   var dwellDuration: TimeInterval = 0.15
   var dismissDelay: TimeInterval = 0.3
   var showHints: Bool = true
-  var showHintBar: Bool = true
+  var hintBarMode: PanelMode = .autoHide
+  var isHintBarRevealed: Bool = false
+  var isHintBarHovered: Bool = false
 
   var isSidebarRevealed: Bool = false
   var isTabBarRevealed: Bool = false
@@ -58,6 +60,16 @@ final class PanelState {
   }
 
   var sidebarIsPinned: Bool { sidebarMode == .pinned }
+
+  var hintBarIsPinned: Bool { hintBarMode == .pinned }
+
+  var shouldShowHintBar: Bool {
+    switch hintBarMode {
+    case .pinned: true
+    case .autoHide: isHintBarRevealed
+    case .hidden: false
+    }
+  }
 
   func tabBarIsPinned(tabCount: Int) -> Bool {
     if hideTabBarWhenSingleTab && tabCount < 2 { return false }

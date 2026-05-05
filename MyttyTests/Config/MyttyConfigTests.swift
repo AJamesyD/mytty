@@ -234,18 +234,30 @@ final class MyttyConfigTests: XCTestCase {
     XCTAssertEqual(config.keybindingStore.passthroughProcesses, ["nvim", "kakoune"])
   }
 
-  func test_showHintBarDefaultsToTrue() throws {
+  func test_hintBarModeDefaultsToAutoHide() throws {
     let config = try MyttyConfig.parse("")
-    XCTAssertTrue(config.showHintBar)
+    XCTAssertEqual(config.hintBarMode, .autoHide)
   }
 
-  func test_parsesShowHintBar() throws {
+  func test_parsesHintBarMode() throws {
     let toml = """
-      show-hint-bar = false
+      [hint-bar]
+      mode = "pinned"
       """
     let config = try MyttyConfig.parse(toml)
-    XCTAssertFalse(config.showHintBar)
+    XCTAssertEqual(config.hintBarMode, .pinned)
   }
+
+  func test_parsesHintBarModeHidden() throws {
+    let toml = """
+      [hint-bar]
+      mode = "hidden"
+      """
+    let config = try MyttyConfig.parse(toml)
+    XCTAssertEqual(config.hintBarMode, .hidden)
+  }
+
+
 
   func test_hintsAlphabetDefault() throws {
     let config = try MyttyConfig.parse("")
