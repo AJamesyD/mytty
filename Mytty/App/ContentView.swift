@@ -534,6 +534,7 @@ extension ContentView {
       ("window-mode", "window"),
       ("copy-mode", "copy"),
       ("hints-mode", "hints"),
+      ("chrome-hints-mode", "chrome"),
 
     ]
     for (action, label) in actions {
