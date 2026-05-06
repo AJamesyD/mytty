@@ -14,6 +14,7 @@ struct MyttyCLI: ParsableCommand {
       WindowCommand.self,
       PopupCommand.self,
       SourceCommand.self,
+      HintsCommand.self,
     ]
   )
 }

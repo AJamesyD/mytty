@@ -249,6 +249,8 @@ extension Notification.Name {
   static let myttyRenameSession = Notification.Name("myttyRenameSession")
   static let myttyConfigDidChange = Notification.Name("myttyConfigDidChange")
   static let myttyDropdownHotkeyPressed = Notification.Name("myttyDropdownHotkeyPressed")
+  static let myttyHintsActivate = Notification.Name("myttyHintsActivate")
+  static let myttyHintsChromeActivate = Notification.Name("myttyHintsChromeActivate")
 }
 
 extension View {

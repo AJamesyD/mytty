@@ -69,4 +69,9 @@ public protocol MyttyServiceProtocol {
   // MARK: - Sources
 
   @MainActor func listSources() async throws -> Data
+
+  // MARK: - Hints
+
+  @MainActor func activateHints() async throws -> Data
+  @MainActor func activateChromeHints() async throws -> Data
 }

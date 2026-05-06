@@ -636,6 +636,16 @@ extension ContentView {
           windowModeManager.reloadConfig()
         }
       }
+      .onReceive(NotificationCenter.default.publisher(for: .myttyHintsActivate)) { _ in
+        if !hintsModeManager.isActive {
+          handleHintsMode()
+        }
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .myttyHintsChromeActivate)) { _ in
+        if !hintsModeManager.isActive {
+          handleChromeHintsMode()
+        }
+      }
       .onAppear {
         activateKeySequenceManager()
       }

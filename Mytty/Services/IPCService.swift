@@ -651,4 +651,21 @@ import MyttyShared
     }
     return try encodeOrThrow(responses)
   }
+
+  // MARK: - Hints
+
+  func activateHints() async throws -> Data {
+    guard store.activeSession?.activeTab?.activePane != nil else {
+      throw MyttyIPC.error(.entityNotFound, "No active pane")
+    }
+    NSApp.activate()
+    NotificationCenter.default.post(name: .myttyHintsActivate, object: nil)
+    return try encodeOrThrow([String: String]())
+  }
+
+  func activateChromeHints() async throws -> Data {
+    NSApp.activate()
+    NotificationCenter.default.post(name: .myttyHintsChromeActivate, object: nil)
+    return try encodeOrThrow([String: String]())
+  }
 }

@@ -392,6 +392,12 @@ final class IPCListener {
     case "source.list":
       return await callService(request) { try await service.listSources() }
 
+    // Hints
+    case "hints.activate":
+      return await callService(request) { try await service.activateHints() }
+    case "hints.activate-chrome":
+      return await callService(request) { try await service.activateChromeHints() }
+
     default:
       return .error(
         id: request.id, code: MyttyIPC.JSONRPCErrorCode.methodNotFound,
