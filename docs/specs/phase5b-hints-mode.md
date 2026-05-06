@@ -2,7 +2,7 @@
 
 Mytty macOS terminal emulator, libghostty backend.
 
-**Status:** Proposed
+**Status:** 5b-1 (terminal provider) and 5b-2 (chrome provider) shipped. 5b-3 (IPC) remaining.
 
 **Goal:** A general label-and-act system with pluggable target providers. Two providers at launch: terminal (URLs, paths, hashes) and chrome (sessions, tabs, panes).
 

@@ -87,6 +87,14 @@ incremental backspace, IME first-char extraction, scroll/resize
 deactivation, file path open action. Hint bar shipped (persistent keybinding discovery bar, `show-hint-bar`
 config toggle; PanelMode upgrade tracked as opportunistic item).
 
+Hints mode 5b-2 shipped (c9bee44): chrome hints provider labels visible
+sessions, tabs, and panes. ChromeFrameStore (@Observable + Environment)
+for frame collection, ChromeHintTargetProvider for target generation.
+Spatial ordering, skips focused/renaming elements, panes-only when sidebar
+hidden. Shift+label closes element. Parameterized HintsOverlayView action
+bar. Known limitation: same tab in sidebar and tab bar gets different labels
+(TODO tracked in provider).
+
 Ghostty submodule upgraded to 563b085a4 (0d43cc3): memory leak fix,
 grapheme rendering fix, libc++ removal. Full clean rebuild verified.
 
@@ -96,8 +104,7 @@ centered over terminal content). HintBarView dynamic font. 4 dead theme
 tokens removed. Spec: `/tmp/ai-spec-overlay-visual-unification.md`.
 
 Next (priority order):
-1. 5b-2: Chrome provider (labels sessions, tabs, panes)
-2. 5b-3: IPC methods and CLI commands
+1. 5b-3: IPC methods and CLI commands (`hints.activate`, `hints.chrome`)
 
 Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
 - R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.
@@ -230,7 +237,7 @@ NSPanel-based dropdown with Ctrl+` hotkey, slide animation, auto-hide on focus l
 #### - [ ] 5a-2: Dropdown polish
 Configurable position (top/bottom/left/right), size (percentage of screen). Per-monitor detection exists (follows mouse cursor). Position (top-only) and size (40% height, full width) are hardcoded.
 
-### - [ ] 5b. Hints Mode (5b-1 shipped)
+### - [ ] 5b. Hints Mode (5b-1, 5b-2 shipped)
 A general "label things, type to jump" system with pluggable target providers. Press a trigger key, visible targets get short letter labels. Type the label to act (open, copy, insert).
 
 Target providers:
@@ -510,7 +517,7 @@ Feature phases (sequential gates):
 
   Phase 5 Essential (parallelizable within):
     ├─ 5a (dropdown) ──> 4f-2 (configurable global hotkey)
-    ├─ 5b (hints mode) ← soft dep on 4f-3; chrome provider labels sessions/tabs/panes
+    ├─ 5b (hints mode) ← 5b-1 + 5b-2 shipped; 5b-3 (IPC) remains
     └─ 5c (floating panes) ← independent
   ──> VoiceOver audit gate
   ──> Phase 5 Polish:
