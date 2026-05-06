@@ -50,6 +50,8 @@ alternatives to NotificationCenter for libghostty events.
 Use `@Observable` (Observation framework). Do not use `@ObservableObject`
 or `@Published`. These are legacy patterns in this project.
 Use `@State` for view-local state. Use `@Environment` to pass the store.
+If the same model object is rendered by multiple views, interaction state
+(editing, expanded, selected) belongs on the model, not the view.
 Do not use `@StateObject` or `@EnvironmentObject`.
 
 ## Enforcement

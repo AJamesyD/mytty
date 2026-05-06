@@ -57,9 +57,6 @@ struct SessionRowView: View {
   @Bindable var session: MyttySession
   @Bindable var store: SessionStore
   var showTree: Bool = true
-  @State private var isExpanded = true
-  @State private var isEditingSession = false
-  @State private var editingTabID: Int?
 
   var isActive: Bool { store.activeSession?.id == session.id }
 
@@ -75,13 +72,13 @@ struct SessionRowView: View {
     .padding(.top, 4)
     .onReceive(NotificationCenter.default.publisher(for: .myttyRenameSession)) { _ in
       if isActive {
-        isEditingSession = true
+        session.isRenaming = true
       }
     }
   }
 
   var treeContent: some View {
-    DisclosureGroup(isExpanded: $isExpanded) {
+    DisclosureGroup(isExpanded: $session.isSidebarExpanded) {
       ForEach(session.tabs) { tab in
         let isActiveTab = isActive && session.activeTab?.id == tab.id
         HStack(spacing: 4) {
@@ -98,16 +95,16 @@ struct SessionRowView: View {
               .shadow(color: MyttyTheme.bellGlow, radius: 3)
               .accessibilityLabel("Bell notification")
           }
-          if editingTabID == tab.id {
+          if tab.isRenaming {
             InlineEditableTextField(
               text: tab.displayTitle,
               placeholder: "Tab name",
               font: .system(size: 12),
               onSubmit: { newName in
                 tab.customTitle = newName.isEmpty ? nil : newName
-                editingTabID = nil
+                tab.isRenaming = false
               },
-              onCancel: { editingTabID = nil }
+              onCancel: { tab.isRenaming = false }
             )
           } else {
             Text(tab.displayTitle)
@@ -115,7 +112,7 @@ struct SessionRowView: View {
               .lineLimit(1)
               .help(tab.displayTitle)
               .onTapGesture(count: 2) {
-                editingTabID = tab.id
+                tab.isRenaming = true
               }
           }
           if tab.panes.count >= 2 {
@@ -153,7 +150,7 @@ struct SessionRowView: View {
         .contentShape(Rectangle())
         .contextMenu {
           Button("Rename Tab") {
-            editingTabID = tab.id
+            tab.isRenaming = true
           }
           Button("Close Tab") {
             session.closeTab(tab)
@@ -166,7 +163,7 @@ struct SessionRowView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .myttyRenameTab)) { _ in
           if isActiveTab {
-            editingTabID = tab.id
+            tab.isRenaming = true
           }
         }
       }
@@ -177,7 +174,7 @@ struct SessionRowView: View {
 
   var sessionLabel: some View {
     HStack(spacing: 6) {
-      if isEditingSession {
+      if session.isRenaming {
         InlineEditableTextField(
           text: session.name,
           placeholder: "Session name",
@@ -185,9 +182,9 @@ struct SessionRowView: View {
           onSubmit: { newName in
             let resolvedName = newName.isEmpty ? session.directory.lastPathComponent : newName
             session.name = resolvedName
-            isEditingSession = false
+            session.isRenaming = false
           },
-          onCancel: { isEditingSession = false }
+          onCancel: { session.isRenaming = false }
         )
       } else {
         Text(session.name)
@@ -197,10 +194,10 @@ struct SessionRowView: View {
           .lineLimit(1)
           .help(session.name)
           .onTapGesture(count: 2) {
-            isEditingSession = true
+            session.isRenaming = true
           }
       }
-      if !showTree || !isExpanded || session.tabs.count >= 2 {
+      if !showTree || !session.isSidebarExpanded || session.tabs.count >= 2 {
         Text("\(session.tabs.count)")
           .font(.system(size: 10, design: .monospaced))
           .foregroundStyle(MyttyTheme.tabCountBadge)
@@ -226,7 +223,7 @@ struct SessionRowView: View {
     .contentShape(Rectangle())
     .contextMenu {
       Button("Rename Session") {
-        isEditingSession = true
+        session.isRenaming = true
       }
       Button("Close Session") { store.closeSession(session) }
     }

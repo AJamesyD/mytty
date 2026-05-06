@@ -23,6 +23,7 @@ final class MyttyTab: Identifiable {
   var activePane: MyttyPane?
   var hasBell = false
   var hasFailedCommand = false
+  var isRenaming = false
 
   enum WindowModeState {
     case inactive, normal, joinPick

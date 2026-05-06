@@ -26,6 +26,8 @@ final class MyttySession: Identifiable {
 
   private(set) var popups: [PopupState] = []
   var activePopup: PopupState?
+  var isRenaming = false
+  var isSidebarExpanded = true
 
   /// Closures that generate the next unique tab and pane IDs.
   @ObservationIgnored

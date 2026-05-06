@@ -44,7 +44,6 @@ struct TabBarItem: View {
   let isActive: Bool
   let onSelect: () -> Void
   let onClose: () -> Void
-  @State private var isEditing = false
   @State private var isHovered = false
 
   var body: some View {
@@ -61,16 +60,16 @@ struct TabBarItem: View {
           .shadow(color: MyttyTheme.bellGlow, radius: 3)
       }
 
-      if isEditing {
+      if tab.isRenaming {
         InlineEditableTextField(
           text: tab.displayTitle,
           placeholder: "Tab name",
           font: .system(size: 12),
           onSubmit: { newName in
             tab.customTitle = newName.isEmpty ? nil : newName
-            isEditing = false
+            tab.isRenaming = false
           },
-          onCancel: { isEditing = false }
+          onCancel: { tab.isRenaming = false }
         )
         .frame(maxWidth: 120)
       } else {
@@ -112,7 +111,7 @@ struct TabBarItem: View {
     }
     .contextMenu {
       Button("Rename Tab") {
-        isEditing = true
+        tab.isRenaming = true
       }
       Button("Close Tab") { onClose() }
     }
@@ -120,7 +119,7 @@ struct TabBarItem: View {
     .onHover { isHovered = $0 }
     .onReceive(NotificationCenter.default.publisher(for: .myttyRenameTab)) { _ in
       if isActive {
-        isEditing = true
+        tab.isRenaming = true
       }
     }
   }
