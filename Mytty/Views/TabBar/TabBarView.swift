@@ -122,5 +122,6 @@ struct TabBarItem: View {
         tab.isRenaming = true
       }
     }
+    .chromeFrame("tabbar-tab-\(tab.id)")
   }
 }

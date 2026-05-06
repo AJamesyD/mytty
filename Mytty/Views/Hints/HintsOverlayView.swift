@@ -5,6 +5,9 @@ struct HintsOverlayView: View {
   let typed: String
   let cellWidth: CGFloat
   let cellHeight: CGFloat
+  var actionBarItems: [(symbol: String, label: String)] = [
+    ("⏎", "copy"), ("⇧", "open"), ("⌃", "paste")
+  ]
 
   var body: some View {
     ZStack {
@@ -36,12 +39,10 @@ struct HintsOverlayView: View {
       VStack {
         Spacer()
         HStack(spacing: 16) {
-          Text("⏎ copy")
-            .foregroundStyle(MyttyTheme.overlayText)
-          Text("⇧ open")
-            .foregroundStyle(MyttyTheme.overlayTextMuted)
-          Text("⌃ paste")
-            .foregroundStyle(MyttyTheme.overlayTextMuted)
+          ForEach(Array(actionBarItems.enumerated()), id: \.offset) { index, item in
+            Text("\(item.symbol) \(item.label)")
+              .foregroundStyle(index == 0 ? MyttyTheme.overlayText : MyttyTheme.overlayTextMuted)
+          }
         }
         .font(.system(size: max(cellHeight * 0.8, 12), weight: .medium, design: .monospaced))
         .padding(.vertical, 6)

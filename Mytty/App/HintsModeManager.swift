@@ -5,10 +5,15 @@ final class HintsModeManager {
   private(set) var state: HintsModeState = .inactive
   private var activeProvider: (any HintTargetProvider)?
   private var alphabet: String = "asdfghjkl"
+  var onChromeAction: ((ChromeElement, HintAction) -> Void)?
 
   var isActive: Bool {
     if case .inactive = state { return false }
     return true
+  }
+
+  var activeProviderID: String? {
+    activeProvider?.providerID
   }
 
   func activate(
@@ -115,8 +120,12 @@ final class HintsModeManager {
         url = URL(string: text)
       }
       if let url { NSWorkspace.shared.open(url) }
-    case .paste, .focus, .close:
+    case .paste:
       break
+    case .focus, .close:
+      if let chromeTarget = label.target as? ChromeHintTarget {
+        onChromeAction?(chromeTarget.chromeElement, action)
+      }
     }
   }
 }

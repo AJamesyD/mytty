@@ -166,6 +166,7 @@ struct SessionRowView: View {
             tab.isRenaming = true
           }
         }
+        .chromeFrame("sidebar-tab-\(session.id)-\(tab.id)")
       }
     } label: {
       sessionLabel
@@ -228,6 +229,7 @@ struct SessionRowView: View {
       Button("Close Session") { store.closeSession(session) }
     }
     .onTapGesture { store.activeSession = session }
+    .chromeFrame("session-\(session.id)")
   }
 
   var rowBackground: some View {

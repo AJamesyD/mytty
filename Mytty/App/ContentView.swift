@@ -25,6 +25,7 @@ struct ContentView: View {
   @State private var copyModeManager = CopyModeManager()
   @State private var whichKeyManager = WhichKeyManager()
   @State private var hintsModeManager = HintsModeManager()
+  @State private var chromeFrameStore = ChromeFrameStore()
   @State private var keySequenceManager = KeySequenceManager()
   @State private var panelState = PanelState()
   @State private var configWatcher = ConfigWatcher()
@@ -398,6 +399,53 @@ struct ContentView: View {
         if hintsModeManager.handleKeyDown(event) == nil { return nil }
         return event
       }
+      hintsModeManager.onChromeAction = { element, action in
+        switch action {
+        case .focus:
+          switch element {
+          case .session(let sessionID):
+            if let session = store.sessions.first(where: { $0.id == sessionID }) {
+              store.activeSession = session
+            }
+          case .tab(let sessionID, let tabID):
+            if let session = store.sessions.first(where: { $0.id == sessionID }),
+              let tab = session.tabs.first(where: { $0.id == tabID })
+            {
+              store.activeSession = session
+              session.activeTab = tab
+            }
+          case .pane(let paneID):
+            if let tab = store.activeSession?.activeTab,
+              let pane = tab.panes.first(where: { $0.id == paneID })
+            {
+              tab.activePane = pane
+            }
+          }
+        case .close:
+          switch element {
+          case .session(let sessionID):
+            if let session = store.sessions.first(where: { $0.id == sessionID }) {
+              store.closeSession(session)
+            }
+          case .tab(let sessionID, let tabID):
+            if let session = store.sessions.first(where: { $0.id == sessionID }),
+              let tab = session.tabs.first(where: { $0.id == tabID })
+            {
+              session.closeTab(tab)
+              if session.tabs.isEmpty { store.closeSession(session) }
+            }
+          case .pane(let paneID):
+            if let tab = store.activeSession?.activeTab,
+              let pane = tab.panes.first(where: { $0.id == paneID })
+            {
+              tab.closePane(pane)
+            }
+          }
+        default:
+          break
+        }
+        returnFocusToActivePane()
+      }
     }
     .onDisappear {
       configWatcher.stop()
@@ -486,6 +534,7 @@ extension ContentView {
       ("window-mode", "window"),
       ("copy-mode", "copy"),
       ("hints-mode", "hints"),
+
     ]
     for (action, label) in actions {
       if let trigger = store.trigger(for: action, in: .global) {
@@ -651,6 +700,27 @@ extension ContentView {
   var contentWithOverlays: some View {
     return
       mainContent
+      .environment(chromeFrameStore)
+      .overlay {
+        if hintsModeManager.isActive, hintsModeManager.activeProviderID == "chrome" {
+          let cellH: CGFloat = store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellHeight ?? 16
+          let cellW: CGFloat = store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellWidth ?? 8
+          switch hintsModeManager.state {
+          case .active(let labels, let typed):
+            HintsOverlayView(
+              labels: labels, typed: typed,
+              cellWidth: cellW, cellHeight: cellH,
+              actionBarItems: [("⏎", "focus"), ("⇧", "close")])
+          case .filtering(_, let typed, let remaining):
+            HintsOverlayView(
+              labels: remaining, typed: typed,
+              cellWidth: cellW, cellHeight: cellH,
+              actionBarItems: [("⏎", "focus"), ("⇧", "close")])
+          default:
+            EmptyView()
+          }
+        }
+      }
       .overlay { sessionManagerOverlay }
       .overlay { popupOverlay }
       .onChange(of: showingSessionManager) { _, isShowing in
@@ -841,7 +911,28 @@ extension ContentView {
   func handleChromeHintsMode() {
     if hintsModeManager.isActive {
       hintsModeManager.deactivate()
+      return
     }
+    if let tab = store.activeSession?.activeTab {
+      if tab.isWindowModeActive {
+        tab.windowModeState = .inactive
+        windowModeManager.deactivate()
+      }
+      if tab.isCopyModeActive {
+        copyModeManager.exit()
+      }
+    }
+    if whichKeyManager.isActive {
+      whichKeyManager.deactivate()
+    }
+    let sidebarVisible = panelState.shouldShowSidebar
+    let provider = ChromeHintTargetProvider(
+      store: store,
+      elementFrames: chromeFrameStore.frames,
+      sidebarVisible: sidebarVisible)
+    let geometry = HintsGeometry.chrome(elementFrames: chromeFrameStore.frames)
+    let config = MyttyConfig.load()
+    hintsModeManager.activate(provider: provider, geometry: geometry, alphabet: config.hints.alphabet)
   }
 
   func handleCloseTab() {

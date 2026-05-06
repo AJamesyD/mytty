@@ -129,6 +129,7 @@ struct PaneView: View {
             }
         }
       }
+      .chromeFrame("pane-\(pane.id)")
       .onHover { hovering in
         isHovering = hovering
       }
