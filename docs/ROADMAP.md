@@ -104,7 +104,10 @@ centered over terminal content). HintBarView dynamic font. 4 dead theme
 tokens removed. Spec: `/tmp/ai-spec-overlay-visual-unification.md`.
 
 Next (priority order):
-1. 5b-3: IPC methods and CLI commands (`hints.activate`, `hints.chrome`)
+1. 5b-3: IPC methods and CLI commands (`hints.activate`, `hints.activate-chrome`).
+   Activation-only semantics: the method's contract is "foreground app +
+   enter hints mode." Justified by the cross-app trigger use case (external
+   hotkey daemons). `--label` and `--query` flags deferred to 5b-4.
 
 Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
 - R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.

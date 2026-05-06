@@ -300,7 +300,7 @@ Window resize invalidates all label positions. Hints mode deactivates on resize 
 
 Tab or session switch deactivates hints mode. ContentView observes `store.activeSession?.activeTab?.id` and calls `hintsModeManager.deactivate()` on change.
 
-Post-activation type filtering (e.g., pressing a key to show only URLs) is deferred to Phase 5b-4. Users can pre-filter by type via IPC (`hints.show { "type": "url" }`) or by disabling types in config.
+Post-activation type filtering (e.g., pressing a key to show only URLs) is deferred to Phase 5b-4. Users can pre-filter by type via IPC (`hints.activate` with a `--type` flag, Phase 5b-4) or by disabling types in config.
 
 ---
 
@@ -346,10 +346,23 @@ JSON-RPC methods (noun.verb format):
 
 | Method | Params | Description |
 |--------|--------|-------------|
-| `hints.show` | `{ "type": "url" \| "path" \| "all" }`, optional `"multiple": true` | Activate hints mode on the focused pane |
-| `hints.select` | `{ "label": "a" }`, optional `"action": "copy" \| "open" \| "paste"` | Select a label and execute action |
-| `hints.cancel` | (none) | Cancel hints mode |
-| `hints.chrome` | (none) | Activate chrome hints on the window |
+| `hints.activate` | (none) | Activate terminal hints mode on the focused pane |
+| `hints.activate-chrome` | (none) | Activate chrome hints on the window |
+| `hints.cancel` | (none) | Cancel hints mode (deferred to 5b-4) |
+
+### Design Rationale: Activation-Only IPC
+
+`hints.activate` and `hints.activate-chrome` are activation-only methods: they enter hints mode but don't select a target. This breaks the pattern of other IPC methods (`pane.zoom`, `tab.rotate`) which are complete, atomic operations. The exception is justified by a specific use case:
+
+**Cross-app trigger**: A user in another app (browser, editor) sees a URL in the terminal and wants to act on it. Their external hotkey daemon (skhd, Hammerspoon) calls `mytty-cli hints activate`. The method forefronts Mytty and enters hints mode in one call, collapsing "focus app + enter mode" into a single operation. The in-app keybinding can only do the second step.
+
+The method's contract is "foreground the app and enter hints mode," not "select a hint target." The state change (app foregrounded, labels displayed, key handling switched) is observable and complete for this use case.
+
+**Why not keystroke synthesis?** External hotkey daemons can synthesize the in-app keybinding via CGEvent, but this fails under macOS secure input (expanded in macOS 14+), requires accessibility permissions, and has race conditions when switching from apps that hold secure input. IPC over the Unix socket is reliable regardless of window server state.
+
+**Why not copy-mode/window-mode IPC?** Those modes lack the cross-app trigger use case; they're only useful when the user is already in Mytty. Hints is different because the user sees terminal content from another app and wants to act on it.
+
+**Future extensions**: `--label` (activate and select in one call) and `--query` (filter targets before showing labels) would make hints IPC a full automation primitive. These are deferred to Phase 5b-4.
 
 Three files must stay in sync per the IPC rules:
 
@@ -359,7 +372,7 @@ Three files must stay in sync per the IPC rules:
 
 CLI commands in `MyttyCLI/Commands/` wrap these methods.
 
-IPC activation follows the same path as keybinding activation (posts a notification handled by `handleHintsMode()`). Keystrokes in flight between IPC dispatch and the next event loop tick may be lost. This is inherent to modal activation and matches the behavior of `copy-mode` and `window-mode` IPC activation.
+IPC activation posts a notification handled by ContentView's existing `handleHintsMode()` / `handleChromeHintsMode()`. This reuses the full activation path (geometry calculation, provider construction, label assignment) without duplicating logic in IPCService.
 
 ---
 
@@ -398,8 +411,8 @@ Modified files:
 
 - **Phase 5b-1**: Core types, label algorithm, terminal provider (all five built-in types: url, path, hash, ip, linenum), overlay in PaneView, key handling, config. No IPC, no chrome provider.
 - **Phase 5b-2**: Chrome provider, second overlay instance in ContentView for chrome targets.
-- **Phase 5b-3**: IPC methods, CLI commands.
-- **Phase 5b-4** (future): User-configurable regex patterns (`custom-patterns`).
+- **Phase 5b-3**: IPC methods (`hints.activate`, `hints.activate-chrome`), CLI commands. Activation-only; `--label`/`--query` deferred to 5b-4.
+- **Phase 5b-4** (future): `--label` and `--query` IPC flags for full programmatic selection. User-configurable regex patterns (`custom-patterns`).
 
 ---
 
