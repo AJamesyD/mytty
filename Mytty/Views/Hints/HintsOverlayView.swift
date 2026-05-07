@@ -6,7 +6,7 @@ struct HintsOverlayView: View {
   let cellWidth: CGFloat
   let cellHeight: CGFloat
   var actionBarItems: [(symbol: String, label: String)] = [
-    ("⏎", "copy"), ("⇧", "open"), ("⌃", "paste")
+    ("⏎", "copy"), ("⇧", "open"), ("⌃", "paste"),
   ]
 
   var body: some View {
@@ -15,7 +15,7 @@ struct HintsOverlayView: View {
         .ignoresSafeArea()
 
       Canvas { context, _ in
-        let fontSize = cellHeight * 0.8
+        let fontSize = MyttyTheme.overlayFontSize(cellHeight)
         for label in labels {
           let origin = label.target.labelOrigin
           let labelWidth = cellWidth * CGFloat(label.label.count)
@@ -44,7 +44,7 @@ struct HintsOverlayView: View {
               .foregroundStyle(index == 0 ? MyttyTheme.overlayText : MyttyTheme.overlayTextMuted)
           }
         }
-        .font(.system(size: max(cellHeight * 0.8, 12), weight: .medium, design: .monospaced))
+        .font(MyttyTheme.overlayFont(cellHeight, weight: .medium))
         .padding(.vertical, 6)
         .padding(.horizontal, 12)
         .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 6))

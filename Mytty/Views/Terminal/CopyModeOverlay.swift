@@ -53,14 +53,14 @@ struct CopyModeOverlay: View {
         HStack {
           if state.subMode == .searchForward || state.subMode == .searchReverse {
             Text(searchBarText)
-              .font(.system(size: max(cellHeight * 0.8, 12), weight: .bold, design: .monospaced))
+              .font(MyttyTheme.overlayFont(cellHeight, weight: .bold))
               .foregroundStyle(MyttyTheme.overlayText)
               .padding(.horizontal, 8)
               .padding(.vertical, 2)
               .background(MyttyTheme.copyModeSearchBar, in: RoundedRectangle(cornerRadius: 4))
           } else {
             Text(modeIndicatorText)
-              .font(.system(size: max(cellHeight * 0.8, 12), weight: .bold, design: .monospaced))
+              .font(MyttyTheme.overlayFont(cellHeight, weight: .bold))
               .foregroundStyle(MyttyTheme.overlayText)
               .padding(.horizontal, 8)
               .padding(.vertical, 2)

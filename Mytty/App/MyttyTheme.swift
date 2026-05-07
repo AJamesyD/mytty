@@ -79,4 +79,13 @@ enum MyttyTheme {
 
   // Transparent
   static let transparent = Color.clear
+
+  // Overlay fonts
+  static func overlayFont(_ cellHeight: CGFloat, weight: Font.Weight = .regular) -> Font {
+    .system(size: max(cellHeight * 0.8, 12), weight: weight, design: .monospaced)
+  }
+
+  static func overlayFontSize(_ cellHeight: CGFloat) -> CGFloat {
+    max(cellHeight * 0.8, 12)
+  }
 }

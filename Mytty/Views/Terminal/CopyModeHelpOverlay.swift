@@ -61,7 +61,7 @@ struct CopyModeHelpOverlay: View {
         hintColumn(title: "Actions", hints: actionHints)
       }
     }
-    .font(.system(size: max(cellHeight * 0.8, 12), design: .monospaced))
+    .font(MyttyTheme.overlayFont(cellHeight))
     .foregroundStyle(MyttyTheme.overlayText)
     .padding(12)
     .background(MyttyTheme.overlayBackground, in: RoundedRectangle(cornerRadius: 8))

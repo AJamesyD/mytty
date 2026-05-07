@@ -10,7 +10,7 @@ struct HintBarView: View {
         KeyBadge(key: item.trigger, label: item.label, labelStyle: MyttyTheme.overlayTextMuted)
       }
     }
-    .font(.system(size: max(cellHeight * 0.8, 12), design: .monospaced))
+    .font(MyttyTheme.overlayFont(cellHeight))
     .foregroundStyle(MyttyTheme.overlayText)
     .padding(.horizontal, 12)
     .padding(.vertical, 6)
