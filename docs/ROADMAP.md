@@ -497,11 +497,9 @@ Opportunistic (no dependencies, land anytime):
   ├─ ~~R20 (window frame persistence)~~: shipped (17be2d9)
   ├─ R14 (dock badge)
   ├─ Replace FuzzyMatcher.swift with ordo-one/FuzzyMatch
-  ├─ Dynamic overlay font scaling: derive terminal overlay font sizes from
-     the active pane's cell height instead of the current fixed 15pt.
-     Affects: WindowModeHints, WhichKeyOverlay, HintsOverlayView,
-     SequenceIndicatorView, CopyModeHelpOverlay, CopyModeOverlay, PaneView
-     ZOOMED badge. Pattern: max(cellHeight * 0.8, 12).
+  ├─ ~~Dynamic overlay font scaling~~: shipped (6a68326). `MyttyTheme.overlayFont`
+     and `overlayFontSize` centralize the `max(cellHeight * 0.8, 12)` pattern.
+     Fixed HintsOverlayView Canvas missing the min-size guard.
   └─ Hint bar PanelMode: convert `show-hint-bar` boolean to PanelMode
      tri-state (pinned/auto-hide/hidden). Reuses existing PanelState
      auto-hide machinery (dwell, dismiss, hover). Default: auto-hide.
