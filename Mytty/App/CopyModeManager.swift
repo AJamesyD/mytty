@@ -10,7 +10,7 @@ final class CopyModeManager {
   private var store: SessionStore?
   var onNeedExitWindowMode: () -> Void = {}
 
-  private struct CopyModeKey: Hashable {
+  struct CopyModeKey: Hashable {
     let key: String
     let hasCtrl: Bool
   }
@@ -64,7 +64,15 @@ final class CopyModeManager {
     }
   }
 
-  private func shouldTranslate(_ state: CopyModeState, key: Character, keyCode: UInt16) -> Bool {
+  func setBindingsForTesting(_ bindings: [String: String]) {
+    triggerToAction = [:]
+    for (key, action) in bindings {
+      let cmKey = CopyModeKey(key: key, hasCtrl: false)
+      triggerToAction[cmKey] = action
+    }
+  }
+
+  func shouldTranslate(_ state: CopyModeState, key: Character, keyCode: UInt16) -> Bool {
     if state.showingHelp { return false }
     if keyCode == 53 { return false }
     if state.isSearching { return false }
@@ -74,7 +82,7 @@ final class CopyModeManager {
     return true
   }
 
-  private func translateKey(
+  func translateKey(
     _ key: Character, modifiers: NSEvent.ModifierFlags, state: CopyModeState, keyCode: UInt16
   ) -> (Character, NSEvent.ModifierFlags) {
     guard shouldTranslate(state, key: key, keyCode: keyCode) else {

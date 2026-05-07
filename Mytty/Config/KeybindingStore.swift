@@ -123,7 +123,9 @@ struct KeybindingStore: Sendable, Equatable {
       "page-up": KeyboardTrigger(prefix: nil, modifiers: [.ctrl], key: "b"),
       "yank": KeyboardTrigger(prefix: nil, modifiers: [], key: "y"),
       "exit": KeyboardTrigger(prefix: nil, modifiers: [], key: "escape"),
-      "top": KeyboardTrigger(prefix: nil, modifiers: [], key: "gg"),
+      // g-prefix actions (gg=top, ge=word-end-backward, gE=word-end-backward-big,
+      // g?=toggle-help) use CopyModeState's pendingG state machine.
+      // Not remappable via config in v1.
     ],
   ]
 

@@ -26,8 +26,8 @@ final class KeybindingStoreTests: XCTestCase {
       KeyboardTrigger(prefix: nil, modifiers: [], key: "z")
     )
     XCTAssertEqual(
-      store.trigger(for: "top", in: .copyMode),
-      KeyboardTrigger(prefix: nil, modifiers: [], key: "gg")
+      store.trigger(for: "move-left", in: .copyMode),
+      KeyboardTrigger(prefix: nil, modifiers: [], key: "h")
     )
   }
 
