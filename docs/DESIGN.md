@@ -50,6 +50,15 @@ made yet.
    CLI are peers, not primary and secondary. Features that can't be scripted
    are features that can't be composed with other tools.
 
+5. **Chrome recedes, content dominates.**
+   Terminal output is the focus. UI chrome (sidebar, tab bar, status
+   indicators) should never compete with it. Use neutral translucent colors
+   for navigation ("you are here"), reserve accent colors for attention
+   states (notifications, failures, activity). Sidebar selection is wayfinding,
+   not emphasis.
+   Lesson: accent-colored selection pills competed visually with terminal
+   content. Neutral translucent pills provide orientation without distraction.
+
 ## Architecture Constraints
 
 Technical boundaries. Do not change without discussion.
@@ -126,6 +135,8 @@ How we work. These govern the roadmap and development workflow.
 - Spec before code: every feature gets a written spec before implementation.
 - Cleanup gates before major phases: tech debt addressed before it compounds.
 - Visual quality ships with features: if it looks unfinished, it is unfinished.
+- Research before aesthetic decisions: UI/UX choices backed by prior-art survey,
+  not taste alone. Survey 5+ comparable apps, document patterns, then decide.
 - IPC parity: stable noun+verb operations get IPC in the same commit as GUI.
 - Do not add Apple framework dependencies beyond AppKit, SwiftUI,
   UserNotifications, and Carbon (transitive via GhosttyKit) without discussion.

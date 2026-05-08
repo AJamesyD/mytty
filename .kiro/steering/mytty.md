@@ -26,6 +26,13 @@ All colors go through MyttyTheme.swift tokens.
 Do not use Color literals (Color.red, .blue) directly in views.
 Do not use .opacity() on theme tokens. Create a new token instead.
 
+Selection indicators:
+- Use neutral translucent (fg.opacity) for navigation, not accent color.
+- Reserve accent color for attention states (badges, bells, failures).
+- Corner radius: 6px for selection pills (macOS Big Sur+ aesthetic).
+- Horizontal inset: 8px from container edges.
+- Background opacity: 18% for selection, 5% for hover.
+
 ## Adding IPC Methods
 
 Three files must stay in sync:
