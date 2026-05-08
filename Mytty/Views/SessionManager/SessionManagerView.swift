@@ -91,7 +91,8 @@ struct SessionManagerView: View {
               .padding(.vertical, 8)
               .background(
                 index == vm.selectedIndex
-                  ? MyttyTheme.selectedRowBackground : MyttyTheme.transparent
+                  ? MyttyTheme.selectedRowBackground : MyttyTheme.transparent,
+                in: RoundedRectangle(cornerRadius: 6)
               )
               .id(index)
               .contentShape(Rectangle())

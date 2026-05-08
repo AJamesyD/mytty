@@ -140,12 +140,13 @@ struct SessionRowView: View {
           }
         }
         .padding(.leading, 12)
+        .padding(.trailing, 8)
         .padding(.vertical, 2)
         .background(
           isActiveTab
             ? MyttyTheme.selectedRowBackground
             : MyttyTheme.transparent,
-          in: RoundedRectangle(cornerRadius: 4)
+          in: RoundedRectangle(cornerRadius: 6)
         )
         .contentShape(Rectangle())
         .contextMenu {
@@ -232,12 +233,9 @@ struct SessionRowView: View {
     .chromeFrame("session-\(session.id)")
   }
 
+  // Session uses full-width tint (no pill) for visual hierarchy with tab pills
   var rowBackground: some View {
-    HStack(spacing: 0) {
-      MyttyTheme.sessionAccent
-        .frame(width: 3)
-        .opacity(isActive ? 1 : 0)
-      MyttyTheme.transparent
-    }
+    Rectangle()
+      .fill(isActive ? MyttyTheme.activeSessionBackground : MyttyTheme.transparent)
   }
 }

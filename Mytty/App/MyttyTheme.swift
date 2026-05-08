@@ -44,8 +44,10 @@ enum MyttyTheme {
   static let activeTabBackground = Color.accentColor.opacity(0.3)
   static let inactiveTabBackground = fg.opacity(0.05)
 
-  // Selection
-  static let selectedRowBackground = Color.accentColor.opacity(0.2)
+  // Selection (neutral translucent per research - lets content dominate)
+  static let selectedRowBackground = fg.opacity(0.18)
+  // Session tint is subtler than tab pill to create visual hierarchy
+  static let activeSessionBackground = fg.opacity(0.08)
 
   // Chrome
   static let sidebarDivider = fg.opacity(0.08)
