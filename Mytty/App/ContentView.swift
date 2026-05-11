@@ -20,6 +20,8 @@ struct ContentView: View {
   @SceneStorage("sidebarWidth") private var sidebarWidth: Double = 220
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var showingSessionManager = false
+  @State private var showingCommandPalette = false
+  @State private var commandPaletteVM: CommandPaletteViewModel?
   @State private var sessionManagerVM: SessionManagerViewModel?
   @State private var windowModeManager = WindowModeManager()
   @State private var copyModeManager = CopyModeManager()
@@ -450,6 +452,21 @@ struct ContentView: View {
   }
 
   @ViewBuilder
+  var commandPaletteOverlay: some View {
+    if showingCommandPalette, let vm = commandPaletteVM {
+      MyttyTheme.modalBackdrop
+        .ignoresSafeArea()
+        .onTapGesture { showingCommandPalette = false }
+
+      CommandPaletteView(
+        vm: vm,
+        keybindingStore: MyttyConfig.load().keybindingStore,
+        isPresented: $showingCommandPalette
+      )
+    }
+  }
+
+  @ViewBuilder
   var popupOverlay: some View {
     if let session = store.activeSession,
       let popup = session.activePopup,
@@ -538,6 +555,9 @@ extension ContentView {
       AppAction(id: "session-manager", label: "Session Manager", category: "session") {
         showingSessionManager = true
       },
+      AppAction(id: "command-palette", label: "Command Palette", category: "mode") {
+        showingCommandPalette = true
+      },
       AppAction(id: "toggle-sidebar", label: "Toggle Sidebar", category: "view") {
         handleToggleSidebar()
       },
@@ -613,6 +633,7 @@ extension ContentView {
 
   private var isAnyModalActive: Bool {
     showingSessionManager
+      || showingCommandPalette
       || windowModeManager.isActive
       || copyModeManager.isActive
       || whichKeyManager.isActive
@@ -637,6 +658,7 @@ extension ContentView {
     }
     let actions: [(String, String)] = [
       ("which-key", "keys"),
+      ("command-palette", "palette"),
       ("window-mode", "window"),
       ("copy-mode", "copy"),
       ("hints-mode", "hints"),
@@ -845,6 +867,7 @@ extension ContentView {
         }
       }
       .overlay { sessionManagerOverlay }
+      .overlay { commandPaletteOverlay }
       .overlay { popupOverlay }
       .onChange(of: showingSessionManager) { _, isShowing in
         if isShowing {
@@ -852,6 +875,13 @@ extension ContentView {
           sessionManagerVM = vm
         } else {
           sessionManagerVM = nil
+        }
+      }
+      .onChange(of: showingCommandPalette) { _, isShowing in
+        if isShowing {
+          commandPaletteVM = CommandPaletteViewModel(actions: actionRegistry)
+        } else {
+          commandPaletteVM = nil
         }
       }
       .paneNavigation(

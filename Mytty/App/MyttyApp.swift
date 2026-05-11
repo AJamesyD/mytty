@@ -99,6 +99,11 @@ struct MyttyApp: App {
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "session-manager", in: .global))
 
+        Button("Command Palette") {
+          action("command-palette")?()
+        }
+        .keyboardShortcut(from: config.keybindingStore.trigger(for: "command-palette", in: .global))
+
         Divider()
 
         Button("Window Mode") {

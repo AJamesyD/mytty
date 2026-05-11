@@ -291,15 +291,10 @@ Base config loading and override file (`ghostty.conf`) shipped in Phase 4. Remai
 - `/spec` required: file format, trust model, layout manager UI design.
 - Depends on: 4a (config format), 2c (layout serialization format)
 
-### - [ ] 5f. Command Palette (Cmd+K)
-Fuzzy-searchable floating panel. All actions with shortcuts. Lower priority because which-key (1a) covers discoverability.
+### - [x] 5f. Command Palette (Cmd+K)
+Fuzzy-searchable floating panel. All actions with shortcuts displayed. Shipped in 583a80a.
 
-Note: consider extending the session manager picker to include tabs before building a separate command palette. The session manager already has fuzzy matching, frecency, and multi-type item support. Adding tabs as a searchable item type may cover the "jump to anything" use case without a new UI.
-
-Shortcut labels: display the direct keybinding right-aligned next to each result (VS Code model). The AppAction registry already carries the action id; look up the global trigger via KeybindingStore. This turns the palette into a "what's the key for X?" tool and provides passive graduation. Config: `palette-show-shortcuts = true` (default on).
-
-- Complexity: 2
-- `/spec` required: action registry, search ranking, visual design. Prior art: Raycast, Nova, Linear.
+Implementation: CommandPaletteView + CommandPaletteViewModel in Views/CommandPalette/. Reuses FocusableTextField (extracted to Views/Shared/), FuzzyMatcher for filtering, KeybindingStore for shortcut display. MenuSyncTests enforces menu item registration for all global-bound actions.
 
 ### - [x] 5g. Pluggable Session Sources
 
@@ -332,7 +327,7 @@ Optional macOS Notification Center integration for events when Mytty is not fron
 - Depends on: 2b (notification infrastructure)
 
 **Essential done when:** dropdown terminal works via global hotkey, hints mode selects visible targets, floating panes work.
-**Polish done when:** Ghostty themes import, project layouts load from `.mytty.toml`, command palette searches all actions, system notifications fire for background events. Session sources: shipped.
+**Polish done when:** Ghostty themes import, project layouts load from `.mytty.toml`, system notifications fire for background events. Session sources: shipped. Command palette: shipped (583a80a).
 
 ---
 
@@ -526,7 +521,7 @@ Feature phases (sequential gates):
   ──> Phase 5 Polish:
     ├─ 5d (Ghostty compat) ← depends on 4a ✓
     ├─ 5e (layouts) ← depends on 4a ✓, 2c ✓
-    ├─ 5f (command palette) ← consider extending session manager picker first
+    ├─ 5f (command palette) ✓
     ├─ 5g ✓ (session sources)             ← shipped 543e924
     └─ 5h (notifications) ← independent
   ──> Phase 6 (moonshots)
@@ -571,7 +566,8 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 
 **Discoverability:**
 - Which-key ghost shortcuts: show the direct global shortcut (e.g., ⌘T) right-aligned and dimmed next to each which-key entry. Turns which-key into a graduation tool. Data already in AppAction registry + KeybindingStore. Config: `which-key-show-shortcuts = true`. Research: `docs/research/keybinding-discoverability.md`.
-- Command palette shortcut labels: display keybinding right-aligned next to every palette result. Ships with 5f.
+- ~~Command palette shortcut labels~~: shipped with 5f (583a80a). Keybinding displayed right-aligned next to every palette result.
+- Generate menu items from AppAction registry: replace hand-written menu Buttons in MyttyApp.swift with a loop over the registry, grouped by `category`. Eliminates the sync problem between registry and menu (currently enforced by `MenuSyncTests`). Trigger: when the menu system needs changes for another reason (hot-reload keybindings, dynamic "Recent Sessions" menu). Approach: add optional `menuGroup: MenuGroup?` enum to AppAction, filter per `CommandGroup` section. Prior art: VS Code's `menus` contribution point maps command IDs to menu locations declaratively. Constraint: SwiftUI `CommandGroup` requires static grouping; may need one `ForEach` per section, or drop to NSMenu (see AppKit window migration track).
 - Post-action shortcut toast: after completing an action via which-key or palette, show "Tip: ⌘T" briefly. Self-limits to 3 appearances per action (persisted counter). Config: `show-shortcut-hints = true`. Prior art: JetBrains IDEs.
 - Contextual mode hints (Zellij-style): when entering window/copy mode, replace the hint bar with mode-specific bindings. Prior art: Zellij status bar.
 - `mytty show-keys` CLI: print all keybindings grouped by category, showing both direct shortcut and which-key path. Supports `--format json` and `--conflicts`.

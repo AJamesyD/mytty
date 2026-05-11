@@ -80,13 +80,22 @@ To add a new action:
 1. Add the handler method in ContentView.swift (Notifications & Handlers extension)
 2. Add one entry in `buildActionRegistry()` with id, label, category, and handler
 3. Add a default keybinding in KeybindingStore.defaultBindings (if the action has a shortcut)
+4. Add a menu Button in MyttyApp.swift with `action("id")` and `.keyboardShortcut(from:)` (if the action has a global shortcut)
+
+Step 4 is required because SwiftUI menu shortcuts are what intercept key
+events before the terminal consumes them. Without a menu item, the
+keybinding is dead. `MenuSyncTests` enforces this at CI time.
+
+Exception: actions using `prefix: .unconsumed` (navigate-left/right/up/down)
+bypass the menu. These are dispatched via libghostty's unconsumed-key
+callback through PaneNavigationManager.
 
 The action id must be kebab-case and match the keybinding name (e.g.,
-`"split-horizontal"`). The action appears in WhichKeyManager, the menu bar,
-and the command palette without additional wiring.
+`"split-horizontal"`). The action appears in WhichKeyManager and the
+command palette without additional wiring.
 
-Do not add actions directly to WhichKeyManager's binding tree or MyttyApp's
-menu commands. These read from the registry.
+Do not add actions directly to WhichKeyManager's binding tree. It reads
+from the registry.
 
 ## Testing
 
