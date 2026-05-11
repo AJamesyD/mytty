@@ -9,7 +9,7 @@ struct MyttyApp: App {
   @State private var config = MyttyConfig.load()
   @State private var dropdownController: DropdownController?
   @State private var hotkeyMonitor: GlobalHotkeyMonitor?
-  @FocusedValue(\.terminalCommands) var commands
+  @FocusedValue(\.actionRegistry) var actions
 
   init() {
     NSWindow.allowsAutomaticWindowTabbing = false
@@ -48,12 +48,12 @@ struct MyttyApp: App {
     }
     .commands {
       CommandGroup(replacing: .newItem) {
-        Button("New Session") { commands?.sessionManager() }
+        Button("New Session") { action("session-manager")?() }
           .keyboardShortcut("n")
         Divider()
-        Button("Close Pane") { commands?.closePane() }
+        Button("Close Pane") { action("close-pane")?() }
           .keyboardShortcut(from: config.keybindingStore.trigger(for: "close-pane", in: .global))
-        Button("Close Tab") { commands?.closeTab() }
+        Button("Close Tab") { action("close-tab")?() }
           .keyboardShortcut(from: config.keybindingStore.trigger(for: "close-tab", in: .global))
       }
       CommandGroup(replacing: .undoRedo) { EmptyView() }
@@ -69,60 +69,60 @@ struct MyttyApp: App {
         // routing, matching Ghostty's approach.
 
         Button("Toggle Sidebar") {
-          commands?.toggleSidebar()
+          action("toggle-sidebar")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "toggle-sidebar", in: .global))
 
         Button("Toggle Tab Bar") {
-          commands?.toggleTabBar()
+          action("toggle-tab-bar")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "toggle-tab-bar", in: .global))
 
         Button("New Tab") {
-          commands?.newTab()
+          action("new-tab")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "new-tab", in: .global))
 
         Button("Split Pane Horizontally") {
-          commands?.splitHorizontal()
+          action("split-horizontal")?()
         }
         .keyboardShortcut(
           from: config.keybindingStore.trigger(for: "split-horizontal", in: .global))
 
         Button("Split Pane Vertically") {
-          commands?.splitVertical()
+          action("split-vertical")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "split-vertical", in: .global))
 
         Button("Session Manager") {
-          commands?.sessionManager()
+          action("session-manager")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "session-manager", in: .global))
 
         Divider()
 
         Button("Window Mode") {
-          commands?.windowMode()
+          action("window-mode")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "window-mode", in: .global))
 
         Button("Copy Mode") {
-          commands?.copyMode()
+          action("copy-mode")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "copy-mode", in: .global))
 
         Button("Which-Key") {
-          commands?.whichKey()
+          action("which-key")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "which-key", in: .global))
 
         Button("Hints Mode") {
-          commands?.hintsMode()
+          action("hints-mode")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "hints-mode", in: .global))
 
         Button("Chrome Hints") {
-          commands?.chromeHintsMode()
+          action("chrome-hints-mode")?()
         }
         .keyboardShortcut(
           from: config.keybindingStore.trigger(for: "chrome-hints-mode", in: .global))
@@ -142,42 +142,42 @@ struct MyttyApp: App {
 
         ForEach(1...9, id: \.self) { index in
           Button("Focus Tab \(index)") {
-            commands?.focusTab(index - 1)
+            action("focus-tab-\(index)")?()
           }
           .keyboardShortcut(
             from: config.keybindingStore.trigger(for: "focus-tab-\(index)", in: .global))
         }
 
         Button("Next Tab") {
-          commands?.nextTab()
+          action("next-tab")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "next-tab", in: .global))
 
         Button("Previous Tab") {
-          commands?.prevTab()
+          action("previous-tab")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "previous-tab", in: .global))
 
         Button("Previous Session") {
-          commands?.prevSession()
+          action("previous-session")?()
         }
         .keyboardShortcut(
           from: config.keybindingStore.trigger(for: "previous-session", in: .global))
 
         Button("Next Session") {
-          commands?.nextSession()
+          action("next-session")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "next-session", in: .global))
 
         Divider()
 
         Button("Previous Prompt") {
-          commands?.jumpToPreviousPrompt()
+          action("previous-prompt")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "previous-prompt", in: .global))
 
         Button("Next Prompt") {
-          commands?.jumpToNextPrompt()
+          action("next-prompt")?()
         }
         .keyboardShortcut(from: config.keybindingStore.trigger(for: "next-prompt", in: .global))
 
@@ -193,7 +193,8 @@ struct MyttyApp: App {
             let modifiers = parseShortcutModifiers(popup.shortcut)
           {
             Button("Toggle \(popup.name)") {
-              commands?.togglePopup(popup.name)
+              NotificationCenter.default.post(
+                name: .myttyTogglePopup, object: nil, userInfo: ["name": popup.name])
             }
             .keyboardShortcut(key, modifiers: modifiers)
           }
@@ -204,6 +205,10 @@ struct MyttyApp: App {
     Settings {
       SettingsView()
     }
+  }
+
+  private func action(_ id: String) -> (() -> Void)? {
+    actions?.first(where: { $0.id == id })?.handler
   }
 
   /// Normalize shortcut string: lowercase, accept both "+" and "-" as separators.
@@ -251,6 +256,7 @@ extension Notification.Name {
   static let myttyDropdownHotkeyPressed = Notification.Name("myttyDropdownHotkeyPressed")
   static let myttyHintsActivate = Notification.Name("myttyHintsActivate")
   static let myttyHintsChromeActivate = Notification.Name("myttyHintsChromeActivate")
+  static let myttyTogglePopup = Notification.Name("myttyTogglePopup")
 }
 
 extension View {

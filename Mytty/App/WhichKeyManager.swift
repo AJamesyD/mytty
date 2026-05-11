@@ -3,6 +3,9 @@ import SwiftUI
 
 enum WhichKeyAction {
   case group(label: String, children: [WhichKeyBinding])
+  // TODO(discoverability): add `shortcut: String?` parameter to show the direct
+  // global keybinding as ghost text (e.g., "⌘T") in the which-key overlay.
+  // Data source: KeybindingStore.trigger(for: actionId, in: .global)?.displayLabel
   case command(label: String, action: @MainActor () -> Void)
 }
 
@@ -128,97 +131,30 @@ final class WhichKeyManager {
     }
   }
 
-  // Binding tree construction: sequential setup of all action categories.
   static func buildBindings(
-    store: SessionStore,
-    commands: TerminalCommands,
-    groups: [WhichKeyGroup]
+    registry: [AppAction],
+    groups: [WhichKeyGroup],
+    tabCount: Int
   ) -> [WhichKeyBinding] {
-    var registry: [String: (label: String, action: @MainActor () -> Void)] = [
-      "swap-left": (
-        "Swap Left",
-        { store.activeSession?.activeTab?.swapActivePane(direction: .left) }
-      ),
-      "swap-down": (
-        "Swap Down",
-        { store.activeSession?.activeTab?.swapActivePane(direction: .down) }
-      ),
-      "swap-up": (
-        "Swap Up",
-        { store.activeSession?.activeTab?.swapActivePane(direction: .up) }
-      ),
-      "swap-right": (
-        "Swap Right",
-        { store.activeSession?.activeTab?.swapActivePane(direction: .right) }
-      ),
-      "zoom": (
-        "Zoom",
-        { store.activeSession?.activeTab?.toggleZoom() }
-      ),
-      "break-to-tab": (
-        "Break to Tab",
-        {
-          guard let session = store.activeSession,
-            let tab = session.activeTab,
-            let pane = tab.activePane,
-            tab.panes.count > 1
-          else { return }
-          tab.closePane(pane)
-          if tab.panes.isEmpty { session.closeTab(tab) }
-          session.addTabWithPane(pane)
-        }
-      ),
-      "rotate": (
-        "Rotate",
-        { store.activeSession?.activeTab?.rotateActivePane() }
-      ),
-      "even-layout": (
-        "Even Layout",
-        {
-          guard let tab = store.activeSession?.activeTab, tab.panes.count >= 2 else { return }
-          tab.applyStandardLayout(.evenHorizontal)
-        }
-      ),
-      "split-vertical": ("Vertical Split", { commands.splitVertical() }),
-      "split-horizontal": ("Horizontal Split", { commands.splitHorizontal() }),
-      "close-pane": ("Close Pane", { commands.closePane() }),
-      "new-session": (
-        "New Session",
-        {
-          store.createSession(
-            name: "New Session", directory: FileManager.default.homeDirectoryForCurrentUser)
-        }
-      ),
-      "session-manager": ("Session Manager", { commands.sessionManager() }),
-      "close-session": (
-        "Close Session",
-        {
-          guard let session = store.activeSession else { return }
-          store.closeSession(session)
-        }
-      ),
-      "new-tab": ("New Tab", { commands.newTab() }),
-      "close-tab": ("Close Tab", { commands.closeTab() }),
-    ]
-    let tabCount = min(store.activeSession?.tabs.count ?? 0, 9)
-    if tabCount > 0 {
-      for i in 1...tabCount {
-        registry["focus-tab-\(i)"] = ("Tab \(i)", { commands.focusTab(i - 1) })
-      }
-    }
+    let actionMap = Dictionary(uniqueKeysWithValues: registry.map { ($0.id, $0) })
 
     return groups.compactMap { group -> WhichKeyBinding? in
       let children = group.bindings.compactMap { node -> WhichKeyBinding? in
-        guard let entry = registry[node.action],
+        if node.action.hasPrefix("focus-tab-"),
+          let n = Int(node.action.dropFirst("focus-tab-".count)),
+          n > tabCount
+        {
+          return nil
+        }
+        guard let action = actionMap[node.action],
           let key = node.key.first
         else { return nil }
         return WhichKeyBinding(
           key: key,
-          action: .command(label: entry.label, action: entry.action)
+          action: .command(label: action.label, action: action.handler)
         )
       }
       guard !children.isEmpty else { return nil }
-      // Falls back to first character of name when key is empty (e.g. user-defined groups without explicit key)
       let groupKey = group.key.first ?? group.name.first ?? "?"
       let groupLabel = group.name.prefix(1).uppercased() + group.name.dropFirst()
       return WhichKeyBinding(

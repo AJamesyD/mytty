@@ -31,7 +31,7 @@ struct ContentView: View {
   @State private var configWatcher = ConfigWatcher()
   @State private var ghosttyConfigWatcher = GhosttyConfigWatcher()
   @State private var hintBarItems: [(trigger: String, label: String)] = []
-  @State private var terminalCommands: TerminalCommands?
+  @State private var actionRegistry: [AppAction] = []
 
   var body: some View {
     contentWithNotifications
@@ -39,38 +39,7 @@ struct ContentView: View {
         .container,
         edges: GhosttyAppManager.shared.windowConfig.titlebarStyle == "hidden" ? .top : []
       )
-      .focusedSceneValue(\.terminalCommands, terminalCommands)
-  }
-
-  private func makeTerminalCommands() -> TerminalCommands {
-    TerminalCommands(
-      newTab: { store.activeSession?.addTab() },
-      closeTab: { handleCloseTab() },
-      nextTab: { store.activeSession?.nextTab() },
-      prevTab: { store.activeSession?.prevTab() },
-      focusTab: { index in
-        guard let session = store.activeSession,
-          index < session.tabs.count
-        else { return }
-        session.activeTab = session.tabs[index]
-      },
-      nextSession: { store.nextSession() },
-      prevSession: { store.prevSession() },
-      splitHorizontal: { splitPane(direction: .horizontal) },
-      splitVertical: { splitPane(direction: .vertical) },
-      closePane: { handleClosePane() },
-      windowMode: { handleWindowMode() },
-      copyMode: { handleCopyMode() },
-      whichKey: { handleWhichKey() },
-      sessionManager: { showingSessionManager = true },
-      togglePopup: { name in handlePopupToggle(name: name) },
-      toggleSidebar: { handleToggleSidebar() },
-      toggleTabBar: { handleToggleTabBar() },
-      jumpToPreviousPrompt: { jumpToPrompt(direction: -1) },
-      jumpToNextPrompt: { jumpToPrompt(direction: 1) },
-      hintsMode: { handleHintsMode() },
-      chromeHintsMode: { handleChromeHintsMode() }
-    )
+      .focusedSceneValue(\.actionRegistry, actionRegistry)
   }
 
   var sidebarPanel: some View {
@@ -257,8 +226,10 @@ struct ContentView: View {
           value: panelState.isHintBarRevealed
         )
         .overlay(alignment: .bottom) {
-          SequenceIndicatorView(text: keySequenceManager.pendingDisplay, cellHeight: currentCellHeight)
-            .padding(.bottom, Self.overlayEdgeInset)
+          SequenceIndicatorView(
+            text: keySequenceManager.pendingDisplay, cellHeight: currentCellHeight
+          )
+          .padding(.bottom, Self.overlayEdgeInset)
         }
         .overlay(alignment: .bottom) {
           WhichKeyOverlay(
@@ -374,7 +345,7 @@ struct ContentView: View {
       value: panelState.isSidebarRevealed
     )
     .onAppear {
-      terminalCommands = makeTerminalCommands()
+      actionRegistry = buildActionRegistry()
       let initialConfig = MyttyConfig.load()
       applyConfig(initialConfig)
       if let error = initialConfig.parseError {
@@ -512,6 +483,134 @@ private var hasRequestedNotificationPermission = false
 // MARK: - Notifications & Handlers
 
 extension ContentView {
+  // Flat registry of all user-invocable actions. Length reflects action count, not complexity.
+  // swiftlint:disable:next function_body_length
+  private func buildActionRegistry() -> [AppAction] {
+    var actions: [AppAction] = [
+      AppAction(id: "new-tab", label: "New Tab", category: "tab") {
+        store.activeSession?.addTab()
+      },
+      AppAction(id: "close-tab", label: "Close Tab", category: "tab") {
+        handleCloseTab()
+      },
+      AppAction(id: "next-tab", label: "Next Tab", category: "navigation") {
+        store.activeSession?.nextTab()
+      },
+      AppAction(id: "previous-tab", label: "Previous Tab", category: "navigation") {
+        store.activeSession?.prevTab()
+      },
+      AppAction(id: "next-session", label: "Next Session", category: "navigation") {
+        store.nextSession()
+      },
+      AppAction(id: "previous-session", label: "Previous Session", category: "navigation") {
+        store.prevSession()
+      },
+      AppAction(id: "navigate-left", label: "Navigate Left", category: "navigation") {
+        handleNavigate(.left)
+      },
+      AppAction(id: "navigate-down", label: "Navigate Down", category: "navigation") {
+        handleNavigate(.down)
+      },
+      AppAction(id: "navigate-up", label: "Navigate Up", category: "navigation") {
+        handleNavigate(.up)
+      },
+      AppAction(id: "navigate-right", label: "Navigate Right", category: "navigation") {
+        handleNavigate(.right)
+      },
+      AppAction(id: "split-horizontal", label: "Horizontal Split", category: "pane") {
+        splitPane(direction: .horizontal)
+      },
+      AppAction(id: "split-vertical", label: "Vertical Split", category: "pane") {
+        splitPane(direction: .vertical)
+      },
+      AppAction(id: "close-pane", label: "Close Pane", category: "pane") {
+        handleClosePane()
+      },
+      AppAction(id: "window-mode", label: "Window Mode", category: "mode") {
+        handleWindowMode()
+      },
+      AppAction(id: "copy-mode", label: "Copy Mode", category: "mode") {
+        handleCopyMode()
+      },
+      AppAction(id: "which-key", label: "Which-Key", category: "mode") {
+        handleWhichKey()
+      },
+      AppAction(id: "session-manager", label: "Session Manager", category: "session") {
+        showingSessionManager = true
+      },
+      AppAction(id: "toggle-sidebar", label: "Toggle Sidebar", category: "view") {
+        handleToggleSidebar()
+      },
+      AppAction(id: "toggle-tab-bar", label: "Toggle Tab Bar", category: "view") {
+        handleToggleTabBar()
+      },
+      AppAction(id: "previous-prompt", label: "Previous Prompt", category: "navigation") {
+        jumpToPrompt(direction: -1)
+      },
+      AppAction(id: "next-prompt", label: "Next Prompt", category: "navigation") {
+        jumpToPrompt(direction: 1)
+      },
+      AppAction(id: "hints-mode", label: "Hints Mode", category: "mode") {
+        handleHintsMode()
+      },
+      AppAction(id: "chrome-hints-mode", label: "Chrome Hints", category: "mode") {
+        handleChromeHintsMode()
+      },
+      AppAction(id: "swap-left", label: "Swap Left", category: "window") {
+        store.activeSession?.activeTab?.swapActivePane(direction: .left)
+      },
+      AppAction(id: "swap-down", label: "Swap Down", category: "window") {
+        store.activeSession?.activeTab?.swapActivePane(direction: .down)
+      },
+      AppAction(id: "swap-up", label: "Swap Up", category: "window") {
+        store.activeSession?.activeTab?.swapActivePane(direction: .up)
+      },
+      AppAction(id: "swap-right", label: "Swap Right", category: "window") {
+        store.activeSession?.activeTab?.swapActivePane(direction: .right)
+      },
+      AppAction(id: "zoom", label: "Zoom", category: "window") {
+        store.activeSession?.activeTab?.toggleZoom()
+      },
+      AppAction(id: "break-to-tab", label: "Break to Tab", category: "window") {
+        guard let session = store.activeSession,
+          let tab = session.activeTab,
+          let pane = tab.activePane,
+          tab.panes.count > 1
+        else { return }
+        tab.closePane(pane)
+        if tab.panes.isEmpty { session.closeTab(tab) }
+        session.addTabWithPane(pane)
+      },
+      AppAction(id: "rotate", label: "Rotate", category: "window") {
+        store.activeSession?.activeTab?.rotateActivePane()
+      },
+      AppAction(id: "even-layout", label: "Even Layout", category: "window") {
+        guard let tab = store.activeSession?.activeTab, tab.panes.count >= 2 else { return }
+        tab.applyStandardLayout(.evenHorizontal)
+      },
+      AppAction(id: "new-session", label: "New Session", category: "session") {
+        store.createSession(
+          name: "New Session", directory: FileManager.default.homeDirectoryForCurrentUser)
+      },
+      AppAction(id: "close-session", label: "Close Session", category: "session") {
+        guard let session = store.activeSession else { return }
+        store.closeSession(session)
+      },
+    ]
+    for i in 1...9 {
+      actions.append(
+        AppAction(id: "focus-tab-\(i)", label: "Tab \(i)", category: "navigation") {
+          guard let session = store.activeSession,
+            (i - 1) < session.tabs.count
+          else { return }
+          session.activeTab = session.tabs[i - 1]
+        }
+      )
+    }
+    assert(Set(actions.map(\.id)).count == actions.count, "Duplicate action IDs in registry")
+    return actions
+  }
+
   private var isAnyModalActive: Bool {
     showingSessionManager
       || windowModeManager.isActive
@@ -524,9 +623,16 @@ extension ContentView {
     store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellHeight ?? 16
   }
 
-  private static func buildHintBarItems(from store: KeybindingStore) -> [(trigger: String, label: String)] {
+  // TODO(discoverability): make hint bar mode-aware. When window mode or copy mode
+  // is active, replace these items with that mode's bindings (Zellij-style).
+  // Config: `hint-bar-mode-hints = true`
+  private static func buildHintBarItems(from store: KeybindingStore) -> [(
+    trigger: String, label: String
+  )] {
     var items: [(trigger: String, label: String)] = []
-    if let leader = store.sequenceTrie.children.keys.sorted(by: { $0.displayLabel < $1.displayLabel }).first {
+    if let leader = store.sequenceTrie.children.keys.sorted(by: {
+      $0.displayLabel < $1.displayLabel
+    }).first {
       items.append((leader.displayLabel, "leader"))
     }
     let actions: [(String, String)] = [
@@ -535,7 +641,6 @@ extension ContentView {
       ("copy-mode", "copy"),
       ("hints-mode", "hints"),
       ("chrome-hints-mode", "chrome"),
-
     ]
     for (action, label) in actions {
       if let trigger = store.trigger(for: action, in: .global) {
@@ -606,6 +711,11 @@ extension ContentView {
       }
       .onReceive(NotificationCenter.default.publisher(for: .ghosttyMouseOverLink)) { notification in
         handleMouseOverLink(notification)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .myttyTogglePopup)) { notification in
+        if let name = notification.userInfo?["name"] as? String {
+          handlePopupToggle(name: name)
+        }
       }
   }
 
@@ -714,8 +824,10 @@ extension ContentView {
       .environment(chromeFrameStore)
       .overlay {
         if hintsModeManager.isActive, hintsModeManager.activeProviderID == "chrome" {
-          let cellH: CGFloat = store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellHeight ?? 16
-          let cellW: CGFloat = store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellWidth ?? 8
+          let cellH: CGFloat =
+            store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellHeight ?? 16
+          let cellW: CGFloat =
+            store.activeSession?.activeTab?.activePane?.surfaceView.gridMetrics()?.cellWidth ?? 8
           switch hintsModeManager.state {
           case .active(let labels, let typed):
             HintsOverlayView(
@@ -855,11 +967,11 @@ extension ContentView {
       }
       hintsModeManager.deactivate()
       let keybindingStore = MyttyConfig.load().keybindingStore
-      guard let terminalCommands else { return }
       whichKeyManager.activate(
         bindings: WhichKeyManager.buildBindings(
-          store: store, commands: terminalCommands,
-          groups: keybindingStore.whichKeyGroups))
+          registry: actionRegistry,
+          groups: keybindingStore.whichKeyGroups,
+          tabCount: store.activeSession?.tabs.count ?? 0))
     }
   }
 
@@ -943,7 +1055,8 @@ extension ContentView {
       sidebarVisible: sidebarVisible)
     let geometry = HintsGeometry.chrome(elementFrames: chromeFrameStore.frames)
     let config = MyttyConfig.load()
-    hintsModeManager.activate(provider: provider, geometry: geometry, alphabet: config.hints.alphabet)
+    hintsModeManager.activate(
+      provider: provider, geometry: geometry, alphabet: config.hints.alphabet)
   }
 
   func handleCloseTab() {
@@ -1358,38 +1471,7 @@ extension ContentView {
   }
 
   func dispatchSequenceAction(_ action: String) {
-    guard let commands = terminalCommands else { return }
-    switch action {
-    case "new-tab": commands.newTab()
-    case "close-tab": commands.closeTab()
-    case "next-tab": commands.nextTab()
-    case "previous-tab": commands.prevTab()
-    case "next-session": commands.nextSession()
-    case "previous-session": commands.prevSession()
-    case "split-horizontal": commands.splitHorizontal()
-    case "split-vertical": commands.splitVertical()
-    case "close-pane": commands.closePane()
-    case "window-mode": commands.windowMode()
-    case "copy-mode": commands.copyMode()
-    case "which-key": commands.whichKey()
-    case "hints-mode": commands.hintsMode()
-    case "chrome-hints-mode": commands.chromeHintsMode()
-    case "session-manager": commands.sessionManager()
-    case "toggle-sidebar": commands.toggleSidebar()
-    case "toggle-tab-bar": commands.toggleTabBar()
-    case "previous-prompt": commands.jumpToPreviousPrompt()
-    case "next-prompt": commands.jumpToNextPrompt()
-    case "navigate-left": handleNavigate(.left)
-    case "navigate-down": handleNavigate(.down)
-    case "navigate-up": handleNavigate(.up)
-    case "navigate-right": handleNavigate(.right)
-    default:
-      if action.hasPrefix("focus-tab-"),
-        let n = Int(action.dropFirst("focus-tab-".count))
-      {
-        commands.focusTab(n - 1)
-      }
-    }
+    actionRegistry.first { $0.id == action }?.handler()
   }
 
   func handleNavigate(_ direction: NavigationDirection) {

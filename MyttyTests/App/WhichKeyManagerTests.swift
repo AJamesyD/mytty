@@ -162,4 +162,64 @@ final class WhichKeyManagerTests: XCTestCase {
     XCTAssertEqual(manager.currentBindings.first?.key, "a")
     XCTAssertTrue(manager.breadcrumb.isEmpty)
   }
+
+  // MARK: - buildBindings tabCount filtering
+
+  func test_buildBindings_filtersTabEntriesBeyondTabCount() {
+    let registry = (1...9).map { i in
+      AppAction(id: "focus-tab-\(i)", label: "Tab \(i)", category: "navigation") {}
+    }
+    let groups = [
+      WhichKeyGroup(
+        name: "tabs", key: "t",
+        bindings: (1...9).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") })
+    ]
+    let bindings = WhichKeyManager.buildBindings(registry: registry, groups: groups, tabCount: 3)
+    guard case .group(_, let children) = bindings.first?.action else {
+      XCTFail("Expected a group binding")
+      return
+    }
+    XCTAssertEqual(children.count, 3)
+  }
+
+  func test_buildBindings_showsAllTabEntriesWhenTabCountIsHigher() {
+    let registry = (1...9).map { i in
+      AppAction(id: "focus-tab-\(i)", label: "Tab \(i)", category: "navigation") {}
+    }
+    let groups = [
+      WhichKeyGroup(
+        name: "tabs", key: "t",
+        bindings: (1...5).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") })
+    ]
+    let bindings = WhichKeyManager.buildBindings(registry: registry, groups: groups, tabCount: 9)
+    guard case .group(_, let children) = bindings.first?.action else {
+      XCTFail("Expected a group binding")
+      return
+    }
+    XCTAssertEqual(children.count, 5)
+  }
+
+  func test_buildBindings_nonTabActionsUnaffectedByTabCount() {
+    let registry = [
+      AppAction(id: "new-tab", label: "New Tab", category: "tab") {},
+      AppAction(id: "close-tab", label: "Close Tab", category: "tab") {},
+      AppAction(id: "focus-tab-1", label: "Tab 1", category: "navigation") {},
+    ]
+    let groups = [
+      WhichKeyGroup(
+        name: "tabs", key: "t",
+        bindings: [
+          WhichKeyNode(action: "new-tab", key: "n"),
+          WhichKeyNode(action: "close-tab", key: "c"),
+          WhichKeyNode(action: "focus-tab-1", key: "1"),
+        ])
+    ]
+    let bindings = WhichKeyManager.buildBindings(registry: registry, groups: groups, tabCount: 0)
+    guard case .group(_, let children) = bindings.first?.action else {
+      XCTFail("Expected a group binding")
+      return
+    }
+    // new-tab and close-tab remain; focus-tab-1 filtered (tabCount=0)
+    XCTAssertEqual(children.count, 2)
+  }
 }
