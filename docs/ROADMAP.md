@@ -296,6 +296,8 @@ Fuzzy-searchable floating panel. All actions with shortcuts. Lower priority beca
 
 Note: consider extending the session manager picker to include tabs before building a separate command palette. The session manager already has fuzzy matching, frecency, and multi-type item support. Adding tabs as a searchable item type may cover the "jump to anything" use case without a new UI.
 
+Shortcut labels: display the direct keybinding right-aligned next to each result (VS Code model). The AppAction registry already carries the action id; look up the global trigger via KeybindingStore. This turns the palette into a "what's the key for X?" tool and provides passive graduation. Config: `palette-show-shortcuts = true` (default on).
+
 - Complexity: 2
 - `/spec` required: action registry, search ranking, visual design. Prior art: Raycast, Nova, Linear.
 
@@ -568,6 +570,12 @@ order or simultaneously:
 Items identified but not yet assigned to a phase. Promote to a phase when scoped.
 
 **Discoverability:**
+- Which-key ghost shortcuts: show the direct global shortcut (e.g., ⌘T) right-aligned and dimmed next to each which-key entry. Turns which-key into a graduation tool. Data already in AppAction registry + KeybindingStore. Config: `which-key-show-shortcuts = true`. Research: `docs/research/keybinding-discoverability.md`.
+- Command palette shortcut labels: display keybinding right-aligned next to every palette result. Ships with 5f.
+- Post-action shortcut toast: after completing an action via which-key or palette, show "Tip: ⌘T" briefly. Self-limits to 3 appearances per action (persisted counter). Config: `show-shortcut-hints = true`. Prior art: JetBrains IDEs.
+- Contextual mode hints (Zellij-style): when entering window/copy mode, replace the hint bar with mode-specific bindings. Prior art: Zellij status bar.
+- `mytty show-keys` CLI: print all keybindings grouped by category, showing both direct shortcut and which-key path. Supports `--format json` and `--conflicts`.
+- Cheat sheet overlay (hold Cmd): full-screen shortcut reference after holding Cmd for 1.5s. Prior art: macOS CheatSheet app, iPadOS keyboard overlay. Medium-high complexity.
 - Which-key context filtering: hide actions that can't execute (close-tab with 1 tab, close-session with 1 session, break-to-tab with 1 pane). Extends the focus-tab fix (420bf50).
 - Modifier-hold shortcut reveal: hold Cmd to show ⌘1-9 on tabs, hold Ctrl to show pane nav hints. Needs NSEvent `flagsChanged` monitor.
 - Richer hover tooltips: directory, shortcut key, running process (beyond current `.help()`)
