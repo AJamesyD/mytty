@@ -19,12 +19,13 @@ struct ChromeHintTargetProvider: HintTargetProvider {
         guard session.id != activeSessionID else { continue }
         let key = "session-\(session.id)"
         guard let frame = elementFrames[key] else { continue }
-        result.append(ChromeHintTarget(
-          id: key,
-          labelOrigin: CGPoint(x: frame.minX, y: frame.minY),
-          displayText: session.name,
-          chromeElement: .session(sessionID: session.id)
-        ))
+        result.append(
+          ChromeHintTarget(
+            id: key,
+            labelOrigin: CGPoint(x: frame.minX, y: frame.minY),
+            displayText: session.name,
+            chromeElement: .session(sessionID: session.id)
+          ))
       }
       for session in store.sessions {
         guard session.isSidebarExpanded else { continue }
@@ -34,12 +35,13 @@ struct ChromeHintTargetProvider: HintTargetProvider {
           guard !isActiveTab else { continue }
           let key = "sidebar-tab-\(session.id)-\(tab.id)"
           guard let frame = elementFrames[key] else { continue }
-          result.append(ChromeHintTarget(
-            id: key,
-            labelOrigin: CGPoint(x: frame.minX, y: frame.minY),
-            displayText: tab.displayTitle,
-            chromeElement: .tab(sessionID: session.id, tabID: tab.id)
-          ))
+          result.append(
+            ChromeHintTarget(
+              id: key,
+              labelOrigin: CGPoint(x: frame.minX, y: frame.minY),
+              displayText: tab.displayTitle,
+              chromeElement: .tab(sessionID: session.id, tabID: tab.id)
+            ))
         }
       }
     }
@@ -51,12 +53,13 @@ struct ChromeHintTargetProvider: HintTargetProvider {
         guard tab.id != activeTabID else { continue }
         let key = "tabbar-tab-\(tab.id)"
         guard let frame = elementFrames[key] else { continue }
-        result.append(ChromeHintTarget(
-          id: key,
-          labelOrigin: CGPoint(x: frame.minX, y: frame.minY),
-          displayText: tab.displayTitle,
-          chromeElement: .tab(sessionID: session.id, tabID: tab.id)
-        ))
+        result.append(
+          ChromeHintTarget(
+            id: key,
+            labelOrigin: CGPoint(x: frame.minX, y: frame.minY),
+            displayText: tab.displayTitle,
+            chromeElement: .tab(sessionID: session.id, tabID: tab.id)
+          ))
       }
     }
 
@@ -65,12 +68,13 @@ struct ChromeHintTargetProvider: HintTargetProvider {
         guard pane.id != activePaneID else { continue }
         let key = "pane-\(pane.id)"
         guard let frame = elementFrames[key] else { continue }
-        result.append(ChromeHintTarget(
-          id: key,
-          labelOrigin: CGPoint(x: frame.minX + 8, y: frame.minY + 8),
-          displayText: "Pane \(pane.id)",
-          chromeElement: .pane(paneID: pane.id)
-        ))
+        result.append(
+          ChromeHintTarget(
+            id: key,
+            labelOrigin: CGPoint(x: frame.minX + 8, y: frame.minY + 8),
+            displayText: "Pane \(pane.id)",
+            chromeElement: .pane(paneID: pane.id)
+          ))
       }
     }
 

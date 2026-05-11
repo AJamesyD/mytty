@@ -257,8 +257,6 @@ final class MyttyConfigTests: XCTestCase {
     XCTAssertEqual(config.hintBarMode, .hidden)
   }
 
-
-
   func test_hintsAlphabetDefault() throws {
     let config = try MyttyConfig.parse("")
     XCTAssertEqual(config.hints.alphabet, "asdfghjkl")
