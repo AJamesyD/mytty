@@ -70,6 +70,24 @@ handleSetTitle) should reuse the existing handler path (post the same
 notification or call the same model method) rather than adding a parallel
 one.
 
+## Adding an Action
+
+User-invocable actions (keybinding targets, menu items, command palette
+entries) live in the AppAction registry built by ContentView.
+
+To add a new action:
+
+1. Add the handler method in ContentView.swift (Notifications & Handlers extension)
+2. Add one entry in `buildActionRegistry()` with id, label, category, and handler
+3. Add a default keybinding in KeybindingStore.defaultBindings (if the action has a shortcut)
+
+The action id must be kebab-case and match the keybinding name (e.g.,
+`"split-horizontal"`). The action appears in WhichKeyManager, the menu bar,
+and the command palette without additional wiring.
+
+Do not add actions directly to WhichKeyManager's binding tree or MyttyApp's
+menu commands. These read from the registry.
+
 ## Testing
 
 Model classes: unit test directly (SessionStore, MyttySession, etc.).

@@ -157,3 +157,17 @@ not raw colors.
 
 **GhosttyApp**: singleton managing the ghostty_app_t lifecycle. C callbacks
 (no captures) post notifications that handlers route to model updates.
+
+**AppAction registry**: the single source of truth for user-invocable
+actions. Each action carries an id (kebab-case, matches KeybindingStore
+action names), a human label, a category, an optional shortcut display
+string, and a handler closure. Built by ContentView from the SessionStore,
+handler methods, and KeybindingStore. All action consumers (WhichKeyManager,
+menu bar, command palette, future IPC) read from this registry. Adding an
+action means one entry in the builder; it appears in all consumers
+automatically.
+
+**Key dispatch** (ADR-008): two-layer system in TerminalSurfaceView.keyDown.
+Layer 1 (modalKeyHandler) checks modal state: which-key, copy mode,
+window mode, hints mode. Layer 2 (keyDispatch) handles pane navigation
+and key sequences. Unhandled keys fall through to libghostty.
