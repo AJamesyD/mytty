@@ -58,6 +58,9 @@ Project renamed across all source, config, docs, and CI files. Bundle ID: `com.m
 - Back-references on model hierarchy: `weak var tab` on MyttyPane, `weak var session` on MyttyTab. Replaced stored identity properties with computed ones, deleted `propagateIdentity()` and manual wiring across several files (ca4a653).
 - SessionSourceRunner simplification: replaced 4 concurrency mechanisms (OnceResume + terminationHandler + DispatchWorkItem + withTaskCancellationHandler) with a 2-task race (6aa9a24).
 
+### Popup Windows
+Named floating terminal windows controllable via CLI and IPC (`popup.open`, `popup.close`, `popup.toggle`, `popup.list`). Config-defined popups with `--name` for toggle semantics.
+
 ---
 
 ## Current
@@ -103,13 +106,15 @@ transient modal styling (white labels, no border, standard badge opacity,
 centered over terminal content). HintBarView dynamic font. 4 dead theme
 tokens removed. Spec: `/tmp/ai-spec-overlay-visual-unification.md`.
 
-Next (priority order):
-1. 5b-3: IPC methods and CLI commands (`hints.activate`, `hints.activate-chrome`).
-   Activation-only semantics: the method's contract is "foreground app +
-   enter hints mode." Justified by the cross-app trigger use case (external
-   hotkey daemons). `--label` and `--query` flags deferred to 5b-4.
+Hints mode 5b-3 shipped (4cad3ae): IPC methods (`hints.activate`,
+`hints.activate-chrome`) and CLI commands. Activation-only semantics for
+cross-app trigger use case. `--label` and `--query` flags deferred to 5b-4.
 
-Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
+Which-key discoverability shipped: ghost shortcuts (c1da6ea) show direct
+keybinding next to entries; context filtering (e531dbf) hides actions that
+can't execute. Command palette shipped (ded9823).
+
+Opportunistic (no dependencies, land alongside any of the above):
 - R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.
 
 
@@ -194,7 +199,7 @@ Parses `ctrl+a>h` syntax. Sequence state machine with 1s configurable timeout. `
 System-wide hotkey registration via `CGEvent` tap or `NSEvent.addGlobalMonitorForEvents`. Requires accessibility permissions. Needed for dropdown terminal (5a) configurable hotkey, though 5a already ships with a hardcoded hotkey.
 - Complexity: 2
 
-### - [ ] 4f-3: Key Tables and Modal Bindings
+### - [ ] 4f-3: Key Tables and Modal Bindings (4f-3a shipped)
 Named binding sets activated/deactivated at runtime. Generalizes which-key into a single mechanism; copy mode adopts key tables for top-level dispatch but retains its internal state machine. Prefixes: `performable:` (only consume if action can execute), `all:` (broadcast to all surfaces). Chained actions.
 - Complexity: 3
 - Ghostty parity: `activate_key_table:<name>`, one-shot mode, `keybind=clear`
@@ -227,7 +232,7 @@ Extends 2c with scrollback persistence, running command restoration, and optiona
 ### Essential
 
 ### 5a. Dropdown / Quake / Float Mode
-Global hotkey summons a dropdown terminal (NSPanel). Also support floating terminal windows that overlay other apps.
+Global hotkey summons a dropdown terminal (NSPanel).
 
 - Complexity: 3
 - Spec: `docs/specs/phase5a-dropdown-terminal.md`
@@ -240,7 +245,7 @@ NSPanel-based dropdown with Ctrl+` hotkey, slide animation, auto-hide on focus l
 #### - [ ] 5a-2: Dropdown polish
 Configurable position (top/bottom/left/right), size (percentage of screen). Per-monitor detection exists (follows mouse cursor). Position (top-only) and size (40% height, full width) are hardcoded.
 
-### - [ ] 5b. Hints Mode (5b-1, 5b-2 shipped)
+### - [x] 5b. Hints Mode (5b-1, 5b-2, 5b-3 shipped; 5b-4 deferred)
 A general "label things, type to jump" system with pluggable target providers. Press a trigger key, visible targets get short letter labels. Type the label to act (open, copy, insert).
 
 Target providers:
@@ -326,7 +331,7 @@ Optional macOS Notification Center integration for events when Mytty is not fron
 - `/spec` required: which events trigger notifications, grouping, action buttons, user preference toggle.
 - Depends on: 2b (notification infrastructure)
 
-**Essential done when:** dropdown terminal works via global hotkey, hints mode selects visible targets, floating panes work.
+**Essential done when:** ~~dropdown terminal works via global hotkey~~ ✓, ~~hints mode selects visible targets~~ ✓, floating panes work.
 **Polish done when:** Ghostty themes import, project layouts load from `.mytty.toml`, system notifications fire for background events. Session sources: shipped. Command palette: shipped (583a80a).
 
 ---
@@ -383,12 +388,11 @@ Explore porting to Linux while keeping Apple Silicon macOS as the primary platfo
 
 ADR: `docs/decisions/007-ghostty-upgrade-policy.md`
 
-### - [ ] 7a. Ghostty Submodule Upgrade
-Pin to a commit after the `ghostty_surface_free_text` memory leak fix (or v1.3.2 when tagged). Zero API changes between v1.3.1 and current main.
+### - [x] 7a. Ghostty Submodule Upgrade
+Pinned to 563b085a4 (0d43cc3), which includes the `ghostty_surface_free_text` memory leak fix. Upgrade to v1.3.2 tag when available (no API changes expected).
 
 - Complexity: 1
 - Upgrade procedure: ADR-007
-- Trigger: v1.3.2 tag, or proactively before next Mytty release
 
 ### - [x] 7b. `just ci` Target
 Single justfile recipe that CI and local dev both call. Runs: swift format check, SwiftLint (strict), swift build, swift test, typos. Prerequisite for CI parity.
@@ -484,10 +488,14 @@ Completed:
   Bridge audit: action parity (6 trivial), mouse forwarding, window title ✓
   Ambient identity (Layer 1): env vars in every pane ✓
   Architecture cleanup: back-references (ca4a653), runner simplification (6aa9a24) ✓
+  Phase 5b (hints mode): 5b-1 + 5b-2 + 5b-3 shipped ✓
+  Phase 7a (Ghostty submodule upgrade to 563b085a4) ✓
+  Which-key discoverability: ghost shortcuts (c1da6ea), context filtering (e531dbf) ✓
+  Command palette (583a80a) ✓
 
 Current (parallelizable):
-  ┌─ 4f-3 (key tables)                    ← Phase A ✓, B and C remain
-  ├─ 7j (CLI golden file tests)           ← deferred, lighter alternative planned
+  ┌─ 4f-3b (copy mode key remapping)      ← unblocked by 4f-3a ✓
+  ├─ IPC gaps (session.focus, tab.focus)  ← trivial, completes CRUD
   └─ 5g known limitations                 ← SessionSourceRegistry for lastStatus
 
 Opportunistic (no dependencies, land anytime):
@@ -496,15 +504,10 @@ Opportunistic (no dependencies, land anytime):
   ├─ ~~Dynamic overlay font scaling~~: shipped (6a68326). `MyttyTheme.overlayFont`
      and `overlayFontSize` centralize the `max(cellHeight * 0.8, 12)` pattern.
      Fixed HintsOverlayView Canvas missing the min-size guard.
-  └─ Hint bar PanelMode: convert `show-hint-bar` boolean to PanelMode
-     tri-state (pinned/auto-hide/hidden). Reuses existing PanelState
-     auto-hide machinery (dwell, dismiss, hover). Default: auto-hide.
-     Config: `hint-bar-mode = "auto-hide"`. Fixes Cmd+Shift+H conflict
-     (macOS 'Hide Others') by changing default binding.
+  └─ ~~Hint bar PanelMode~~: shipped. `hint-bar-mode` config with
+     pinned/auto-hide/hidden tri-state.
 
 Near-term (unblocked after current):
-  ┌─ 4f-3b (copy mode key remapping)      ← unblocked by 4f-3a ✓
-  ├─ 7a (Ghostty submodule upgrade)       ← independent
   ├─ 7e (Periphery + pre-commit)          ← depends on 7c ✓
   └─ 7h (app icon)                        ← independent
 
@@ -514,7 +517,7 @@ Feature phases (sequential gates):
 
   Phase 5 Essential (parallelizable within):
     ├─ 5a (dropdown) ──> 4f-2 (configurable global hotkey)
-    ├─ 5b (hints mode) ← 5b-1 + 5b-2 shipped; 5b-3 (IPC) remains
+    ├─ 5b (hints mode) ← 5b-1 + 5b-2 + 5b-3 shipped; 5b-4 deferred
     └─ 5c (floating panes) ← independent
   ──> VoiceOver audit gate
   ──> Phase 5 Polish:
@@ -542,7 +545,6 @@ These items have zero dependencies on each other and can be done in any
 order or simultaneously:
 
 - 4f-3b (copy mode remapping): unblocked by 4f-3a
-- 7a (Ghostty submodule upgrade): waiting on upstream v1.3.2 tag
 - 7e (Periphery + pre-commit): tooling, low effort
 
 ---
@@ -564,14 +566,11 @@ order or simultaneously:
 Items identified but not yet assigned to a phase. Promote to a phase when scoped.
 
 **Discoverability:**
-- ~~Which-key ghost shortcuts~~: shipped (c1da6ea). Direct global shortcut shown dimmed next to each which-key entry.
-- ~~Command palette shortcut labels~~: shipped with 5f (583a80a). Keybinding displayed right-aligned next to every palette result.
 - Generate menu items from AppAction registry: replace hand-written menu Buttons in MyttyApp.swift with a loop over the registry, grouped by `category`. Eliminates the sync problem between registry and menu (currently enforced by `MenuSyncTests`). Trigger: when the menu system needs changes for another reason (hot-reload keybindings, dynamic "Recent Sessions" menu). Approach: add optional `menuGroup: MenuGroup?` enum to AppAction, filter per `CommandGroup` section. Prior art: VS Code's `menus` contribution point maps command IDs to menu locations declaratively. Constraint: SwiftUI `CommandGroup` requires static grouping; may need one `ForEach` per section, or drop to NSMenu (see AppKit window migration track).
 - Post-action shortcut toast: after completing an action via which-key or palette, show "Tip: ⌘T" briefly. Self-limits to 3 appearances per action (persisted counter). Config: `show-shortcut-hints = true`. Prior art: JetBrains IDEs.
 - Contextual mode hints (Zellij-style): when entering window/copy mode, replace the hint bar with mode-specific bindings. Prior art: Zellij status bar.
 - `mytty show-keys` CLI: print all keybindings grouped by category, showing both direct shortcut and which-key path. Supports `--format json` and `--conflicts`.
 - Cheat sheet overlay (hold Cmd): full-screen shortcut reference after holding Cmd for 1.5s. Prior art: macOS CheatSheet app, iPadOS keyboard overlay. Medium-high complexity.
-- Which-key context filtering: hide actions that can't execute (close-tab with 1 tab, close-session with 1 session, break-to-tab with 1 pane). Extends the focus-tab fix (420bf50).
 - Modifier-hold shortcut reveal: hold Cmd to show ⌘1-9 on tabs, hold Ctrl to show pane nav hints. Needs NSEvent `flagsChanged` monitor.
 - Richer hover tooltips: directory, shortcut key, running process (beyond current `.help()`)
 - Tab bar scroll edge gradients (fade indicating overflow)
@@ -586,6 +585,10 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 - Config reference: `docs/config-example.toml` with all options and defaults
 - Config CLI: `config show`, `config set`, `config path` subcommands
 - Config key validation: warn on unrecognized keys (R32)
+
+**IPC gaps:**
+- `session.focus`: focus a session by ID. Completes the session CRUD set. Trivial: `store.activeSession = session`.
+- `tab.focus`: focus a tab by ID. Completes the tab CRUD set. Trivial: `session.activeTab = tab`.
 
 **Quick fixes** (do when convenient, no spec needed):
 - Move `rename-tab` dispatch to `TerminalSurfaceView.keyDown`: Cmd+Shift+R is intercepted by libghostty before the menu system sees it. Handle it at the surface level like other shortcuts (Cmd+T, Cmd+W). Posts `.myttyRenameTab` notification.
@@ -607,14 +610,9 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 - Steering doc performance rules: no @Observable mutation from view body, no allocations on per-keystroke paths.
 
 **UX polish (from cmux RFC analysis):**
-- ~~Window frame persistence (R20)~~: shipped (17be2d9)
-- Dock badge (R14): `NSApp.dockTile.badgeLabel` from aggregate notification count. ~15 LOC.
 - Config parse error dismissible banner (R70): MyttyConfig.parseError exists, needs UI.
 - Empty state views for sidebar and session manager (R69).
 - Sidebar toggle button (chevron at top of SidebarView).
-
-**Bridge correctness:**
-- ~~Display ID tracking (R19)~~: `ghostty_surface_set_display_id` in `viewDidMoveToWindow` and screen-change notification. Shipped.
 
 ---
 
@@ -634,7 +632,7 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 - Ghostty tmux control mode (in progress; DCS parser landed, Issue #1935)
 - OSC 133 C as apprt action: would enable explicit running-state detection in sidebar
 - Native git branch OSC sequence: would replace event-driven git rev-parse
-- Ghostty v1.3.2: fixes `ghostty_surface_free_text` memory leak (5 Mytty call sites). ADR-007 tracks upgrade policy.
+- Ghostty v1.3.2: move from commit pin to tagged release (memory leak fix already included in current pin). ADR-007 tracks upgrade policy.
 
 ---
 
@@ -650,9 +648,7 @@ Options:
 1. **Incremental**: consolidate five monitors into one with an explicit dispatch chain. Lower risk, partial fix.
 2. **Full rework**: move binding dispatch into the surface keyDown path (Ghostty model). Eliminates the bug class entirely but touches every manager.
 
-ADR-008 complete (both phases). Two-layer key dispatch: TerminalSurfaceView.keyDown checks modal state, then falls through to libghostty.
-
-ADR-008 complete. ModalKeyDispatcher deleted in Phase 2.
+ADR-008 complete. Two-layer key dispatch in TerminalSurfaceView.keyDown; ModalKeyDispatcher deleted in Phase 2.
 
 ### Testing gap: synthetic NSEvents
 
