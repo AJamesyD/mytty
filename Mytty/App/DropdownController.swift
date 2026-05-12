@@ -50,6 +50,10 @@ class DropdownController: NSObject, NSWindowDelegate {
     guard !visible else { return }
     visible = true
 
+    let config = MyttyConfig.load()
+    let position = config.dropdownPosition
+    let sizeFraction = Double(config.dropdownSize) / 100.0
+
     if !NSApp.isActive {
       if let front = NSWorkspace.shared.frontmostApplication,
         front.bundleIdentifier != Bundle.main.bundleIdentifier
@@ -71,14 +75,8 @@ class DropdownController: NSObject, NSWindowDelegate {
           ?? NSScreen.screens.first
       else { return }
       let visibleFrame = screen.visibleFrame
-      let height = visibleFrame.height * 0.4
-      let width = visibleFrame.width
-      let initialFrame = NSRect(
-        x: visibleFrame.minX,
-        y: visibleFrame.maxY,
-        width: width,
-        height: height
-      )
+      let (initialFrame, _) = frames(
+        for: position, size: sizeFraction, visibleFrame: visibleFrame)
       panel.setFrame(initialFrame, display: false)
       let hostingView = NSHostingView(rootView: PaneView(pane: pane, isActive: true))
       panel.contentView = hostingView
@@ -90,21 +88,8 @@ class DropdownController: NSObject, NSWindowDelegate {
         ?? NSScreen.screens.first
     else { return }
     let visibleFrame = screen.visibleFrame
-    let height = visibleFrame.height * 0.4
-    let width = visibleFrame.width
-
-    let initialFrame = NSRect(
-      x: visibleFrame.minX,
-      y: visibleFrame.maxY,
-      width: width,
-      height: height
-    )
-    let finalFrame = NSRect(
-      x: visibleFrame.minX,
-      y: visibleFrame.maxY - height,
-      width: width,
-      height: height
-    )
+    let (initialFrame, finalFrame) = frames(
+      for: position, size: sizeFraction, visibleFrame: visibleFrame)
 
     panel.setFrame(initialFrame, display: false)
     panel.alphaValue = 0
@@ -145,17 +130,13 @@ class DropdownController: NSObject, NSWindowDelegate {
       }
     }
 
+    let config = MyttyConfig.load()
+    let position = config.dropdownPosition
+    let sizeFraction = Double(config.dropdownSize) / 100.0
     guard let screen = panel.screen ?? NSScreen.main ?? NSScreen.screens.first else { return }
     let visibleFrame = screen.visibleFrame
-    let height = panel.frame.height
-    let width = panel.frame.width
-
-    let initialFrame = NSRect(
-      x: visibleFrame.minX,
-      y: visibleFrame.maxY,
-      width: width,
-      height: height
-    )
+    let (initialFrame, _) = frames(
+      for: position, size: sizeFraction, visibleFrame: visibleFrame)
 
     panel.level = .popUpMenu
 
@@ -171,6 +152,37 @@ class DropdownController: NSObject, NSWindowDelegate {
           panel.orderOut(self)
         }
       })
+  }
+
+  private func frames(
+    for position: DropdownPosition, size: Double, visibleFrame: NSRect
+  ) -> (initial: NSRect, final: NSRect) {
+    switch position {
+    case .top:
+      let h = visibleFrame.height * size
+      let w = visibleFrame.width
+      let initial = NSRect(x: visibleFrame.minX, y: visibleFrame.maxY, width: w, height: h)
+      let dest = NSRect(x: visibleFrame.minX, y: visibleFrame.maxY - h, width: w, height: h)
+      return (initial, dest)
+    case .bottom:
+      let h = visibleFrame.height * size
+      let w = visibleFrame.width
+      let initial = NSRect(x: visibleFrame.minX, y: visibleFrame.minY - h, width: w, height: h)
+      let dest = NSRect(x: visibleFrame.minX, y: visibleFrame.minY, width: w, height: h)
+      return (initial, dest)
+    case .left:
+      let w = visibleFrame.width * size
+      let h = visibleFrame.height
+      let initial = NSRect(x: visibleFrame.minX - w, y: visibleFrame.minY, width: w, height: h)
+      let dest = NSRect(x: visibleFrame.minX, y: visibleFrame.minY, width: w, height: h)
+      return (initial, dest)
+    case .right:
+      let w = visibleFrame.width * size
+      let h = visibleFrame.height
+      let initial = NSRect(x: visibleFrame.maxX, y: visibleFrame.minY, width: w, height: h)
+      let dest = NSRect(x: visibleFrame.maxX - w, y: visibleFrame.minY, width: w, height: h)
+      return (initial, dest)
+    }
   }
 
   private func makeWindowKey(retries: UInt8 = 0) {

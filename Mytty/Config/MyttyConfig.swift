@@ -36,6 +36,10 @@ struct HintsConfig: Sendable, Equatable {
   var types: Set<TerminalMatchType> = Set(TerminalMatchType.allCases)
 }
 
+enum DropdownPosition: String, Sendable, Equatable {
+  case top, bottom, left, right
+}
+
 struct MyttyConfig: Sendable, Equatable {
   var sidebarMode: PanelMode = .pinned
   var sidebarPosition: SidebarPosition = .left
@@ -46,6 +50,8 @@ struct MyttyConfig: Sendable, Equatable {
   var autoHideDismissDelayMs: Int = 300
   var autoHideShowHints: Bool = true
   var hintBarMode: PanelMode = .autoHide
+  var dropdownPosition: DropdownPosition = .top
+  var dropdownSize: Int = 40
   var popups: [PopupDefinition] = []
   var ssh = SSHConfig()
   var hints = HintsConfig()
@@ -154,6 +160,14 @@ struct MyttyConfig: Sendable, Equatable {
         let mode = PanelMode.fromConfig(modeStr)
       {
         config.hintBarMode = mode
+      }
+    }
+    if let dropdownTable = table["dropdown"]?.table {
+      if let posStr = dropdownTable["position"]?.string {
+        config.dropdownPosition = DropdownPosition(rawValue: posStr) ?? .top
+      }
+      if let size = dropdownTable["size"]?.int {
+        config.dropdownSize = max(10, min(100, size))
       }
     }
     config.keybindingStore = Self.parseKeybindings(from: table)
