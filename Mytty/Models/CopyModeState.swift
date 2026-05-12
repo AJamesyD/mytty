@@ -180,7 +180,6 @@ struct CopyModeState {
   // MARK: - Normal key dispatch
 
   // Vi motion dispatch: flat switch with one case per motion key.
-  // swiftlint:disable:next function_body_length
   private mutating func handleNormalKey(
     key: Character,
     keyCode: UInt16,

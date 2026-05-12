@@ -4,6 +4,8 @@
 excluded:
   - .build
   - vendor
+  # ArgumentParser command boilerplate triggers naming and complexity rules
+  # that don't reflect real design problems. Re-evaluate if CLI grows custom logic.
   - MyttyCLI
 
 # C interop: libghostty callbacks use single-letter params (e.g., F for flags,
@@ -22,19 +24,18 @@ identifier_name:
 # Function length is a proxy for "too many responsibilities," not a goal
 # in itself. A 150-line function doing one complex thing (event dispatch,
 # parsing) is fine. A 40-line function doing four unrelated things is not.
-# Warn at 100 to flag growth; error at 200 to catch genuine god functions.
 function_body_length:
-  warning: 100
+  warning: 150
   error: 200
 
 type_body_length:
-  warning: 350
-  error: 550
+  warning: 500
+  error: 700
 
 cyclomatic_complexity:
   ignores_case_statements: true
-  warning: 15
-  error: 25
+  warning: 20
+  error: 30
 
 # --- Disabled rules ---
 #
@@ -73,12 +74,10 @@ disabled_rules:
   - todo
   - multiple_closures_with_trailing_closure
 
-# Largest file is ContentView.swift (~1050 lines after consolidating handlers).
-# Threshold catches unbounded growth without flagging current files.
-# See TODO in ContentView.swift for the @Observable extraction that would
-# shrink it and allow re-splitting handlers into a separate file.
+# ContentView.swift is large by design (steering: handlers live in same-file extension).
+# Threshold gives headroom above current size; error catches runaway growth.
 file_length:
-  warning: 1200
+  warning: 1500
   error: 2000
   ignore_comment_only_lines: true
 

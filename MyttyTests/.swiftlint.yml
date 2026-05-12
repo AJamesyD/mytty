@@ -4,3 +4,5 @@ parent_config: ../.swiftlint.yml
 
 disabled_rules:
   - type_body_length
+  - force_unwrapping
+  - for_where

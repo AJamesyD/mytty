@@ -10,7 +10,6 @@ private struct ListenerState: Sendable {
 
 @MainActor
 // Socket I/O + JSON-RPC dispatch in one class. Splitting would separate the read loop from its handler.
-// swiftlint:disable:next type_body_length
 final class IPCListener {
   private let service: MyttyIPCService
   private let state = OSAllocatedUnfairLock(initialState: ListenerState())

@@ -501,7 +501,6 @@ private var hasRequestedNotificationPermission = false
 
 extension ContentView {
   // Flat registry of all user-invocable actions. Length reflects action count, not complexity.
-  // swiftlint:disable:next function_body_length
   private func buildActionRegistry() -> [AppAction] {
     var actions: [AppAction] = [
       AppAction(id: "new-tab", label: "New Tab", category: "tab") {
