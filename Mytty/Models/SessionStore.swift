@@ -12,6 +12,10 @@ final class SessionStore {
   private(set) var sessions: [MyttySession] = []
   var activeSession: MyttySession?
 
+  var totalNotificationCount: Int {
+    sessions.reduce(0) { $0 + $1.notificationCount }
+  }
+
   private var nextSessionId = 1
   private var nextTabId = 1
   private var nextPaneId = 1

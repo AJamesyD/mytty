@@ -788,6 +788,9 @@ extension ContentView {
         let title = store.activeSession?.activeTab?.displayTitle ?? ""
         store.activeSession?.activeTab?.activePane?.surfaceView.window?.title = title
       }
+      .onChange(of: store.totalNotificationCount) { _, newValue in
+        NSApp.dockTile.badgeLabel = newValue > 0 ? "\(newValue)" : nil
+      }
   }
 
   var contentWithGhosttyActions: some View {
