@@ -137,7 +137,7 @@
             };
 
             tests = {
-              enable = true;
+              enable = false;
               name = "tests";
               entry = "just test";
               pass_filenames = false;

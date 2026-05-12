@@ -1,5 +1,7 @@
 [files]
-extend-exclude = ["vendor/"]
+# Scan code, not prose. Markdown has too many domain terms, commit hashes,
+# and proper nouns for typos to be useful there.
+extend-exclude = ["vendor/", "docs/", "*.md"]
 
 [default.extend-words]
 # Intentional misspellings in fuzzy match test data
