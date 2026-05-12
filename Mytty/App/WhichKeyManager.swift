@@ -132,6 +132,8 @@ final class WhichKeyManager {
     registry: [AppAction],
     groups: [WhichKeyGroup],
     tabCount: Int,
+    sessionCount: Int,
+    paneCount: Int,
     keybindingStore: KeybindingStore
   ) -> [WhichKeyBinding] {
     let actionMap = Dictionary(uniqueKeysWithValues: registry.map { ($0.id, $0) })
@@ -144,6 +146,9 @@ final class WhichKeyManager {
         {
           return nil
         }
+        if node.action == "close-tab" && tabCount <= 1 { return nil }
+        if node.action == "close-session" && sessionCount <= 1 { return nil }
+        if node.action == "break-to-tab" && paneCount <= 1 { return nil }
         guard let action = actionMap[node.action],
           let key = node.key.first
         else { return nil }

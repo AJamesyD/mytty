@@ -588,7 +588,6 @@ Items identified but not yet assigned to a phase. Promote to a phase when scoped
 - Config key validation: warn on unrecognized keys (R32)
 
 **Quick fixes** (do when convenient, no spec needed):
-- `@MainActor` on TerminalCommands (one-line concurrency annotation)
 - Move `rename-tab` dispatch to `TerminalSurfaceView.keyDown`: Cmd+Shift+R is intercepted by libghostty before the menu system sees it. Handle it at the surface level like other shortcuts (Cmd+T, Cmd+W). Posts `.myttyRenameTab` notification.
 - Worktree recipes in justfile (`setup-worktree`, dev-variant bundle name)
 

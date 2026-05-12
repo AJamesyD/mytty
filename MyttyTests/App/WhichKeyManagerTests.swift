@@ -175,7 +175,8 @@ final class WhichKeyManagerTests: XCTestCase {
         bindings: (1...9).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") })
     ]
     let bindings = WhichKeyManager.buildBindings(
-      registry: registry, groups: groups, tabCount: 3, keybindingStore: KeybindingStore())
+      registry: registry, groups: groups, tabCount: 3,
+      sessionCount: 1, paneCount: 1, keybindingStore: KeybindingStore())
     guard case .group(_, let children) = bindings.first?.action else {
       XCTFail("Expected a group binding")
       return
@@ -193,7 +194,8 @@ final class WhichKeyManagerTests: XCTestCase {
         bindings: (1...5).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") })
     ]
     let bindings = WhichKeyManager.buildBindings(
-      registry: registry, groups: groups, tabCount: 9, keybindingStore: KeybindingStore())
+      registry: registry, groups: groups, tabCount: 9,
+      sessionCount: 1, paneCount: 1, keybindingStore: KeybindingStore())
     guard case .group(_, let children) = bindings.first?.action else {
       XCTFail("Expected a group binding")
       return
@@ -217,12 +219,13 @@ final class WhichKeyManagerTests: XCTestCase {
         ])
     ]
     let bindings = WhichKeyManager.buildBindings(
-      registry: registry, groups: groups, tabCount: 0, keybindingStore: KeybindingStore())
+      registry: registry, groups: groups, tabCount: 0,
+      sessionCount: 1, paneCount: 1, keybindingStore: KeybindingStore())
     guard case .group(_, let children) = bindings.first?.action else {
       XCTFail("Expected a group binding")
       return
     }
-    // new-tab and close-tab remain; focus-tab-1 filtered (tabCount=0)
-    XCTAssertEqual(children.count, 2)
+    // new-tab remains; close-tab filtered (tabCount<=1), focus-tab-1 filtered (tabCount=0)
+    XCTAssertEqual(children.count, 1)
   }
 }

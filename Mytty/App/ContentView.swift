@@ -1002,6 +1002,8 @@ extension ContentView {
           registry: actionRegistry,
           groups: keybindingStore.whichKeyGroups,
           tabCount: store.activeSession?.tabs.count ?? 0,
+          sessionCount: store.sessions.count,
+          paneCount: store.activeSession?.activeTab?.panes.count ?? 0,
           keybindingStore: keybindingStore))
     }
   }
