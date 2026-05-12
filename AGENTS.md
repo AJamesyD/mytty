@@ -13,7 +13,7 @@ just build-release      # Release build (rebuilds libghostty first)
 just test               # All tests (swift test)
 just test-filter NAME   # Tests matching a filter
 just fmt                # Format all code (Swift + Nix)
-just lint               # SwiftLint
+just lint               # Format check + lint (strict)
 just check              # Format check + lint + test
 just build-libghostty   # Rebuild libghostty (requires nix devshell)
 just dev                # Enter nix devshell

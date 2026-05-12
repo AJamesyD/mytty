@@ -8,6 +8,7 @@ DerivedData/
 result
 result-*
 .direnv/
+.pre-commit-config.yaml
 .worktrees/
 .session.md
 rule_docs/

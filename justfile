@@ -183,11 +183,9 @@ setup:
     git submodule update --init --recursive
     @echo "Now run 'just build-libghostty' to build libghostty"
 
-# Install git hooks (format + lint on commit)
+# Git hooks (auto-installed by nix devshell)
 install-hooks:
-    cp scripts/pre-commit .git/hooks/pre-commit
-    chmod +x .git/hooks/pre-commit
-    @echo "Pre-commit hook installed."
+    @echo "Hooks are auto-installed by nix devshell (direnv allow or nix develop)."
 
 # Format all code (Swift + Nix + Shell)
 # swift-format: Xcode toolchain (authoritative for Swift layout)
@@ -198,14 +196,11 @@ fmt:
     nix fmt flake.nix
     shfmt -w scripts/
 
-# Check formatting without modifying
-fmt-check:
+# Lint all code (strict: warnings are errors)
+lint:
     swift format lint --strict --parallel --recursive Mytty/ MyttyTests/ MyttyCLI/ MyttyShared/
     nix fmt -- --check flake.nix
     shfmt -d scripts/
-
-# Lint all code (strict: warnings are errors)
-lint:
     swiftlint lint --quiet --strict
     shellcheck scripts/*
     typos
@@ -214,11 +209,15 @@ lint:
 lint-fix:
     swiftlint lint --fix --quiet
 
-# Local check: format, lint, verify, test
-check: fmt-check lint verify-cli-ref test
+# Local check: lint, verify, test
+check: lint verify-cli-ref test
 
 # CI pipeline
-ci: fmt-check lint build verify-cli-ref test
+ci: lint build verify-cli-ref test
+
+# Detect unused code (requires a prior build)
+periphery:
+    periphery scan --skip-build --index-store-path .build/debug/index/store
 
 # Generate CLI reference from ArgumentParser dump-help
 generate-cli-ref: build-cli
