@@ -111,7 +111,7 @@ Next (priority order):
 
 Opportunistic (no dependencies, land alongside any of the above; these are zero-risk items that can ship in any commit without blocking or being blocked by current work):
 - R14: dock badge (`NSApp.dockTile.badgeLabel` from aggregate notification count, ~15 LOC). Needs a spike to validate the `.onChange(of: computed-expression)` observation pattern with nested @Observable. The spike is a risk to investigate during implementation, not a blocker: if the pattern doesn't work, a manual `withObservationTracking` fallback exists.
-- Replace `FuzzyMatcher.swift` with [ordo-one/FuzzyMatch](https://github.com/ordo-one/FuzzyMatch) (Apache-2.0). Gains typo tolerance, abbreviation matching, and `attributedHighlight()` for SwiftUI. Deletes 227 lines. Research: `/tmp/ai-research-swift-packages-mytty.md`.
+
 
 ### Bridge audit cleanup gate (before new features)
 
@@ -493,7 +493,6 @@ Current (parallelizable):
 Opportunistic (no dependencies, land anytime):
   ├─ ~~R20 (window frame persistence)~~: shipped (17be2d9)
   ├─ R14 (dock badge)
-  ├─ Replace FuzzyMatcher.swift with ordo-one/FuzzyMatch
   ├─ ~~Dynamic overlay font scaling~~: shipped (6a68326). `MyttyTheme.overlayFont`
      and `overlayFontSize` centralize the `max(cellHeight * 0.8, 12)` pattern.
      Fixed HintsOverlayView Canvas missing the min-size guard.
@@ -565,7 +564,7 @@ order or simultaneously:
 Items identified but not yet assigned to a phase. Promote to a phase when scoped.
 
 **Discoverability:**
-- Which-key ghost shortcuts: show the direct global shortcut (e.g., ⌘T) right-aligned and dimmed next to each which-key entry. Turns which-key into a graduation tool. Data already in AppAction registry + KeybindingStore. Config: `which-key-show-shortcuts = true`. Research: `docs/research/keybinding-discoverability.md`.
+- ~~Which-key ghost shortcuts~~: shipped (c1da6ea). Direct global shortcut shown dimmed next to each which-key entry.
 - ~~Command palette shortcut labels~~: shipped with 5f (583a80a). Keybinding displayed right-aligned next to every palette result.
 - Generate menu items from AppAction registry: replace hand-written menu Buttons in MyttyApp.swift with a loop over the registry, grouped by `category`. Eliminates the sync problem between registry and menu (currently enforced by `MenuSyncTests`). Trigger: when the menu system needs changes for another reason (hot-reload keybindings, dynamic "Recent Sessions" menu). Approach: add optional `menuGroup: MenuGroup?` enum to AppAction, filter per `CommandGroup` section. Prior art: VS Code's `menus` contribution point maps command IDs to menu locations declaratively. Constraint: SwiftUI `CommandGroup` requires static grouping; may need one `ForEach` per section, or drop to NSMenu (see AppKit window migration track).
 - Post-action shortcut toast: after completing an action via which-key or palette, show "Tip: ⌘T" briefly. Self-limits to 3 appearances per action (persisted counter). Config: `show-shortcut-hints = true`. Prior art: JetBrains IDEs.
