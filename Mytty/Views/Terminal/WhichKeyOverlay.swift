@@ -58,17 +58,23 @@ struct WhichKeyOverlay: View {
   }
 
   private func hintBadge(binding: WhichKeyBinding) -> some View {
-    let (label, isGroup) = bindingLabel(binding.action)
-    return KeyBadge(
-      key: String(binding.key),
-      label: label + (isGroup ? " >" : "")
-    )
+    let (label, isGroup, shortcut) = bindingLabel(binding.action)
+    return HStack(spacing: 4) {
+      KeyBadge(
+        key: String(binding.key),
+        label: label + (isGroup ? " >" : "")
+      )
+      if let shortcut {
+        Text(shortcut)
+          .foregroundStyle(MyttyTheme.overlayTextMuted)
+      }
+    }
   }
 
-  private func bindingLabel(_ action: WhichKeyAction) -> (String, Bool) {
+  private func bindingLabel(_ action: WhichKeyAction) -> (String, Bool, String?) {
     switch action {
-    case .group(let label, _): (label, true)
-    case .command(let label, _): (label, false)
+    case .group(let label, _): (label, true, nil)
+    case .command(let label, let shortcut, _): (label, false, shortcut)
     }
   }
 }

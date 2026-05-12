@@ -154,7 +154,7 @@ final class KeySequenceManager {
       }
       guard let key = trigger.key.first else { return nil }
       if child.action != nil {
-        return WhichKeyBinding(key: key, action: .command(label: label, action: {}))
+        return WhichKeyBinding(key: key, action: .command(label: label, shortcut: nil, action: {}))
       }
       let subBindings = self.continuations(from: child)
       return WhichKeyBinding(key: key, action: .group(label: label, children: subBindings))

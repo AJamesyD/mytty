@@ -3,10 +3,7 @@ import SwiftUI
 
 enum WhichKeyAction {
   case group(label: String, children: [WhichKeyBinding])
-  // TODO(discoverability): add `shortcut: String?` parameter to show the direct
-  // global keybinding as ghost text (e.g., "⌘T") in the which-key overlay.
-  // Data source: KeybindingStore.trigger(for: actionId, in: .global)?.displayLabel
-  case command(label: String, action: @MainActor () -> Void)
+  case command(label: String, shortcut: String?, action: @MainActor () -> Void)
 }
 
 struct WhichKeyBinding: Identifiable {
@@ -109,7 +106,7 @@ final class WhichKeyManager {
     }
 
     switch binding.action {
-    case .command(_, let action):
+    case .command(_, _, let action):
       deactivate()
       action()
     case .group(let label, let children):
@@ -134,7 +131,8 @@ final class WhichKeyManager {
   static func buildBindings(
     registry: [AppAction],
     groups: [WhichKeyGroup],
-    tabCount: Int
+    tabCount: Int,
+    keybindingStore: KeybindingStore
   ) -> [WhichKeyBinding] {
     let actionMap = Dictionary(uniqueKeysWithValues: registry.map { ($0.id, $0) })
 
@@ -149,9 +147,10 @@ final class WhichKeyManager {
         guard let action = actionMap[node.action],
           let key = node.key.first
         else { return nil }
+        let shortcut = keybindingStore.trigger(for: node.action, in: .global)?.displayLabel
         return WhichKeyBinding(
           key: key,
-          action: .command(label: action.label, action: action.handler)
+          action: .command(label: action.label, shortcut: shortcut, action: action.handler)
         )
       }
       guard !children.isEmpty else { return nil }

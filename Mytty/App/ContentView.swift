@@ -1001,7 +1001,8 @@ extension ContentView {
         bindings: WhichKeyManager.buildBindings(
           registry: actionRegistry,
           groups: keybindingStore.whichKeyGroups,
-          tabCount: store.activeSession?.tabs.count ?? 0))
+          tabCount: store.activeSession?.tabs.count ?? 0,
+          keybindingStore: keybindingStore))
     }
   }
 

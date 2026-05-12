@@ -12,7 +12,7 @@ final class WhichKeyManagerTests: XCTestCase {
     [
       WhichKeyBinding(
         key: "a",
-        action: .command(label: "Action A") { [self] in
+        action: .command(label: "Action A", shortcut: nil) { [self] in
           flagSet = true
         }),
       WhichKeyBinding(
@@ -22,7 +22,7 @@ final class WhichKeyManagerTests: XCTestCase {
           children: [
             WhichKeyBinding(
               key: "x",
-              action: .command(label: "Nested") { [self] in
+              action: .command(label: "Nested", shortcut: nil) { [self] in
                 flagSet = true
               })
           ])),
@@ -87,7 +87,7 @@ final class WhichKeyManagerTests: XCTestCase {
     let bindings = makeBindings()
     manager.activate(bindings: bindings)
     manager.activate(bindings: [
-      WhichKeyBinding(key: "q", action: .command(label: "Other") {})
+      WhichKeyBinding(key: "q", action: .command(label: "Other", shortcut: nil) {})
     ])
     XCTAssertEqual(manager.currentBindings.count, 2)
     XCTAssertEqual(manager.currentBindings.first?.key, "a")
@@ -129,7 +129,7 @@ final class WhichKeyManagerTests: XCTestCase {
               action: .group(
                 label: "SubGroup",
                 children: [
-                  WhichKeyBinding(key: "x", action: .command(label: "Leaf") {})
+                  WhichKeyBinding(key: "x", action: .command(label: "Leaf", shortcut: nil) {})
                 ]))
           ]))
     ]
@@ -154,7 +154,7 @@ final class WhichKeyManagerTests: XCTestCase {
 
   func test_showContinuations_activatesAndSetsBindings() {
     let bindings: [WhichKeyBinding] = [
-      WhichKeyBinding(key: "a", action: .command(label: "Cont") {})
+      WhichKeyBinding(key: "a", action: .command(label: "Cont", shortcut: nil) {})
     ]
     manager.showContinuations(bindings)
     XCTAssertTrue(manager.isActive)
@@ -174,7 +174,8 @@ final class WhichKeyManagerTests: XCTestCase {
         name: "tabs", key: "t",
         bindings: (1...9).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") })
     ]
-    let bindings = WhichKeyManager.buildBindings(registry: registry, groups: groups, tabCount: 3)
+    let bindings = WhichKeyManager.buildBindings(
+      registry: registry, groups: groups, tabCount: 3, keybindingStore: KeybindingStore())
     guard case .group(_, let children) = bindings.first?.action else {
       XCTFail("Expected a group binding")
       return
@@ -191,7 +192,8 @@ final class WhichKeyManagerTests: XCTestCase {
         name: "tabs", key: "t",
         bindings: (1...5).map { WhichKeyNode(action: "focus-tab-\($0)", key: "\($0)") })
     ]
-    let bindings = WhichKeyManager.buildBindings(registry: registry, groups: groups, tabCount: 9)
+    let bindings = WhichKeyManager.buildBindings(
+      registry: registry, groups: groups, tabCount: 9, keybindingStore: KeybindingStore())
     guard case .group(_, let children) = bindings.first?.action else {
       XCTFail("Expected a group binding")
       return
@@ -214,7 +216,8 @@ final class WhichKeyManagerTests: XCTestCase {
           WhichKeyNode(action: "focus-tab-1", key: "1"),
         ])
     ]
-    let bindings = WhichKeyManager.buildBindings(registry: registry, groups: groups, tabCount: 0)
+    let bindings = WhichKeyManager.buildBindings(
+      registry: registry, groups: groups, tabCount: 0, keybindingStore: KeybindingStore())
     guard case .group(_, let children) = bindings.first?.action else {
       XCTFail("Expected a group binding")
       return
