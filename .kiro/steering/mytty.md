@@ -105,6 +105,12 @@ NSEvent monitors: test the extracted handler methods, not the monitors.
 Views: manual testing only.
 Do not mock SessionStore. Create a real instance for tests.
 
+Interrupted `swift build` or `swift test` can leave zombie `swift-frontend`
+and `xctest` processes consuming CPU and memory. The justfile's `build` and
+`test` recipes kill these automatically via `_kill-zombies`. When running
+swift commands directly, kill zombies first:
+`pkill -9 -f 'swift-(build|test|frontend)|xctest' 2>/dev/null || true`
+
 ## File Naming
 
 Views: FooView.swift in Views/Category/

@@ -5,8 +5,12 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # Default recipe
 default: build
 
+# Kill dangling swift/xctest processes that leak memory after interrupted builds
+_kill-zombies:
+    @pkill -9 -f 'swift-(build|test|frontend)|xctest' 2>/dev/null || true
+
 # Build the app (debug)
-build:
+build: _kill-zombies
     swift build
 
 # Build the app (release)
@@ -107,7 +111,7 @@ open:
     open /Applications/Mytty.app
 
 # Run tests
-test:
+test: _kill-zombies
     swift test
 
 # Run tests matching a filter
