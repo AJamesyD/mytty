@@ -9,6 +9,7 @@ public protocol MyttyServiceProtocol {
   @MainActor func getSession(id: Int) async throws -> Data
   @MainActor func closeSession(id: Int) async throws -> Data
   @MainActor func renameSession(id: Int, name: String) async throws -> Data
+  @MainActor func focusSession(id: Int) async throws -> Data
 
   // MARK: - Tabs
 
@@ -20,6 +21,7 @@ public protocol MyttyServiceProtocol {
   @MainActor func moveTab(id: Int, toIndex: Int) async throws -> Data
   @MainActor func rotateTab(id: Int) async throws -> Data
   @MainActor func applyTabLayout(id: Int, name: String) async throws -> Data
+  @MainActor func focusTab(id: Int) async throws -> Data
 
   // MARK: - Panes
 

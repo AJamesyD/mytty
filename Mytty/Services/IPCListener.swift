@@ -256,6 +256,8 @@ final class IPCListener {
       return await callService(request) {
         try await service.renameSession(id: int("id"), name: str("name") ?? "")
       }
+    case "session.focus":
+      return await callService(request) { try await service.focusSession(id: int("id")) }
 
     // Tabs
     case "tab.create":
@@ -287,6 +289,8 @@ final class IPCListener {
       return await callService(request) {
         try await service.applyTabLayout(id: int("id"), name: str("name") ?? "")
       }
+    case "tab.focus":
+      return await callService(request) { try await service.focusTab(id: int("id")) }
 
     // Panes
     case "pane.create":

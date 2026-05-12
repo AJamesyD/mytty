@@ -111,6 +111,19 @@ import MyttyShared
     return try encodeOrThrow(sessionResponse(session))
   }
 
+  func focusSession(id: Int) async throws -> Data {
+    guard let session = store.session(byId: id) else {
+      throw MyttyIPC.error(.entityNotFound, "Session \(id) not found")
+    }
+    store.activeSession = session
+    if let pane = session.activeTab?.activePane {
+      pane.surfaceView.window?.makeKeyAndOrderFront(nil)
+      pane.surfaceView.window?.makeFirstResponder(pane.surfaceView)
+    }
+    Task { await broker.publish(event: "session.focused", params: ["sessionId": .int(id)]) }
+    return try encodeOrThrow(sessionResponse(session))
+  }
+
   // MARK: - Tabs
 
   func createTab(sessionId: Int, name: String?, exec: String?) async throws -> Data {
@@ -204,6 +217,17 @@ import MyttyShared
       await broker.publish(
         event: "tab.layout-applied", params: ["tabId": .int(tab.id), "layout": .string(name)])
     }
+    return try encodeOrThrow(tabResponse(tab))
+  }
+
+  func focusTab(id: Int) async throws -> Data {
+    guard let (session, tab) = store.tab(byId: id) else {
+      throw MyttyIPC.error(.entityNotFound, "Tab \(id) not found")
+    }
+    store.activeSession = session
+    session.activeTab = tab
+    tab.activePane?.surfaceView.window?.makeFirstResponder(tab.activePane?.surfaceView)
+    Task { await broker.publish(event: "tab.focused", params: ["tabId": .int(id)]) }
     return try encodeOrThrow(tabResponse(tab))
   }
 

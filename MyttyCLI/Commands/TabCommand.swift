@@ -15,6 +15,7 @@ struct TabCommand: ParsableCommand {
       Move.self,
       Rotate.self,
       Layout.self,
+      Focus.self,
     ]
   )
 
@@ -361,6 +362,36 @@ struct TabCommand: ParsableCommand {
           ])
         }
       }
+    }
+  }
+
+  struct Focus: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Focus a tab")
+
+    @Argument(help: "Tab ID")
+    var id: Int
+
+    @Flag(name: .long, help: "Output as JSON")
+    var json = false
+
+    @Flag(name: .long, help: "Output as human-readable text")
+    var human = false
+
+    func run() throws {
+      let format = OutputFormat.detect(forceJSON: json, forceHuman: human)
+      let formatter = OutputFormatter(format: format)
+      let client = IPCClient()
+      try client.connect()
+      try client.initialize()
+
+      do {
+        _ = try client.callJSONRPC("tab.focus", params: ["id": .int(id)])
+      } catch {
+        OutputFormatter.printError(error.localizedDescription)
+        Foundation.exit(1)
+      }
+
+      formatter.printSuccess("Tab \(id) focused")
     }
   }
 }
