@@ -56,6 +56,16 @@ Rename a session
 | --json | Output as JSON |  |
 | --human | Output as human-readable text |  |
 
+### mytty-cli session focus
+
+Focus a session
+
+| Option | Description | Default |
+| --- | --- | --- |
+| <id> | Session ID |  |
+| --json | Output as JSON |  |
+| --human | Output as human-readable text |  |
+
 ## mytty-cli tab
 
 Manage tabs
@@ -141,6 +151,16 @@ Apply a preset layout
 | --- | --- | --- |
 | --id | Tab ID (0 = active) | 0 |
 | <name> | Layout name: even-horizontal, even-vertical, main-horizontal, main-vertical, tiled |  |
+| --json | Output as JSON |  |
+| --human | Output as human-readable text |  |
+
+### mytty-cli tab focus
+
+Focus a tab
+
+| Option | Description | Default |
+| --- | --- | --- |
+| <id> | Tab ID |  |
 | --json | Output as JSON |  |
 | --human | Output as human-readable text |  |
 
@@ -431,4 +451,15 @@ List configured session sources
 | --- | --- | --- |
 | --json | Output as JSON |  |
 | --human | Output as human-readable text |  |
+
+## mytty-cli hints
+
+Control hints mode
+### mytty-cli hints activate
+
+Activate terminal hints mode
+
+### mytty-cli hints chrome
+
+Activate chrome hints mode
 
