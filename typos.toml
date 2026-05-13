@@ -10,6 +10,6 @@ proejct = "proejct"
 fo = "fo"
 
 [files]
-# vendor/: git submodule, not our code to fix
-# docs/research/: contains domain-specific vocabulary not worth maintaining
-extend-exclude = ["vendor/", "docs/research/"]
+# vendor/: git submodule, not our code
+# docs/ and *.md: domain terms, commit hashes, and proper nouns
+extend-exclude = ["vendor/", "docs/", "*.md"]
